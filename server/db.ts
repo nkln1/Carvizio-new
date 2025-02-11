@@ -6,9 +6,7 @@ import * as schema from "@shared/schema";
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  process.env.DATABASE_URL = "postgresql://carvizio_migrator:Mercedes6284@89.40.72.121:5432/carvizio_db";
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
