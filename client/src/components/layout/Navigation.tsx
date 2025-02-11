@@ -77,9 +77,6 @@ export default function Navigation() {
               <span className="hidden sm:inline">Contactează-ne</span>
               <span className="sm:hidden">Contact</span>
             </Button>
-            <div className="flex items-center">
-              <span className="text-gray-600">Mesaje</span>
-            </div>
           </div>
         </div>
       </div>
