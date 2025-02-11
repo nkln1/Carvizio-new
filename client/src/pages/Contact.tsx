@@ -50,7 +50,6 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
       <div className="max-w-7xl mx-auto py-8 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-4 sm:mb-8">
