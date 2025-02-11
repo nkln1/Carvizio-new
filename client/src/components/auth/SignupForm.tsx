@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, createContext, useContext } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -91,6 +90,21 @@ const serviceSchema = z.object({
 });
 
 type UserRole = "client" | "service" | null;
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }: any) {
+  //  Add your auth logic here if needed.  This is a placeholder.
+  return (
+    <AuthContext.Provider value={{ user: null, login: () => {}, logout: () => {} }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
