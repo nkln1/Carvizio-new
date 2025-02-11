@@ -12,25 +12,25 @@ export default function Navigation() {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link href="/">
-            <a className="text-2xl font-bold text-primary">Carvizio</a>
+            <span className="text-2xl font-bold text-primary cursor-pointer">Carvizio</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link href="/search">
-              <a className="text-gray-700 hover:text-primary transition-colors">
+              <span className="text-gray-700 hover:text-primary transition-colors cursor-pointer">
                 Search Cars
-              </a>
+              </span>
             </Link>
             <Link href="/sell">
-              <a className="text-gray-700 hover:text-primary transition-colors">
+              <span className="text-gray-700 hover:text-primary transition-colors cursor-pointer">
                 Sell Your Car
-              </a>
+              </span>
             </Link>
             <Link href="/about">
-              <a className="text-gray-700 hover:text-primary transition-colors">
+              <span className="text-gray-700 hover:text-primary transition-colors cursor-pointer">
                 About Us
-              </a>
+              </span>
             </Link>
             <Button>Get Started</Button>
           </div>
@@ -52,19 +52,19 @@ export default function Navigation() {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link href="/search">
-                <a className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors">
+                <span className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors cursor-pointer">
                   Search Cars
-                </a>
+                </span>
               </Link>
               <Link href="/sell">
-                <a className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors">
+                <span className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors cursor-pointer">
                   Sell Your Car
-                </a>
+                </span>
               </Link>
               <Link href="/about">
-                <a className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors">
+                <span className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors cursor-pointer">
                   About Us
-                </a>
+                </span>
               </Link>
               <Button className="w-full mt-4">Get Started</Button>
             </div>
