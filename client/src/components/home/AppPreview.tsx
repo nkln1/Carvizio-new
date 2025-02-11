@@ -1,60 +1,41 @@
-import { motion } from "framer-motion";
-
 export default function AppPreview() {
   return (
-    <section className="bg-white py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center lg:text-left"
-          >
-            <h2 className="text-4xl font-extrabold text-gray-900 mb-6">
-              Descarcă aplicația CARVIZIO
-            </h2>
-            <p className="text-xl text-gray-600 mb-8">
-              Ai toate funcționalitățile în buzunar. Gestionează programările,
-              primește notificări și găsește service-uri auto oriunde te-ai afla.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <a
-                href="#"
-                className="inline-block transform transition-transform hover:scale-105"
-              >
-                <img
-                  src="https://i.ibb.co/q7Pt0Hh/google-play.png"
-                  alt="Get it on Google Play"
-                  className="h-14"
-                />
-              </a>
-              <a
-                href="#"
-                className="inline-block transform transition-transform hover:scale-105"
-              >
-                <img
-                  src="https://i.ibb.co/tY4qnqX/app-store.png"
-                  alt="Download on the App Store"
-                  className="h-14"
-                />
-              </a>
-            </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="relative"
-          >
+    <section className="relative py-20 bg-gradient-to-r from-gray-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center">
+        {/* Imaginea cu telefon */}
+        <div className="md:w-1/2 flex justify-center mb-10 md:mb-0 md:pr-10">
+          <img
+            src="https://i.ibb.co/yYYRCCC/app.png"
+            alt="Mobile App Preview"
+            className="max-h-96 drop-shadow-lg transform hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+
+        {/* Textul explicativ */}
+        <div className="md:w-1/2 text-center md:text-left">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
+            Aplicația Mobilă
+            <br className="hidden sm:block" />
+            <span className="text-[#00aff5]">Vine în Curând!</span>
+          </h2>
+          <p className="text-lg sm:text-xl text-gray-700 mb-6 leading-relaxed">
+            Lucrăm intens la dezvoltarea aplicației noastre mobile, care va fi
+            disponibilă în curând atât în App Store, cât și în Google Play. Vei
+            putea solicita oferte, programa vizite la service și evalua
+            experiența ta direct de pe telefon, într-un mod simplu și rapid.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start sm:space-x-4 space-y-4 sm:space-y-0">
             <img
-              src="https://i.ibb.co/C2Bzt95/mockup.png"
-              alt="CARVIZIO App Preview"
-              className="w-full h-auto rounded-lg shadow-xl"
+              src="https://i.ibb.co/VwQc4DZ/car-service-app-apple-store.png"
+              alt="App Store Badge"
+              className="h-16 drop-shadow-md transform hover:scale-105 transition-transform duration-300"
             />
-          </motion.div>
+            <img
+              src="https://i.ibb.co/hHgSnK7/car-service-app-googleplay-store.png"
+              alt="Google Play Badge"
+              className="h-16 drop-shadow-md transform hover:scale-105 transition-transform duration-300"
+            />
+          </div>
         </div>
       </div>
     </section>
