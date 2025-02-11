@@ -38,7 +38,7 @@ export default function AuthDialog({
       <DialogTrigger asChild>
         {trigger || <Button>Login</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] p-0 gap-0">
         <DialogHeader>
           <DialogTitle className="text-center">
             {view === "login" ? "Conectare" : "Creează cont"}
