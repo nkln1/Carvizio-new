@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const faqs = [
   {
@@ -48,24 +49,43 @@ export default function FAQ() {
         </h2>
         <div className="space-y-4">
           {faqs.map((item, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
+            <div 
+              key={index} 
+              className="border border-gray-200 rounded-lg p-4 
+                         hover:border-[#00aff5] hover:shadow-md
+                         transition-all duration-300 ease-in-out"
+            >
               <button
                 type="button"
-                className="flex justify-between w-full text-left focus:outline-none"
+                className="flex justify-between w-full text-left focus:outline-none
+                           group"
                 onClick={() => toggleFAQ(index)}
               >
-                <span className="text-lg font-semibold text-gray-800">
+                <span className="text-lg font-semibold text-gray-800 
+                                group-hover:text-[#00aff5] transition-colors duration-300">
                   {item.question}
                 </span>
-                <span className="text-gray-500 font-bold text-xl">
+                <span className="text-gray-500 font-bold text-xl
+                                group-hover:text-[#00aff5] transition-colors duration-300
+                                transform group-hover:scale-110">
                   {activeIndex === index ? "−" : "+"}
                 </span>
               </button>
-              {activeIndex === index && (
-                <div className="mt-2 text-gray-600 leading-relaxed">
-                  {item.answer}
-                </div>
-              )}
+              <AnimatePresence>
+                {activeIndex === index && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-2 text-gray-600 leading-relaxed">
+                      {item.answer}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
