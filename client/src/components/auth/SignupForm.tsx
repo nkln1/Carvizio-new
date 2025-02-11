@@ -21,9 +21,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
-import RoleSelection from "@/components/auth/RoleSelection";
+import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useLocation } from "wouter";
+
+type AuthContextType = {
+  user: any;
+  login: () => void;
+  logout: () => void;
+};
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  login: () => {},
+  logout: () => {},
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthContext.Provider value={{ user: null, login: () => {}, logout: () => {} }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 const clientSchema = z.object({
   name: z.string().min(2, {
@@ -91,20 +115,7 @@ const serviceSchema = z.object({
 
 type UserRole = "client" | "service" | null;
 
-const AuthContext = createContext(null);
-
-export function AuthProvider({ children }: any) {
-  //  Add your auth logic here if needed.  This is a placeholder.
-  return (
-    <AuthContext.Provider value={{ user: null, login: () => {}, logout: () => {} }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
+//const AuthContext = createContext(null);
 
 export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
