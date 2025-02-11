@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
-import RoleSelection from "./RoleSelection";
+import RoleSelection from "@/components/auth/RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useLocation } from "wouter";
 
