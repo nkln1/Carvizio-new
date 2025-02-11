@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -38,28 +37,37 @@ export default function AuthDialog({
       <DialogTrigger asChild>
         {trigger || <Button>Login</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-center">
-            {view === "login" ? "Conectare" : "Creează cont"}
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            {view === "login" 
-              ? "Conectează-te pentru a accesa toate funcționalitățile"
-              : "Creează un cont nou pentru a începe"
-            }
-          </DialogDescription>
-        </DialogHeader>
-        {view === "login" ? <LoginForm /> : <SignupForm />}
-        <div className="text-center mt-4">
-          <Button
-            variant="link"
-            onClick={() => setView(view === "login" ? "signup" : "login")}
-          >
-            {view === "login"
-              ? "Nu ai cont? Creează unul acum"
-              : "Ai deja cont? Conectează-te"}
-          </Button>
+      <DialogContent 
+        className="w-full sm:max-w-[500px] max-h-[90vh] overflow-y-auto p-0"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <div className="sticky top-0 z-50 bg-white px-6 pt-6 pb-4 border-b">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center text-[#00aff5]">
+              {view === "login" ? "Conectare" : "Creează cont"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-600">
+              {view === "login" 
+                ? "Conectează-te pentru a accesa toate funcționalitățile"
+                : "Creează un cont nou pentru a începe"
+              }
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="px-6 py-4">
+          {view === "login" ? <LoginForm /> : <SignupForm />}
+          <div className="text-center mt-4 pb-2">
+            <Button
+              variant="link"
+              className="text-[#00aff5] hover:text-[#0099d6] transition-colors"
+              onClick={() => setView(view === "login" ? "signup" : "login")}
+            >
+              {view === "login"
+                ? "Nu ai cont? Creează unul acum"
+                : "Ai deja cont? Conectează-te"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
