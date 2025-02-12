@@ -6,8 +6,19 @@ import * as schema from "@shared/schema";
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "postgresql://carvizio_migrator:Mercedes6284@89.40.72.121:5432/carvizio_db";
+  throw new Error("DATABASE_URL environment variable is not set");
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Test the connection
+pool.connect()
+  .then(() => console.log('Successfully connected to database'))
+  .catch(err => console.error('Database connection error:', err));
+
+export const db = drizzle(pool, { schema });

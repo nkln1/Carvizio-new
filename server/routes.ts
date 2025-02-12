@@ -10,28 +10,39 @@ export function registerRoutes(app: Express): Server {
   // User registration endpoint
   app.post("/api/auth/register", async (req, res) => {
     try {
+      console.log("Registration attempt with data:", { ...req.body, password: '[REDACTED]' });
+
       // Validate request body
       const userInput = insertUserSchema.parse(req.body);
+      console.log("Validation passed, parsed user input:", { ...userInput, password: '[REDACTED]' });
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userInput.email);
       if (existingUser) {
+        console.log("User already exists:", userInput.email);
         return res.status(400).json({ 
           error: "Email already registered" 
         });
       }
 
       // Create user
+      console.log("Attempting to create user...");
       const user = await storage.createUser(userInput);
+      console.log("User created successfully:", { id: user.id, email: user.email });
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
 
       res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      console.error("Registration error:", error);
+    } catch (error: any) {
+      console.error("Registration error details:", error);
+      if (error.errors) {
+        console.error("Validation errors:", error.errors);
+      }
+
       res.status(400).json({ 
-        error: "Invalid registration data" 
+        error: "Invalid registration data",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
