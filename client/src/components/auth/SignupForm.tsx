@@ -29,9 +29,31 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 
 type UserRole = "client" | "service" | null;
 
-interface SignupFormProps {
-  onSuccess?: () => void;
+interface ClientFormValues {
+  name: string;
+  email: string;
+  phone: string;
+  county: string;
+  city: string;
+  password: string;
+  confirmPassword: string;
 }
+
+interface ServiceFormValues {
+  companyName: string;
+  representativeName: string;
+  email: string;
+  phone: string;
+  cui: string;
+  tradeRegNumber: string;
+  address: string;
+  county: string;
+  city: string;
+  password: string;
+  confirmPassword: string;
+}
+
+type FormValues = ClientFormValues | ServiceFormValues;
 
 const clientSchema = z.object({
   name: z.string().min(2, {
@@ -104,7 +126,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const clientForm = useForm<z.infer<typeof clientSchema>>({
+  const clientForm = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
@@ -117,7 +139,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     },
   });
 
-  const serviceForm = useForm<z.infer<typeof serviceSchema>>({
+  const serviceForm = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       companyName: "",
@@ -134,20 +156,18 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof clientSchema> | z.infer<typeof serviceSchema>) {
+  const currentForm = role === "client" ? clientForm : serviceForm;
+
+  async function onSubmit(values: FormValues) {
     if (isLoading) return;
     setIsLoading(true);
 
     try {
-      // First, create the Firebase user
       const { email, password } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
-
-      // Get the Firebase ID token
       const idToken = await firebaseUser.getIdToken();
 
-      // Then create the user in our database
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -193,8 +213,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     return <RoleSelection onSelect={setRole} />;
   }
 
-  const currentForm = role === "client" ? clientForm : serviceForm;
-
   return (
     <div className="w-full max-w-4xl space-y-6 p-6 bg-white rounded-lg shadow-lg relative max-h-[80vh] overflow-y-auto">
       <Button
@@ -220,11 +238,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-black">Nume și Prenume</FormLabel>
+                    <FormLabel htmlFor="name">Nume și Prenume</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                        <Input id="name" {...field} placeholder="Ion Popescu" className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -238,11 +256,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                   name="companyName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-black">Nume Service</FormLabel>
+                      <FormLabel htmlFor="companyName">Nume Service</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input {...field} placeholder="Auto Service SRL" className="pl-10" />
+                          <Input id="companyName" {...field} placeholder="Auto Service SRL" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -254,11 +272,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                   name="representativeName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-black">Nume Reprezentant</FormLabel>
+                      <FormLabel htmlFor="representativeName">Nume Reprezentant</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input {...field} placeholder="Ion Popescu" className="pl-10" />
+                          <Input id="representativeName" {...field} placeholder="Ion Popescu" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -270,11 +288,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                   name="cui"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-black">CUI</FormLabel>
+                      <FormLabel htmlFor="cui">CUI</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input {...field} placeholder="12345678" className="pl-10" />
+                          <Input id="cui" {...field} placeholder="12345678" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -286,11 +304,27 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                   name="tradeRegNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-black">Nr. Înreg.</FormLabel>
+                      <FormLabel htmlFor="tradeRegNumber">Nr. Înreg.</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input {...field} placeholder="J40/1234/2025" className="pl-10" />
+                          <Input id="tradeRegNumber" {...field} placeholder="J40/1234/2025" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={currentForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="address">Adresă</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="address" {...field} placeholder="Strada, Număr" className="pl-10" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -305,11 +339,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-black">Email</FormLabel>
+                  <FormLabel htmlFor="email">Email</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input {...field} type="email" placeholder="email@example.com" className="pl-10" />
+                      <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -321,41 +355,23 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-black">Telefon</FormLabel>
+                  <FormLabel htmlFor="phone">Telefon</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input {...field} placeholder="0712 345 678" className="pl-10" />
+                      <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {role === "service" && (
-              <FormField
-                control={currentForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-black">Adresă</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="Strada, Număr" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
             <FormField
               control={currentForm.control}
               name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-black">Județ</FormLabel>
+                  <FormLabel htmlFor="county">Județ</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -387,7 +403,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-black">Localitate</FormLabel>
+                  <FormLabel htmlFor="city">Localitate</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -417,11 +433,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-black">Parolă</FormLabel>
+                  <FormLabel htmlFor="password">Parolă</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
+                      <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -433,11 +449,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-black">Confirmă Parola</FormLabel>
+                  <FormLabel htmlFor="confirmPassword">Confirmă Parola</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input {...field} type="password" placeholder="••••••••" className="pl-10" />
+                      <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10" />
                     </div>
                   </FormControl>
                   <FormMessage />

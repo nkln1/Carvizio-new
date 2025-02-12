@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth, isFirebaseInitialized } from '@/lib/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 interface User {
   id: number;
@@ -27,48 +27,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    console.log("Setting up Firebase auth state listener");
     let unsubscribeAuth: (() => void) | null = null;
 
     const initializeAuth = async () => {
-      // Wait for Firebase to be initialized
-      await isFirebaseInitialized;
+      try {
+        // Wait for Firebase to be initialized
+        await isFirebaseInitialized;
 
-      unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-        try {
-          console.log("Firebase auth state changed:", firebaseUser?.email);
-          if (firebaseUser) {
-            // User is signed in with Firebase
-            const idToken = await firebaseUser.getIdToken(true); // Force token refresh
-            console.log("Got Firebase ID token, fetching user data from backend");
+        // Set persistence to LOCAL
+        await setPersistence(auth, browserLocalPersistence);
+        console.log("Firebase persistence set to LOCAL");
 
-            const response = await fetch('/api/auth/me', {
-              headers: {
-                'Authorization': `Bearer ${idToken}`
+        unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+          try {
+            console.log("Firebase auth state changed:", firebaseUser?.email);
+            if (firebaseUser) {
+              const idToken = await firebaseUser.getIdToken(true);
+
+              const response = await fetch('/api/auth/me', {
+                headers: {
+                  'Authorization': `Bearer ${idToken}`
+                },
+                credentials: 'include' // Important for session cookies
+              });
+
+              if (response.ok) {
+                const userData = await response.json();
+                setUser(userData);
+              } else {
+                console.error("Failed to get user data from backend", await response.text());
+                await firebaseSignOut(auth);
+                setUser(null);
               }
-            });
-
-            if (response.ok) {
-              const userData = await response.json();
-              console.log("Got user data from backend:", userData);
-              setUser(userData);
             } else {
-              console.log("Backend didn't recognize the user, signing out");
-              await firebaseSignOut(auth);
+              console.log("User is signed out");
               setUser(null);
             }
-          } else {
-            console.log("User is signed out");
+          } catch (error) {
+            console.error('Auth state change error:', error);
             setUser(null);
+          } finally {
+            setLoading(false);
+            setInitialized(true);
           }
-        } catch (error) {
-          console.error('Auth state change error:', error);
-          setUser(null);
-        } finally {
-          setLoading(false);
-          setInitialized(true);
-        }
-      });
+        });
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        setLoading(false);
+        setInitialized(true);
+      }
     };
 
     initializeAuth();
@@ -83,7 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include' // Important for session cookies
+      });
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
@@ -91,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Don't render anything until Firebase is initialized
   if (!initialized) {
     return null;
   }
