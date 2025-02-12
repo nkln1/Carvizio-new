@@ -5,6 +5,7 @@ import { insertUserSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { pool } from "./db";
+import express from "express";
 
 declare module "express-session" {
   interface SessionData {
@@ -29,6 +30,8 @@ export function registerRoutes(app: Express): Server {
   );
 
   app.use(json());
+  const router = express.Router();
+  app.use(router);
 
   // User registration endpoint
   app.post("/api/auth/register", async (req, res) => {
@@ -159,6 +162,18 @@ export function registerRoutes(app: Express): Server {
       res.status(200).json({ 
         message: "Already logged out" 
       });
+    }
+  });
+
+  // Unread messages endpoint
+  router.get('/api/messages/unread', async (req, res) => {
+    try {
+      //  Replace this with your actual unread message count logic
+      const unreadCount = 0; // Placeholder
+      res.json({ count: unreadCount });
+    } catch (error) {
+      console.error("Error fetching unread message count:", error);
+      res.status(500).json({ error: "Failed to fetch unread message count" });
     }
   });
 

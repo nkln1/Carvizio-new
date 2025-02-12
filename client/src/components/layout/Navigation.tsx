@@ -23,10 +23,14 @@ export default function Navigation() {
     const fetchUnreadCount = async () => {
       try {
         const response = await fetch('/api/messages/unread');
+        if (!response.ok) {
+          throw new Error('Failed to fetch unread count');
+        }
         const data = await response.json();
         setUnreadClientsCount(data.count);
       } catch (error) {
         console.error("Error fetching unread message count:", error);
+        setUnreadClientsCount(0);
       }
     };
     fetchUnreadCount();
