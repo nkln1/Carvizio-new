@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  firebaseUid: text("firebase_uid").notNull().unique(),
   role: text("role", { enum: ["client", "service"] }).notNull(),
   name: text("name"),
   phone: text("phone"),
@@ -25,7 +26,8 @@ export const users = pgTable("users", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
-  createdAt: true
+  createdAt: true,
+  firebaseUid: true
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

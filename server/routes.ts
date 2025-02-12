@@ -5,6 +5,16 @@ import { insertUserSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { pool } from "./db";
+import { auth as firebaseAdmin } from "firebase-admin";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin with credentials
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 
 declare module "express-session" {
   interface SessionData {
@@ -30,8 +40,26 @@ export function registerRoutes(app: Express): Server {
 
   app.use(json());
 
+  // Firebase Auth Middleware
+  const validateFirebaseToken = async (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.firebaseUser = decodedToken;
+      next();
+    } catch (error) {
+      console.error('Firebase token verification failed:', error);
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+  };
+
   // User registration endpoint
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", validateFirebaseToken, async (req, res) => {
     try {
       console.log("Registration attempt with data:", { ...req.body, password: '[REDACTED]' });
 
@@ -39,34 +67,25 @@ export function registerRoutes(app: Express): Server {
       const userInput = insertUserSchema.parse(req.body);
       console.log("Validation passed, parsed user input:", { ...userInput, password: '[REDACTED]' });
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(userInput.email);
-      if (existingUser) {
-        console.log("User already exists:", userInput.email);
-        return res.status(400).json({ 
-          error: "Email already registered" 
-        });
-      }
-
       // Create user
       console.log("Attempting to create user...");
-      const user = await storage.createUser(userInput);
+      const user = await storage.createUser({
+        ...userInput,
+        firebaseUid: req.firebaseUser.uid
+      });
       console.log("User created successfully:", { id: user.id, email: user.email });
 
       // Set user in session
-      if (req.session) {
-        req.session.userId = user.id;
-        await new Promise((resolve, reject) => {
-          req.session.save((err) => {
-            if (err) reject(err);
-            resolve(true);
-          });
+      req.session.userId = user.id;
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          resolve(true);
         });
-      }
+      });
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
-
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       console.error("Registration error details:", error);
@@ -78,65 +97,47 @@ export function registerRoutes(app: Express): Server {
   });
 
   // User login endpoint
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
     try {
-      const { email, password } = req.body;
-
-      const user = await storage.getUserByEmail(email);
-      if (!user || user.password !== password) {
-        return res.status(401).json({ 
-          error: "Invalid credentials" 
-        });
+      // Find user by Firebase UID
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser.uid);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
       }
 
       // Set user in session
-      if (req.session) {
-        req.session.userId = user.id;
-        await new Promise((resolve, reject) => {
-          req.session.save((err) => {
-            if (err) reject(err);
-            resolve(true);
-          });
+      req.session.userId = user.id;
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          resolve(true);
         });
-      }
+      });
 
       // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-
+      const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ 
-        error: "Login failed" 
-      });
+      res.status(500).json({ error: "Login failed" });
     }
   });
 
   // Get current user endpoint
-  app.get("/api/auth/me", async (req, res) => {
+  app.get("/api/auth/me", validateFirebaseToken, async (req, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ 
-          error: "Not authenticated" 
-        });
-      }
-
-      const user = await storage.getUser(req.session.userId);
+      // Find user by Firebase UID
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser.uid);
       if (!user) {
-        return res.status(404).json({ 
-          error: "User not found" 
-        });
+        return res.status(401).json({ error: "Not authenticated" });
       }
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
-
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Get user error:", error);
-      res.status(500).json({ 
-        error: "Failed to get user data" 
-      });
+      res.status(500).json({ error: "Failed to get user data" });
     }
   });
 
@@ -146,19 +147,13 @@ export function registerRoutes(app: Express): Server {
       req.session.destroy((err) => {
         if (err) {
           console.error("Logout error:", err);
-          return res.status(500).json({ 
-            error: "Failed to logout" 
-          });
+          return res.status(500).json({ error: "Failed to logout" });
         }
         res.clearCookie('connect.sid');
-        res.status(200).json({ 
-          message: "Logged out successfully" 
-        });
+        res.status(200).json({ message: "Logged out successfully" });
       });
     } else {
-      res.status(200).json({ 
-        message: "Already logged out" 
-      });
+      res.status(200).json({ message: "Already logged out" });
     }
   });
 

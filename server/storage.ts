@@ -10,7 +10,8 @@ const PostgresSessionStore = connectPg(session);
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
+  createUser(user: InsertUser & { firebaseUid: string }): Promise<User>;
   sessionStore: session.Store;
 }
 
@@ -34,11 +35,17 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser & { firebaseUid: string }): Promise<User> {
     const [user] = await db
       .insert(users)
       .values({
         ...insertUser,
+        firebaseUid: insertUser.firebaseUid,
         verified: false,
         createdAt: new Date(),
       })
