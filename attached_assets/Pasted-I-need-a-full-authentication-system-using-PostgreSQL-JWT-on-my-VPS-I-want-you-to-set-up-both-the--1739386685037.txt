@@ -1,0 +1,38 @@
+I need a full authentication system using PostgreSQL + JWT on my VPS. I want you to set up both the backend (Node.js + Express.js) and the frontend (React + Context API).
+
+🔹 Backend (Node.js + Express.js)
+Set up PostgreSQL connection in Express using pg.
+Create a users table in PostgreSQL with the following fields:
+id SERIAL PRIMARY KEY
+email VARCHAR(255) UNIQUE NOT NULL
+password TEXT NOT NULL (hashed using bcrypt)
+role VARCHAR(20) DEFAULT 'client'
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+Create authentication routes:
+/api/auth/register → Registers a new user (hash password before saving).
+/api/auth/login → Verifies the password, issues a JWT token, and stores it in an HTTP-only cookie.
+/api/auth/me → Reads the JWT from cookies and returns user details.
+/api/auth/logout → Clears the authentication cookie.
+Use JWT tokens for authentication (jsonwebtoken).
+Ensure authentication persists after refresh using HTTP-only cookies (no localStorage).
+Secure the API:
+Use environment variables for database credentials.
+Protect sensitive routes (e.g., /dashboard) with authentication middleware.
+🔹 Frontend (React + Context API)
+Set up authentication context (AuthContext.tsx) to manage user state.
+Create a login & signup page using React and Tailwind CSS.
+Persist authentication state after refresh by checking /api/auth/me.
+Use fetch with credentials: "include" to send cookies with API requests.
+Display a login dropdown if the user is authenticated.
+Implement logout functionality that clears authentication cookies and updates the UI.
+🔹 VPS Deployment
+Ensure the backend runs on my VPS and connects to PostgreSQL.
+Use PM2 to keep the Node.js server running in the background.
+Set up CORS properly so the frontend can communicate with the backend.
+If needed, configure NGINX as a reverse proxy for the backend.
+💡 Expected Outcome
+A fully working authentication system using PostgreSQL & JWT on my VPS.
+Secure, persistent login with HTTP-only cookies (not localStorage).
+A React frontend that handles login, signup, and user sessions correctly.
+A backend that properly manages authentication and securely interacts with PostgreSQL.
+Please generate the entire project, including server.js, React components, and authentication logic.
