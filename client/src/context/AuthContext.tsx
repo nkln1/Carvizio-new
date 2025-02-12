@@ -26,13 +26,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("Setting up Firebase auth state listener");
     // Listen for Firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
+        console.log("Firebase auth state changed:", firebaseUser?.email);
         if (firebaseUser) {
           // User is signed in with Firebase
           // Get the ID token to verify with our backend
           const idToken = await firebaseUser.getIdToken();
+          console.log("Got Firebase ID token, fetching user data from backend");
 
           // Fetch our user data from the backend
           const response = await fetch('/api/auth/me', {
@@ -43,14 +46,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (response.ok) {
             const userData = await response.json();
+            console.log("Got user data from backend:", userData);
             setUser(userData);
           } else {
+            console.log("Backend didn't recognize the user, signing out");
             // If our backend doesn't recognize the user, sign them out of Firebase
             await firebaseSignOut(auth);
             setUser(null);
           }
         } else {
           // User is signed out of Firebase
+          console.log("User is signed out");
           setUser(null);
         }
       } catch (error) {
