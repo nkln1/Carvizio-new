@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import { useAuth } from "@/context/AuthContext";
+import { useLocation } from "wouter";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -25,13 +25,19 @@ export default function AuthDialog({
   const [view, setView] = useState<"login" | "signup">(defaultView);
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // Close dialog when user is authenticated
+  // Close dialog and redirect when user is authenticated
   useEffect(() => {
     if (user) {
       setOpen(false);
+      if (user.role === "client") {
+        setLocation("/dashboard");
+      } else if (user.role === "service") {
+        setLocation("/service-dashboard");
+      }
     }
-  }, [user]);
+  }, [user, setLocation]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -50,7 +56,11 @@ export default function AuthDialog({
             }
           </DialogDescription>
         </DialogHeader>
-        {view === "login" ? <LoginForm /> : <SignupForm />}
+        {view === "login" ? (
+          <LoginForm onSuccess={() => setOpen(false)} />
+        ) : (
+          <SignupForm onSuccess={() => setOpen(false)} />
+        )}
         <div className="text-center mt-4">
           <Button
             variant="link"

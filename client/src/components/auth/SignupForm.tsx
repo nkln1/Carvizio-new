@@ -115,9 +115,11 @@ const serviceSchema = z.object({
 
 type UserRole = "client" | "service" | null;
 
-//const AuthContext = createContext(null);
+interface SignupFormProps {
+  onSuccess?: () => void;
+}
 
-export default function SignupForm() {
+export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<UserRole>(null);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
@@ -178,6 +180,8 @@ export default function SignupForm() {
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
       });
+
+      onSuccess?.();
 
       if (role === "client") {
         setLocation("/dashboard");
