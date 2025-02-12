@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import pkg from 'pg';
+const { Pool } = pkg;
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
@@ -8,26 +9,21 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Configure pool with enhanced error handling and proper SSL
-export const pool = new Pool({ 
+// Create a new pool with the DATABASE_URL
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000, // 5 second timeout
-  max: 20, // Maximum number of clients in the pool
-  ssl: {
-    rejectUnauthorized: false // Allow self-signed certificates for VPS connection
-  }
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
-// Test the connection and log any errors
+// Test database connection
 pool.connect()
   .then(() => {
-    console.log('Successfully connected to database');
+    console.log('Successfully connected to PostgreSQL database');
   })
   .catch(err => {
     console.error('Database connection error:', err.message);
-    console.error('Error details:', err);
-    const sanitizedUrl = process.env.DATABASE_URL?.replace(/:[^@]+@/, ':***@') || '';
-    console.error('Attempted connection to:', sanitizedUrl);
   });
 
 export const db = drizzle(pool, { schema });
