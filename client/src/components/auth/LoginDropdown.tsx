@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 export default function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -26,29 +26,17 @@ export default function LoginDropdown() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      setIsOpen(false);
     };
   }, []);
 
   const handleSignOut = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to logout');
-      }
-
+      await signOut();
       toast({
         title: "Success",
         description: "Te-ai deconectat cu succes!",
       });
       setLocation("/");
-      window.location.reload(); // Refresh to clear auth state
     } catch (error) {
       toast({
         variant: "destructive",
@@ -57,6 +45,14 @@ export default function LoginDropdown() {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <Button variant="ghost" className="opacity-50 cursor-not-allowed">
+        <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+      </Button>
+    );
+  }
 
   if (!user) {
     return (
