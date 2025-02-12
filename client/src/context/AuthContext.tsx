@@ -1,8 +1,14 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 
+interface User {
+  id: number;
+  email: string;
+  role: "client" | "service";
+  name?: string;
+}
+
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   loading: boolean;
 }
 
@@ -12,12 +18,26 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Implement actual auth state management
-    setLoading(false);
+    // Check if user is logged in when component mounts
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkAuth();
   }, []);
 
   return (

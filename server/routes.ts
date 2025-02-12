@@ -4,6 +4,12 @@ import { storage } from "./storage";
 import { insertUserSchema } from "@shared/schema";
 import { json } from "express";
 
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
+}
+
 export function registerRoutes(app: Express): Server {
   app.use(json());
 
@@ -29,6 +35,11 @@ export function registerRoutes(app: Express): Server {
       console.log("Attempting to create user...");
       const user = await storage.createUser(userInput);
       console.log("User created successfully:", { id: user.id, email: user.email });
+
+      // Set user in session
+      if (req.session) {
+        req.session.userId = user.id;
+      }
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
@@ -77,7 +88,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Get current user endpoint
-  app.get("/api/auth/user", async (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     try {
       if (!req.session?.userId) {
         return res.status(401).json({ 
