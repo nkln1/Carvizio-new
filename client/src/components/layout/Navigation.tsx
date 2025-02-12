@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Mail, ChevronDown } from "lucide-react";
-import AuthDialog from "@/components/auth/AuthDialog";
+import { Mail } from "lucide-react";
+import LoginDropdown from "@/components/auth/LoginDropdown";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -78,21 +77,7 @@ export default function Navigation() {
               <span className="hidden sm:inline">Contactează-ne</span>
               <span className="sm:hidden">Contact</span>
             </Button>
-            <AuthDialog
-              trigger={
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-2 text-gray-600 hover:text-[#00aff5]"
-                >
-                  <img
-                    src="https://i.ibb.co/NnnNWbN/Signlogin.png"
-                    alt="Login Icon"
-                    className="h-8 w-8"
-                  />
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              }
-            />
+            <LoginDropdown />
           </div>
         </div>
       </div>
