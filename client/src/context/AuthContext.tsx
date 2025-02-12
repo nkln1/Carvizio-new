@@ -38,8 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           console.log("Firebase auth state changed:", firebaseUser?.email);
           if (firebaseUser) {
+            // Set up token refresh
+            const tokenRefreshInterval = setInterval(async () => {
+              const newToken = await firebaseUser.getIdToken(true);
+              console.log("Token refreshed");
+            }, 10 * 60 * 1000); // Refresh token every 10 minutes
+
             // User is signed in with Firebase
-            const idToken = await firebaseUser.getIdToken(true); // Force token refresh
+            const idToken = await firebaseUser.getIdToken(true);
             console.log("Got Firebase ID token, fetching user data from backend");
 
             const response = await fetch('/api/auth/me', {
@@ -47,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 'Authorization': `Bearer ${idToken}`
               }
             });
+
+            // Clean up token refresh on unmount
+            return () => clearInterval(tokenRefreshInterval);
 
             if (response.ok) {
               const userData = await response.json();
