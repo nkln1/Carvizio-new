@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,29 +24,13 @@ import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-rea
 import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useLocation } from "wouter";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
-type AuthContextType = {
-  user: any;
-  login: () => void;
-  logout: () => void;
-};
+type UserRole = "client" | "service" | null;
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: () => {},
-  logout: () => {},
-});
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthContext.Provider value={{ user: null, login: () => {}, logout: () => {} }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
+interface SignupFormProps {
+  onSuccess?: () => void;
 }
 
 const clientSchema = z.object({
@@ -113,12 +97,6 @@ const serviceSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type UserRole = "client" | "service" | null;
-
-interface SignupFormProps {
-  onSuccess?: () => void;
-}
-
 export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<UserRole>(null);
@@ -161,14 +139,25 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     setIsLoading(true);
 
     try {
+      // First, create the Firebase user
+      const { email, password } = values;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const { user: firebaseUser } = userCredential;
+
+      // Get the Firebase ID token
+      const idToken = await firebaseUser.getIdToken();
+
+      // Then create the user in our database
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           ...values,
           role,
+          firebaseUid: firebaseUser.uid,
         }),
       });
 
