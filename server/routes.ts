@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema } from "@shared/schema";
 import { json } from "express";
+import session from "express-session";
+import { pool } from "./db";
 
 declare module "express-session" {
   interface SessionData {
@@ -11,6 +13,21 @@ declare module "express-session" {
 }
 
 export function registerRoutes(app: Express): Server {
+  // Configure session middleware
+  app.use(
+    session({
+      secret: process.env.REPL_ID || 'your-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      },
+      store: storage.sessionStore
+    })
+  );
+
   app.use(json());
 
   // User registration endpoint
@@ -39,6 +56,12 @@ export function registerRoutes(app: Express): Server {
       // Set user in session
       if (req.session) {
         req.session.userId = user.id;
+        await new Promise((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) reject(err);
+            resolve(true);
+          });
+        });
       }
 
       // Remove password from response
@@ -47,10 +70,6 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       console.error("Registration error details:", error);
-      if (error.errors) {
-        console.error("Validation errors:", error.errors);
-      }
-
       res.status(400).json({ 
         error: "Invalid registration data",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -73,6 +92,12 @@ export function registerRoutes(app: Express): Server {
       // Set user in session
       if (req.session) {
         req.session.userId = user.id;
+        await new Promise((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) reject(err);
+            resolve(true);
+          });
+        });
       }
 
       // Remove password from response
@@ -125,6 +150,7 @@ export function registerRoutes(app: Express): Server {
             error: "Failed to logout" 
           });
         }
+        res.clearCookie('connect.sid');
         res.status(200).json({ 
           message: "Logged out successfully" 
         });
