@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -49,17 +50,52 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      // TODO: Implement login logic here
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+
+      // Get the Firebase ID token
+      const idToken = await userCredential.user.getIdToken();
+
+      // Call our backend to create session
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        credentials: 'include' // Important for session cookies
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to authenticate with backend');
+      }
+
+      const userData = await response.json();
+
       toast({
         title: "Success",
         description: "Te-ai conectat cu succes!",
       });
+
+      // Call the success callback
       onSuccess?.();
+
+      // Redirect based on user role
+      if (userData.role === "client") {
+        setLocation("/dashboard");
+      } else if (userData.role === "service") {
+        setLocation("/service-dashboard");
+      }
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "A apărut o eroare la conectare.",
+        description: "Email sau parolă incorectă.",
       });
     } finally {
       setIsLoading(false);
@@ -79,7 +115,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
     setIsSendingReset(true);
     try {
-      // TODO: Implement password reset logic here
+      // Send password reset email
+      await auth.sendPasswordResetEmail(email);
       toast({
         title: "Email trimis",
         description: "Verifică-ți email-ul pentru instrucțiuni de resetare a parolei.",
