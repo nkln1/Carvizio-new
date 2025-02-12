@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -31,7 +31,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Keep the cars table as is
+// Keep the cars table with proper integer types
 export const cars = pgTable("cars", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -45,9 +45,9 @@ export const cars = pgTable("cars", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-export const insertCarSchema = createInsertSchema(cars).omit({ 
+export const insertCarSchema = createInsertSchema(cars).omit({
   id: true,
-  createdAt: true 
+  createdAt: true
 });
 
 export type InsertCar = z.infer<typeof insertCarSchema>;
