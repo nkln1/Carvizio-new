@@ -26,3 +26,10 @@ setPersistence(auth, browserLocalPersistence)
 auth.onAuthStateChanged((user) => {
   console.log("Firebase auth state:", user ? "Logged in" : "Logged out");
 });
+
+// Export initialized flag
+export const isFirebaseInitialized = new Promise((resolve) => {
+  auth.onAuthStateChanged(() => {
+    resolve(true);
+  });
+});

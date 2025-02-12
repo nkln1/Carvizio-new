@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, isFirebaseInitialized } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 
 interface User {
@@ -31,6 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribeAuth: (() => void) | null = null;
 
     const initializeAuth = async () => {
+      // Wait for Firebase to be initialized
+      await isFirebaseInitialized;
+
       unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
         try {
           console.log("Firebase auth state changed:", firebaseUser?.email);
@@ -84,11 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
+      throw error;
     }
   };
 
+  // Don't render anything until Firebase is initialized
   if (!initialized) {
-    return null; // Don't render anything until Firebase is initialized
+    return null;
   }
 
   return (
