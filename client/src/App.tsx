@@ -5,13 +5,17 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Navigation from "@/components/layout/Navigation";
-import Contact from "@/pages/Contact"; // Added import for Contact page
+import Contact from "@/pages/Contact";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AuthProvider } from "@/context/AuthContext";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/contact" component={Contact} /> {/* Added Contact route */}
+      <Route path="/contact" component={Contact} />
+      <ProtectedRoute path="/dashboard" component={() => <div>Dashboard</div>} />
+      <ProtectedRoute path="/service-dashboard" component={() => <div>Service Dashboard</div>} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -20,9 +24,11 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Navigation />
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Navigation />
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
