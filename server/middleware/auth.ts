@@ -15,8 +15,14 @@ export const generateToken = (user: User): string => {
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies.token;
+    // Check session first
+    if (req.session && req.session.user) {
+      req.user = req.session.user;
+      return next();
+    }
 
+    // Then check JWT token
+    const token = req.cookies.token;
     if (!token) {
       return res.status(401).json({ message: 'No token, authorization denied' });
     }
@@ -28,9 +34,12 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       return res.status(401).json({ message: 'User not found' });
     }
 
+    // Set both session and request user
+    req.session.user = user;
     req.user = user;
     next();
   } catch (err) {
+    console.error('Auth middleware error:', err);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
