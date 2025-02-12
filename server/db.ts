@@ -5,15 +5,24 @@ import * as schema from "@shared/schema";
 
 // Configure WebSocket for Neon
 neonConfig.webSocketConstructor = ws;
+neonConfig.useSecureWebSocket = false; // Allow non-secure WebSocket for development
+neonConfig.pipelineTLS = false; // Disable TLS pipeline for development
+neonConfig.pipelineConnect = false; // Disable pipeline connect for development
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set");
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
-// Create pool with proper configuration
+// Configure pool with enhanced error handling
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000 // 5 second timeout
+  connectionTimeoutMillis: 5000, // 5 second timeout
+  max: 20, // Maximum number of clients in the pool
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // Test the connection and log any errors
@@ -23,15 +32,11 @@ pool.connect()
   })
   .catch(err => {
     console.error('Database connection error:', err.message);
-    if (err.code === 'ECONNREFUSED') {
-      console.error('Could not connect to database. Please check if the database is running and accessible.');
-    }
+    // Add more detailed error information for debugging
+    console.error('Error details:', err);
+    // Log connection string (without sensitive data) for debugging
+    const sanitizedUrl = process.env.DATABASE_URL?.replace(/:[^@]+@/, ':***@') || '';
+    console.error('Attempted connection to:', sanitizedUrl);
   });
 
-// Export the drizzle instance
 export const db = drizzle(pool, { schema });
-
-// Handle pool errors
-pool.on('error', (err) => {
-  console.error('Unexpected database error:', err.message);
-});

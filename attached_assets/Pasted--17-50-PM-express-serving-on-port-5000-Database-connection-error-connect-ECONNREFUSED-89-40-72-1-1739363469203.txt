@@ -1,0 +1,70 @@
+:17:50 PM [express] serving on port 5000
+Database connection error: connect ECONNREFUSED 89.40.72.121:443
+1:17:53 PM [express] GET /api/messages/unread 200 in 4ms
+1:17:58 PM [express] GET /api/messages/unread 200 in 3ms
+1:17:58 PM [express] GET /api/messages/unread 200 in 3ms
+1:18:07 PM [express] GET /api/messages/unread 200 in 4ms
+Registration attempt with data: {
+  name: 'Catalin',
+  email: 'c.adetu@yahoo.com',
+  phone: '0765328547',
+  county: 'București',
+  city: 'Sector 1',
+  password: '[REDACTED]',
+  confirmPassword: 'Telekom',
+  role: 'client'
+}
+Validation passed, parsed user input: {
+  email: 'c.adetu@yahoo.com',
+  password: '[REDACTED]',
+  role: 'client',
+  name: 'Catalin',
+  phone: '0765328547',
+  county: 'București',
+  city: 'Sector 1'
+}
+Registration error details: ErrorEvent {
+  [Symbol(kTarget)]: WebSocket {
+    _events: [Object: null prototype] {
+      error: [Function],
+      message: [Function],
+      close: [Function],
+      open: [Function]
+    },
+    _eventsCount: 4,
+    _maxListeners: undefined,
+    _binaryType: 'arraybuffer',
+    _closeCode: 1006,
+    _closeFrameReceived: false,
+    _closeFrameSent: false,
+    _closeMessage: <Buffer >,
+    _closeTimer: null,
+    _errorEmitted: true,
+    _extensions: {},
+    _paused: false,
+    _protocol: '',
+    _readyState: 3,
+    _receiver: null,
+    _sender: null,
+    _socket: null,
+    _bufferedAmount: 0,
+    _isServer: false,
+    _redirects: 0,
+    _autoPong: true,
+    _url: 'wss://89.40.72.121/v2',
+    _req: null,
+    [Symbol(shapeMode)]: false,
+    [Symbol(kCapture)]: false
+  },
+  [Symbol(kType)]: 'error',
+  [Symbol(kError)]: Error: connect ECONNREFUSED 89.40.72.121:443
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+    errno: -111,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '89.40.72.121',
+    port: 443
+  },
+  [Symbol(kMessage)]: 'connect ECONNREFUSED 89.40.72.121:443'
+}
+1:18:31 PM [express] POST /api/auth/register 400 in 156ms :: {"error":"Invalid registration data","d
