@@ -41,6 +41,11 @@ export default function AuthDialog({
 
   const handleSuccess = () => {
     setOpen(false);
+    if (user?.role === "client") {
+      setLocation("/dashboard");
+    } else if (user?.role === "service") {
+      setLocation("/service-dashboard");
+    }
   };
 
   return (

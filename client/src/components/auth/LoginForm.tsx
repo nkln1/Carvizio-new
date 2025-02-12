@@ -26,7 +26,11 @@ const formSchema = z.object({
   }),
 });
 
-export default function LoginForm() {
+interface LoginFormProps {
+  onSuccess?: () => void;
+}
+
+export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
   const { toast } = useToast();
@@ -50,7 +54,7 @@ export default function LoginForm() {
         title: "Success",
         description: "Te-ai conectat cu succes!",
       });
-      setLocation("/dashboard");
+      onSuccess?.();
     } catch (error: any) {
       toast({
         variant: "destructive",
