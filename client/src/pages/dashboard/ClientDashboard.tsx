@@ -9,19 +9,16 @@ import {
   SidebarMenuButton,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import {
-  FileText,
-  MessageSquare,
-  Car,
-  User,
-  Tag
-} from "lucide-react";
+import { FileText, MessageSquare, Car, User, Tag } from "lucide-react";
+import { useLocation } from "wouter";
 import Footer from "@/components/layout/Footer";
 
 export default function ClientDashboard() {
+  const [location] = useLocation();
+
   return (
-    <SidebarProvider defaultOpen>
-      <div className="flex min-h-[calc(100vh-4rem)] flex-col">
+    <div className="flex min-h-screen flex-col">
+      <SidebarProvider defaultOpen>
         <div className="flex flex-1">
           <Sidebar side="left" variant="sidebar" collapsible="icon">
             <SidebarHeader className="border-b border-border/50">
@@ -38,7 +35,7 @@ export default function ClientDashboard() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    isActive={location.pathname === "/dashboard/requests"}
+                    isActive={location === "/dashboard/requests"}
                     tooltip="Cererile Mele"
                   >
                     <FileText className="h-4 w-4" />
@@ -47,7 +44,7 @@ export default function ClientDashboard() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    isActive={location.pathname === "/dashboard/offers"}
+                    isActive={location === "/dashboard/offers"}
                     tooltip="Oferte Primite"
                   >
                     <Tag className="h-4 w-4" />
@@ -56,7 +53,7 @@ export default function ClientDashboard() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    isActive={location.pathname === "/dashboard/messages"}
+                    isActive={location === "/dashboard/messages"}
                     tooltip="Mesaje"
                   >
                     <MessageSquare className="h-4 w-4" />
@@ -65,7 +62,7 @@ export default function ClientDashboard() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    isActive={location.pathname === "/dashboard/my-car"}
+                    isActive={location === "/dashboard/my-car"}
                     tooltip="Mașina Mea"
                   >
                     <Car className="h-4 w-4" />
@@ -74,7 +71,7 @@ export default function ClientDashboard() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    isActive={location.pathname === "/dashboard/account"}
+                    isActive={location === "/dashboard/account"}
                     tooltip="Cont"
                   >
                     <User className="h-4 w-4" />
@@ -144,8 +141,8 @@ export default function ClientDashboard() {
             </Tabs>
           </main>
         </div>
-        <Footer />
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+      <Footer />
+    </div>
   );
 }
