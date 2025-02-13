@@ -67,7 +67,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        credentials: 'include' // Important for session cookies
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -81,15 +81,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         description: "Te-ai conectat cu succes!",
       });
 
-      // Call the success callback
+      // Call the success callback which will handle the redirect
       onSuccess?.();
-
-      // Redirect based on user role
-      if (userData.role === "client") {
-        setLocation("/dashboard");
-      } else if (userData.role === "service") {
-        setLocation("/service-dashboard");
-      }
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
