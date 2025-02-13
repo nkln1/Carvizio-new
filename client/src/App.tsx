@@ -8,14 +8,13 @@ import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AuthProvider } from "@/context/AuthContext";
-import ClientDashboard from "@/pages/dashboard/ClientDashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/contact" component={Contact} />
-      <ProtectedRoute path="/dashboard" component={ClientDashboard} />
+      <ProtectedRoute path="/dashboard" component={() => <div>Dashboard</div>} />
       <ProtectedRoute path="/service-dashboard" component={() => <div>Service Dashboard</div>} />
       <Route component={NotFound} />
     </Switch>

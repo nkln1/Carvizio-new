@@ -67,7 +67,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        credentials: 'include'
+        credentials: 'include' // Important for session cookies
       });
 
       if (!response.ok) {
@@ -81,18 +81,15 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         description: "Te-ai conectat cu succes!",
       });
 
-      // Call the success callback first to close any modals
+      // Call the success callback
       onSuccess?.();
 
-      // Then redirect based on user role with a slight delay to allow UI updates
-      setTimeout(() => {
-        if (userData.role === "client") {
-          setLocation("/dashboard");
-        } else if (userData.role === "service") {
-          setLocation("/service-dashboard");
-        }
-      }, 100);
-
+      // Redirect based on user role
+      if (userData.role === "client") {
+        setLocation("/dashboard");
+      } else if (userData.role === "service") {
+        setLocation("/service-dashboard");
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
@@ -118,6 +115,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
     setIsSendingReset(true);
     try {
+      // Send password reset email
       await auth.sendPasswordResetEmail(email);
       toast({
         title: "Email trimis",
