@@ -27,23 +27,12 @@ export default function AuthDialog({
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Close dialog and redirect when user is authenticated
-  useEffect(() => {
-    if (user) {
-      setOpen(false);
-      if (user.role === "client") {
-        setLocation("/dashboard");
-      } else if (user.role === "service") {
-        setLocation("/service-dashboard");
-      }
-    }
-  }, [user, setLocation]);
-
-  const handleSuccess = () => {
+  // Handle role-based redirect
+  const handleAuthSuccess = (role: string) => {
     setOpen(false);
-    if (user?.role === "client") {
+    if (role === "client") {
       setLocation("/dashboard");
-    } else if (user?.role === "service") {
+    } else if (role === "service") {
       setLocation("/service-dashboard");
     }
   };
@@ -66,9 +55,9 @@ export default function AuthDialog({
           </DialogDescription>
         </DialogHeader>
         {view === "login" ? (
-          <LoginForm onSuccess={handleSuccess} />
+          <LoginForm onSuccess={handleAuthSuccess} />
         ) : (
-          <SignupForm onSuccess={handleSuccess} />
+          <SignupForm onSuccess={handleAuthSuccess} />
         )}
         <div className="text-center mt-4">
           <Button

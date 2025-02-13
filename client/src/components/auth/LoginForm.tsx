@@ -28,7 +28,7 @@ const formSchema = z.object({
 });
 
 interface LoginFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (role: string) => void;
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
@@ -81,8 +81,9 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         description: "Te-ai conectat cu succes!",
       });
 
-      // Call the success callback which will handle the redirect
-      onSuccess?.();
+      // Call the success callback with the user role
+      onSuccess?.(userData.role);
+
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
