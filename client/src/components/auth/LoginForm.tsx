@@ -67,7 +67,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        credentials: 'include' // Important for session cookies
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -115,7 +115,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
     setIsSendingReset(true);
     try {
-      // Send password reset email
       await auth.sendPasswordResetEmail(email);
       toast({
         title: "Email trimis",
