@@ -17,8 +17,6 @@ import {
   Tag
 } from "lucide-react";
 
-import Footer from "@/components/layout/Footer";
-
 export default function ClientDashboard() {
   return (
     <SidebarProvider defaultOpen>
@@ -144,7 +142,6 @@ export default function ClientDashboard() {
           </Tabs>
         </main>
       </div>
-      <Footer />
     </SidebarProvider>
   );
 }
