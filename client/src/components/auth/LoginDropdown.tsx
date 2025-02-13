@@ -18,6 +18,17 @@ export default function LoginDropdown() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  // Add effect to handle automatic redirect when user logs in
+  useEffect(() => {
+    if (user) {
+      if (user.role === "client") {
+        setLocation("/dashboard");
+      } else if (user.role === "service") {
+        setLocation("/service-dashboard");
+      }
+    }
+  }, [user, setLocation]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -32,14 +43,6 @@ export default function LoginDropdown() {
         title: "Error",
         description: "A apărut o eroare la deconectare.",
       });
-    }
-  };
-
-  const handleDashboardRedirect = () => {
-    if (user?.role === "client") {
-      setLocation("/dashboard");
-    } else if (user?.role === "service") {
-      setLocation("/service-dashboard");
     }
   };
 
@@ -87,10 +90,7 @@ export default function LoginDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[200px]">
-        <DropdownMenuItem 
-          onClick={handleDashboardRedirect}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem className="cursor-pointer">
           {user.email}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
