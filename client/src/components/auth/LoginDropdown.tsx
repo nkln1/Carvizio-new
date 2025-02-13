@@ -35,6 +35,14 @@ export default function LoginDropdown() {
     }
   };
 
+  const handleEmailClick = () => {
+    if (user?.role === "client") {
+      setLocation("/dashboard");
+    } else if (user?.role === "service") {
+      setLocation("/service-dashboard");
+    }
+  };
+
   if (loading) {
     return (
       <Button variant="ghost" className="opacity-50 cursor-not-allowed">
@@ -79,11 +87,11 @@ export default function LoginDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[200px]">
-        <DropdownMenuItem className="cursor-default">
+        <DropdownMenuItem onClick={handleEmailClick} className="cursor-pointer">
           {user.email}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           Deconectare
         </DropdownMenuItem>
       </DropdownMenuContent>

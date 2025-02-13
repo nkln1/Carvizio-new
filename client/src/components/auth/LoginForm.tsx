@@ -81,15 +81,18 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         description: "Te-ai conectat cu succes!",
       });
 
-      // Call the success callback
+      // Call the success callback first to close any modals
       onSuccess?.();
 
-      // Redirect based on user role
-      if (userData.role === "client") {
-        setLocation("/dashboard");
-      } else if (userData.role === "service") {
-        setLocation("/service-dashboard");
-      }
+      // Then redirect based on user role with a slight delay to allow UI updates
+      setTimeout(() => {
+        if (userData.role === "client") {
+          setLocation("/dashboard");
+        } else if (userData.role === "service") {
+          setLocation("/service-dashboard");
+        }
+      }, 100);
+
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
