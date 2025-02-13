@@ -81,7 +81,14 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         description: "Te-ai conectat cu succes!",
       });
 
-      // Call the success callback with the user role
+      // Handle redirect based on role immediately
+      if (userData.role === "client") {
+        setLocation("/dashboard");
+      } else if (userData.role === "service") {
+        setLocation("/service-dashboard");
+      }
+
+      // Notify parent component if needed
       onSuccess?.(userData.role);
 
     } catch (error: any) {
@@ -109,7 +116,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
     setIsSendingReset(true);
     try {
-      // Send password reset email
       await auth.sendPasswordResetEmail(email);
       toast({
         title: "Email trimis",

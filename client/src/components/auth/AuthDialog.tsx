@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "wouter";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -25,16 +24,10 @@ export default function AuthDialog({
   const [view, setView] = useState<"login" | "signup">(defaultView);
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
 
-  // Handle role-based redirect
+  // Handle dialog close after successful auth
   const handleAuthSuccess = (role: string) => {
     setOpen(false);
-    if (role === "client") {
-      setLocation("/dashboard");
-    } else if (role === "service") {
-      setLocation("/service-dashboard");
-    }
   };
 
   return (
