@@ -1,6 +1,7 @@
 import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users table with expanded fields for authentication
 export const users = pgTable("users", {
@@ -23,6 +24,35 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+export const usersRelations = relations(users, ({ many }) => ({
+  cars: many(cars)
+}));
+
+// Cars table definition
+export const cars = pgTable("cars", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  year: text("year").notNull(),
+  fuelType: text("fuel_type", { 
+    enum: ["Benzină", "Motorină", "Hibrid", "Electric"] 
+  }).notNull(),
+  transmission: text("transmission", {
+    enum: ["Manuală", "Automată"]
+  }).notNull(),
+  vin: text("vin"),
+  mileage: integer("mileage").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const carsRelations = relations(cars, ({ one }) => ({
+  user: one(users, {
+    fields: [cars.userId],
+    references: [users.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
@@ -30,27 +60,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   firebaseUid: true
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-
-// Keep the cars table with proper integer types
-export const cars = pgTable("cars", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  price: integer("price").notNull(),
-  year: integer("year").notNull(),
-  mileage: integer("mileage").notNull(),
-  category: text("category").notNull(),
-  features: text("features").array(),
-  images: text("images").array(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-});
-
 export const insertCarSchema = createInsertSchema(cars).omit({
   id: true,
   createdAt: true
 });
 
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
 export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;

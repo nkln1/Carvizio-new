@@ -1,19 +1,18 @@
-import { users, type User, type InsertUser } from "@shared/schema";
+import { users, cars, type User, type InsertUser, type Car, type InsertCar } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
 
 const PostgresSessionStore = connectPg(session);
 
-// Create a standard pg Pool for session store using proper ES module import
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 10000,
-  ssl: false // Disable SSL for VPS connection
+  ssl: false
 });
 
 export interface IStorage {
@@ -22,6 +21,12 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser & { firebaseUid: string }): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User>;
+  // Car management
+  getUserCars(userId: number): Promise<Car[]>;
+  getCar(id: number): Promise<Car | undefined>;
+  createCar(car: InsertCar): Promise<Car>;
+  updateCar(id: number, carData: Partial<Car>): Promise<Car>;
+  deleteCar(id: number): Promise<void>;
   sessionStore: session.Store;
 }
 
@@ -35,6 +40,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  // Existing user methods
   async getUser(id: number): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -89,7 +95,6 @@ export class DatabaseStorage implements IStorage {
         .update(users)
         .set({
           ...userData,
-          // Don't allow updating these fields
           email: undefined,
           password: undefined,
           firebaseUid: undefined,
@@ -102,6 +107,66 @@ export class DatabaseStorage implements IStorage {
       return updatedUser;
     } catch (error) {
       console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  // Car management methods
+  async getUserCars(userId: number): Promise<Car[]> {
+    try {
+      return await db
+        .select()
+        .from(cars)
+        .where(eq(cars.userId, userId))
+        .orderBy(desc(cars.createdAt));
+    } catch (error) {
+      console.error('Error getting user cars:', error);
+      return [];
+    }
+  }
+
+  async getCar(id: number): Promise<Car | undefined> {
+    try {
+      const [car] = await db.select().from(cars).where(eq(cars.id, id));
+      return car;
+    } catch (error) {
+      console.error('Error getting car:', error);
+      return undefined;
+    }
+  }
+
+  async createCar(car: InsertCar): Promise<Car> {
+    try {
+      const [newCar] = await db
+        .insert(cars)
+        .values(car)
+        .returning();
+      return newCar;
+    } catch (error) {
+      console.error('Error creating car:', error);
+      throw error;
+    }
+  }
+
+  async updateCar(id: number, carData: Partial<Car>): Promise<Car> {
+    try {
+      const [updatedCar] = await db
+        .update(cars)
+        .set(carData)
+        .where(eq(cars.id, id))
+        .returning();
+      return updatedCar;
+    } catch (error) {
+      console.error('Error updating car:', error);
+      throw error;
+    }
+  }
+
+  async deleteCar(id: number): Promise<void> {
+    try {
+      await db.delete(cars).where(eq(cars.id, id));
+    } catch (error) {
+      console.error('Error deleting car:', error);
       throw error;
     }
   }
