@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { User, MessageCircle, FileText, Settings, Bell } from "lucide-react";
+import { User, MessageCircle, FileText, Settings, Bell, Car } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
@@ -87,6 +87,14 @@ export default function ClientDashboard() {
               >
                 <MessageCircle className="h-4 w-4" />
                 Mesaje
+              </Button>
+              <Button
+                variant={activeTab === "car" ? "default" : "ghost"}
+                onClick={() => setActiveTab("car")}
+                className="flex items-center gap-2"
+              >
+                <Car className="h-4 w-4" />
+                Mașina mea
               </Button>
               <Button
                 variant={activeTab === "profile" ? "default" : "ghost"}
@@ -200,6 +208,26 @@ export default function ClientDashboard() {
               </Card>
             )}
 
+            {/* Car Section */}
+            {activeTab === "car" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mașina mea</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-white rounded-lg border border-gray-200">
+                      <p className="text-gray-500">Nu aveți nicio mașină înregistrată.</p>
+                      <Button className="mt-4">
+                        <Car className="mr-2 h-4 w-4" />
+                        Adaugă mașină
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Profile/Account Section */}
             {activeTab === "profile" && (
               <Card>
@@ -211,9 +239,9 @@ export default function ClientDashboard() {
                     {userProfile ? (
                       <>
                         {isEditing ? (
-                          <EditProfile 
-                            user={userProfile} 
-                            onCancel={() => setIsEditing(false)} 
+                          <EditProfile
+                            user={userProfile}
+                            onCancel={() => setIsEditing(false)}
                           />
                         ) : (
                           <>
@@ -250,8 +278,8 @@ export default function ClientDashboard() {
                               </div>
                             </div>
                             <div className="flex flex-col space-y-2">
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 className="w-full sm:w-auto"
                                 onClick={() => setIsEditing(true)}
                               >
