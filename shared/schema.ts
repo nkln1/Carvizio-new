@@ -25,7 +25,8 @@ export const users = pgTable("users", {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
-  cars: many(cars)
+  cars: many(cars),
+  requests: many(requests)
 }));
 
 // Cars table definition
@@ -46,10 +47,38 @@ export const cars = pgTable("cars", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-export const carsRelations = relations(cars, ({ one }) => ({
+export const carsRelations = relations(cars, ({ one, many }) => ({
   user: one(users, {
     fields: [cars.userId],
     references: [users.id],
+  }),
+  requests: many(requests)
+}));
+
+// Requests table definition
+export const requests = pgTable("requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  carId: integer("car_id").notNull().references(() => cars.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status", {
+    enum: ["În așteptare", "Acceptat", "Finalizat"]
+  }).default("În așteptare").notNull(),
+  preferredDate: timestamp("preferred_date").notNull(),
+  county: text("county").notNull(),
+  cities: text("cities").array().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const requestsRelations = relations(requests, ({ one }) => ({
+  user: one(users, {
+    fields: [requests.userId],
+    references: [users.id],
+  }),
+  car: one(cars, {
+    fields: [requests.carId],
+    references: [cars.id],
   }),
 }));
 
@@ -65,7 +94,15 @@ export const insertCarSchema = createInsertSchema(cars).omit({
   createdAt: true
 });
 
+export const insertRequestSchema = createInsertSchema(requests).omit({
+  id: true,
+  status: true,
+  createdAt: true
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
+export type InsertRequest = z.infer<typeof insertRequestSchema>;
+export type Request = typeof requests.$inferSelect;

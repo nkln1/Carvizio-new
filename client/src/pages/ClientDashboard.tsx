@@ -6,22 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { User, MessageCircle, FileText, Settings, Bell, Car, Plus, Clock } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
-import type { User as UserType, Car as CarType } from "@shared/schema";
+import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
 import { EditProfile } from "@/components/auth/EditProfile";
 import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
 import { RequestForm } from "@/components/request/RequestForm";
 import { Badge } from "@/components/ui/badge";
-
-interface Request {
-  id: string;
-  date: string;
-  status: "În așteptare" | "Acceptat" | "Finalizat";
-  description: string;
-}
 
 interface ServiceOffer {
   id: number;
@@ -40,7 +33,7 @@ export default function ClientDashboard() {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const { toast } = useToast();
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<RequestType[]>([]);
   const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
   useEffect(() => {
@@ -191,9 +184,47 @@ export default function ClientDashboard() {
     }
   };
 
+  // Fetch requests
+  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
+    queryKey: ['/api/requests'],
+    enabled: !!userProfile,
+  });
+
+  // Create request mutation
+  const createRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create request');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+    },
+  });
+
   const handleRequestSubmit = async (data: any) => {
     try {
-      console.log("Request data:", data);
+      await createRequestMutation.mutateAsync({
+        ...data,
+        userId: userProfile?.id,
+        carId: parseInt(data.carId),
+      });
+
       toast({
         title: "Success",
         description: "Cererea a fost trimisă cu succes!",
@@ -202,7 +233,7 @@ export default function ClientDashboard() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "A apărut o eroare la trimiterea cererii.",
+        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
         variant: "destructive",
       });
     }
@@ -281,9 +312,13 @@ export default function ClientDashboard() {
                   <CardTitle>Cererile Mele Recente</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {requests.length > 0 ? (
+                  {isLoadingRequests ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
+                    </div>
+                  ) : userRequests.length > 0 ? (
                     <div className="space-y-4">
-                      {requests.map((request) => (
+                      {userRequests.map((request) => (
                         <div
                           key={request.id}
                           className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
@@ -292,7 +327,9 @@ export default function ClientDashboard() {
                             <div>
                               <p className="font-medium">#{request.id}</p>
                               <p className="text-sm text-gray-600">{request.description}</p>
-                              <p className="text-sm text-gray-500">{request.date}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(request.createdAt).toLocaleDateString('ro-RO')}
+                              </p>
                             </div>
                             <span
                               className={`px-3 py-1 rounded-full text-sm ${getStatusColor(

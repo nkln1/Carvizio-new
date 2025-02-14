@@ -1,4 +1,4 @@
-import { users, cars, type User, type InsertUser, type Car, type InsertCar } from "@shared/schema";
+import { users, cars, requests, type User, type InsertUser, type Car, type InsertCar, type Request, type InsertRequest } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import session from "express-session";
@@ -27,6 +27,11 @@ export interface IStorage {
   createCar(car: InsertCar): Promise<Car>;
   updateCar(id: number, carData: Partial<Car>): Promise<Car>;
   deleteCar(id: number): Promise<void>;
+  // Request management
+  getUserRequests(userId: number): Promise<Request[]>;
+  getRequest(id: number): Promise<Request | undefined>;
+  createRequest(request: InsertRequest): Promise<Request>;
+  updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
   sessionStore: session.Store;
 }
 
@@ -40,7 +45,6 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // Existing user methods
   async getUser(id: number): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -111,7 +115,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Car management methods
   async getUserCars(userId: number): Promise<Car[]> {
     try {
       return await db
@@ -171,6 +174,56 @@ export class DatabaseStorage implements IStorage {
       await db.delete(cars).where(eq(cars.id, id));
     } catch (error) {
       console.error('Error deleting car:', error);
+      throw error;
+    }
+  }
+
+  async getUserRequests(userId: number): Promise<Request[]> {
+    try {
+      return await db
+        .select()
+        .from(requests)
+        .where(eq(requests.userId, userId))
+        .orderBy(desc(requests.createdAt));
+    } catch (error) {
+      console.error('Error getting user requests:', error);
+      return [];
+    }
+  }
+
+  async getRequest(id: number): Promise<Request | undefined> {
+    try {
+      const [request] = await db.select().from(requests).where(eq(requests.id, id));
+      return request;
+    } catch (error) {
+      console.error('Error getting request:', error);
+      return undefined;
+    }
+  }
+
+  async createRequest(request: InsertRequest): Promise<Request> {
+    try {
+      const [newRequest] = await db
+        .insert(requests)
+        .values(request)
+        .returning();
+      return newRequest;
+    } catch (error) {
+      console.error('Error creating request:', error);
+      throw error;
+    }
+  }
+
+  async updateRequest(id: number, requestData: Partial<Request>): Promise<Request> {
+    try {
+      const [updatedRequest] = await db
+        .update(requests)
+        .set(requestData)
+        .where(eq(requests.id, id))
+        .returning();
+      return updatedRequest;
+    } catch (error) {
+      console.error('Error updating request:', error);
       throw error;
     }
   }
