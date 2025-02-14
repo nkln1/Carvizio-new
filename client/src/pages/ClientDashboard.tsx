@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { User, MessageCircle, FileText, Settings, Bell, Car } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import type { User as UserType } from "@shared/schema";
+import type { User as UserType, Car as CarType } from "@shared/schema";
 import { EditProfile } from "@/components/auth/EditProfile";
+import { CarForm } from "@/components/car/CarForm";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 // Mock data for requests and offers
 const mockRequests = [
@@ -26,6 +30,8 @@ export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
+  const [showCarDialog, setShowCarDialog] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -42,6 +48,43 @@ export default function ClientDashboard() {
     retry: 1,
     refetchOnWindowFocus: false
   });
+
+  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
+    queryKey: ['/api/cars'],
+    enabled: !!userProfile,
+  });
+
+  const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
+    try {
+      const response = await fetch('/api/cars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(carData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save car');
+      }
+
+      toast({
+        title: "Success",
+        description: "Car added successfully",
+      });
+
+      // Invalidate and refetch cars
+      queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
+      setShowCarDialog(false);
+    } catch (error) {
+      console.error('Error saving car:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save car",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -118,7 +161,6 @@ export default function ClientDashboard() {
           </div>
         )}
 
-        {/* Only show content when not loading */}
         {!isLoading && (
           <>
             {/* Requests Section */}
@@ -216,13 +258,43 @@ export default function ClientDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="p-4 bg-white rounded-lg border border-gray-200">
-                      <p className="text-gray-500">Nu aveți nicio mașină înregistrată.</p>
-                      <Button className="mt-4">
+                    {isLoadingCars ? (
+                      <div className="flex justify-center p-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
+                      </div>
+                    ) : userCars.length > 0 ? (
+                      userCars.map((car) => (
+                        <div key={car.id} className="p-4 bg-white rounded-lg border border-gray-200">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-medium">{car.brand} {car.model}</h3>
+                              <p className="text-sm text-gray-600">An: {car.year}</p>
+                              <p className="text-sm text-gray-600">
+                                Kilometraj: {car.mileage} km | {car.fuelType} | {car.transmission}
+                              </p>
+                              {car.vin && (
+                                <p className="text-sm text-gray-500">VIN: {car.vin}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 bg-white rounded-lg border border-gray-200">
+                        <p className="text-gray-500">Nu aveți nicio mașină înregistrată.</p>
+                        <Button className="mt-4" onClick={() => setShowCarDialog(true)}>
+                          <Car className="mr-2 h-4 w-4" />
+                          Adaugă mașină
+                        </Button>
+                      </div>
+                    )}
+
+                    {userCars.length > 0 && (
+                      <Button onClick={() => setShowCarDialog(true)}>
                         <Car className="mr-2 h-4 w-4" />
-                        Adaugă mașină
+                        Adaugă altă mașină
                       </Button>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -303,6 +375,16 @@ export default function ClientDashboard() {
           </>
         )}
       </div>
+
+      <Dialog open={showCarDialog} onOpenChange={setShowCarDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adaugă mașină nouă</DialogTitle>
+          </DialogHeader>
+          <CarForm onSubmit={handleCarSubmit} onCancel={() => setShowCarDialog(false)} />
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );

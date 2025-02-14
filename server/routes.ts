@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema, insertCarSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { pool } from "./db";
@@ -194,6 +194,48 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Profile update error:", error);
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  // Car management endpoints
+  app.get("/api/cars", validateFirebaseToken, async (req, res) => {
+    try {
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const cars = await storage.getUserCars(user.id);
+      res.json(cars);
+    } catch (error) {
+      console.error("Error getting user cars:", error);
+      res.status(500).json({ error: "Failed to get cars" });
+    }
+  });
+
+  app.post("/api/cars", validateFirebaseToken, async (req, res) => {
+    try {
+      // Get the current user
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Validate request body using the insert schema
+      const carData = insertCarSchema.parse({
+        ...req.body,
+        userId: user.id
+      });
+
+      // Create the car
+      const car = await storage.createCar(carData);
+      res.status(201).json(car);
+    } catch (error: any) {
+      console.error("Error creating car:", error);
+      res.status(400).json({
+        error: "Invalid car data",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
