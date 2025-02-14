@@ -73,6 +73,7 @@ export function CarForm({ onSubmit, onCancel, initialData }: CarFormProps) {
             ...data,
             year: data.year.toString(),
             mileage: Number(data.mileage),
+            vin: data.vin || null, // Convert empty string to null
           };
           onSubmit(carData);
         })} 
