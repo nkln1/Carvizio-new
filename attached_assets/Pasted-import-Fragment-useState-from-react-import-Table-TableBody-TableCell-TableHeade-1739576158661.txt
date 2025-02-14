@@ -32,6 +32,7 @@ import {
   X,
   ArrowUpDown,
   Loader2,
+  Plus,
 } from "lucide-react";
 import {
   Pagination,
@@ -55,6 +56,7 @@ interface ClientRequestsProps {
   onMessage: (request: Request) => void;
   onSendOffer: (request: Request, offerData: any) => Promise<void>;
   onRejectRequest: (requestId: string) => void;
+  onCreateRequest?: () => void; // New prop for create request handler
   selectedRequest: Request | null;
   requestClient: User | null;
   cars: Record<string, Car>;
@@ -68,6 +70,7 @@ export function ClientRequests({
   onMessage,
   onSendOffer,
   onRejectRequest,
+  onCreateRequest,
   selectedRequest,
   requestClient,
   cars,
@@ -227,7 +230,7 @@ export function ClientRequests({
       </Card>
     );
   }
-  
+
   const handleSendOfferClick = (request: Request) => {
     setSelectedOfferRequest(request);
     setShowOfferForm(true);
@@ -247,23 +250,32 @@ export function ClientRequests({
       <Card className="border-[#00aff5]/20 mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-[#00aff5] flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Cereri în Așteptare
-              </CardTitle>
-              {clientRequests.filter((req) => !viewedRequests.has(req.id) && !req.hasReceivedOffer)
-                .length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1"
-                >
-                  {
-                    clientRequests.filter((req) => !viewedRequests.has(req.id) && !req.hasReceivedOffer)
-                      .length
-                  }
-                </Badge>
-              )}
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={onCreateRequest}
+                className="bg-[#00aff5] text-white hover:bg-[#0095d1] flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Creaza cerere
+              </Button>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-[#00aff5] flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Cereri în Așteptare
+                </CardTitle>
+                {clientRequests.filter((req) => !viewedRequests.has(req.id) && !req.hasReceivedOffer)
+                  .length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-[#00aff5] text-white text-sm font-normal px-2.5 py-1"
+                  >
+                    {
+                      clientRequests.filter((req) => !viewedRequests.has(req.id) && !req.hasReceivedOffer)
+                        .length
+                    }
+                  </Badge>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-10">
               <div className="flex items-center gap-2">
