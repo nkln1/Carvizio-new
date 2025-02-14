@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { User, MessageCircle, FileText, Settings, Bell, Car } from "lucide-react";
+import { User, MessageCircle, FileText, Settings, Bell, Car, Plus } from "lucide-react"; // Added Plus icon import
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import type { User as UserType, Car as CarType } from "@shared/schema";
@@ -253,7 +253,16 @@ export default function ClientDashboard() {
             {activeTab === "requests" && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Cererile Mele Recente</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Cererile Mele Recente</CardTitle>
+                    <Button
+                      onClick={() => console.log("Create new request")}
+                      className="bg-[#00aff5] text-white hover:bg-[#0095d1]"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Creaza cerere
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
