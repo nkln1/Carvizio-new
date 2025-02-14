@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { User, MessageCircle, FileText, Settings, Bell, Car, Plus } from "lucide-react";
+import { User, MessageCircle, FileText, Settings, Bell, Car, Plus, Clock } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import type { User as UserType, Car as CarType } from "@shared/schema";
@@ -14,6 +14,23 @@ import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { RequestForm } from "@/components/request/RequestForm";
+import { Badge } from "@/components/ui/badge";
+
+interface Request {
+  id: string;
+  date: string;
+  status: "În așteptare" | "Acceptat" | "Finalizat";
+  description: string;
+}
+
+interface ServiceOffer {
+  id: number;
+  serviceId: string;
+  serviceName: string;
+  price: number;
+  availability: string;
+  description: string;
+}
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
@@ -23,6 +40,8 @@ export default function ClientDashboard() {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const { toast } = useToast();
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -123,7 +142,6 @@ export default function ClientDashboard() {
       });
     }
   };
-
 
   const handleDeleteCar = async (carId: string) => {
     try {
@@ -263,29 +281,43 @@ export default function ClientDashboard() {
                   <CardTitle>Cererile Mele Recente</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {mockRequests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">#{request.id}</p>
-                            <p className="text-sm text-gray-600">{request.description}</p>
-                            <p className="text-sm text-gray-500">{request.date}</p>
+                  {requests.length > 0 ? (
+                    <div className="space-y-4">
+                      {requests.map((request) => (
+                        <div
+                          key={request.id}
+                          className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">#{request.id}</p>
+                              <p className="text-sm text-gray-600">{request.description}</p>
+                              <p className="text-sm text-gray-500">{request.date}</p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                                request.status
+                              )}`}
+                            >
+                              {request.status}
+                            </span>
                           </div>
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
-                              request.status
-                            )}`}
-                          >
-                            {request.status}
-                          </span>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <p className="text-gray-500">Nu aveți cereri active în acest moment.</p>
+                      <Button
+                        onClick={() => setShowRequestDialog(true)}
+                        variant="outline"
+                        className="mt-4"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Creează prima cerere
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -296,36 +328,42 @@ export default function ClientDashboard() {
                   <CardTitle>Oferte Primite</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {mockOffers.map((offer) => (
-                      <div
-                        key={offer.id}
-                        className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">{offer.serviceName}</p>
-                            <p className="text-sm text-gray-600">{offer.description}</p>
-                            <p className="text-sm text-gray-500">
-                              Disponibil: {offer.availability}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-[#00aff5]">{offer.price} RON</p>
-                            <Button
-                              size="sm"
-                              className="mt-2"
-                              onClick={() => {
-                                console.log("Accepted offer:", offer.id);
-                              }}
-                            >
-                              Acceptă Oferta
-                            </Button>
+                  {offers.length > 0 ? (
+                    <div className="space-y-4">
+                      {offers.map((offer) => (
+                        <div
+                          key={offer.id}
+                          className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{offer.serviceName}</p>
+                              <p className="text-sm text-gray-600">{offer.description}</p>
+                              <p className="text-sm text-gray-500">
+                                Disponibil: {offer.availability}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-[#00aff5]">{offer.price} RON</p>
+                              <Button
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => {
+                                  console.log("Accepted offer:", offer.id);
+                                }}
+                              >
+                                Acceptă Oferta
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500 py-6">
+                      Nu aveți oferte în acest moment.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -395,7 +433,7 @@ export default function ClientDashboard() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDeleteCar(car.id)}
+                              onClick={() => handleDeleteCar(car.id.toString())}
                             >
                               Șterge
                             </Button>
