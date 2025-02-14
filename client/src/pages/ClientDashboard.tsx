@@ -25,9 +25,9 @@ export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("requests");
 
-  // Properly type the user profile data
-  const { data: userProfile, isLoading, error } = useQuery<UserType>({
-    queryKey: ['/api/user'],
+  // Update the endpoint to use /api/auth/me
+  const { data: userProfile, isLoading } = useQuery<UserType>({
+    queryKey: ['/api/auth/me'],
     retry: false,
     refetchOnWindowFocus: false
   });
@@ -55,22 +55,7 @@ export default function ClientDashboard() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-      </div>
-    );
-  }
-
-  if (error || !userProfile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">Unable to load user profile</p>
-      </div>
-    );
-  }
-
+  // Always render the navigation and main structure
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Navigation */}
@@ -117,146 +102,157 @@ export default function ClientDashboard() {
 
       {/* Main Content */}
       <div className="container mx-auto p-6 flex-grow">
-        {/* Requests Section */}
-        {activeTab === "requests" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Cererile Mele Recente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">#{request.id}</p>
-                        <p className="text-sm text-gray-600">{request.description}</p>
-                        <p className="text-sm text-gray-500">{request.date}</p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
-                          request.status
-                        )}`}
-                      >
-                        {request.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Show loading state in the content area */}
+        {isLoading && (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+          </div>
         )}
 
-        {/* Offers Section */}
-        {activeTab === "offers" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Oferte Primite</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockOffers.map((offer) => (
-                  <div
-                    key={offer.id}
-                    className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
+        {/* Only show content when not loading */}
+        {!isLoading && (
+          <>
+            {/* Requests Section */}
+            {activeTab === "requests" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cererile Mele Recente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {mockRequests.map((request) => (
+                      <div
+                        key={request.id}
+                        className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">#{request.id}</p>
+                            <p className="text-sm text-gray-600">{request.description}</p>
+                            <p className="text-sm text-gray-500">{request.date}</p>
+                          </div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                              request.status
+                            )}`}
+                          >
+                            {request.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Offers Section */}
+            {activeTab === "offers" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Oferte Primite</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {mockOffers.map((offer) => (
+                      <div
+                        key={offer.id}
+                        className="p-4 bg-white rounded-lg border border-gray-200 hover:border-[#00aff5] transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">{offer.serviceName}</p>
+                            <p className="text-sm text-gray-600">{offer.description}</p>
+                            <p className="text-sm text-gray-500">
+                              Disponibil: {offer.availability}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-[#00aff5]">{offer.price} RON</p>
+                            <Button
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => {
+                                console.log("Accepted offer:", offer.id);
+                              }}
+                            >
+                              Acceptă Oferta
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Messages Section */}
+            {activeTab === "messages" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mesaje</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-500">Nu există mesaje noi.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Profile/Account Section */}
+            {activeTab === "profile" && userProfile && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informații Cont</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="font-medium">{offer.serviceName}</p>
-                        <p className="text-sm text-gray-600">{offer.description}</p>
-                        <p className="text-sm text-gray-500">
-                          Disponibil: {offer.availability}
+                        <p className="text-sm font-medium text-gray-500">Nume Complet</p>
+                        <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Email</p>
+                        <p className="mt-1 text-sm">{userProfile.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Telefon</p>
+                        <p className="mt-1 text-sm">{userProfile.phone || 'Nu este specificat'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Județ</p>
+                        <p className="mt-1 text-sm">{userProfile.county || 'Nu este specificat'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Oraș</p>
+                        <p className="mt-1 text-sm">{userProfile.city || 'Nu este specificat'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Tip Cont</p>
+                        <p className="mt-1 text-sm capitalize">{userProfile.role || 'Nu este specificat'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
+                        <p className="mt-1 text-sm">
+                          {userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : 'Nu este specificat'}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-[#00aff5]">{offer.price} RON</p>
-                        <Button
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => {
-                            // Handle offer acceptance
-                            console.log("Accepted offer:", offer.id);
-                          }}
-                        >
-                          Acceptă Oferta
-                        </Button>
-                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Button variant="outline" className="w-full sm:w-auto">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Editează Profilul
+                      </Button>
+                      <Button variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700">
+                        Schimbă Parola
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Messages Section */}
-        {activeTab === "messages" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Mesaje</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-500">Nu există mesaje noi.</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Profile/Account Section */}
-        {activeTab === "profile" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Informații Cont</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Nume Complet</p>
-                    <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Email</p>
-                    <p className="mt-1 text-sm">{userProfile.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Telefon</p>
-                    <p className="mt-1 text-sm">{userProfile.phone || 'Nu este specificat'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Județ</p>
-                    <p className="mt-1 text-sm">{userProfile.county || 'Nu este specificat'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Oraș</p>
-                    <p className="mt-1 text-sm">{userProfile.city || 'Nu este specificat'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Tip Cont</p>
-                    <p className="mt-1 text-sm capitalize">{userProfile.role || 'Nu este specificat'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
-                    <p className="mt-1 text-sm">
-                      {userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : 'Nu este specificat'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col space-y-2">
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Editează Profilul
-                  </Button>
-                  <Button variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700">
-                    Schimbă Parola
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
       <Footer />
