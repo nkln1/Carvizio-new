@@ -24,6 +24,9 @@ export default function ClientDashboard() {
   const [userProfile] = useState({
     email: auth.currentUser?.email,
     name: "John Doe", // Mock name
+    phone: "0712 345 678", // Mock phone
+    createdAt: "14 Februarie 2024", // Mock creation date
+    role: "Client" // Mock role
   });
 
   useEffect(() => {
@@ -95,25 +98,6 @@ export default function ClientDashboard() {
 
       {/* Main Content */}
       <div className="container mx-auto p-6 flex-grow">
-        {/* Profile Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Profil Client</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium">{userProfile.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Nume</p>
-                <p className="font-medium">{userProfile.name}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Requests Section */}
         {activeTab === "requests" && (
           <Card>
@@ -206,22 +190,41 @@ export default function ClientDashboard() {
         {activeTab === "profile" && (
           <Card>
             <CardHeader>
-              <CardTitle>Setări Cont</CardTitle>
+              <CardTitle>Informații Cont</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{userProfile.email}</p>
+              <div className="grid gap-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Nume Complet</p>
+                    <p className="mt-1 text-sm">{userProfile.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Email</p>
+                    <p className="mt-1 text-sm">{userProfile.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Telefon</p>
+                    <p className="mt-1 text-sm">{userProfile.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Tip Cont</p>
+                    <p className="mt-1 text-sm">{userProfile.role}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
+                    <p className="mt-1 text-sm">{userProfile.createdAt}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Nume</p>
-                  <p className="font-medium">{userProfile.name}</p>
+                <div className="flex flex-col space-y-2">
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Editează Profilul
+                  </Button>
+                  <Button variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700">
+                    Schimbă Parola
+                  </Button>
                 </div>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Editează Profilul
-                </Button>
               </div>
             </CardContent>
           </Card>
