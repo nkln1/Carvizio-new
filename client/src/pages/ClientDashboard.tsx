@@ -56,16 +56,23 @@ export default function ClientDashboard() {
 
   const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
     try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
       const response = await fetch('/api/cars', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(carData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save car');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save car');
       }
 
       toast({
@@ -80,7 +87,7 @@ export default function ClientDashboard() {
       console.error('Error saving car:', error);
       toast({
         title: "Error",
-        description: "Failed to save car",
+        description: error instanceof Error ? error.message : "Failed to save car",
         variant: "destructive",
       });
     }
