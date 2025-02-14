@@ -172,6 +172,31 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add profile update endpoint
+  app.patch("/api/auth/profile", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Profile update attempt with data:", req.body);
+
+      // Find user by Firebase UID
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Update user data
+      const updatedUser = await storage.updateUser(user.id, req.body);
+      console.log('Successfully updated user data:', { id: updatedUser.id, email: updatedUser.email });
+
+      // Remove sensitive data from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
