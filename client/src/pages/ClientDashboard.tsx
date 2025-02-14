@@ -94,7 +94,7 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleUpdateCar = async (carData: CarType) => {
+  const handleUpdateCar = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
     try {
       if (!selectedCar) return;
 
@@ -104,7 +104,7 @@ export default function ClientDashboard() {
       }
 
       const response = await fetch(`/api/cars/${selectedCar.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

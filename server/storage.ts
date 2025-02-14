@@ -152,11 +152,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateCar(id: number, carData: Partial<Car>): Promise<Car> {
     try {
+      console.log('Updating car with ID:', id, 'and data:', carData);
       const [updatedCar] = await db
         .update(cars)
         .set(carData)
         .where(eq(cars.id, id))
         .returning();
+      console.log('Updated car:', updatedCar);
       return updatedCar;
     } catch (error) {
       console.error('Error updating car:', error);

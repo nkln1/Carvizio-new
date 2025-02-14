@@ -257,7 +257,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add these new endpoints after the POST /api/cars endpoint
   app.patch("/api/cars/:id", validateFirebaseToken, async (req, res) => {
     try {
       console.log("Car update attempt for ID:", req.params.id, "with data:", req.body);
@@ -278,11 +277,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Not authorized to update this car" });
       }
 
-      // Validate and parse request body
-      const carData = insertCarSchema.partial().parse(req.body);
-
       // Update the car
-      const updatedCar = await storage.updateCar(parseInt(req.params.id), carData);
+      const updatedCar = await storage.updateCar(parseInt(req.params.id), {
+        ...req.body,
+        userId: user.id // Ensure userId remains unchanged
+      });
       console.log("Successfully updated car:", updatedCar);
 
       res.json(updatedCar);
