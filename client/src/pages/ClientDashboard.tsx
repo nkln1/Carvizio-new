@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { User, MessageCircle, FileText, Settings, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import type { User as UserType } from "@shared/schema";
 
 // Mock data for requests and offers
 const mockRequests = [
@@ -24,8 +25,8 @@ export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("requests");
 
-  // Fetch user data from the backend
-  const { data: userProfile, isLoading } = useQuery({
+  // Properly type the user profile data
+  const { data: userProfile, isLoading, error } = useQuery<UserType>({
     queryKey: ['/api/user'],
     retry: false,
     refetchOnWindowFocus: false
@@ -58,6 +59,14 @@ export default function ClientDashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      </div>
+    );
+  }
+
+  if (error || !userProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Unable to load user profile</p>
       </div>
     );
   }
@@ -207,32 +216,32 @@ export default function ClientDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Nume Complet</p>
-                    <p className="mt-1 text-sm">{userProfile?.name}</p>
+                    <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Email</p>
-                    <p className="mt-1 text-sm">{userProfile?.email}</p>
+                    <p className="mt-1 text-sm">{userProfile.email}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Telefon</p>
-                    <p className="mt-1 text-sm">{userProfile?.phone}</p>
+                    <p className="mt-1 text-sm">{userProfile.phone || 'Nu este specificat'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Județ</p>
-                    <p className="mt-1 text-sm">{userProfile?.county}</p>
+                    <p className="mt-1 text-sm">{userProfile.county || 'Nu este specificat'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Oraș</p>
-                    <p className="mt-1 text-sm">{userProfile?.city}</p>
+                    <p className="mt-1 text-sm">{userProfile.city || 'Nu este specificat'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Tip Cont</p>
-                    <p className="mt-1 text-sm capitalize">{userProfile?.role}</p>
+                    <p className="mt-1 text-sm capitalize">{userProfile.role || 'Nu este specificat'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
                     <p className="mt-1 text-sm">
-                      {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : ''}
+                      {userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : 'Nu este specificat'}
                     </p>
                   </div>
                 </div>
