@@ -49,10 +49,11 @@ export function registerRoutes(app: Express): Server {
 
   app.use(json());
 
-  // Firebase Auth Middleware
+  // Firebase Auth Middleware with improved error handling
   const validateFirebaseToken = async (req: Request, res: any, next: any) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No token provided in request');
       return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -60,6 +61,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
       req.firebaseUser = decodedToken;
+      console.log('Firebase token verified successfully for user:', decodedToken.uid);
       next();
     } catch (error) {
       console.error('Firebase token verification failed:', error);
@@ -98,7 +100,7 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       console.error("Registration error details:", error);
-      res.status(400).json({ 
+      res.status(400).json({
         error: "Invalid registration data",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -132,17 +134,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get current user endpoint
+  // Get current user endpoint with improved error handling
   app.get("/api/auth/me", validateFirebaseToken, async (req, res) => {
     try {
+      console.log('Fetching user data for Firebase UID:', req.firebaseUser!.uid);
+
       // Find user by Firebase UID
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
+        console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(401).json({ error: "Not authenticated" });
       }
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
+      console.log('Successfully retrieved user data:', { id: user.id, email: user.email });
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Get user error:", error);

@@ -9,21 +9,30 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create a new pool with the DATABASE_URL
+// Create a new pool with the DATABASE_URL and improved connection settings
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  max: 10, // Reduced from 20 to prevent overwhelming the VPS
+  idleTimeoutMillis: 60000, // Increased from 30000 to allow longer idle times
+  connectionTimeoutMillis: 10000, // Increased from 5000 to allow more time for connection
+  ssl: {
+    rejectUnauthorized: false // Required for some VPS PostgreSQL connections
+  }
 });
 
-// Test database connection
-pool.connect()
-  .then(() => {
+// Test database connection and keep retrying
+const testConnection = async () => {
+  try {
+    const client = await pool.connect();
     console.log('Successfully connected to PostgreSQL database');
-  })
-  .catch(err => {
+    client.release();
+  } catch (err) {
     console.error('Database connection error:', err.message);
-  });
+    // Retry connection after 5 seconds
+    setTimeout(testConnection, 5000);
+  }
+};
+
+testConnection();
 
 export const db = drizzle(pool, { schema });
