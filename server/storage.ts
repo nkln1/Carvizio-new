@@ -10,6 +10,10 @@ const PostgresSessionStore = connectPg(session);
 // Create a standard pg Pool for session store using proper ES module import
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 10000,
+  ssl: false // Disable SSL for VPS connection
 });
 
 export interface IStorage {
