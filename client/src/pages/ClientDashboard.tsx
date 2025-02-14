@@ -25,18 +25,8 @@ export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Update the endpoint to use /api/auth/me and enable debugging
-  const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/auth/me'],
-    retry: 1,
-    refetchOnWindowFocus: false,
-    onError: (error) => {
-      console.error('Error fetching user profile:', error);
-    }
-  });
-
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         setLocation("/");
       }
@@ -44,6 +34,12 @@ export default function ClientDashboard() {
 
     return () => unsubscribe();
   }, [setLocation]);
+
+  const { data: userProfile, isLoading } = useQuery<UserType>({
+    queryKey: ['/api/auth/me'],
+    retry: 1,
+    refetchOnWindowFocus: false
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {

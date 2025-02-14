@@ -3,11 +3,12 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import LoginDropdown from "@/components/auth/LoginDropdown";
+import { useQuery } from "@tanstack/react-query";
+import { auth } from "@/lib/firebase";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [, setLocation] = useLocation();
-  const [unreadClientsCount, setUnreadClientsCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,18 +19,12 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await fetch('/api/messages/unread');
-        const data = await response.json();
-        setUnreadClientsCount(data.count);
-      } catch (error) {
-        console.error("Error fetching unread message count:", error);
-      }
-    };
-    fetchUnreadCount();
-  }, []);
+  const { data: unreadData } = useQuery({
+    queryKey: ['/api/messages/unread'],
+    enabled: !!auth.currentUser
+  });
+
+  const unreadClientsCount = unreadData?.count ?? 0;
 
   const handleContactClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
