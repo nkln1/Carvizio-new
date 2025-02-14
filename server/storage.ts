@@ -31,31 +31,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return undefined;
+    }
   }
 
   async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by Firebase UID:', error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser & { firebaseUid: string }): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        ...insertUser,
-        firebaseUid: insertUser.firebaseUid,
-        verified: false,
-        createdAt: new Date(),
-      })
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values({
+          ...insertUser,
+          firebaseUid: insertUser.firebaseUid,
+          verified: false,
+          createdAt: new Date(),
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 }
 
