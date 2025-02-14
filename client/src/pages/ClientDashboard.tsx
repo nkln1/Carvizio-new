@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { User, MessageCircle, FileText, Settings, Bell, Car, Plus } from "lucide-react"; // Added Plus icon import
+import { User, MessageCircle, FileText, Settings, Bell, Car, Plus } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import type { User as UserType, Car as CarType } from "@shared/schema";
@@ -13,24 +13,14 @@ import { EditProfile } from "@/components/auth/EditProfile";
 import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-
-// Mock data for requests and offers
-const mockRequests = [
-  { id: "REQ001", date: "2024-02-14", status: "În așteptare", description: "Schimb ulei și filtru" },
-  { id: "REQ002", date: "2024-02-13", status: "Acceptat", description: "Verificare frâne" },
-  { id: "REQ003", date: "2024-02-12", status: "Finalizat", description: "Schimb anvelope" },
-];
-
-const mockOffers = [
-  { id: 1, serviceId: "SRV1", serviceName: "Auto Service Pro", price: 350, availability: "2024-02-16", description: "Schimb ulei și filtru" },
-  { id: 2, serviceId: "SRV2", serviceName: "Mecanik Expert", price: 400, availability: "2024-02-15", description: "Verificare frâne completă" },
-];
+import { RequestForm } from "@/components/request/RequestForm";
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const { toast } = useToast();
 
@@ -81,7 +71,6 @@ export default function ClientDashboard() {
         description: "Car added successfully",
       });
 
-      // Invalidate and refetch cars
       queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
       setShowCarDialog(false);
     } catch (error) {
@@ -160,7 +149,6 @@ export default function ClientDashboard() {
         description: "Car deleted successfully",
       });
 
-      // Invalidate and refetch cars
       queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
     } catch (error) {
       console.error('Error deleting car:', error);
@@ -185,10 +173,25 @@ export default function ClientDashboard() {
     }
   };
 
-  // Always render the navigation and main structure
+  const handleRequestSubmit = async (data: any) => {
+    try {
+      console.log("Request data:", data);
+      toast({
+        title: "Success",
+        description: "Cererea a fost trimisă cu succes!",
+      });
+      setShowRequestDialog(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "A apărut o eroare la trimiterea cererii.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Navigation */}
       <div className="bg-white shadow">
         <div className="container mx-auto">
           <div className="flex items-center justify-between p-4">
@@ -234,13 +237,18 @@ export default function ClientDashboard() {
                 Cont
               </Button>
             </div>
+            <Button
+              onClick={() => setShowRequestDialog(true)}
+              className="bg-[#00aff5] text-white hover:bg-[#0095d1] ml-4"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Creaza cerere
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="container mx-auto p-6 flex-grow">
-        {/* Show loading state in the content area */}
         {isLoading && (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -249,20 +257,10 @@ export default function ClientDashboard() {
 
         {!isLoading && (
           <>
-            {/* Requests Section */}
             {activeTab === "requests" && (
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Cererile Mele Recente</CardTitle>
-                    <Button
-                      onClick={() => console.log("Create new request")}
-                      className="bg-[#00aff5] text-white hover:bg-[#0095d1]"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Creaza cerere
-                    </Button>
-                  </div>
+                  <CardTitle>Cererile Mele Recente</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -292,7 +290,6 @@ export default function ClientDashboard() {
               </Card>
             )}
 
-            {/* Offers Section */}
             {activeTab === "offers" && (
               <Card>
                 <CardHeader>
@@ -333,7 +330,6 @@ export default function ClientDashboard() {
               </Card>
             )}
 
-            {/* Messages Section */}
             {activeTab === "messages" && (
               <Card>
                 <CardHeader>
@@ -345,7 +341,6 @@ export default function ClientDashboard() {
               </Card>
             )}
 
-            {/* Car Section */}
             {activeTab === "car" && (
               <div className="container mx-auto">
                 <div className="flex justify-between items-center mb-6">
@@ -427,7 +422,6 @@ export default function ClientDashboard() {
               </div>
             )}
 
-            {/* Profile/Account Section */}
             {activeTab === "profile" && (
               <Card>
                 <CardHeader>
@@ -503,7 +497,6 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      {/* Car Dialog */}
       <Dialog open={showCarDialog} onOpenChange={(open) => {
         setShowCarDialog(open);
         if (!open) setSelectedCar(undefined);
@@ -521,6 +514,22 @@ export default function ClientDashboard() {
               setSelectedCar(undefined);
             }}
             initialData={selectedCar}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Creează o nouă cerere</DialogTitle>
+          </DialogHeader>
+          <RequestForm
+            onSubmit={handleRequestSubmit}
+            onCancel={() => setShowRequestDialog(false)}
+            onAddCar={(data) => {
+              setShowCarDialog(true);
+              setShowRequestDialog(false);
+            }}
           />
         </DialogContent>
       </Dialog>
