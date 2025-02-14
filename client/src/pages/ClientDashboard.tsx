@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { User, MessageCircle, FileText, Settings, Bell } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 
-// Mock data
+// Mock data for requests and offers
 const mockRequests = [
   { id: "REQ001", date: "2024-02-14", status: "În așteptare", description: "Schimb ulei și filtru" },
   { id: "REQ002", date: "2024-02-13", status: "Acceptat", description: "Verificare frâne" },
@@ -21,12 +23,12 @@ const mockOffers = [
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("requests");
-  const [userProfile] = useState({
-    email: auth.currentUser?.email,
-    name: "John Doe", // Mock name
-    phone: "0712 345 678", // Mock phone
-    createdAt: "14 Februarie 2024", // Mock creation date
-    role: "Client" // Mock role
+
+  // Fetch user data from the backend
+  const { data: userProfile, isLoading } = useQuery({
+    queryKey: ['/api/user'],
+    retry: false,
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {
@@ -51,6 +53,14 @@ export default function ClientDashboard() {
         return "text-gray-600 bg-gray-100";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -197,23 +207,33 @@ export default function ClientDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Nume Complet</p>
-                    <p className="mt-1 text-sm">{userProfile.name}</p>
+                    <p className="mt-1 text-sm">{userProfile?.name}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Email</p>
-                    <p className="mt-1 text-sm">{userProfile.email}</p>
+                    <p className="mt-1 text-sm">{userProfile?.email}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Telefon</p>
-                    <p className="mt-1 text-sm">{userProfile.phone}</p>
+                    <p className="mt-1 text-sm">{userProfile?.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Județ</p>
+                    <p className="mt-1 text-sm">{userProfile?.county}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Oraș</p>
+                    <p className="mt-1 text-sm">{userProfile?.city}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Tip Cont</p>
-                    <p className="mt-1 text-sm">{userProfile.role}</p>
+                    <p className="mt-1 text-sm capitalize">{userProfile?.role}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
-                    <p className="mt-1 text-sm">{userProfile.createdAt}</p>
+                    <p className="mt-1 text-sm">
+                      {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : ''}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col space-y-2">
