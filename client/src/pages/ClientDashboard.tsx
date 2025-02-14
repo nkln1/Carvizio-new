@@ -31,6 +31,7 @@ export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
+  const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,6 +89,84 @@ export default function ClientDashboard() {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to save car",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateCar = async (carData: CarType) => {
+    try {
+      if (!selectedCar) return;
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`/api/cars/${selectedCar.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(carData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update car');
+      }
+
+      toast({
+        title: "Success",
+        description: "Car updated successfully",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
+      setShowCarDialog(false);
+      setSelectedCar(undefined);
+    } catch (error) {
+      console.error('Error updating car:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update car",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  const handleDeleteCar = async (carId: string) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`/api/cars/${carId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete car');
+      }
+
+      toast({
+        title: "Success",
+        description: "Car deleted successfully",
+      });
+
+      // Invalidate and refetch cars
+      queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
+    } catch (error) {
+      console.error('Error deleting car:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete car",
         variant: "destructive",
       });
     }
@@ -259,52 +338,84 @@ export default function ClientDashboard() {
 
             {/* Car Section */}
             {activeTab === "car" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mașina mea</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {isLoadingCars ? (
-                      <div className="flex justify-center p-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
-                      </div>
-                    ) : userCars.length > 0 ? (
-                      userCars.map((car) => (
-                        <div key={car.id} className="p-4 bg-white rounded-lg border border-gray-200">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{car.brand} {car.model}</h3>
-                              <p className="text-sm text-gray-600">An: {car.year}</p>
-                              <p className="text-sm text-gray-600">
-                                Kilometraj: {car.mileage} km | {car.fuelType} | {car.transmission}
+              <div className="container mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Mașinile Mele</h2>
+                  <Button onClick={() => setShowCarDialog(true)}>
+                    <Car className="mr-2 h-4 w-4" />
+                    Adaugă mașină
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {isLoadingCars ? (
+                    <div className="col-span-full flex justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
+                    </div>
+                  ) : userCars.length > 0 ? (
+                    userCars.map((car) => (
+                      <Card key={car.id} className="flex flex-col">
+                        <CardHeader>
+                          <CardTitle>{car.brand} {car.model}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                          <div className="space-y-2">
+                            <p className="text-sm">
+                              <span className="font-medium">An:</span> {car.year}
+                            </p>
+                            <p className="text-sm">
+                              <span className="font-medium">Kilometraj:</span> {car.mileage} km
+                            </p>
+                            <p className="text-sm">
+                              <span className="font-medium">Combustibil:</span> {car.fuelType}
+                            </p>
+                            <p className="text-sm">
+                              <span className="font-medium">Transmisie:</span> {car.transmission}
+                            </p>
+                            {car.vin && (
+                              <p className="text-sm">
+                                <span className="font-medium">VIN:</span> {car.vin}
                               </p>
-                              {car.vin && (
-                                <p className="text-sm text-gray-500">VIN: {car.vin}</p>
-                              )}
-                            </div>
+                            )}
                           </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-4 bg-white rounded-lg border border-gray-200">
-                        <p className="text-gray-500">Nu aveți nicio mașină înregistrată.</p>
-                        <Button className="mt-4" onClick={() => setShowCarDialog(true)}>
-                          <Car className="mr-2 h-4 w-4" />
-                          Adaugă mașină
-                        </Button>
-                      </div>
-                    )}
-
-                    {userCars.length > 0 && (
-                      <Button onClick={() => setShowCarDialog(true)}>
-                        <Car className="mr-2 h-4 w-4" />
-                        Adaugă altă mașină
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                          <div className="flex justify-end gap-2 mt-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedCar(car);
+                                setShowCarDialog(true);
+                              }}
+                            >
+                              Editează
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteCar(car.id)}
+                            >
+                              Șterge
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="col-span-full">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <p className="text-center text-gray-500 mb-4">Nu aveți nicio mașină înregistrată.</p>
+                          <div className="flex justify-center">
+                            <Button onClick={() => setShowCarDialog(true)}>
+                              <Car className="mr-2 h-4 w-4" />
+                              Adaugă mașină
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Profile/Account Section */}
@@ -383,12 +494,25 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      <Dialog open={showCarDialog} onOpenChange={setShowCarDialog}>
+      {/* Car Dialog */}
+      <Dialog open={showCarDialog} onOpenChange={(open) => {
+        setShowCarDialog(open);
+        if (!open) setSelectedCar(undefined);
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adaugă mașină nouă</DialogTitle>
+            <DialogTitle>
+              {selectedCar ? "Editează mașina" : "Adaugă mașină nouă"}
+            </DialogTitle>
           </DialogHeader>
-          <CarForm onSubmit={handleCarSubmit} onCancel={() => setShowCarDialog(false)} />
+          <CarForm
+            onSubmit={selectedCar ? handleUpdateCar : handleCarSubmit}
+            onCancel={() => {
+              setShowCarDialog(false);
+              setSelectedCar(undefined);
+            }}
+            initialData={selectedCar}
+          />
         </DialogContent>
       </Dialog>
 

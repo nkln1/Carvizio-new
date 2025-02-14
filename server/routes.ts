@@ -257,6 +257,86 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add these new endpoints after the POST /api/cars endpoint
+  app.patch("/api/cars/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Car update attempt for ID:", req.params.id, "with data:", req.body);
+
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Fetch the car to verify ownership
+      const car = await storage.getCar(parseInt(req.params.id));
+      if (!car) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+
+      if (car.userId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to update this car" });
+      }
+
+      // Validate and parse request body
+      const carData = insertCarSchema.partial().parse(req.body);
+
+      // Update the car
+      const updatedCar = await storage.updateCar(parseInt(req.params.id), carData);
+      console.log("Successfully updated car:", updatedCar);
+
+      res.json(updatedCar);
+    } catch (error: any) {
+      console.error("Error updating car:", error);
+
+      if (error.errors) {
+        return res.status(400).json({
+          error: "Invalid car data",
+          details: error.errors
+        });
+      }
+
+      res.status(500).json({
+        error: "Failed to update car",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
+  app.delete("/api/cars/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Car deletion attempt for ID:", req.params.id);
+
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Fetch the car to verify ownership
+      const car = await storage.getCar(parseInt(req.params.id));
+      if (!car) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+
+      if (car.userId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to delete this car" });
+      }
+
+      // Delete the car
+      await storage.deleteCar(parseInt(req.params.id));
+      console.log("Successfully deleted car:", req.params.id);
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting car:", error);
+      res.status(500).json({
+        error: "Failed to delete car",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
