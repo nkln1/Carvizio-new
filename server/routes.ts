@@ -215,26 +215,44 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/cars", validateFirebaseToken, async (req, res) => {
     try {
+      console.log("Car creation attempt with data:", req.body);
+
       // Get the current user
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Validate request body using the insert schema
+      console.log("Found user:", { id: user.id, email: user.email });
+
+      // Validate and parse request body
       const carData = insertCarSchema.parse({
         ...req.body,
         userId: user.id
       });
 
+      console.log("Validated car data:", carData);
+
       // Create the car
       const car = await storage.createCar(carData);
+      console.log("Successfully created car:", car);
+
       res.status(201).json(car);
     } catch (error: any) {
       console.error("Error creating car:", error);
-      res.status(400).json({
-        error: "Invalid car data",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+
+      if (error.errors) {
+        // Zod validation error
+        return res.status(400).json({
+          error: "Invalid car data",
+          details: error.errors
+        });
+      }
+
+      res.status(500).json({
+        error: "Failed to save car",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });

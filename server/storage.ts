@@ -137,10 +137,12 @@ export class DatabaseStorage implements IStorage {
 
   async createCar(car: InsertCar): Promise<Car> {
     try {
+      console.log('Creating car with data:', car);
       const [newCar] = await db
         .insert(cars)
         .values(car)
         .returning();
+      console.log('Created car:', newCar);
       return newCar;
     } catch (error) {
       console.error('Error creating car:', error);
