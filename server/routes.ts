@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema } from "@shared/schema";
@@ -8,18 +8,27 @@ import { pool } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin with credentials
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+// Extend the Express Request type to include firebaseUser
+declare global {
+  namespace Express {
+    interface Request {
+      firebaseUser?: admin.auth.DecodedIdToken;
+    }
+  }
 }
 
 declare module "express-session" {
   interface SessionData {
     userId?: number;
   }
+}
+
+// Initialize Firebase Admin with credentials
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
 }
 
 export function registerRoutes(app: Express): Server {
@@ -41,7 +50,7 @@ export function registerRoutes(app: Express): Server {
   app.use(json());
 
   // Firebase Auth Middleware
-  const validateFirebaseToken = async (req: any, res: any, next: any) => {
+  const validateFirebaseToken = async (req: Request, res: any, next: any) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
@@ -71,7 +80,7 @@ export function registerRoutes(app: Express): Server {
       console.log("Attempting to create user...");
       const user = await storage.createUser({
         ...userInput,
-        firebaseUid: req.firebaseUser.uid
+        firebaseUid: req.firebaseUser!.uid
       });
       console.log("User created successfully:", { id: user.id, email: user.email });
 
@@ -100,7 +109,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
     try {
       // Find user by Firebase UID
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser.uid);
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
@@ -127,7 +136,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/auth/me", validateFirebaseToken, async (req, res) => {
     try {
       // Find user by Firebase UID
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser.uid);
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         return res.status(401).json({ error: "Not authenticated" });
       }

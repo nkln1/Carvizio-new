@@ -1,7 +1,9 @@
-import pkg from 'pg';
-const { Pool } = pkg;
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
 import * as schema from "@shared/schema";
+
+neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -9,21 +11,5 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create a new pool with the DATABASE_URL
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-});
-
-// Test database connection
-pool.connect()
-  .then(() => {
-    console.log('Successfully connected to PostgreSQL database');
-  })
-  .catch(err => {
-    console.error('Database connection error:', err.message);
-  });
-
-export const db = drizzle(pool, { schema });
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle({ client: pool, schema });
