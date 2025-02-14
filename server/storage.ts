@@ -21,6 +21,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser & { firebaseUid: string }): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User>;
   sessionStore: session.Store;
 }
 
@@ -78,6 +79,29 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          ...userData,
+          // Don't allow updating these fields
+          email: undefined,
+          password: undefined,
+          firebaseUid: undefined,
+          role: undefined,
+          verified: undefined,
+          createdAt: undefined,
+        })
+        .where(eq(users.id, id))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating user:', error);
       throw error;
     }
   }
