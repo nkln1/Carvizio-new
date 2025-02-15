@@ -218,7 +218,7 @@ export class DatabaseStorage implements IStorage {
           carId: request.carId,
           title: request.title,
           description: request.description,
-          preferredDate: request.preferredDate,
+          preferredDate: new Date(request.preferredDate),
           county: request.county,
           cities: request.cities,
           status: "În așteptare",
