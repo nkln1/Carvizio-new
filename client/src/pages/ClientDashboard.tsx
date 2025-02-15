@@ -36,6 +36,7 @@ export default function ClientDashboard() {
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
+  const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const { toast } = useToast();
   const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
@@ -88,6 +89,8 @@ export default function ClientDashboard() {
         throw new Error(errorData.message || 'Failed to save car');
       }
 
+      const newCar = await response.json();
+
       toast({
         title: "Success",
         description: "Car added successfully",
@@ -95,8 +98,10 @@ export default function ClientDashboard() {
 
       queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
       setShowCarDialog(false);
-      if (showRequestDialog) {
+
+      if (pendingRequestData) {
         setShowRequestDialog(true);
+        setPendingRequestData(null);
       }
     } catch (error) {
       console.error('Error saving car:', error);
@@ -305,7 +310,12 @@ export default function ClientDashboard() {
 
       <Dialog open={showCarDialog} onOpenChange={(open) => {
         setShowCarDialog(open);
-        if (!open) setSelectedCar(undefined);
+        if (!open) {
+          setSelectedCar(undefined);
+          if (pendingRequestData) {
+            setShowRequestDialog(true);
+          }
+        }
       }}>
         <DialogContent>
           <DialogHeader>
@@ -318,6 +328,9 @@ export default function ClientDashboard() {
             onCancel={() => {
               setShowCarDialog(false);
               setSelectedCar(undefined);
+              if (pendingRequestData) {
+                setShowRequestDialog(true);
+              }
             }}
             initialData={selectedCar}
           />
@@ -334,11 +347,16 @@ export default function ClientDashboard() {
           </DialogHeader>
           <RequestForm
             onSubmit={handleRequestSubmit}
-            onCancel={() => setShowRequestDialog(false)}
+            onCancel={() => {
+              setShowRequestDialog(false);
+              setPendingRequestData(null);
+            }}
             onAddCar={(data) => {
+              setPendingRequestData(data);
               setShowCarDialog(true);
               setShowRequestDialog(false);
             }}
+            initialData={pendingRequestData}
           />
         </DialogContent>
       </Dialog>
