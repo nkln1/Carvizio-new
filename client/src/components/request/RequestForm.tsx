@@ -92,6 +92,7 @@ export function RequestForm({
     queryKey: ['/api/cars'],
   });
 
+  // Initialize form with initial data
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -104,13 +105,28 @@ export function RequestForm({
     },
   });
 
+  // Load cities when county changes or form is initialized with a county
+  useEffect(() => {
+    if (selectedCounty) {
+      const citiesForCounty = getCitiesForCounty(selectedCounty);
+      setAvailableCities(citiesForCounty);
+      // Only reset cities if there's no initial data or if county changed
+      if (!initialData?.cities || initialData.county !== selectedCounty) {
+        form.setValue("cities", []);
+      }
+    }
+  }, [selectedCounty, form, initialData]);
+
   // Watch for car selection changes
   useEffect(() => {
     const selectedCarId = form.watch("carId");
     if (selectedCarId) {
       const selectedCar = userCars.find(car => car.id === parseInt(selectedCarId));
       if (selectedCar) {
-        const carDetails = `
+        const existingDescription = form.getValues("description");
+        // Only update description if it's empty or doesn't contain car details
+        if (!existingDescription || !existingDescription.includes("Detalii mașină:")) {
+          const carDetails = `
 Detalii mașină:
 - Marca: ${selectedCar.brand}
 - Model: ${selectedCar.model}
@@ -123,18 +139,11 @@ ${selectedCar.vin ? `- Serie șasiu (VIN): ${selectedCar.vin}` : ''}
 Descriere cerere:
 ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
 
-        form.setValue("description", carDetails.trim(), { shouldDirty: true });
+          form.setValue("description", carDetails.trim(), { shouldDirty: true });
+        }
       }
     }
   }, [form.watch("carId"), userCars]);
-
-  useEffect(() => {
-    if (selectedCounty) {
-      const citiesForCounty = getCitiesForCounty(selectedCounty);
-      setAvailableCities(citiesForCounty);
-      form.setValue("cities", []);
-    }
-  }, [selectedCounty, form]);
 
   return (
     <Form {...form}>
@@ -241,7 +250,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedCounty(value);
-                      form.setValue("cities", []);
+                      // Only reset cities if there's no initial data
+                      if (!initialData?.cities) {
+                        form.setValue("cities", []);
+                      }
                     }}
                     value={field.value}
                   >
