@@ -188,6 +188,8 @@ export default function ClientDashboard() {
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   // Update the createRequestMutation
@@ -220,7 +222,20 @@ export default function ClientDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      toast({
+        title: "Success",
+        description: "Cererea a fost trimisă cu succes!",
+      });
+      setShowRequestDialog(false);
     },
+    onError: (error) => {
+      console.error('Error creating request:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleRequestSubmit = async (data: any) => {
@@ -243,15 +258,6 @@ export default function ClientDashboard() {
       }
 
       await createRequestMutation.mutateAsync(requestData);
-
-      toast({
-        title: "Success",
-        description: "Cererea a fost trimisă cu succes!",
-      });
-
-      // Force a refetch of the requests
-      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
-      setShowRequestDialog(false);
     } catch (error) {
       console.error('Error submitting request:', error);
       toast({
