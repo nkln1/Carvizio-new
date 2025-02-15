@@ -174,18 +174,16 @@ export class DatabaseStorage implements IStorage {
 
   async getUserRequests(userId: number): Promise<Request[]> {
     try {
-      console.log('Fetching requests for user ID:', userId);
-      const requests = await db
+      const userRequests = await db
         .select()
         .from(requests)
         .where(eq(requests.userId, userId))
         .orderBy(desc(requests.createdAt));
-
-      console.log('Retrieved requests:', JSON.stringify(requests, null, 2));
-      return requests;
+      console.log('Retrieved requests for user', userId, ':', userRequests);
+      return userRequests;
     } catch (error) {
       console.error('Error in getUserRequests:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -203,12 +201,6 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Creating request with data:', JSON.stringify(request, null, 2));
 
-      // Validate request data
-      if (!request.userId || !request.carId || !request.title || !request.description ||
-          !request.preferredDate || !request.county || !request.cities) {
-        throw new Error('Missing required fields for request creation');
-      }
-
       // Ensure cities is an array
       const cities = Array.isArray(request.cities) ? request.cities : [request.cities];
 
@@ -216,7 +208,7 @@ export class DatabaseStorage implements IStorage {
         .insert(requests)
         .values({
           ...request,
-          cities: cities,
+          cities,
           status: "În așteptare",
           createdAt: new Date()
         })

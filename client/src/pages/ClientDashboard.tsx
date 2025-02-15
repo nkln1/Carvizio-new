@@ -183,19 +183,79 @@ export default function ClientDashboard() {
     }
   };
 
-  // Update the requests query and invalidation logic
+  const handleRequestSubmit = async (data: any) => {
+    try {
+      const requestData = {
+        userId: userProfile?.id,
+        carId: parseInt(data.carId),
+        title: data.title,
+        description: data.description,
+        preferredDate: new Date(data.preferredDate).toISOString(),
+        county: data.county,
+        cities: data.cities
+      };
+
+      console.log('Submitting request with data:', JSON.stringify(requestData, null, 2));
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create request' }));
+        throw new Error(errorData.message || 'Failed to create request');
+      }
+
+      const result = await response.json();
+      console.log('Server response:', result);
+
+      toast({
+        title: "Success",
+        description: "Cererea a fost trimisă cu succes!",
+      });
+
+      // Invalidate and refetch requests
+      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      setShowRequestDialog(false);
+
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update the requests query configuration
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
     staleTime: 0,
-    cacheTime: 0,
-    refetchInterval: 3000, // Refetch every 3 seconds
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchInterval: 5000,
     onError: (error) => {
       console.error('Error fetching requests:', error);
+      toast({
+        title: "Error",
+        description: "Nu s-au putut încărca cererile.",
+        variant: "destructive",
+      });
     },
   });
+
 
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -228,62 +288,6 @@ export default function ClientDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
     },
   });
-
-  const handleRequestSubmit = async (data: any) => {
-    try {
-      const requestData = {
-        userId: userProfile?.id,
-        carId: parseInt(data.carId),
-        title: data.title,
-        description: data.description,
-        preferredDate: new Date(data.preferredDate).toISOString(),
-        county: data.county,
-        cities: data.cities
-      };
-
-      console.log('Submitting request with data:', JSON.stringify(requestData, null, 2));
-
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch('/api/requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
-        throw new Error(`Failed to create request: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('Server response:', result);
-
-      toast({
-        title: "Success",
-        description: "Cererea a fost trimisă cu succes!",
-      });
-
-      // Invalidate and refetch
-      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
-      setShowRequestDialog(false);
-
-    } catch (error) {
-      console.error('Error submitting request:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
