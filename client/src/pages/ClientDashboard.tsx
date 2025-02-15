@@ -187,6 +187,9 @@ export default function ClientDashboard() {
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
+    staleTime: 0, // Disable cache to always fetch fresh data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   const createRequestMutation = useMutation({
@@ -383,7 +386,7 @@ export default function ClientDashboard() {
                                 Creat la: {new Date(request.createdAt).toLocaleDateString('ro-RO')}
                               </p>
                             </div>
-                            <Badge 
+                            <Badge
                               variant="secondary"
                               className={`${getStatusColor(request.status)}`}
                             >

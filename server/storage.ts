@@ -174,11 +174,14 @@ export class DatabaseStorage implements IStorage {
 
   async getUserRequests(userId: number): Promise<Request[]> {
     try {
-      return await db
+      console.log('Fetching requests for user:', userId);
+      const userRequests = await db
         .select()
         .from(requests)
         .where(eq(requests.userId, userId))
         .orderBy(desc(requests.createdAt));
+      console.log('Found requests:', userRequests);
+      return userRequests;
     } catch (error) {
       console.error('Error getting user requests:', error);
       return [];
