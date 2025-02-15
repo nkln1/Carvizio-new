@@ -236,11 +236,18 @@ export class DatabaseStorage implements IStorage {
 
   async updateRequest(id: number, requestData: Partial<Request>): Promise<Request> {
     try {
+      console.log('Updating request with ID:', id, 'and data:', requestData);
       const [updatedRequest] = await db
         .update(requests)
         .set(requestData)
         .where(eq(requests.id, id))
         .returning();
+
+      if (!updatedRequest) {
+        throw new Error('Request not found');
+      }
+
+      console.log('Updated request:', updatedRequest);
       return updatedRequest;
     } catch (error) {
       console.error('Error updating request:', error);

@@ -53,6 +53,7 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
         throw new Error('No authentication token available');
       }
 
+      // First update the database
       const response = await fetch(`/api/requests/${requestId}`, {
         method: 'PATCH',
         headers: {
@@ -67,7 +68,7 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
         throw new Error(errorData.message || 'Failed to cancel request');
       }
 
-      // Invalidate the requests query to trigger a refetch
+      // After successful database update, invalidate the cache to trigger a UI refresh
       await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
 
       toast({
