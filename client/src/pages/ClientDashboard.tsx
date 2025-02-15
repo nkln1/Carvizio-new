@@ -230,17 +230,41 @@ export default function ClientDashboard() {
         userId: userProfile?.id,
         carId: parseInt(data.carId),
         preferredDate: new Date(data.preferredDate).toISOString(),
-        cities: data.cities
+        cities: data.cities,
+        status: "În așteptare",
+        county: data.county,
+        title: data.title,
+        description: data.description
       };
 
       console.log('Submitting request with data:', requestData);
 
-      await createRequestMutation.mutateAsync(requestData);
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error('Failed to create request');
+      }
 
       toast({
         title: "Success",
         description: "Cererea a fost trimisă cu succes!",
       });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       setShowRequestDialog(false);
     } catch (error) {
       console.error('Error submitting request:', error);
