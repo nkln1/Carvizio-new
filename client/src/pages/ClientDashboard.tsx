@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { User, MessageCircle, FileText, Settings, Bell, Car, Plus, Clock } from "lucide-react";
@@ -206,21 +206,17 @@ export default function ClientDashboard() {
       });
 
       if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create request');
-        } else {
-          throw new Error('Server error: Failed to create request');
-        }
+        throw new Error('Failed to create request');
       }
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error('Invalid response from server');
-      }
+      const result = await response.text();
+      if (!result) return null;
 
-      return response.json();
+      try {
+        return JSON.parse(result);
+      } catch {
+        return null;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
@@ -234,7 +230,7 @@ export default function ClientDashboard() {
         userId: userProfile?.id,
         carId: parseInt(data.carId),
         preferredDate: new Date(data.preferredDate).toISOString(),
-        cities: data.cities // Ensure cities array is passed correctly
+        cities: data.cities
       };
 
       console.log('Submitting request with data:', requestData);
@@ -614,6 +610,9 @@ export default function ClientDashboard() {
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Creează o nouă cerere</DialogTitle>
+            <DialogDescription>
+              Completați formularul pentru a trimite o nouă cerere de service
+            </DialogDescription>
           </DialogHeader>
           <RequestForm
             onSubmit={handleRequestSubmit}
