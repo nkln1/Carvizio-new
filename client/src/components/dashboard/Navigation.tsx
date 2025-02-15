@@ -14,7 +14,7 @@ export function Navigation({ activeTab, setActiveTab, onCreateRequest }: Navigat
         <div className="flex items-center justify-between p-4">
           <div className="flex space-x-4">
             <Button
-              variant="ghost" className={`flex items-center gap-2 ${activeTab === "requests" ? "bg-[#0099d6] text-white hover:bg-[#0099d6]/90" : ""}`}
+              variant={activeTab === "requests" ? "default" : "ghost"}
               onClick={() => setActiveTab("requests")}
               className="flex items-center gap-2"
             >
@@ -22,7 +22,7 @@ export function Navigation({ activeTab, setActiveTab, onCreateRequest }: Navigat
               Cererile Mele
             </Button>
             <Button
-              variant="ghost" className={`flex items-center gap-2 ${activeTab === "offers" ? "bg-[#0099d6] text-white hover:bg-[#0099d6]/90" : ""}`}
+              variant={activeTab === "offers" ? "default" : "ghost"}
               onClick={() => setActiveTab("offers")}
               className="flex items-center gap-2"
             >
@@ -30,7 +30,7 @@ export function Navigation({ activeTab, setActiveTab, onCreateRequest }: Navigat
               Oferte primite
             </Button>
             <Button
-              variant="ghost" className={`flex items-center gap-2 ${activeTab === "messages" ? "bg-[#0099d6] text-white hover:bg-[#0099d6]/90" : ""}`}
+              variant={activeTab === "messages" ? "default" : "ghost"}
               onClick={() => setActiveTab("messages")}
               className="flex items-center gap-2"
             >
@@ -38,7 +38,7 @@ export function Navigation({ activeTab, setActiveTab, onCreateRequest }: Navigat
               Mesaje
             </Button>
             <Button
-              variant="ghost" className={`flex items-center gap-2 ${activeTab === "car" ? "bg-[#0099d6] text-white hover:bg-[#0099d6]/90" : ""}`}
+              variant={activeTab === "car" ? "default" : "ghost"}
               onClick={() => setActiveTab("car")}
               className="flex items-center gap-2"
             >
@@ -46,7 +46,7 @@ export function Navigation({ activeTab, setActiveTab, onCreateRequest }: Navigat
               Mașina mea
             </Button>
             <Button
-              variant="ghost" className={`flex items-center gap-2 ${activeTab === "profile" ? "bg-[#0099d6] text-white hover:bg-[#0099d6]/90" : ""}`}
+              variant={activeTab === "profile" ? "default" : "ghost"}
               onClick={() => setActiveTab("profile")}
               className="flex items-center gap-2"
             >
