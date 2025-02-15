@@ -110,18 +110,15 @@ export function RequestForm({
     if (selectedCarId) {
       const selectedCar = userCars.find(car => car.id === parseInt(selectedCarId));
       if (selectedCar) {
-        // Format car details
         const carDetails = `
 Detalii mașină:
 - Marca: ${selectedCar.brand}
 - Model: ${selectedCar.model}
 - An fabricație: ${selectedCar.year}
-${selectedCar.licensePlate ? `- Număr înmatriculare: ${selectedCar.licensePlate}` : ''}
 ${selectedCar.vin ? `- Serie șasiu (VIN): ${selectedCar.vin}` : ''}
-${selectedCar.engine ? `- Motor: ${selectedCar.engine}` : ''}
-${selectedCar.transmission ? `- Transmisie: ${selectedCar.transmission}` : ''}
-${selectedCar.fuelType ? `- Combustibil: ${selectedCar.fuelType}` : ''}
-${selectedCar.mileage ? `- Kilometraj: ${selectedCar.mileage} km` : ''}
+- Motor: ${selectedCar.fuelType}
+- Transmisie: ${selectedCar.transmission}
+- Kilometraj: ${selectedCar.mileage} km
 
 Descriere cerere:
 ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
@@ -149,9 +146,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Titlu cerere</FormLabel>
+                  <FormLabel htmlFor="title">Titlu cerere</FormLabel>
                   <FormControl>
                     <Input
+                      id="title"
                       placeholder="ex: Revizie anuală la 30.000 km"
                       {...field}
                     />
@@ -166,14 +164,14 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="carId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Selectare mașină</FormLabel>
+                  <FormLabel htmlFor="carId">Selectare mașină</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                       >
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger id="carId" className="w-full">
                           <SelectValue placeholder="Selectează mașina" />
                         </SelectTrigger>
                         <SelectContent>
@@ -205,9 +203,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descriere cerere</FormLabel>
+                  <FormLabel htmlFor="description">Descriere cerere</FormLabel>
                   <FormControl>
                     <Textarea
+                      id="description"
                       placeholder="ex: Doresc oferta de preț revizie anuală la 30.000 km pentru o MAZDA CX5 din 2020."
                       className="min-h-[100px]"
                       {...field}
@@ -223,9 +222,9 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="preferredDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data preferată</FormLabel>
+                  <FormLabel htmlFor="preferredDate">Data preferată</FormLabel>
                   <FormControl>
-                    <Input type="date" min={formattedToday} {...field} />
+                    <Input id="preferredDate" type="date" min={formattedToday} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -237,7 +236,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Județ</FormLabel>
+                  <FormLabel htmlFor="county">Județ</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -247,7 +246,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger id="county">
                         <SelectValue placeholder="Selectează județul" />
                       </SelectTrigger>
                     </FormControl>
@@ -274,16 +273,13 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     {availableCities.map((city) => (
                       <div key={city} className="flex items-center space-x-2">
                         <Checkbox
+                          id={`city-${city}`}
                           checked={form.watch("cities")?.includes(city)}
                           onCheckedChange={(checked) => {
-                            const currentCities =
-                              form.getValues("cities") || [];
+                            const currentCities = form.getValues("cities") || [];
                             if (checked) {
                               if (currentCities.length < 2) {
-                                form.setValue("cities", [
-                                  ...currentCities,
-                                  city,
-                                ]);
+                                form.setValue("cities", [...currentCities, city]);
                               }
                             } else {
                               form.setValue(
@@ -297,7 +293,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                             (form.watch("cities")?.length || 0) >= 2
                           }
                         />
-                        <label className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        <label 
+                          htmlFor={`city-${city}`}
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
                           {city}
                         </label>
                       </div>
