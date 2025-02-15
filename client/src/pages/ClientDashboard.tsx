@@ -212,18 +212,11 @@ export default function ClientDashboard() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Failed to create request');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create request');
       }
 
-      const result = await response.text();
-      if (!result) return null;
-
-      try {
-        return JSON.parse(result);
-      } catch {
-        return null;
-      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
@@ -232,8 +225,10 @@ export default function ClientDashboard() {
         description: "Cererea a fost trimisă cu succes!",
       });
       setShowRequestDialog(false);
+      setPendingRequestData(null);
     },
     onError: (error) => {
+      console.error('Error creating request:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
@@ -252,8 +247,10 @@ export default function ClientDashboard() {
         preferredDate: new Date(data.preferredDate).toISOString(),
         county: data.county,
         cities: data.cities,
+        status: "În așteptare"
       };
 
+      console.log('Submitting request with data:', requestData);
       await createRequestMutation.mutateAsync(requestData);
     } catch (error) {
       console.error('Error submitting request:', error);
