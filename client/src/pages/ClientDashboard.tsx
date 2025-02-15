@@ -198,6 +198,8 @@ export default function ClientDashboard() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      console.log('Sending request data:', JSON.stringify(data, null, 2));
+
       const response = await fetch('/api/requests', {
         method: 'POST',
         headers: {
@@ -208,10 +210,14 @@ export default function ClientDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create request');
+        const errorData = await response.json().catch(() => null);
+        console.error('Server error response:', errorData);
+        throw new Error(errorData?.message || 'Failed to create request');
       }
 
       const result = await response.text();
+      console.log('Server response:', result);
+
       if (!result) return null;
 
       try {
@@ -248,10 +254,9 @@ export default function ClientDashboard() {
         preferredDate: new Date(data.preferredDate).toISOString(),
         county: data.county,
         cities: data.cities,
-        status: "În așteptare"
       };
 
-      console.log('Submitting request with data:', requestData);
+      console.log('Submitting request with data:', JSON.stringify(requestData, null, 2));
 
       if (!requestData.userId || !requestData.carId) {
         throw new Error('Missing required fields: userId or carId');

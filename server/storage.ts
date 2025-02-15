@@ -205,18 +205,29 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Creating request with data:', JSON.stringify(request, null, 2));
 
-      // Ensure all required fields are present
+      // Validate required fields
       if (!request.userId || !request.carId) {
         throw new Error('Missing required fields: userId or carId');
       }
 
+      // Ensure all fields are in the correct format
+      const requestToInsert = {
+        user_id: request.userId,
+        car_id: request.carId,
+        title: request.title,
+        description: request.description,
+        preferred_date: request.preferredDate,
+        county: request.county,
+        cities: request.cities,
+        status: "În așteptare",
+        created_at: new Date(),
+      };
+
+      console.log('Formatted request for insertion:', JSON.stringify(requestToInsert, null, 2));
+
       const [newRequest] = await db
         .insert(requests)
-        .values({
-          ...request,
-          status: "În așteptare",
-          createdAt: new Date(),
-        })
+        .values(requestToInsert)
         .returning();
 
       console.log('Created request in database:', JSON.stringify(newRequest, null, 2));
