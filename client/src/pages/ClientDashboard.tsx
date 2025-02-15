@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { User, MessageCircle, FileText, Settings, Bell, Car, Plus, Clock } from "lucide-react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { User, MessageCircle, FileText, Settings, Bell, Car, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
@@ -183,24 +183,22 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleRequestSubmit = async (data: any) => {
+  const handleRequestSubmit = async (formData: any) => {
     try {
-      const requestData = {
-        userId: userProfile?.id,
-        carId: parseInt(data.carId),
-        title: data.title,
-        description: data.description,
-        preferredDate: new Date(data.preferredDate).toISOString(),
-        county: data.county,
-        cities: data.cities
-      };
-
-      console.log('Submitting request with data:', JSON.stringify(requestData, null, 2));
-
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
         throw new Error('No authentication token available');
       }
+
+      const requestData = {
+        userId: userProfile?.id,
+        carId: Number(formData.carId),
+        title: formData.title,
+        description: formData.description,
+        preferredDate: new Date(formData.preferredDate).toISOString(),
+        county: formData.county,
+        cities: Array.isArray(formData.cities) ? formData.cities : [formData.cities]
+      };
 
       const response = await fetch('/api/requests', {
         method: 'POST',
@@ -208,16 +206,13 @@ export default function ClientDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify(requestData)
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to create request' }));
-        throw new Error(errorData.message || 'Failed to create request');
+        const error = await response.text();
+        throw new Error(error || 'Failed to create request');
       }
-
-      const result = await response.json();
-      console.log('Server response:', result);
 
       toast({
         title: "Success",
@@ -236,56 +231,15 @@ export default function ClientDashboard() {
     }
   };
 
-  // Update the requests query configuration
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000,
-    onError: (error) => {
-      console.error('Error fetching requests:', error);
-      toast({
-        title: "Error",
-        description: "Nu s-au putut încărca cererile.",
-        variant: "destructive",
-      });
-    },
+    refetchInterval: 5000
   });
 
-
-  const createRequestMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create request');
-      }
-
-      const result = await response.text();
-      if (!result) return null;
-
-      try {
-        return JSON.parse(result);
-      } catch {
-        return null;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
-    },
-  });
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

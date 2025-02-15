@@ -146,7 +146,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Titlu cerere</FormLabel>
+                  <FormLabel htmlFor="request-title">Titlu cerere</FormLabel>
                   <FormControl>
                     <Input
                       id="request-title"
@@ -164,7 +164,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="carId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Selectare mașină</FormLabel>
+                  <FormLabel htmlFor="car-select">Selectare mașină</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Select
@@ -203,7 +203,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descriere cerere</FormLabel>
+                  <FormLabel htmlFor="request-description">Descriere cerere</FormLabel>
                   <FormControl>
                     <Textarea
                       id="request-description"
@@ -222,7 +222,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="preferredDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data preferată</FormLabel>
+                  <FormLabel htmlFor="preferred-date">Data preferată</FormLabel>
                   <FormControl>
                     <Input id="preferred-date" type="date" min={formattedToday} {...field} />
                   </FormControl>
@@ -236,7 +236,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Județ</FormLabel>
+                  <FormLabel htmlFor="county-select">Județ</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -245,11 +245,6 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     }}
                     value={field.value}
                   >
-                    <FormControl>
-                      <SelectTrigger id="county-select">
-                        <SelectValue placeholder="Selectează județul" />
-                      </SelectTrigger>
-                    </FormControl>
                     <SelectContent>
                       {romanianCounties.map((county) => (
                         <SelectItem key={county} value={county}>
@@ -266,7 +261,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
             <FormField
               control={form.control}
               name="cities"
-              render={() => (
+              render={({field}) => (
                 <FormItem>
                   <FormLabel>Localități (selectați maxim 2)</FormLabel>
                   <div className="space-y-2">
