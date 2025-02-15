@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import type { Request as RequestType } from "@shared/schema";
 
 interface RequestsTabProps {
@@ -58,13 +59,13 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
         throw new Error('Failed to cancel request');
       }
 
+      // Invalidate the requests query to trigger a refetch
+      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+
       toast({
         title: "Success",
         description: "Cererea a fost anulată cu succes.",
       });
-
-      // Refresh the requests list
-      window.location.reload();
     } catch (error) {
       console.error('Error canceling request:', error);
       toast({
