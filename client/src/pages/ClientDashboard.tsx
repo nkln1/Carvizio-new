@@ -33,7 +33,6 @@ export default function ClientDashboard() {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const { toast } = useToast();
-  const [requests, setRequests] = useState<RequestType[]>([]);
   const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
   useEffect(() => {
@@ -184,13 +183,12 @@ export default function ClientDashboard() {
     }
   };
 
-  // Fetch requests
+  // Update the requests query and invalidation logic
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
   });
 
-  // Update the createRequestMutation
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
@@ -367,7 +365,7 @@ export default function ClientDashboard() {
                     <div className="flex justify-center p-4">
                       <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
                     </div>
-                  ) : userRequests.length > 0 ? (
+                  ) : userRequests && userRequests.length > 0 ? (
                     <div className="space-y-4">
                       {userRequests.map((request) => (
                         <div
@@ -376,19 +374,21 @@ export default function ClientDashboard() {
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-medium">#{request.id}</p>
+                              <h3 className="font-medium text-lg">{request.title}</h3>
                               <p className="text-sm text-gray-600">{request.description}</p>
+                              <p className="text-sm text-gray-500 mt-2">
+                                Data preferată: {new Date(request.preferredDate).toLocaleDateString('ro-RO')}
+                              </p>
                               <p className="text-sm text-gray-500">
-                                {new Date(request.createdAt).toLocaleDateString('ro-RO')}
+                                Creat la: {new Date(request.createdAt).toLocaleDateString('ro-RO')}
                               </p>
                             </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
-                                request.status
-                              )}`}
+                            <Badge 
+                              variant="secondary"
+                              className={`${getStatusColor(request.status)}`}
                             >
                               {request.status}
-                            </span>
+                            </Badge>
                           </div>
                         </div>
                       ))}
