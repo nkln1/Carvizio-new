@@ -203,16 +203,23 @@ export class DatabaseStorage implements IStorage {
 
   async createRequest(request: InsertRequest): Promise<Request> {
     try {
-      console.log('Creating request with data:', request);
+      console.log('Creating request with data:', JSON.stringify(request, null, 2));
+
+      // Ensure all required fields are present
+      if (!request.userId || !request.carId) {
+        throw new Error('Missing required fields: userId or carId');
+      }
+
       const [newRequest] = await db
         .insert(requests)
         .values({
           ...request,
           status: "În așteptare",
-          createdAt: new Date()
+          createdAt: new Date(),
         })
         .returning();
-      console.log('Created request:', newRequest);
+
+      console.log('Created request in database:', JSON.stringify(newRequest, null, 2));
       return newRequest;
     } catch (error) {
       console.error('Error creating request:', error);

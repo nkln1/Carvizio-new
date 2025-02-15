@@ -226,18 +226,22 @@ export default function ClientDashboard() {
   const handleRequestSubmit = async (data: any) => {
     try {
       const requestData = {
-        ...data,
         userId: userProfile?.id,
         carId: parseInt(data.carId),
-        preferredDate: new Date(data.preferredDate).toISOString(),
-        cities: data.cities,
-        status: "În așteptare",
-        county: data.county,
         title: data.title,
-        description: data.description
+        description: data.description,
+        preferredDate: new Date(data.preferredDate).toISOString(),
+        county: data.county,
+        cities: data.cities,
+        status: "În așteptare"
       };
 
       console.log('Submitting request with data:', requestData);
+
+      if (!requestData.userId || !requestData.carId) {
+        throw new Error('Missing required fields: userId or carId');
+      }
+
       await createRequestMutation.mutateAsync(requestData);
 
       toast({
@@ -245,6 +249,8 @@ export default function ClientDashboard() {
         description: "Cererea a fost trimisă cu succes!",
       });
 
+      // Force a refetch of the requests
+      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       setShowRequestDialog(false);
     } catch (error) {
       console.error('Error submitting request:', error);
