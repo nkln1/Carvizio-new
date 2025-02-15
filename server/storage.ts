@@ -174,17 +174,18 @@ export class DatabaseStorage implements IStorage {
 
   async getUserRequests(userId: number): Promise<Request[]> {
     try {
-      console.log('Fetching requests for user:', userId);
-      const userRequests = await db
+      console.log('Fetching requests for user ID:', userId);
+      const requests = await db
         .select()
         .from(requests)
         .where(eq(requests.userId, userId))
         .orderBy(desc(requests.createdAt));
-      console.log('Found requests:', userRequests);
-      return userRequests;
+
+      console.log('Retrieved requests:', JSON.stringify(requests, null, 2));
+      return requests;
     } catch (error) {
-      console.error('Error getting user requests:', error);
-      return [];
+      console.error('Error in getUserRequests:', error);
+      throw error;
     }
   }
 
@@ -202,9 +203,9 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Creating request with data:', JSON.stringify(request, null, 2));
 
-      // Validate that required fields are present
+      // Validate request data
       if (!request.userId || !request.carId || !request.title || !request.description ||
-        !request.preferredDate || !request.county || !request.cities) {
+          !request.preferredDate || !request.county || !request.cities) {
         throw new Error('Missing required fields for request creation');
       }
 
@@ -224,7 +225,7 @@ export class DatabaseStorage implements IStorage {
       console.log('Successfully created request:', JSON.stringify(newRequest, null, 2));
       return newRequest;
     } catch (error) {
-      console.error('Error creating request:', error);
+      console.error('Error in createRequest:', error);
       if (error instanceof Error) {
         console.error('Error details:', error.message);
         console.error('Error stack:', error.stack);

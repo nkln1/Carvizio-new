@@ -187,9 +187,14 @@ export default function ClientDashboard() {
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
-    staleTime: 0, // Disable cache to always fetch fresh data
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
+    staleTime: 0,
+    cacheTime: 0,
+    refetchInterval: 3000, // Refetch every 3 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    onError: (error) => {
+      console.error('Error fetching requests:', error);
+    },
   });
 
   const createRequestMutation = useMutation({
@@ -252,32 +257,21 @@ export default function ClientDashboard() {
         body: JSON.stringify(requestData),
       });
 
-      const responseText = await response.text();
-      console.log('Server response text:', responseText);
-
       if (!response.ok) {
-        console.error('Server error response:', responseText);
-        throw new Error(`Failed to create request: ${responseText}`);
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
+        throw new Error(`Failed to create request: ${errorText}`);
       }
 
-      // Only try to parse if we have content
-      let result;
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText);
-          console.log('Parsed response:', result);
-        } catch (err) {
-          console.error('Error parsing response:', err);
-          // Don't throw here, we succeeded in creating the request
-        }
-      }
+      const result = await response.json();
+      console.log('Server response:', result);
 
       toast({
         title: "Success",
         description: "Cererea a fost trimisă cu succes!",
       });
 
-      // Force a refetch of the requests
+      // Invalidate and refetch
       await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       setShowRequestDialog(false);
 
