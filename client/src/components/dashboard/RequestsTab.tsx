@@ -31,6 +31,7 @@ import {
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
 
 interface RequestsTabProps {
@@ -47,16 +48,23 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
 
   const handleDelete = async (requestId: number) => {
     try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
       const response = await fetch(`/api/requests/${requestId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status: 'Anulat' })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to cancel request');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to cancel request');
       }
 
       // Invalidate the requests query to trigger a refetch
