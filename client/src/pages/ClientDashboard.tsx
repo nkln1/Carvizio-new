@@ -18,6 +18,8 @@ import { CarsTab } from "@/components/dashboard/CarsTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
+import { MessagesTab } from "@/components/dashboard/MessagesTab";
+import { ProfileTab } from "@/components/dashboard/ProfileTab";
 
 interface ServiceOffer {
   id: number;
@@ -31,7 +33,6 @@ interface ServiceOffer {
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
-  const [isEditing, setIsEditing] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
@@ -66,7 +67,6 @@ export default function ClientDashboard() {
     staleTime: 0,
   });
 
-  // Handlers for car operations
   const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
     try {
       const token = await auth.currentUser?.getIdToken();
@@ -181,7 +181,6 @@ export default function ClientDashboard() {
     }
   };
 
-  // Request creation mutation
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
@@ -252,7 +251,7 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navigation 
+      <Navigation
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onCreateRequest={() => setShowRequestDialog(true)}
@@ -278,14 +277,7 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "messages" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mesaje</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-500">Nu există mesaje noi.</p>
-                </CardContent>
-              </Card>
+              <MessagesTab />
             )}
 
             {activeTab === "car" && (
@@ -301,76 +293,8 @@ export default function ClientDashboard() {
               />
             )}
 
-            {activeTab === "profile" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informații Cont</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6">
-                    {userProfile ? (
-                      <>
-                        {isEditing ? (
-                          <EditProfile
-                            user={userProfile}
-                            onCancel={() => setIsEditing(false)}
-                          />
-                        ) : (
-                          <>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Nume Complet</p>
-                                <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Email</p>
-                                <p className="mt-1 text-sm">{userProfile.email}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Telefon</p>
-                                <p className="mt-1 text-sm">{userProfile.phone || 'Nu este specificat'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Județ</p>
-                                <p className="mt-1 text-sm">{userProfile.county || 'Nu este specificat'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Oraș</p>
-                                <p className="mt-1 text-sm">{userProfile.city || 'Nu este specificat'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Tip Cont</p>
-                                <p className="mt-1 text-sm capitalize">{userProfile.role || 'Nu este specificat'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
-                                <p className="mt-1 text-sm">
-                                  {userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : 'Nu este specificat'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex flex-col space-y-2">
-                              <Button
-                                variant="outline"
-                                className="w-full sm:w-auto"
-                                onClick={() => setIsEditing(true)}
-                              >
-                                <Settings className="mr-2 h-4 w-4" />
-                                Editează Profilul
-                              </Button>
-                              <Button variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700">
-                                Schimbă Parola
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-gray-500">Se încarcă informațiile contului...</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+            {activeTab === "profile" && userProfile && (
+              <ProfileTab userProfile={userProfile} />
             )}
           </>
         )}
