@@ -104,7 +104,6 @@ export function RequestForm({
     },
   });
 
-  // Watch for car selection changes
   useEffect(() => {
     const selectedCarId = form.watch("carId");
     if (selectedCarId) {
@@ -123,7 +122,7 @@ ${selectedCar.vin ? `- Serie șasiu (VIN): ${selectedCar.vin}` : ''}
 Descriere cerere:
 ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
 
-        form.setValue("description", carDetails.trim(), { shouldDirty: true });
+        form.setValue("description", carDetails.trim());
       }
     }
   }, [form.watch("carId"), userCars]);
@@ -237,22 +236,27 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               render={({ field }) => (
                 <FormItem>
                   <FormLabel htmlFor="county-select">Județ</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedCounty(value);
-                      form.setValue("cities", []);
-                    }}
-                    value={field.value}
-                  >
-                    <SelectContent>
-                      {romanianCounties.map((county) => (
-                        <SelectItem key={county} value={county}>
-                          {county}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedCounty(value);
+                        form.setValue("cities", []);
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger id="county-select">
+                        <SelectValue placeholder="Selectează județul" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {romanianCounties.map((county) => (
+                          <SelectItem key={county} value={county}>
+                            {county}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
