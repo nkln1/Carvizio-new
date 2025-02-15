@@ -259,6 +259,9 @@ export default function ClientDashboard() {
         throw new Error('Failed to create request');
       }
 
+      const result = await response.text();
+      console.log('Server response:', result);
+
       toast({
         title: "Success",
         description: "Cererea a fost trimisă cu succes!",

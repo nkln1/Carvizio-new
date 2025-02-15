@@ -203,10 +203,16 @@ export class DatabaseStorage implements IStorage {
 
   async createRequest(request: InsertRequest): Promise<Request> {
     try {
+      console.log('Creating request with data:', request);
       const [newRequest] = await db
         .insert(requests)
-        .values(request)
+        .values({
+          ...request,
+          status: "În așteptare",
+          createdAt: new Date()
+        })
         .returning();
+      console.log('Created request:', newRequest);
       return newRequest;
     } catch (error) {
       console.error('Error creating request:', error);
