@@ -398,6 +398,38 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add PATCH endpoint for request status update
+  app.patch("/api/requests/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Request status update attempt for ID:", req.params.id, "with data:", req.body);
+
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Validate status value
+      if (!["Active", "Rezolvat", "Anulat"].includes(req.body.status)) {
+        return res.status(400).json({ error: "Invalid status value" });
+      }
+
+      // Update the request status
+      const updatedRequest = await storage.updateRequest(parseInt(req.params.id), {
+        status: req.body.status
+      });
+
+      console.log("Successfully updated request:", updatedRequest);
+      res.json(updatedRequest);
+    } catch (error: any) {
+      console.error("Error updating request status:", error);
+      res.status(500).json({
+        error: "Failed to update request status",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
