@@ -49,7 +49,7 @@ export function MyRequests({
           </TabsList>
           <TabsContent value="active">
             <RequestsTable
-              requests={requests.filter((req) => req.status === "În așteptare")}
+              requests={requests.filter((req) => req.status === "Active")}
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
@@ -57,7 +57,7 @@ export function MyRequests({
           </TabsContent>
           <TabsContent value="solved">
             <RequestsTable
-              requests={requests.filter((req) => req.status === "Finalizat")}
+              requests={requests.filter((req) => req.status === "Rezolvat")}
               cars={cars}
               onDelete={onDelete}
               refreshRequests={refreshRequests}
