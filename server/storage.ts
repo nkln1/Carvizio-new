@@ -221,7 +221,7 @@ export class DatabaseStorage implements IStorage {
           preferredDate: new Date(request.preferredDate),
           county: request.county,
           cities: request.cities,
-          status: "În așteptare",
+          status: "Active",
           createdAt: new Date(),
         })
         .returning();

@@ -123,8 +123,8 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                 <TableBody>
                   {requests
                     .filter((req) => {
-                      if (tab === "active") return req.status === "În așteptare";
-                      if (tab === "solved") return req.status === "Finalizat";
+                      if (tab === "active") return req.status === "Active";
+                      if (tab === "solved") return req.status === "Rezolvat";
                       if (tab === "canceled") return req.status === "Anulat";
                       return false;
                     })
@@ -148,9 +148,9 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                         <TableCell>
                           <span
                             className={`px-2 py-1 rounded-full text-sm ${
-                              request.status === "În așteptare"
+                              request.status === "Active"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : request.status === "Finalizat"
+                                : request.status === "Rezolvat"
                                   ? "bg-green-100 text-green-800"
                                   : "bg-red-100 text-red-800"
                             }`}
@@ -191,8 +191,8 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                       </TableRow>
                     ))}
                   {requests.filter((req) => {
-                    if (tab === "active") return req.status === "În așteptare";
-                    if (tab === "solved") return req.status === "Finalizat";
+                    if (tab === "active") return req.status === "Active";
+                    if (tab === "solved") return req.status === "Rezolvat";
                     if (tab === "canceled") return req.status === "Anulat";
                     return false;
                   }).length === 0 && (
@@ -277,9 +277,9 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                 </h3>
                 <span
                   className={`px-2 py-1 rounded-full text-sm ${
-                    selectedRequest.status === "În așteptare"
+                    selectedRequest.status === "Active"
                       ? "bg-yellow-100 text-yellow-800"
-                      : selectedRequest.status === "Finalizat"
+                      : selectedRequest.status === "Rezolvat"
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                   }`}
