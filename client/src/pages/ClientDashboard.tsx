@@ -95,6 +95,9 @@ export default function ClientDashboard() {
 
       queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
       setShowCarDialog(false);
+      if (showRequestDialog) {
+        setShowRequestDialog(true);
+      }
     } catch (error) {
       console.error('Error saving car:', error);
       toast({
