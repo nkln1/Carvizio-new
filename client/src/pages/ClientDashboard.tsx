@@ -96,12 +96,20 @@ export default function ClientDashboard() {
         description: "Car added successfully",
       });
 
+      // Update the pendingRequestData with the new car ID
+      if (pendingRequestData) {
+        setPendingRequestData({
+          ...pendingRequestData,
+          carId: newCar.id.toString()
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
       setShowCarDialog(false);
 
+      // Always reopen the request dialog with the preserved data
       if (pendingRequestData) {
         setShowRequestDialog(true);
-        setPendingRequestData(null);
       }
     } catch (error) {
       console.error('Error saving car:', error);
@@ -312,8 +320,11 @@ export default function ClientDashboard() {
         setShowCarDialog(open);
         if (!open) {
           setSelectedCar(undefined);
+          // Reopen request dialog with preserved data
           if (pendingRequestData) {
-            setShowRequestDialog(true);
+            setTimeout(() => {
+              setShowRequestDialog(true);
+            }, 100);
           }
         }
       }}>
@@ -328,8 +339,11 @@ export default function ClientDashboard() {
             onCancel={() => {
               setShowCarDialog(false);
               setSelectedCar(undefined);
+              // Reopen request dialog with preserved data
               if (pendingRequestData) {
-                setShowRequestDialog(true);
+                setTimeout(() => {
+                  setShowRequestDialog(true);
+                }, 100);
               }
             }}
             initialData={selectedCar}
@@ -352,9 +366,17 @@ export default function ClientDashboard() {
               setPendingRequestData(null);
             }}
             onAddCar={(data) => {
-              setPendingRequestData(data);
-              setShowCarDialog(true);
+              // Store ALL form data before switching to car dialog
+              setPendingRequestData({
+                title: data.title,
+                description: data.description,
+                preferredDate: data.preferredDate,
+                county: data.county,
+                cities: data.cities,
+                carId: data.carId
+              });
               setShowRequestDialog(false);
+              setShowCarDialog(true);
             }}
             initialData={pendingRequestData}
           />
