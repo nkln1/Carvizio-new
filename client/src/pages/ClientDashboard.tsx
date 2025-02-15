@@ -228,12 +228,11 @@ export default function ClientDashboard() {
       const requestData = {
         userId: userProfile?.id,
         carId: parseInt(data.carId),
-        preferredDate: new Date(data.preferredDate).toISOString(),
-        cities: data.cities,
-        status: "În așteptare",
-        county: data.county,
         title: data.title,
-        description: data.description
+        description: data.description,
+        preferredDate: new Date(data.preferredDate).toISOString(),
+        county: data.county,
+        cities: data.cities
       };
 
       console.log('Submitting request with data:', JSON.stringify(requestData, null, 2));
@@ -260,13 +259,16 @@ export default function ClientDashboard() {
         throw new Error(`Failed to create request: ${responseText}`);
       }
 
+      // Only try to parse if we have content
       let result;
-      try {
-        result = responseText ? JSON.parse(responseText) : null;
-        console.log('Parsed response:', result);
-      } catch (err) {
-        console.error('Error parsing response:', err);
-        throw new Error('Invalid server response format');
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+          console.log('Parsed response:', result);
+        } catch (err) {
+          console.error('Error parsing response:', err);
+          // Don't throw here, we succeeded in creating the request
+        }
       }
 
       toast({
@@ -277,6 +279,7 @@ export default function ClientDashboard() {
       // Force a refetch of the requests
       await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       setShowRequestDialog(false);
+
     } catch (error) {
       console.error('Error submitting request:', error);
       toast({
