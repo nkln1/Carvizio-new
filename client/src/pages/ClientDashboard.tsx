@@ -224,10 +224,8 @@ export default function ClientDashboard() {
         description: "Cererea a fost trimisă cu succes!",
       });
 
-      // Invalidate and refetch requests
-      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       setShowRequestDialog(false);
-
     } catch (error) {
       console.error('Error submitting request:', error);
       toast({
@@ -239,7 +237,7 @@ export default function ClientDashboard() {
   };
 
   // Update the requests query configuration
-  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
+  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
     staleTime: 0,

@@ -89,7 +89,7 @@ export function RequestForm({
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   const { data: userCars = [] } = useQuery<CarType[]>({
-    queryKey: ['/api/cars'],
+    queryKey: ['/api/cars']
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -146,10 +146,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="title">Titlu cerere</FormLabel>
+                  <FormLabel>Titlu cerere</FormLabel>
                   <FormControl>
                     <Input
-                      id="title"
+                      id="request-title"
                       placeholder="ex: Revizie anuală la 30.000 km"
                       {...field}
                     />
@@ -164,14 +164,14 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="carId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="carId">Selectare mașină</FormLabel>
+                  <FormLabel>Selectare mașină</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                       >
-                        <SelectTrigger id="carId" className="w-full">
+                        <SelectTrigger id="car-select" className="w-full">
                           <SelectValue placeholder="Selectează mașina" />
                         </SelectTrigger>
                         <SelectContent>
@@ -203,10 +203,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="description">Descriere cerere</FormLabel>
+                  <FormLabel>Descriere cerere</FormLabel>
                   <FormControl>
                     <Textarea
-                      id="description"
+                      id="request-description"
                       placeholder="ex: Doresc oferta de preț revizie anuală la 30.000 km pentru o MAZDA CX5 din 2020."
                       className="min-h-[100px]"
                       {...field}
@@ -222,9 +222,9 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="preferredDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="preferredDate">Data preferată</FormLabel>
+                  <FormLabel>Data preferată</FormLabel>
                   <FormControl>
-                    <Input id="preferredDate" type="date" min={formattedToday} {...field} />
+                    <Input id="preferred-date" type="date" min={formattedToday} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -236,7 +236,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="county">Județ</FormLabel>
+                  <FormLabel>Județ</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
@@ -246,7 +246,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger id="county">
+                      <SelectTrigger id="county-select">
                         <SelectValue placeholder="Selectează județul" />
                       </SelectTrigger>
                     </FormControl>
@@ -270,37 +270,40 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                 <FormItem>
                   <FormLabel>Localități (selectați maxim 2)</FormLabel>
                   <div className="space-y-2">
-                    {availableCities.map((city) => (
-                      <div key={city} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`city-${city}`}
-                          checked={form.watch("cities")?.includes(city)}
-                          onCheckedChange={(checked) => {
-                            const currentCities = form.getValues("cities") || [];
-                            if (checked) {
-                              if (currentCities.length < 2) {
-                                form.setValue("cities", [...currentCities, city]);
+                    {availableCities.map((city) => {
+                      const cityId = `city-${city.replace(/\s+/g, '-').toLowerCase()}`;
+                      return (
+                        <div key={city} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={cityId}
+                            checked={form.watch("cities")?.includes(city)}
+                            onCheckedChange={(checked) => {
+                              const currentCities = form.getValues("cities") || [];
+                              if (checked) {
+                                if (currentCities.length < 2) {
+                                  form.setValue("cities", [...currentCities, city]);
+                                }
+                              } else {
+                                form.setValue(
+                                  "cities",
+                                  currentCities.filter((c) => c !== city),
+                                );
                               }
-                            } else {
-                              form.setValue(
-                                "cities",
-                                currentCities.filter((c) => c !== city),
-                              );
+                            }}
+                            disabled={
+                              !form.watch("cities")?.includes(city) &&
+                              (form.watch("cities")?.length || 0) >= 2
                             }
-                          }}
-                          disabled={
-                            !form.watch("cities")?.includes(city) &&
-                            (form.watch("cities")?.length || 0) >= 2
-                          }
-                        />
-                        <label 
-                          htmlFor={`city-${city}`}
-                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {city}
-                        </label>
-                      </div>
-                    ))}
+                          />
+                          <label
+                            htmlFor={cityId}
+                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {city}
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                   <FormMessage />
                 </FormItem>
