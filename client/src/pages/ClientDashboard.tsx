@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { User, MessageCircle, FileText, Settings, Bell, Car, Plus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { User, MessageCircle, FileText, Settings, Bell, Car, Plus, Clock } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
@@ -33,6 +33,7 @@ export default function ClientDashboard() {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const { toast } = useToast();
+  const [requests, setRequests] = useState<RequestType[]>([]);
   const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
   useEffect(() => {
@@ -183,22 +184,17 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleRequestSubmit = async (formData: any) => {
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
+  // Fetch requests
+  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
+    queryKey: ['/api/requests'],
+    enabled: !!userProfile,
+  });
 
-      const requestData = {
-        userId: userProfile?.id,
-        carId: Number(formData.carId),
-        title: formData.title,
-        description: formData.description,
-        preferredDate: new Date(formData.preferredDate).toISOString(),
-        county: formData.county,
-        cities: Array.isArray(formData.cities) ? formData.cities : [formData.cities]
-      };
+  // Update the createRequestMutation
+  const createRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
 
       const response = await fetch('/api/requests', {
         method: 'POST',
@@ -206,13 +202,65 @@ export default function ClientDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to create request');
+        throw new Error('Failed to create request');
       }
+
+      const result = await response.text();
+      if (!result) return null;
+
+      try {
+        return JSON.parse(result);
+      } catch {
+        return null;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+    },
+  });
+
+  const handleRequestSubmit = async (data: any) => {
+    try {
+      const requestData = {
+        ...data,
+        userId: userProfile?.id,
+        carId: parseInt(data.carId),
+        preferredDate: new Date(data.preferredDate).toISOString(),
+        cities: data.cities,
+        status: "În așteptare",
+        county: data.county,
+        title: data.title,
+        description: data.description
+      };
+
+      console.log('Submitting request with data:', requestData);
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error('Failed to create request');
+      }
+
+      const result = await response.text();
+      console.log('Server response:', result);
 
       toast({
         title: "Success",
@@ -230,16 +278,6 @@ export default function ClientDashboard() {
       });
     }
   };
-
-  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery({
-    queryKey: ['/api/requests'],
-    enabled: !!userProfile,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 5000
-  });
-
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -318,7 +356,7 @@ export default function ClientDashboard() {
                     <div className="flex justify-center p-4">
                       <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
                     </div>
-                  ) : userRequests && userRequests.length > 0 ? (
+                  ) : userRequests.length > 0 ? (
                     <div className="space-y-4">
                       {userRequests.map((request) => (
                         <div
@@ -327,21 +365,19 @@ export default function ClientDashboard() {
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-medium text-lg">{request.title}</h3>
+                              <p className="font-medium">#{request.id}</p>
                               <p className="text-sm text-gray-600">{request.description}</p>
-                              <p className="text-sm text-gray-500 mt-2">
-                                Data preferată: {new Date(request.preferredDate).toLocaleDateString('ro-RO')}
-                              </p>
                               <p className="text-sm text-gray-500">
-                                Creat la: {new Date(request.createdAt).toLocaleDateString('ro-RO')}
+                                {new Date(request.createdAt).toLocaleDateString('ro-RO')}
                               </p>
                             </div>
-                            <Badge
-                              variant="secondary"
-                              className={`${getStatusColor(request.status)}`}
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                                request.status
+                              )}`}
                             >
                               {request.status}
-                            </Badge>
+                            </span>
                           </div>
                         </div>
                       ))}

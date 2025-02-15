@@ -21,11 +21,13 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser & { firebaseUid: string }): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User>;
+  // Car management
   getUserCars(userId: number): Promise<Car[]>;
   getCar(id: number): Promise<Car | undefined>;
   createCar(car: InsertCar): Promise<Car>;
   updateCar(id: number, carData: Partial<Car>): Promise<Car>;
   deleteCar(id: number): Promise<void>;
+  // Request management
   getUserRequests(userId: number): Promise<Request[]>;
   getRequest(id: number): Promise<Request | undefined>;
   createRequest(request: InsertRequest): Promise<Request>;
@@ -138,10 +140,12 @@ export class DatabaseStorage implements IStorage {
 
   async createCar(car: InsertCar): Promise<Car> {
     try {
+      console.log('Creating car with data:', car);
       const [newCar] = await db
         .insert(cars)
         .values(car)
         .returning();
+      console.log('Created car:', newCar);
       return newCar;
     } catch (error) {
       console.error('Error creating car:', error);
@@ -151,11 +155,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateCar(id: number, carData: Partial<Car>): Promise<Car> {
     try {
+      console.log('Updating car with ID:', id, 'and data:', carData);
       const [updatedCar] = await db
         .update(cars)
         .set(carData)
         .where(eq(cars.id, id))
         .returning();
+      console.log('Updated car:', updatedCar);
       return updatedCar;
     } catch (error) {
       console.error('Error updating car:', error);
@@ -174,15 +180,13 @@ export class DatabaseStorage implements IStorage {
 
   async getUserRequests(userId: number): Promise<Request[]> {
     try {
-      const userRequests = await db
+      return await db
         .select()
         .from(requests)
         .where(eq(requests.userId, userId))
         .orderBy(desc(requests.createdAt));
-      console.log('Retrieved requests for user', userId, ':', userRequests);
-      return userRequests;
     } catch (error) {
-      console.error('Error in getUserRequests:', error);
+      console.error('Error getting user requests:', error);
       return [];
     }
   }
@@ -199,29 +203,19 @@ export class DatabaseStorage implements IStorage {
 
   async createRequest(request: InsertRequest): Promise<Request> {
     try {
-      console.log('Creating request with data:', JSON.stringify(request, null, 2));
-
-      // Ensure cities is an array
-      const cities = Array.isArray(request.cities) ? request.cities : [request.cities];
-
+      console.log('Creating request with data:', request);
       const [newRequest] = await db
         .insert(requests)
         .values({
           ...request,
-          cities,
           status: "În așteptare",
           createdAt: new Date()
         })
         .returning();
-
-      console.log('Successfully created request:', JSON.stringify(newRequest, null, 2));
+      console.log('Created request:', newRequest);
       return newRequest;
     } catch (error) {
-      console.error('Error in createRequest:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', error.message);
-        console.error('Error stack:', error.stack);
-      }
+      console.error('Error creating request:', error);
       throw error;
     }
   }
