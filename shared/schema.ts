@@ -63,8 +63,8 @@ export const requests = pgTable("requests", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   status: text("status", {
-    enum: ["În așteptare", "Acceptat", "Finalizat"]
-  }).default("În așteptare").notNull(),
+    enum: ["Active", "Rezolvat", "Anulat"]
+  }).default("Active").notNull(),
   preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
