@@ -240,14 +240,12 @@ export default function ClientDashboard() {
   const handleRequestSubmit = async (data: any) => {
     try {
       const requestData = {
-        userId: userProfile?.id,
         carId: parseInt(data.carId),
         title: data.title,
         description: data.description,
         preferredDate: new Date(data.preferredDate).toISOString(),
         county: data.county,
-        cities: data.cities,
-        status: "În așteptare"
+        cities: data.cities
       };
 
       console.log('Submitting request with data:', requestData);

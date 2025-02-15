@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertCarSchema } from "@shared/schema";
+import { insertUserSchema, insertCarSchema, insertRequestSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { pool } from "./db";
@@ -333,6 +333,68 @@ export function registerRoutes(app: Express): Server {
         error: "Failed to delete car",
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
+    }
+  });
+
+  // Add request endpoints
+  app.post("/api/requests", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Request creation attempt with data:", req.body);
+
+      // Get the current user
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      console.log("Found user:", { id: user.id, email: user.email });
+
+      // Validate and parse request body
+      const requestData = insertRequestSchema.parse({
+        ...req.body,
+        userId: user.id,
+        preferredDate: new Date(req.body.preferredDate)
+      });
+
+      console.log("Validated request data:", requestData);
+
+      // Create the request
+      const request = await storage.createRequest(requestData);
+      console.log("Successfully created request:", request);
+
+      res.status(201).json(request);
+    } catch (error: any) {
+      console.error("Error creating request:", error);
+
+      if (error.errors) {
+        // Zod validation error
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: error.errors
+        });
+      }
+
+      res.status(500).json({
+        error: "Failed to save request",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
+  // Add GET requests endpoint
+  app.get("/api/requests", validateFirebaseToken, async (req, res) => {
+    try {
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const requests = await storage.getUserRequests(user.id);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error getting user requests:", error);
+      res.status(500).json({ error: "Failed to get requests" });
     }
   });
 
