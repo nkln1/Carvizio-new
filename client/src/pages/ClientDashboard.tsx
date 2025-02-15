@@ -219,11 +219,14 @@ export default function ClientDashboard() {
 
   const handleRequestSubmit = async (data: any) => {
     try {
-      await createRequestMutation.mutateAsync({
+      const requestData = {
         ...data,
         userId: userProfile?.id,
         carId: parseInt(data.carId),
-      });
+        preferredDate: new Date(data.preferredDate).toISOString()
+      };
+
+      await createRequestMutation.mutateAsync(requestData);
 
       toast({
         title: "Success",
@@ -231,6 +234,7 @@ export default function ClientDashboard() {
       });
       setShowRequestDialog(false);
     } catch (error) {
+      console.error('Error submitting request:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
