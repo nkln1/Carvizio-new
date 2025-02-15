@@ -7,7 +7,11 @@ interface NavigationProps {
   onCreateRequest: () => void;
 }
 
-export function Navigation({ activeTab, setActiveTab, onCreateRequest }: NavigationProps) {
+export function Navigation({
+  activeTab,
+  setActiveTab,
+  onCreateRequest,
+}: NavigationProps) {
   return (
     <div className="bg-white shadow">
       <div className="container mx-auto">
@@ -59,7 +63,7 @@ export function Navigation({ activeTab, setActiveTab, onCreateRequest }: Navigat
             className="bg-[#00aff5] text-white hover:bg-[#0095d1] ml-4"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Creaza cerere
+            Adaugă cerere
           </Button>
         </div>
       </div>
