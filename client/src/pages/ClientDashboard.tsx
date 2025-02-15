@@ -226,7 +226,6 @@ export default function ClientDashboard() {
   const handleRequestSubmit = async (data: any) => {
     try {
       const requestData = {
-        ...data,
         userId: userProfile?.id,
         carId: parseInt(data.carId),
         preferredDate: new Date(data.preferredDate).toISOString(),
@@ -237,7 +236,7 @@ export default function ClientDashboard() {
         description: data.description
       };
 
-      console.log('Submitting request with data:', requestData);
+      console.log('Submitting request with data:', JSON.stringify(requestData, null, 2));
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
@@ -253,21 +252,30 @@ export default function ClientDashboard() {
         body: JSON.stringify(requestData),
       });
 
+      const responseText = await response.text();
+      console.log('Server response text:', responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', errorText);
-        throw new Error('Failed to create request');
+        console.error('Server error response:', responseText);
+        throw new Error(`Failed to create request: ${responseText}`);
       }
 
-      const result = await response.text();
-      console.log('Server response:', result);
+      let result;
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+        console.log('Parsed response:', result);
+      } catch (err) {
+        console.error('Error parsing response:', err);
+        throw new Error('Invalid server response format');
+      }
 
       toast({
         title: "Success",
         description: "Cererea a fost trimisă cu succes!",
       });
 
-      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      // Force a refetch of the requests
+      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       setShowRequestDialog(false);
     } catch (error) {
       console.error('Error submitting request:', error);
