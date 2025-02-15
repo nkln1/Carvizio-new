@@ -190,7 +190,7 @@ export default function ClientDashboard() {
     enabled: !!userProfile,
   });
 
-  // Create request mutation
+  // Update the createRequestMutation
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
@@ -206,8 +206,18 @@ export default function ClientDashboard() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create request');
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create request');
+        } else {
+          throw new Error('Server error: Failed to create request');
+        }
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error('Invalid response from server');
       }
 
       return response.json();
@@ -223,8 +233,11 @@ export default function ClientDashboard() {
         ...data,
         userId: userProfile?.id,
         carId: parseInt(data.carId),
-        preferredDate: new Date(data.preferredDate).toISOString()
+        preferredDate: new Date(data.preferredDate).toISOString(),
+        cities: data.cities // Ensure cities array is passed correctly
       };
+
+      console.log('Submitting request with data:', requestData);
 
       await createRequestMutation.mutateAsync(requestData);
 
