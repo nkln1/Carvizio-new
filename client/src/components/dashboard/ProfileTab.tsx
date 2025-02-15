@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { User, Settings } from "lucide-react";
 import { EditProfile } from "@/components/auth/EditProfile";
 import type { User as UserType } from "@shared/schema";
 import { useState } from "react";
@@ -14,8 +14,11 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Informații Cont</CardTitle>
+      <CardHeader className="border-b bg-gray-50">
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Profilul Meu
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6">

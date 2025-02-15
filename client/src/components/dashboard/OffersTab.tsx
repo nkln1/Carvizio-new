@@ -1,6 +1,25 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
+import {
+  SendHorizontal,
+  Clock,
+  User,
+  Calendar,
+  CreditCard,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Check,
+  XCircle,
+  Eye,
+  RotateCcw,
+} from "lucide-react";
 interface ServiceOffer {
   id: number;
   serviceId: string;
@@ -16,9 +35,15 @@ interface OffersTabProps {
 
 export function OffersTab({ offers }: OffersTabProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Oferte Primite</CardTitle>
+    <Card className="shadow-lg">
+      <CardHeader className="border-b bg-gray-50">
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <SendHorizontal className="h-5 w-5" />
+          Oferte Primite
+        </CardTitle>
+        <CardDescription>
+          Vezi și gestionează ofertele primite de la service-uri auto
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {offers.length > 0 ? (
@@ -37,7 +62,9 @@ export function OffersTab({ offers }: OffersTabProps) {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-[#00aff5]">{offer.price} RON</p>
+                    <p className="font-bold text-[#00aff5]">
+                      {offer.price} RON
+                    </p>
                     <Button
                       size="sm"
                       className="mt-2"

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, FileText } from "lucide-react";
 import type { Request as RequestType } from "@shared/schema";
 
 interface RequestsTabProps {
@@ -24,9 +24,12 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cererile Mele Recente</CardTitle>
+    <Card className="shadow-lg">
+      <CardHeader className="border-b bg-gray-50">
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Cererile mele
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (

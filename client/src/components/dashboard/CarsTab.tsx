@@ -11,11 +11,22 @@ interface CarsTabProps {
   onDeleteCar: (carId: string) => void;
 }
 
-export function CarsTab({ cars, isLoading, onAddCar, onEditCar, onDeleteCar }: CarsTabProps) {
+export function CarsTab({
+  cars,
+  isLoading,
+  onAddCar,
+  onEditCar,
+  onDeleteCar,
+}: CarsTabProps) {
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Mașinile Mele</h2>
+        <CardHeader className="border-b bg-gray-50">
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <Car className="h-5 w-5" />
+            Mașina Mea
+          </CardTitle>
+        </CardHeader>
         <Button onClick={onAddCar}>
           <Car className="mr-2 h-4 w-4" />
           Adaugă mașină
@@ -30,7 +41,9 @@ export function CarsTab({ cars, isLoading, onAddCar, onEditCar, onDeleteCar }: C
           cars.map((car) => (
             <Card key={car.id} className="flex flex-col">
               <CardHeader>
-                <CardTitle>{car.brand} {car.model}</CardTitle>
+                <CardTitle>
+                  {car.brand} {car.model}
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
                 <div className="space-y-2">
@@ -38,13 +51,16 @@ export function CarsTab({ cars, isLoading, onAddCar, onEditCar, onDeleteCar }: C
                     <span className="font-medium">An:</span> {car.year}
                   </p>
                   <p className="text-sm">
-                    <span className="font-medium">Kilometraj:</span> {car.mileage} km
+                    <span className="font-medium">Kilometraj:</span>{" "}
+                    {car.mileage} km
                   </p>
                   <p className="text-sm">
-                    <span className="font-medium">Combustibil:</span> {car.fuelType}
+                    <span className="font-medium">Combustibil:</span>{" "}
+                    {car.fuelType}
                   </p>
                   <p className="text-sm">
-                    <span className="font-medium">Transmisie:</span> {car.transmission}
+                    <span className="font-medium">Transmisie:</span>{" "}
+                    {car.transmission}
                   </p>
                   {car.vin && (
                     <p className="text-sm">
@@ -75,7 +91,9 @@ export function CarsTab({ cars, isLoading, onAddCar, onEditCar, onDeleteCar }: C
           <div className="col-span-full">
             <Card>
               <CardContent className="pt-6">
-                <p className="text-center text-gray-500 mb-4">Nu aveți nicio mașină înregistrată.</p>
+                <p className="text-center text-gray-500 mb-4">
+                  Nu aveți nicio mașină înregistrată.
+                </p>
                 <div className="flex justify-center">
                   <Button onClick={onAddCar}>
                     <Car className="mr-2 h-4 w-4" />
