@@ -110,7 +110,6 @@ export function RequestForm({
     if (selectedCounty) {
       const citiesForCounty = getCitiesForCounty(selectedCounty);
       setAvailableCities(citiesForCounty);
-      // Only reset cities if there's no initial data or if county changed
       if (!initialData?.cities || initialData.county !== selectedCounty) {
         form.setValue("cities", []);
       }
@@ -124,7 +123,6 @@ export function RequestForm({
       const selectedCar = userCars.find(car => car.id === parseInt(selectedCarId));
       if (selectedCar) {
         const existingDescription = form.getValues("description");
-        // Only update description if it's empty or doesn't contain car details
         if (!existingDescription || !existingDescription.includes("Detalii mașină:")) {
           const carDetails = `
 Detalii mașină:
@@ -155,10 +153,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="title">Titlu cerere</FormLabel>
+                  <FormLabel htmlFor="request-title">Titlu cerere</FormLabel>
                   <FormControl>
                     <Input
-                      id="title"
+                      id="request-title"
                       placeholder="ex: Revizie anuală la 30.000 km"
                       {...field}
                     />
@@ -173,14 +171,14 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="carId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="carId">Selectare mașină</FormLabel>
+                  <FormLabel htmlFor="request-car">Selectare mașină</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                       >
-                        <SelectTrigger id="carId" className="w-full">
+                        <SelectTrigger id="request-car" className="w-full">
                           <SelectValue placeholder="Selectează mașina" />
                         </SelectTrigger>
                         <SelectContent>
@@ -212,10 +210,10 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="description">Descriere cerere</FormLabel>
+                  <FormLabel htmlFor="request-description">Descriere cerere</FormLabel>
                   <FormControl>
                     <Textarea
-                      id="description"
+                      id="request-description"
                       placeholder="ex: Doresc oferta de preț revizie anuală la 30.000 km pentru o MAZDA CX5 din 2020."
                       className="min-h-[100px]"
                       {...field}
@@ -231,9 +229,14 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="preferredDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="preferredDate">Data preferată</FormLabel>
+                  <FormLabel htmlFor="request-preferred-date">Data preferată</FormLabel>
                   <FormControl>
-                    <Input id="preferredDate" type="date" min={formattedToday} {...field} />
+                    <Input 
+                      id="request-preferred-date"
+                      type="date"
+                      min={formattedToday}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -245,12 +248,11 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
               name="county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="county">Județ</FormLabel>
+                  <FormLabel htmlFor="request-county">Județ</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedCounty(value);
-                      // Only reset cities if there's no initial data
                       if (!initialData?.cities) {
                         form.setValue("cities", []);
                       }
@@ -258,7 +260,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger id="county">
+                      <SelectTrigger id="request-county">
                         <SelectValue placeholder="Selectează județul" />
                       </SelectTrigger>
                     </FormControl>
@@ -282,37 +284,40 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                 <FormItem>
                   <FormLabel>Localități (selectați maxim 2)</FormLabel>
                   <div className="space-y-2">
-                    {availableCities.map((city) => (
-                      <div key={city} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`city-${city}`}
-                          checked={form.watch("cities")?.includes(city)}
-                          onCheckedChange={(checked) => {
-                            const currentCities = form.getValues("cities") || [];
-                            if (checked) {
-                              if (currentCities.length < 2) {
-                                form.setValue("cities", [...currentCities, city]);
+                    {availableCities.map((city) => {
+                      const cityId = `city-${city.replace(/\s+/g, '-').toLowerCase()}`;
+                      return (
+                        <div key={city} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={cityId}
+                            checked={form.watch("cities")?.includes(city)}
+                            onCheckedChange={(checked) => {
+                              const currentCities = form.getValues("cities") || [];
+                              if (checked) {
+                                if (currentCities.length < 2) {
+                                  form.setValue("cities", [...currentCities, city]);
+                                }
+                              } else {
+                                form.setValue(
+                                  "cities",
+                                  currentCities.filter((c) => c !== city),
+                                );
                               }
-                            } else {
-                              form.setValue(
-                                "cities",
-                                currentCities.filter((c) => c !== city),
-                              );
+                            }}
+                            disabled={
+                              !form.watch("cities")?.includes(city) &&
+                              (form.watch("cities")?.length || 0) >= 2
                             }
-                          }}
-                          disabled={
-                            !form.watch("cities")?.includes(city) &&
-                            (form.watch("cities")?.length || 0) >= 2
-                          }
-                        />
-                        <label 
-                          htmlFor={`city-${city}`}
-                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {city}
-                        </label>
-                      </div>
-                    ))}
+                          />
+                          <label
+                            htmlFor={cityId}
+                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {city}
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                   <FormMessage />
                 </FormItem>
