@@ -6,7 +6,6 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
@@ -16,8 +15,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/contact" component={Contact} />
-      <ProtectedRoute path="/dashboard" component={ClientDashboard} />
-      <ProtectedRoute path="/service-dashboard" component={ServiceDashboard} />
+      <Route path="/dashboard" component={ClientDashboard} />
+      <Route path="/service-dashboard" component={ServiceDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

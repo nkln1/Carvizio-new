@@ -202,15 +202,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
       console.log('Backend registration complete, redirecting...');
 
-      // 4. Redirect based on role
-      const redirectPath = role === "client" ? "/dashboard" : "/service-dashboard";
-      setLocation(redirectPath);
-
-      // 5. Show success toast after redirect
+      // 4. Show success toast before redirect
       toast({
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
       });
+
+      // 5. Redirect based on role
+      const redirectPath = role === "client" ? "/dashboard" : "/service-dashboard";
+      console.log('Redirecting to:', redirectPath);
+      window.location.href = redirectPath;
 
       onSuccess?.();
     } catch (error: any) {
