@@ -154,12 +154,12 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
     if (!date) return;
 
     const dateExists = selectedDates.some(
-      (d) => d.toISOString().split('T')[0] === date.toISOString().split('T')[0]
+      (d) => d.getTime() === date.getTime()
     );
 
     if (dateExists) {
       const newDates = selectedDates.filter(
-        (d) => d.toISOString().split('T')[0] !== date.toISOString().split('T')[0]
+        (d) => d.getTime() !== date.getTime()
       );
       setSelectedDates(newDates);
       form.setValue("preferredDates", newDates);
@@ -173,7 +173,7 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
   // Handle date removal
   const handleDateRemove = (dateToRemove: Date) => {
     const newDates = selectedDates.filter(
-      (d) => d.toISOString().split('T')[0] !== dateToRemove.toISOString().split('T')[0]
+      (d) => d.getTime() !== dateToRemove.getTime()
     );
     setSelectedDates(newDates);
     form.setValue("preferredDates", newDates);
@@ -270,11 +270,11 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
                     <div className="flex flex-wrap gap-2 mb-2">
                       {selectedDates.map((date) => (
                         <Badge
-                          key={date.toISOString()}
+                          key={date.getTime()}
                           variant="secondary"
                           className="flex items-center gap-1"
                         >
-                          {format(date, "dd.MM.yyyy")}
+                          {format(new Date(date), "dd.MM.yyyy")}
                           <Button
                             type="button"
                             variant="ghost"
