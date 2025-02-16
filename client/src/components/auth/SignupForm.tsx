@@ -165,6 +165,29 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     setIsLoading(true);
 
     try {
+      // Check if phone number already exists
+      const phoneCheckResponse = await fetch('/api/auth/check-phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: values.phone }),
+      });
+
+      if (!phoneCheckResponse.ok) {
+        const error = await phoneCheckResponse.json();
+        if (error.code === 'PHONE_EXISTS') {
+          toast({
+            variant: "destructive",
+            title: "Eroare",
+            description: "Acest număr de telefon este deja înregistrat.",
+          });
+          setIsLoading(false);
+          return;
+        }
+        throw new Error('Failed to check phone number');
+      }
+
       const { email, password } = values;
       console.log('Starting user registration process...');
 
@@ -199,9 +222,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       console.log('Backend registration complete');
 
       await auth.signOut();
-
       await signInWithEmailAndPassword(auth, email, password);
-
       const newIdToken = await firebaseUser.getIdToken(true);
 
       const loginResponse = await fetch('/api/auth/login', {

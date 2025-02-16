@@ -11,7 +11,7 @@ export const users = pgTable("users", {
   firebaseUid: text("firebase_uid").notNull().unique(),
   role: text("role", { enum: ["client", "service"] }).notNull(),
   name: text("name"),
-  phone: text("phone"),
+  phone: text("phone").unique(), 
   county: text("county"),
   city: text("city"),
   // Service specific fields
