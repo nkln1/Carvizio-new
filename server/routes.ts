@@ -440,12 +440,20 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Get service location details
-      if (user.role !== "SERVICE") {
+      if (user.role !== "service") { // Changed to lowercase to match database
         return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
       }
 
+      // Ensure county exists
+      if (!user.county) {
+        return res.status(400).json({ error: "Service provider must set their county" });
+      }
+
+      // Convert cities string to array if exists, or use empty array
+      const serviceCities = user.city ? [user.city] : [];
+
       // Fetch requests that match the service's location
-      const matchingRequests = await storage.getRequestsByLocation(user.county, user.cities || []);
+      const matchingRequests = await storage.getRequestsByLocation(user.county, serviceCities);
       res.json(matchingRequests);
     } catch (error) {
       console.error("Error getting requests by location:", error);

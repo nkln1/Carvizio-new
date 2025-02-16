@@ -258,27 +258,29 @@ export class DatabaseStorage implements IStorage {
 
   async getRequestsByLocation(county: string, cities: string[]): Promise<Request[]> {
     try {
-      // Fetch requests that match the service's location
-      // A request matches if:
-      // 1. The county matches AND
-      // 2. At least one city from the request's cities array matches the service's cities array
-      const requests = await db
+      // Get all active requests from the specified county
+      const matchingRequests = await db
         .select()
         .from(requests)
         .where(eq(requests.county, county))
+        .where(eq(requests.status, "Active"))
         .orderBy(desc(requests.createdAt));
 
-      // Filter requests to match cities
-      return requests.filter(request => {
-        // If the request has no cities specified, include it (backwards compatibility)
-        if (!request.cities || request.cities.length === 0) return true;
+      // If service has cities specified, filter requests to match cities
+      if (cities.length > 0) {
+        return matchingRequests.filter(request => {
+          const requestCities = request.cities || [];
+          return requestCities.some(requestCity =>
+            cities.includes(requestCity)
+          );
+        });
+      }
 
-        // Check if any of the request's cities match any of the service's cities
-        return request.cities.some(city => cities.includes(city));
-      });
+      // If service has no cities specified, return all requests from the county
+      return matchingRequests;
     } catch (error) {
       console.error('Error getting requests by location:', error);
-      return [];
+      throw error;
     }
   }
 }
