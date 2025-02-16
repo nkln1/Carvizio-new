@@ -34,9 +34,9 @@ export default function ServiceDashboard() {
   }, [setLocation]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/auth/me'],
+    queryKey: ["/api/auth/me"],
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
   const handleResendVerification = async () => {
@@ -44,7 +44,8 @@ export default function ServiceDashboard() {
       await resendVerificationEmail();
       toast({
         title: "Email trimis",
-        description: "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
+        description:
+          "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
       });
     } catch (error) {
       toast({
@@ -78,14 +79,19 @@ export default function ServiceDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
-                {user.email && `Am trimis un link de verificare la adresa ${user.email}.`}
+                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de
+                email.
+                {user.email &&
+                  `Am trimis un link de verificare la adresa ${user.email}.`}
               </p>
               <div className="flex flex-col gap-2">
                 <Button onClick={handleResendVerification}>
                   Retrimite emailul de verificare
                 </Button>
-                <Button variant="outline" onClick={() => window.location.reload()}>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
                   Am verificat emailul
                 </Button>
               </div>
@@ -120,40 +126,62 @@ export default function ServiceDashboard() {
         <div className="container mx-auto px-6">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-[#00aff5]">Service Dashboard</h1>
+              <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
               <div className="hidden md:flex items-center space-x-4">
                 <Button
                   variant={activeTab === "cereri" ? "default" : "ghost"}
                   onClick={() => setActiveTab("cereri")}
-                  className={activeTab === "cereri" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
+                  className={
+                    activeTab === "cereri"
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
                 >
                   Cereri
                 </Button>
                 <Button
                   variant={activeTab === "oferte-trimise" ? "default" : "ghost"}
                   onClick={() => setActiveTab("oferte-trimise")}
-                  className={activeTab === "oferte-trimise" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
+                  className={
+                    activeTab === "oferte-trimise"
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
                 >
                   Oferte trimise
                 </Button>
                 <Button
-                  variant={activeTab === "oferte-acceptate" ? "default" : "ghost"}
+                  variant={
+                    activeTab === "oferte-acceptate" ? "default" : "ghost"
+                  }
                   onClick={() => setActiveTab("oferte-acceptate")}
-                  className={activeTab === "oferte-acceptate" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
+                  className={
+                    activeTab === "oferte-acceptate"
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
                 >
                   Oferte acceptate
                 </Button>
                 <Button
                   variant={activeTab === "mesaje" ? "default" : "ghost"}
                   onClick={() => setActiveTab("mesaje")}
-                  className={activeTab === "mesaje" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
+                  className={
+                    activeTab === "mesaje"
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
                 >
                   Mesaje
                 </Button>
                 <Button
                   variant={activeTab === "cont" ? "default" : "ghost"}
                   onClick={() => setActiveTab("cont")}
-                  className={activeTab === "cont" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
+                  className={
+                    activeTab === "cont"
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
                 >
                   Cont
                 </Button>
@@ -169,9 +197,7 @@ export default function ServiceDashboard() {
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
           </div>
         ) : (
-          <div className="space-y-6">
-            {renderActiveTab()}
-          </div>
+          <div className="space-y-6">{renderActiveTab()}</div>
         )}
       </div>
 
