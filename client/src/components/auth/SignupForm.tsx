@@ -24,7 +24,7 @@ import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-rea
 import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword } from "firebase/auth";
 
 type UserRole = "client" | "service" | null;
 
@@ -198,11 +198,17 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       const userData = await response.json();
       console.log('Backend registration complete');
 
+      await auth.signOut();
+
+      await signInWithEmailAndPassword(auth, email, password);
+
+      const newIdToken = await firebaseUser.getIdToken(true);
+
       const loginResponse = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
+          'Authorization': `Bearer ${newIdToken}`
         },
         credentials: 'include'
       });
@@ -226,7 +232,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "A apărut o eroare la înregistrare. Te rugăm să încerci din nou.",
+        description: error.message || "A apărut o eroare la înregistrare. Te rugăm să încerci din nou.",
       });
     } finally {
       setIsLoading(false);
