@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -116,16 +116,24 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
     setIsSendingReset(true);
     try {
-      await auth.sendPasswordResetEmail(email);
+      await sendPasswordResetEmail(auth, email);
       toast({
         title: "Email trimis",
         description: "Verifică-ți email-ul pentru instrucțiuni de resetare a parolei.",
       });
     } catch (error: any) {
+      console.error('Password reset error:', error);
+      let errorMessage = "A apărut o eroare la trimiterea email-ului de resetare.";
+
+      // Customize error message based on Firebase error codes
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = "Nu există niciun cont asociat cu acest email.";
+      }
+
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "A apărut o eroare la trimiterea email-ului de resetare.",
+        description: errorMessage,
       });
     } finally {
       setIsSendingReset(false);
