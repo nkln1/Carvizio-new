@@ -204,13 +204,24 @@ export default function ClientDashboard() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      const requestData = {
+        carId: parseInt(data.carId),
+        title: data.title,
+        description: data.description,
+        preferredDate: data.preferredDates.map((date: Date) => date.toISOString()),
+        county: data.county,
+        cities: data.cities
+      };
+
+      console.log('Submitting request with data:', requestData);
+
       const response = await fetch('/api/requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
@@ -241,17 +252,7 @@ export default function ClientDashboard() {
 
   const handleRequestSubmit = async (data: any) => {
     try {
-      const requestData = {
-        carId: parseInt(data.carId),
-        title: data.title,
-        description: data.description,
-        preferredDate: new Date(data.preferredDate).toISOString(),
-        county: data.county,
-        cities: data.cities
-      };
-
-      console.log('Submitting request with data:', requestData);
-      await createRequestMutation.mutateAsync(requestData);
+      await createRequestMutation.mutateAsync(data);
     } catch (error) {
       console.error('Error submitting request:', error);
       toast({

@@ -53,7 +53,6 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
         throw new Error('No authentication token available');
       }
 
-      // First update the database
       const response = await fetch(`/api/requests/${requestId}`, {
         method: 'PATCH',
         headers: {
@@ -68,7 +67,6 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
         throw new Error(errorData.message || 'Failed to cancel request');
       }
 
-      // After successful database update, invalidate the cache to trigger a UI refresh
       await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
 
       toast({
@@ -123,7 +121,7 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                 <TableHeader>
                   <TableRow>
                     <TableHead>Titlu</TableHead>
-                    <TableHead>Data preferată</TableHead>
+                    <TableHead>Date preferate</TableHead>
                     <TableHead>Data trimiterii</TableHead>
                     <TableHead>Locație</TableHead>
                     <TableHead>Status</TableHead>
@@ -147,7 +145,11 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                           {request.title}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                          {Array.isArray(request.preferredDate)
+                            ? request.preferredDate.map((date) =>
+                                format(new Date(date), "dd.MM.yyyy")
+                              ).join(", ")
+                            : format(new Date(request.preferredDate), "dd.MM.yyyy")}
                         </TableCell>
                         <TableCell>
                           {format(new Date(request.createdAt), "dd.MM.yyyy")}
@@ -261,10 +263,14 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
-                  Data preferată
+                  Date preferate
                 </h3>
                 <p>
-                  {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                  {Array.isArray(selectedRequest.preferredDate)
+                    ? selectedRequest.preferredDate.map((date) =>
+                        format(new Date(date), "dd.MM.yyyy")
+                      ).join(", ")
+                    : format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
                 </p>
               </div>
               <div>

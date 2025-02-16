@@ -20,17 +20,19 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useState } from "react";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useQuery } from "@tanstack/react-query";
 import type { Car as CarType } from "@shared/schema";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
-// Get today's date in YYYY-MM-DD format
+// Get today's date
 const today = new Date();
 today.setHours(0, 0, 0, 0);
-const formattedToday = today.toISOString().split("T")[0];
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -42,20 +44,22 @@ const formSchema = z.object({
   carId: z.string({
     required_error: "Te rugăm să selectezi o mașină.",
   }),
-  preferredDate: z
-    .string()
+  preferredDates: z.array(z.date())
     .min(1, {
-      message: "Te rugăm să selectezi o dată preferată.",
+      message: "Te rugăm să selectezi cel puțin o dată preferată.",
+    })
+    .max(10, {
+      message: "Poți selecta maxim 10 date preferate.",
     })
     .refine(
-      (date) => {
-        const selectedDate = new Date(date);
-        selectedDate.setHours(0, 0, 0, 0);
-        return selectedDate >= today;
-      },
+      (dates) => dates.every(date => {
+        const dateToCheck = new Date(date);
+        dateToCheck.setHours(0, 0, 0, 0);
+        return dateToCheck >= today;
+      }),
       {
-        message: "Data preferată nu poate fi anterioară datei curente.",
-      },
+        message: "Toate datele trebuie să fie ulterioare datei curente.",
+      }
     ),
   county: z.string().min(1, {
     message: "Te rugăm să selectezi județul.",
@@ -87,19 +91,21 @@ export function RequestForm({
     initialData?.county || "",
   );
   const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [selectedDates, setSelectedDates] = useState<Date[]>(
+    initialData?.preferredDates || []
+  );
 
   const { data: userCars = [] } = useQuery<CarType[]>({
     queryKey: ['/api/cars'],
   });
 
-  // Initialize form with initial data
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || "",
       description: initialData?.description || "",
       carId: initialData?.carId || "",
-      preferredDate: initialData?.preferredDate || formattedToday,
+      preferredDates: initialData?.preferredDates || [],
       county: initialData?.county || "",
       cities: initialData?.cities || [],
     },
@@ -142,6 +148,36 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
       }
     }
   }, [form.watch("carId"), userCars]);
+
+  // Handle date selection
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+
+    const dateExists = selectedDates.some(
+      (d) => d.toISOString().split('T')[0] === date.toISOString().split('T')[0]
+    );
+
+    if (dateExists) {
+      const newDates = selectedDates.filter(
+        (d) => d.toISOString().split('T')[0] !== date.toISOString().split('T')[0]
+      );
+      setSelectedDates(newDates);
+      form.setValue("preferredDates", newDates);
+    } else if (selectedDates.length < 10) {
+      const newDates = [...selectedDates, date];
+      setSelectedDates(newDates);
+      form.setValue("preferredDates", newDates);
+    }
+  };
+
+  // Handle date removal
+  const handleDateRemove = (dateToRemove: Date) => {
+    const newDates = selectedDates.filter(
+      (d) => d.toISOString().split('T')[0] !== dateToRemove.toISOString().split('T')[0]
+    );
+    setSelectedDates(newDates);
+    form.setValue("preferredDates", newDates);
+  };
 
   return (
     <Form {...form}>
@@ -226,18 +262,46 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
 
             <FormField
               control={form.control}
-              name="preferredDate"
-              render={({ field }) => (
+              name="preferredDates"
+              render={() => (
                 <FormItem>
-                  <FormLabel htmlFor="request-preferred-date">Data preferată</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="request-preferred-date"
-                      type="date"
-                      min={formattedToday}
-                      {...field}
+                  <FormLabel>Date preferate (maxim 10)</FormLabel>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedDates.map((date) => (
+                        <Badge
+                          key={date.toISOString()}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {format(date, "dd.MM.yyyy")}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => handleDateRemove(date)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Calendar
+                      mode="multiple"
+                      selected={selectedDates}
+                      onSelect={handleDateSelect}
+                      disabled={(date) => {
+                        const currentDate = new Date();
+                        currentDate.setHours(0, 0, 0, 0);
+                        return date < currentDate;
+                      }}
+                      className="border rounded-md"
                     />
-                  </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Click pe o dată pentru a o selecta/deselecta. Poți selecta maxim 10 date.
+                    </p>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
