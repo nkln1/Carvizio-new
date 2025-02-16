@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, sendEmailVerification } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -25,6 +25,9 @@ setPersistence(auth, browserLocalPersistence)
 // Log the current auth state
 auth.onAuthStateChanged((user) => {
   console.log("Firebase auth state:", user ? "Logged in" : "Logged out");
+  if (user) {
+    console.log("Email verified:", user.emailVerified);
+  }
 });
 
 // Export initialized flag
@@ -33,3 +36,11 @@ export const isFirebaseInitialized = new Promise((resolve) => {
     resolve(true);
   });
 });
+
+// Function to send verification email
+export const sendVerificationEmail = async () => {
+  const user = auth.currentUser;
+  if (user && !user.emailVerified) {
+    await sendEmailVerification(user);
+  }
+};

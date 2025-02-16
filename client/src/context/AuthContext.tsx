@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth, isFirebaseInitialized } from '@/lib/firebase';
+import { auth, isFirebaseInitialized, sendVerificationEmail } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 interface User {
@@ -7,18 +7,21 @@ interface User {
   email: string;
   role: "client" | "service";
   name?: string;
+  emailVerified: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   signOut: async () => {},
+  resendVerificationEmail: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -31,10 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        // Wait for Firebase to be initialized
         await isFirebaseInitialized;
-
-        // Set persistence to LOCAL
         await setPersistence(auth, browserLocalPersistence);
         console.log("Firebase persistence set to LOCAL");
 
@@ -48,12 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 headers: {
                   'Authorization': `Bearer ${idToken}`
                 },
-                credentials: 'include' // Important for session cookies
+                credentials: 'include'
               });
 
               if (response.ok) {
                 const userData = await response.json();
-                setUser(userData);
+                setUser({
+                  ...userData,
+                  emailVerified: firebaseUser.emailVerified
+                });
               } else {
                 console.error("Failed to get user data from backend", await response.text());
                 await firebaseSignOut(auth);
@@ -92,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(auth);
       await fetch('/api/auth/logout', { 
         method: 'POST',
-        credentials: 'include' // Important for session cookies
+        credentials: 'include'
       });
       setUser(null);
     } catch (error) {
@@ -101,12 +104,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resendVerificationEmail = async () => {
+    await sendVerificationEmail();
+  };
+
   if (!initialized) {
     return null;
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, resendVerificationEmail }}>
       {children}
     </AuthContext.Provider>
   );

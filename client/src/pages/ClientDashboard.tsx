@@ -5,7 +5,7 @@ import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
 import { EditProfile } from "@/components/auth/EditProfile";
 import { CarForm } from "@/components/car/CarForm";
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
+import { useAuth } from "@/context/AuthContext";
 
 interface ServiceOffer {
   id: number;
@@ -32,6 +33,7 @@ interface ServiceOffer {
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
+  const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
@@ -259,6 +261,54 @@ export default function ClientDashboard() {
       });
     }
   };
+
+  const handleResendVerification = async () => {
+    try {
+      await resendVerificationEmail();
+      toast({
+        title: "Email trimis",
+        description: "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
+      });
+    } catch (error) {
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la trimiterea emailului de verificare.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!user?.emailVerified) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <div className="container mx-auto p-6 flex-grow flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-6 w-6" />
+                Verifică-ți adresa de email
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600">
+                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
+                Am trimis un link de verificare la adresa {user.email}.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleResendVerification}>
+                  Retrimite emailul de verificare
+                </Button>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Am verificat emailul
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
