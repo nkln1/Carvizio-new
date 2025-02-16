@@ -40,8 +40,14 @@ interface RequestsTabProps {
   onCreateRequest: () => void;
 }
 
-export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTabProps) {
-  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
+export function RequestsTab({
+  requests,
+  isLoading,
+  onCreateRequest,
+}: RequestsTabProps) {
+  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(
+    null,
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const { toast } = useToast();
@@ -50,33 +56,33 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        throw new Error('No authentication token available');
+        throw new Error("No authentication token available");
       }
 
       // First update the database
       const response = await fetch(`/api/requests/${requestId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: 'Anulat' })
+        body: JSON.stringify({ status: "Anulat" }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to cancel request');
+        throw new Error(errorData.message || "Failed to cancel request");
       }
 
       // After successful database update, invalidate the cache to trigger a UI refresh
-      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
 
       toast({
         title: "Success",
         description: "Cererea a fost anulată cu succes.",
       });
     } catch (error) {
-      console.error('Error canceling request:', error);
+      console.error("Error canceling request:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -147,7 +153,10 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                           {request.title}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                          {format(
+                            new Date(request.preferredDate),
+                            "dd.MM.yyyy",
+                          )}
                         </TableCell>
                         <TableCell>
                           {format(new Date(request.createdAt), "dd.MM.yyyy")}
@@ -207,7 +216,10 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                     return false;
                   }).length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground"
+                      >
                         Nu există cereri în această categorie.
                       </TableCell>
                     </TableRow>
@@ -224,14 +236,16 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
           <AlertDialogHeader>
             <AlertDialogTitle>Anulați această cerere?</AlertDialogTitle>
             <AlertDialogDescription>
-              Această acțiune nu poate fi anulată. Cererea va fi mutată în categoria
-              "Anulate".
+              Această acțiune nu poate fi anulată. Cererea va fi mutată în
+              categoria "Anulate".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Nu</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedRequest && handleDelete(selectedRequest.id)}
+              onClick={() =>
+                selectedRequest && handleDelete(selectedRequest.id)
+              }
               className="bg-red-500 hover:bg-red-600"
             >
               Da, anulează cererea
@@ -257,14 +271,19 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Descriere
                 </h3>
-                <p>{selectedRequest.description}</p>
+                <p className="whitespace-pre-line">
+                  {selectedRequest.description}
+                </p>
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Data preferată
                 </h3>
                 <p>
-                  {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                  {format(
+                    new Date(selectedRequest.preferredDate),
+                    "dd.MM.yyyy",
+                  )}
                 </p>
               </div>
               <div>
@@ -279,7 +298,9 @@ export function RequestsTab({ requests, isLoading, onCreateRequest }: RequestsTa
                 <h3 className="font-medium text-sm text-muted-foreground">
                   Locație
                 </h3>
-                <p>{selectedRequest.cities?.join(", ")}, {selectedRequest.county}</p>
+                <p>
+                  {selectedRequest.cities?.join(", ")}, {selectedRequest.county}
+                </p>
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">

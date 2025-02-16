@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -22,7 +22,7 @@ import {
   SendHorizontal,
 } from "lucide-react";
 import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
@@ -31,6 +31,38 @@ export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // WebSocket connection
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'NEW_REQUEST') {
+          // Invalidate and refetch requests when a new one is received
+          queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, [queryClient]);
 
   // Fetch requests that match the service's location
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
@@ -157,7 +189,7 @@ export default function RequestsTab() {
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Descriere
                   </h3>
-                  <p>{selectedRequest.description}</p>
+                  <p className="whitespace-pre-line">{selectedRequest.description}</p>
                 </div>
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">

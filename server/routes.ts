@@ -1,5 +1,6 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
 import { insertUserSchema, insertCarSchema, insertRequestSchema, users } from "@shared/schema";
 import { json } from "express";
@@ -364,6 +365,16 @@ export function registerRoutes(app: Express): Server {
       const request = await storage.createRequest(requestData);
       console.log("Successfully created request:", request);
 
+      // Broadcast the new request to all connected services
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'NEW_REQUEST',
+            payload: request
+          }));
+        }
+      });
+
       res.status(201).json(request);
     } catch (error: any) {
       console.error("Error creating request:", error);
@@ -492,5 +503,19 @@ export function registerRoutes(app: Express): Server {
 
 
   const httpServer = createServer(app);
+
+  // Initialize WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  // Handle WebSocket connections
+  wss.on('connection', ws => {
+    console.log('Client connected');
+    ws.on('message', message => {
+      console.log('Received:', message);
+      // handle message
+    });
+    ws.on('close', () => console.log('Client disconnected'));
+  });
+
   return httpServer;
 }
