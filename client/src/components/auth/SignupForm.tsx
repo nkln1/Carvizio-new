@@ -168,13 +168,20 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     try {
       const { email, password } = values;
+      console.log('Starting user registration process...');
+
+      // 1. Create Firebase user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
+      console.log('Firebase user created successfully');
 
-      // Send verification email immediately after user creation
+      // 2. Send verification email
       await sendEmailVerification(firebaseUser);
+      console.log('Verification email sent');
 
+      // 3. Get token and register with backend
       const idToken = await firebaseUser.getIdToken();
+      console.log('Got Firebase token, registering with backend...');
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -193,13 +200,13 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         throw new Error('Failed to register user');
       }
 
-      // Redirect user based on role immediately after successful registration
-      if (role === "client") {
-        setLocation("/dashboard");
-      } else if (role === "service") {
-        setLocation("/service-dashboard");
-      }
+      console.log('Backend registration complete, redirecting...');
 
+      // 4. Redirect based on role
+      const redirectPath = role === "client" ? "/dashboard" : "/service-dashboard";
+      setLocation(redirectPath);
+
+      // 5. Show success toast after redirect
       toast({
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
