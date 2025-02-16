@@ -38,6 +38,9 @@ const editProfileSchema = z.object({
   city: z.string().min(1, {
     message: "Te rugăm să selectezi localitatea.",
   }),
+  address: z.string().optional(),
+  companyName: z.string().optional(),
+  representativeName: z.string().optional(),
 });
 
 type EditProfileFormValues = z.infer<typeof editProfileSchema>;
@@ -59,6 +62,9 @@ export function EditProfile({ user, onCancel }: EditProfileProps) {
       phone: user.phone || "",
       county: user.county || "",
       city: user.city || "",
+      address: user.address || "",
+      companyName: user.companyName || "",
+      representativeName: user.representativeName || "",
     },
   });
 
@@ -87,6 +93,9 @@ export function EditProfile({ user, onCancel }: EditProfileProps) {
   async function onSubmit(values: EditProfileFormValues) {
     mutation.mutate(values);
   }
+
+  // Determine if the user is a service account
+  const isServiceAccount = user.role === 'service';
 
   return (
     <Form {...form}>
@@ -180,6 +189,53 @@ export function EditProfile({ user, onCancel }: EditProfileProps) {
             </FormItem>
           )}
         />
+
+        {/* Service-specific fields */}
+        {isServiceAccount && (
+          <>
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Adresă</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Strada, Număr, Bloc, etc." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="companyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nume Companie</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Numele companiei" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="representativeName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nume Reprezentant</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Numele reprezentantului legal" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button
