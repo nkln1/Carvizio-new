@@ -49,7 +49,17 @@ export default function ServiceDashboard() {
     }
   };
 
-  if (!user?.emailVerified) {
+  // Early return if user is not available yet
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      </div>
+    );
+  }
+
+  // Show email verification message if email is not verified
+  if (!user.emailVerified) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="container mx-auto p-6 flex-grow flex items-center justify-center">
@@ -63,7 +73,7 @@ export default function ServiceDashboard() {
             <CardContent className="space-y-4">
               <p className="text-gray-600">
                 Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
-                Am trimis un link de verificare la adresa {user.email}.
+                {user.email && `Am trimis un link de verificare la adresa ${user.email}.`}
               </p>
               <div className="flex flex-col gap-2">
                 <Button onClick={handleResendVerification}>
