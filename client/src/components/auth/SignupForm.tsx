@@ -166,6 +166,12 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       const { email, password } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
+
+      // Send verification email immediately after user creation
+      await firebaseUser.sendEmailVerification({
+        url: window.location.origin + '/dashboard', // Redirect URL after verification
+      });
+
       const idToken = await firebaseUser.getIdToken();
 
       const response = await fetch('/api/auth/register', {
