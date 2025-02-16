@@ -431,6 +431,28 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add service requests endpoint
+  app.get("/api/service/requests", validateFirebaseToken, async (req, res) => {
+    try {
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Get service location details
+      if (user.role !== "SERVICE") {
+        return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
+      }
+
+      // Fetch requests that match the service's location
+      const matchingRequests = await storage.getRequestsByLocation(user.county, user.cities || []);
+      res.json(matchingRequests);
+    } catch (error) {
+      console.error("Error getting requests by location:", error);
+      res.status(500).json({ error: "Failed to get requests" });
+    }
+  });
+
   // Add phone check endpoint with proper Drizzle implementation
   app.post("/api/auth/check-phone", async (req, res) => {
     try {

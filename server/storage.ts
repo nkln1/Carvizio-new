@@ -32,6 +32,7 @@ export interface IStorage {
   getRequest(id: number): Promise<Request | undefined>;
   createRequest(request: InsertRequest): Promise<Request>;
   updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
+  getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
   sessionStore: session.Store;
 }
 
@@ -252,6 +253,32 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error updating request:', error);
       throw error;
+    }
+  }
+
+  async getRequestsByLocation(county: string, cities: string[]): Promise<Request[]> {
+    try {
+      // Fetch requests that match the service's location
+      // A request matches if:
+      // 1. The county matches AND
+      // 2. At least one city from the request's cities array matches the service's cities array
+      const requests = await db
+        .select()
+        .from(requests)
+        .where(eq(requests.county, county))
+        .orderBy(desc(requests.createdAt));
+
+      // Filter requests to match cities
+      return requests.filter(request => {
+        // If the request has no cities specified, include it (backwards compatibility)
+        if (!request.cities || request.cities.length === 0) return true;
+
+        // Check if any of the request's cities match any of the service's cities
+        return request.cities.some(city => cities.includes(city));
+      });
+    } catch (error) {
+      console.error('Error getting requests by location:', error);
+      return [];
     }
   }
 }
