@@ -23,7 +23,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
 import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
-import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 
@@ -128,7 +127,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [role, setRole] = useState<UserRole>(null);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
 
   const clientForm = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -170,17 +168,14 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       const { email, password } = values;
       console.log('Starting user registration process...');
 
-      // 1. Create Firebase user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
       console.log('Firebase user created successfully');
 
-      // 2. Send verification email
       await sendEmailVerification(firebaseUser);
       console.log('Verification email sent');
 
-      // 3. Get token and register with backend
-      const idToken = await firebaseUser.getIdToken(true); // Force token refresh
+      const idToken = await firebaseUser.getIdToken(true);
       console.log('Got Firebase token, registering with backend...');
 
       const response = await fetch('/api/auth/register', {
@@ -200,26 +195,19 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         throw new Error('Failed to register user');
       }
 
-      const userData = await response.json();
-      console.log('Backend registration complete, redirecting...');
+      await response.json();
+      console.log('Backend registration complete');
 
-      // 4. Show success toast before redirect
       toast({
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
       });
 
-      // 5. Notify parent component with the role
       onSuccess?.(role);
 
-      // 6. Redirect based on role - this will be handled by AuthContext
-      const redirectPath = role === "service" ? "/service-dashboard" : "/dashboard";
-      console.log('Setting location to:', redirectPath);
-      setLocation(redirectPath);
 
     } catch (error: any) {
       console.error("Registration error:", error);
-      // If Firebase user was created but backend registration failed, clean up
       if (auth.currentUser) {
         await auth.currentUser.delete();
       }
