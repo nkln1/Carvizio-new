@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
-import { updatePassword } from "firebase/auth";
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { Loader2 } from "lucide-react";
 
 interface ChangePasswordDialogProps {
@@ -14,14 +14,21 @@ interface ChangePasswordDialogProps {
 }
 
 export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const resetForm = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Eroare",
@@ -43,23 +50,38 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
     setIsLoading(true);
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error("User not found");
+      if (!user || !user.email) throw new Error("User not found");
 
+      // First re-authenticate
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        currentPassword
+      );
+      await reauthenticateWithCredential(user, credential);
+
+      // Then change password
       await updatePassword(user, newPassword);
-      
+
       toast({
         title: "Succes",
         description: "Parola a fost schimbată cu succes",
       });
-      
+
       onOpenChange(false);
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
+      resetForm();
+    } catch (error: any) {
       console.error("Error changing password:", error);
+      let errorMessage = "A apărut o eroare la schimbarea parolei.";
+
+      if (error.code === "auth/wrong-password") {
+        errorMessage = "Parola curentă este incorectă.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Prea multe încercări. Vă rugăm să încercați mai târziu.";
+      }
+
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la schimbarea parolei. Te rugăm să te reconectezi și să încerci din nou.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -68,12 +90,29 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      onOpenChange(open);
+      if (!open) resetForm();
+    }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Schimbă Parola</DialogTitle>
+          <DialogDescription>
+            Pentru a schimba parola, vă rugăm să introduceți parola curentă și noua parolă
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="current-password">Parola Curentă</Label>
+            <Input
+              id="current-password"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Introduceți parola curentă"
+              disabled={isLoading}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="new-password">Parolă Nouă</Label>
             <Input
@@ -100,7 +139,10 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                resetForm();
+              }}
               disabled={isLoading}
             >
               Anulează
