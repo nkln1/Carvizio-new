@@ -25,7 +25,7 @@ import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 
 type UserRole = "client" | "service" | null;
 
@@ -119,6 +119,10 @@ const serviceSchema = z.object({
   path: ["confirmPassword"],
 });
 
+interface SignupFormProps {
+  onSuccess?: () => void;
+}
+
 export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<UserRole>(null);
@@ -166,6 +170,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       const { email, password } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
+
+      // Send verification email immediately after user creation
+      await sendEmailVerification(firebaseUser);
+
       const idToken = await firebaseUser.getIdToken();
 
       const response = await fetch('/api/auth/register', {
