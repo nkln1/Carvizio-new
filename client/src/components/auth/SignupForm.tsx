@@ -193,18 +193,19 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         throw new Error('Failed to register user');
       }
 
+      // Redirect user based on role immediately after successful registration
+      if (role === "client") {
+        setLocation("/dashboard");
+      } else if (role === "service") {
+        setLocation("/service-dashboard");
+      }
+
       toast({
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
       });
 
       onSuccess?.();
-
-      if (role === "client") {
-        setLocation("/dashboard");
-      } else if (role === "service") {
-        setLocation("/service-dashboard");
-      }
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
