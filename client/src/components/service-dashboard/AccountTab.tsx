@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Settings, Loader2 } from "lucide-react";
-import { EditProfile } from "@/components/auth/EditProfile";
+import { EditProfileService } from "@/components/auth/EditProfileService";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import type { User as UserType } from "@shared/schema";
 import { useState } from "react";
@@ -49,7 +49,7 @@ export default function AccountTab() {
       <CardContent>
         <div className="grid gap-6">
           {isEditing ? (
-            <EditProfile
+            <EditProfileService
               user={userProfile}
               onCancel={() => setIsEditing(false)}
             />
@@ -57,8 +57,12 @@ export default function AccountTab() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Nume și Prenume</p>
-                  <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
+                  <p className="text-sm font-medium text-gray-500">Nume Companie</p>
+                  <p className="mt-1 text-sm">{userProfile.companyName || 'Nu este specificat'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Nume Reprezentant</p>
+                  <p className="mt-1 text-sm">{userProfile.representativeName || 'Nu este specificat'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Email</p>
@@ -80,16 +84,6 @@ export default function AccountTab() {
                   <p className="text-sm font-medium text-gray-500">Adresă</p>
                   <p className="mt-1 text-sm">{userProfile.address || 'Nu este specificat'}</p>
                 </div>
-
-                {/* Service specific information */}
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Nume Companie</p>
-                  <p className="mt-1 text-sm">{userProfile.companyName || 'Nu este specificat'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Nume Reprezentant</p>
-                  <p className="mt-1 text-sm">{userProfile.representativeName || 'Nu este specificat'}</p>
-                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">CUI</p>
                   <p className="mt-1 text-sm">{userProfile.cui || 'Nu este specificat'}</p>
@@ -97,10 +91,6 @@ export default function AccountTab() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Număr Registru Comerț</p>
                   <p className="mt-1 text-sm">{userProfile.tradeRegNumber || 'Nu este specificat'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Tip Cont</p>
-                  <p className="mt-1 text-sm capitalize">Service</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>

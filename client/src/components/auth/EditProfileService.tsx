@@ -25,10 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import * as z from "zod";
 
-const editProfileSchema = z.object({
-  name: z.string().min(2, {
-    message: "Numele trebuie să conțină cel puțin 2 caractere.",
-  }),
+const editServiceProfileSchema = z.object({
   phone: z.string().min(10, {
     message: "Te rugăm să introduci un număr de telefon valid.",
   }),
@@ -38,32 +35,43 @@ const editProfileSchema = z.object({
   city: z.string().min(1, {
     message: "Te rugăm să selectezi localitatea.",
   }),
+  address: z.string().min(1, {
+    message: "Te rugăm să introduci adresa service-ului.",
+  }),
+  companyName: z.string().min(1, {
+    message: "Te rugăm să introduci numele companiei.",
+  }),
+  representativeName: z.string().min(1, {
+    message: "Te rugăm să introduci numele reprezentantului.",
+  }),
 });
 
-type EditProfileFormValues = z.infer<typeof editProfileSchema>;
+type EditServiceProfileFormValues = z.infer<typeof editServiceProfileSchema>;
 
-interface EditProfileProps {
+interface EditProfileServiceProps {
   user: User;
   onCancel: () => void;
 }
 
-export function EditProfile({ user, onCancel }: EditProfileProps) {
+export function EditProfileService({ user, onCancel }: EditProfileServiceProps) {
   const [selectedCounty, setSelectedCounty] = useState(user.county || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<EditProfileFormValues>({
-    resolver: zodResolver(editProfileSchema),
+  const form = useForm<EditServiceProfileFormValues>({
+    resolver: zodResolver(editServiceProfileSchema),
     defaultValues: {
-      name: user.name || "",
       phone: user.phone || "",
       county: user.county || "",
       city: user.city || "",
+      address: user.address || "",
+      companyName: user.companyName || "",
+      representativeName: user.representativeName || "",
     },
   });
 
   const mutation = useMutation({
-    mutationFn: async (values: EditProfileFormValues) => {
+    mutationFn: async (values: EditServiceProfileFormValues) => {
       const response = await apiRequest("PATCH", "/api/auth/profile", values);
       return response.json();
     },
@@ -71,7 +79,7 @@ export function EditProfile({ user, onCancel }: EditProfileProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: "Profil actualizat",
-        description: "Datele tale au fost salvate cu succes.",
+        description: "Datele service-ului au fost salvate cu succes.",
       });
       onCancel();
     },
@@ -84,27 +92,13 @@ export function EditProfile({ user, onCancel }: EditProfileProps) {
     },
   });
 
-  async function onSubmit(values: EditProfileFormValues) {
+  async function onSubmit(values: EditServiceProfileFormValues) {
     mutation.mutate(values);
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nume și Prenume</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Ion Popescu" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="phone"
@@ -176,6 +170,48 @@ export function EditProfile({ user, onCancel }: EditProfileProps) {
                     ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Adresă Service</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Strada, Număr, Bloc, etc." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nume Companie</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Numele companiei" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="representativeName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nume Reprezentant</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Numele reprezentantului legal" />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
