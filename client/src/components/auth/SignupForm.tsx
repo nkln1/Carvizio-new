@@ -195,8 +195,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         throw new Error('Failed to register user');
       }
 
-      await response.json();
+      const userData = await response.json();
       console.log('Backend registration complete');
+
+      const loginResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        credentials: 'include'
+      });
+
+      if (!loginResponse.ok) {
+        throw new Error('Failed to establish session');
+      }
 
       toast({
         title: "Success",
@@ -204,7 +217,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       });
 
       onSuccess?.(role);
-
 
     } catch (error: any) {
       console.error("Registration error:", error);
