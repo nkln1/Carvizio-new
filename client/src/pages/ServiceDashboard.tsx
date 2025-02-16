@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
-import type { User as UserType } from "@shared/schema";
+import type { User as UserType, Request as RequestType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-
-// Import the tab components
-import RequestsTab from "@/components/service-dashboard/RequestsTab";
-import SentOffersTab from "@/components/service-dashboard/SentOffersTab";
-import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab";
-import MessagesTab from "@/components/service-dashboard/MessagesTab";
-import AccountTab from "@/components/service-dashboard/AccountTab";
 
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
@@ -97,23 +91,6 @@ export default function ServiceDashboard() {
     );
   }
 
-  const renderActiveTab = () => {
-    switch (activeTab) {
-      case "cereri":
-        return <RequestsTab />;
-      case "oferte-trimise":
-        return <SentOffersTab />;
-      case "oferte-acceptate":
-        return <AcceptedOffersTab />;
-      case "mesaje":
-        return <MessagesTab />;
-      case "cont":
-        return <AccountTab />;
-      default:
-        return <RequestsTab />;
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <nav className="bg-white border-b">
@@ -170,7 +147,60 @@ export default function ServiceDashboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {renderActiveTab()}
+            {activeTab === "cereri" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cereri de Service</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Lista cererilor va apărea aici.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === "oferte-trimise" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Oferte Trimise</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Lista ofertelor trimise va apărea aici.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === "oferte-acceptate" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Oferte Acceptate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Lista ofertelor acceptate va apărea aici.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === "mesaje" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mesaje</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Mesajele vor apărea aici.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === "cont" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informații Cont</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Informațiile contului vor apărea aici.</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>
