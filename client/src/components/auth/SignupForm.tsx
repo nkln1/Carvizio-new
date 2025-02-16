@@ -209,9 +209,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       });
 
       // 5. Redirect based on role
-      const redirectPath = role === "client" ? "/dashboard" : "/service-dashboard";
+      const redirectPath = role === "service" ? "/service-dashboard" : "/dashboard";
       console.log('Redirecting to:', redirectPath);
-      window.location.href = redirectPath;
+      setLocation(redirectPath);
 
       onSuccess?.();
     } catch (error: any) {
