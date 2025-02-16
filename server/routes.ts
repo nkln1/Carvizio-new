@@ -1,12 +1,13 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertCarSchema, insertRequestSchema } from "@shared/schema";
+import { insertUserSchema, insertCarSchema, insertRequestSchema, users } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
-import { pool } from "./db";
+import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
+import { eq } from 'drizzle-orm';
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -429,6 +430,36 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
+
+  // Add phone check endpoint with proper Drizzle implementation
+  app.post("/api/auth/check-phone", async (req, res) => {
+    try {
+      const { phone } = req.body;
+
+      if (!phone) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+
+      // Check if phone already exists in database using Drizzle
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.phone, phone));
+
+      if (existingUser) {
+        return res.status(400).json({
+          error: "Phone number already registered",
+          code: "PHONE_EXISTS"
+        });
+      }
+
+      res.status(200).json({ available: true });
+    } catch (error) {
+      console.error("Phone check error:", error);
+      res.status(500).json({ error: "Failed to check phone number" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
