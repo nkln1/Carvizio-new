@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Settings } from "lucide-react";
 import { EditProfile } from "@/components/auth/EditProfile";
+import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import type { User as UserType } from "@shared/schema";
 import { useState } from "react";
 
@@ -11,6 +12,7 @@ interface ProfileTabProps {
 
 export function ProfileTab({ userProfile }: ProfileTabProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   return (
     <Card>
@@ -70,7 +72,11 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
                   <Settings className="mr-2 h-4 w-4" />
                   Editează Profilul
                 </Button>
-                <Button variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700">
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto text-red-600 hover:text-red-700"
+                  onClick={() => setShowPasswordDialog(true)}
+                >
                   Schimbă Parola
                 </Button>
               </div>
@@ -78,6 +84,11 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
           )}
         </div>
       </CardContent>
+
+      <ChangePasswordDialog 
+        open={showPasswordDialog} 
+        onOpenChange={setShowPasswordDialog}
+      />
     </Card>
   );
 }

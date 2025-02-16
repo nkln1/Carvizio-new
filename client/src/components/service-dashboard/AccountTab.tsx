@@ -2,12 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Settings, Loader2 } from "lucide-react";
 import { EditProfile } from "@/components/auth/EditProfile";
+import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import type { User as UserType } from "@shared/schema";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 export default function AccountTab() {
   const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
     retry: 1,
@@ -54,6 +56,10 @@ export default function AccountTab() {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Nume și Prenume</p>
+                  <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Email</p>
                   <p className="mt-1 text-sm">{userProfile.email}</p>
@@ -112,7 +118,11 @@ export default function AccountTab() {
                   <Settings className="mr-2 h-4 w-4" />
                   Editează Profilul
                 </Button>
-                <Button variant="outline" className="w-full sm:w-auto text-red-600 hover:text-red-700">
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto text-red-600 hover:text-red-700"
+                  onClick={() => setShowPasswordDialog(true)}
+                >
                   Schimbă Parola
                 </Button>
               </div>
@@ -120,6 +130,11 @@ export default function AccountTab() {
           )}
         </div>
       </CardContent>
+
+      <ChangePasswordDialog 
+        open={showPasswordDialog} 
+        onOpenChange={setShowPasswordDialog}
+      />
     </Card>
   );
 }
