@@ -120,7 +120,7 @@ const serviceSchema = z.object({
 });
 
 interface SignupFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (role: UserRole) => void;
 }
 
 export default function SignupForm({ onSuccess }: SignupFormProps) {
@@ -180,7 +180,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       console.log('Verification email sent');
 
       // 3. Get token and register with backend
-      const idToken = await firebaseUser.getIdToken();
+      const idToken = await firebaseUser.getIdToken(true); // Force token refresh
       console.log('Got Firebase token, registering with backend...');
 
       const response = await fetch('/api/auth/register', {
@@ -200,6 +200,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         throw new Error('Failed to register user');
       }
 
+      const userData = await response.json();
       console.log('Backend registration complete, redirecting...');
 
       // 4. Show success toast before redirect
@@ -208,14 +209,20 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
       });
 
-      // 5. Redirect based on role
+      // 5. Notify parent component with the role
+      onSuccess?.(role);
+
+      // 6. Redirect based on role - this will be handled by AuthContext
       const redirectPath = role === "service" ? "/service-dashboard" : "/dashboard";
-      console.log('Redirecting to:', redirectPath);
+      console.log('Setting location to:', redirectPath);
       setLocation(redirectPath);
 
-      onSuccess?.();
     } catch (error: any) {
       console.error("Registration error:", error);
+      // If Firebase user was created but backend registration failed, clean up
+      if (auth.currentUser) {
+        await auth.currentUser.delete();
+      }
       toast({
         variant: "destructive",
         title: "Eroare",

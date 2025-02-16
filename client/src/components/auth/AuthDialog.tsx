@@ -26,7 +26,7 @@ export default function AuthDialog({
   const { user } = useAuth();
 
   // Handle dialog close after successful auth
-  const handleAuthSuccess = (role: string) => {
+  const handleAuthSuccess = (role?: string) => {
     setOpen(false);
   };
 
