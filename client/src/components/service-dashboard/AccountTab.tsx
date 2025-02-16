@@ -55,10 +55,6 @@ export default function AccountTab() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Nume Complet</p>
-                  <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
-                </div>
-                <div>
                   <p className="text-sm font-medium text-gray-500">Email</p>
                   <p className="mt-1 text-sm">{userProfile.email}</p>
                 </div>

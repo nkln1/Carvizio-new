@@ -31,7 +31,7 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Nume Complet</p>
+                  <p className="text-sm font-medium text-gray-500">Nume și Prenume</p>
                   <p className="mt-1 text-sm">{userProfile.name || 'Nu este specificat'}</p>
                 </div>
                 <div>
