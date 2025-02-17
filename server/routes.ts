@@ -505,16 +505,32 @@ export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
   // Initialize WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    perMessageDeflate: false
+  });
 
   // Handle WebSocket connections
-  wss.on('connection', ws => {
-    console.log('Client connected');
+  wss.on('connection', (ws, req) => {
+    console.log('Client connected from:', req.socket.remoteAddress);
+    
     ws.on('message', message => {
-      console.log('Received:', message);
-      // handle message
+      console.log('Received:', message.toString());
     });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
     ws.on('close', () => console.log('Client disconnected'));
+
+    // Send initial connection confirmation
+    ws.send(JSON.stringify({ type: 'CONNECTED' }));
+  });
+
+  wss.on('error', (error) => {
+    console.error('WebSocket server error:', error);
   });
 
   return httpServer;

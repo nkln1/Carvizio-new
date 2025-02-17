@@ -42,7 +42,7 @@ export default function RequestsTab() {
   // WebSocket connection
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = import.meta.env.DEV ? "0.0.0.0:5000" : window.location.host;
+    const host = import.meta.env.DEV ? `${window.location.hostname}:5000` : window.location.host;
     const wsUrl = `${protocol}//${host}/ws`;
     
     let socket: WebSocket;
