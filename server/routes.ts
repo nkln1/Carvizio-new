@@ -9,6 +9,8 @@ import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
+import { insertOfferSchema } from "@shared/schema"; // Add import for offer schema
+
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -498,6 +500,88 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Phone check error:", error);
       res.status(500).json({ error: "Failed to check phone number" });
+    }
+  });
+
+  // Add offer submission endpoint
+  app.post("/api/requests/:id/offers", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Offer submission attempt for request ID:", req.params.id);
+
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Verify user is a service provider
+      if (user.role !== "service") {
+        return res.status(403).json({ error: "Only service providers can submit offers" });
+      }
+
+      // Create the offer
+      const offerData = {
+        ...req.body,
+        requestId: parseInt(req.params.id),
+        serviceId: user.id
+      };
+
+      // Validate and parse offer data
+      const validatedOffer = insertOfferSchema.parse(offerData);
+      const offer = await storage.createOffer(validatedOffer);
+
+      // Update request hasReceivedOffer status
+      await storage.updateRequest(parseInt(req.params.id), {
+        hasReceivedOffer: true
+      });
+
+      console.log("Successfully created offer:", offer);
+      res.status(201).json(offer);
+    } catch (error: any) {
+      console.error("Error submitting offer:", error);
+
+      if (error.errors) {
+        return res.status(400).json({
+          error: "Invalid offer data",
+          details: error.errors
+        });
+      }
+
+      res.status(500).json({
+        error: "Failed to submit offer",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
+  // Add request rejection endpoint
+  app.post("/api/requests/:id/reject", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Request rejection attempt for ID:", req.params.id);
+
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Verify user is a service provider
+      if (user.role !== "service") {
+        return res.status(403).json({ error: "Only service providers can reject requests" });
+      }
+
+      // Update request to mark as rejected
+      await storage.updateRequest(parseInt(req.params.id), {
+        hasReceivedOffer: true // This moves it to the "Cereri cu Oferte Trimise" section
+      });
+
+      res.status(200).json({ message: "Request rejected successfully" });
+    } catch (error: any) {
+      console.error("Error rejecting request:", error);
+      res.status(500).json({
+        error: "Failed to reject request",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
