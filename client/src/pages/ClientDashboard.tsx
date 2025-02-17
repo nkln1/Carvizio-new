@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
-import { EditProfile } from "@/components/auth/EditProfile";
+import { ClientProfileTab } from "@/components/dashboard/ClientProfileTab";
 import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
 import { RequestForm } from "@/components/request/RequestForm";
@@ -16,7 +18,6 @@ import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
-import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { useAuth } from "@/context/AuthContext";
 
 interface ServiceOffer {
@@ -31,7 +32,7 @@ interface ServiceOffer {
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("requests");
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
@@ -49,9 +50,37 @@ export default function ClientDashboard() {
     return () => unsubscribe();
   }, [setLocation]);
 
+  // WebSocket setup with proper error handling
+  useEffect(() => {
+    if (!user) return;
+
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      console.log('Attempting WebSocket connection to:', wsUrl);
+
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connection established');
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      return () => {
+        ws.close();
+      };
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error);
+    }
+  }, [user]);
+
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/client/profile'],
     queryFn: async () => {
+      console.log('Fetching client profile...');
       const token = await auth.currentUser?.getIdToken(true);
       if (!token) {
         throw new Error('No authentication token available');
@@ -59,15 +88,19 @@ export default function ClientDashboard() {
 
       const response = await fetch('/api/client/profile', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch client profile');
+        const errorText = await response.text();
+        console.error('Failed to fetch client profile:', errorText);
+        throw new Error(`Failed to fetch client profile: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Received client profile:', data);
       return data;
     },
     retry: 1,
@@ -348,7 +381,7 @@ export default function ClientDashboard() {
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
           </div>
         ) : (
-          <>
+          <div className="space-y-6">
             {activeTab === "requests" && (
               <RequestsTab
                 requests={userRequests}
@@ -379,9 +412,9 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "profile" && userProfile && (
-              <ProfileTab userProfile={userProfile} />
+              <ClientProfileTab userProfile={userProfile} />
             )}
-          </>
+          </div>
         )}
       </div>
 
