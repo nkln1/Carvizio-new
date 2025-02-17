@@ -20,6 +20,7 @@ import {
   Eye,
   MessageSquare,
   SendHorizontal,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -146,11 +147,24 @@ export default function RequestsTab() {
                         Detalii
                       </Button>
                       <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                        onClick={() => {
+                          toast({
+                            title: "În curând",
+                            description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                          });
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Mesaj
+                      </Button>
+                      <Button
                         variant="default"
                         size="sm"
                         className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
                         onClick={() => {
-                          // TODO: Implement send offer functionality
                           toast({
                             title: "În curând",
                             description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
@@ -159,6 +173,20 @@ export default function RequestsTab() {
                       >
                         <SendHorizontal className="h-4 w-4" />
                         Trimite Ofertă
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                        onClick={() => {
+                          toast({
+                            title: "În curând",
+                            description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                          });
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        Respinge
                       </Button>
                     </div>
                   </TableCell>
