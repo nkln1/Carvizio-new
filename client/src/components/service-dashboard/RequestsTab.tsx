@@ -32,6 +32,7 @@ export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [viewedRequests, setViewedRequests] = useState(new Set<string>()); // Track viewed requests
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -105,9 +106,20 @@ export default function RequestsTab() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="flex items-center gap-2 mb-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showOnlyNew}
+              onChange={(e) => setShowOnlyNew(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-[#00aff5] focus:ring-[#00aff5]"
+            />
+            <span>Doar cereri noi</span>
+          </label>
+        </div>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : activeRequests.length > 0 ? (
+        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(request.id)).length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -120,7 +132,9 @@ export default function RequestsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeRequests.map((request) => (
+              {activeRequests
+                .filter(request => !showOnlyNew || !viewedRequests.has(request.id))
+                .map((request) => (
                 <TableRow 
                   key={request.id} 
                   className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
