@@ -31,6 +31,7 @@ import type { Request as RequestType } from "@shared/schema";
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
+  const [viewedRequests, setViewedRequests] = useState(new Set<string>()); // Track viewed requests
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -89,6 +90,12 @@ export default function RequestsTab() {
   // Filter only active requests
   const activeRequests = requests.filter(req => req.status === "Active");
 
+  const handleViewRequest = (requestId: string) => {
+    setViewedRequests(prevViewed => new Set([...prevViewed, requestId]));
+    setSelectedRequest(requests.find(req => req.id === requestId));
+    setShowViewDialog(true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -116,7 +123,16 @@ export default function RequestsTab() {
               {activeRequests.map((request) => (
                 <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
                   <TableCell className="font-medium">
-                    {request.title}
+                    <div className="flex items-center gap-2">
+                      {!viewedRequests.has(request.id) && (
+                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                          NEW
+                        </span>
+                      )}
+                      <span className={!viewedRequests.has(request.id) ? "font-bold" : ""}>
+                        {request.title}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -137,10 +153,7 @@ export default function RequestsTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setShowViewDialog(true);
-                        }}
+                        onClick={() => handleViewRequest(request.id)}
                         className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                       >
                         <Eye className="h-4 w-4" />
