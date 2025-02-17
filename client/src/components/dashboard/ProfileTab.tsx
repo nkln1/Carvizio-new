@@ -56,14 +56,12 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
                   <p className="text-sm font-medium text-gray-500">Adresă</p>
                   <p className="mt-1 text-sm">{userProfile.address || 'Nu este specificat'}</p>
                 </div>
-                {userProfile.role === 'client' && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
-                    <p className="mt-1 text-sm">
-                      {userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : 'Nu este specificat'}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
+                  <p className="mt-1 text-sm">
+                    {userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('ro-RO') : 'Nu este specificat'}
+                  </p>
+                </div>
               </div>
               <div className="flex flex-col space-y-2">
                 <Button
