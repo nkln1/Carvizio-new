@@ -42,12 +42,16 @@ export default function RequestsTab() {
   // WebSocket connection
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
+    const host = import.meta.env.DEV ? "0.0.0.0:5000" : window.location.host;
+    const wsUrl = `${protocol}//${host}/ws`;
+    
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(wsUrl);
 
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-    };
+      socket.onopen = () => {
+        console.log('WebSocket connection established');
+      };
 
     socket.onmessage = (event) => {
       try {
@@ -66,8 +70,13 @@ export default function RequestsTab() {
     };
 
     return () => {
-      socket.close();
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
     };
+  } catch (error) {
+    console.error('WebSocket connection error:', error);
+  }
   }, [queryClient]);
 
   // Fetch requests that match the service's location
