@@ -62,7 +62,6 @@ export default function ClientDashboard() {
       }
 
       const data = await response.json();
-      console.log('Client profile data received:', data);
       return data;
     },
     retry: 1,
@@ -368,6 +367,7 @@ export default function ClientDashboard() {
             {activeTab === "profile" && userProfile && (
               <ClientProfileTab userProfile={userProfile} />
             )}
+            {activeTab === "messages" && <MessagesTab />} {/* Added this line */}
           </div>
         )}
       </div>
