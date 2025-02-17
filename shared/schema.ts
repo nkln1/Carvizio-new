@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Users table remains unchanged
+// Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -29,7 +29,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   offers: many(offers)
 }));
 
-// Cars table remains unchanged
+// Cars table
 export const cars = pgTable("cars", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -55,7 +55,7 @@ export const carsRelations = relations(cars, ({ one, many }) => ({
   requests: many(requests)
 }));
 
-// Updated requests table with hasReceivedOffer field
+// Requests table with hasReceivedOffer field
 export const requests = pgTable("requests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -68,7 +68,7 @@ export const requests = pgTable("requests", {
   preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
-  hasReceivedOffer: boolean("has_received_offer").default(false),
+  hasReceivedOffer: boolean("has_received_offer").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -84,7 +84,7 @@ export const requestsRelations = relations(requests, ({ one, many }) => ({
   offers: many(offers)
 }));
 
-// New offers table
+// Offers table
 export const offers = pgTable("offers", {
   id: serial("id").primaryKey(),
   requestId: integer("request_id").notNull().references(() => requests.id),

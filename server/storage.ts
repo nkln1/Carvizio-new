@@ -1,4 +1,4 @@
-import { users, cars, requests, type User, type InsertUser, type Car, type InsertCar, type Request, type InsertRequest } from "@shared/schema";
+import { users, cars, requests, offers, type User, type InsertUser, type Car, type InsertCar, type Request, type InsertRequest, type Offer, type InsertOffer } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import session from "express-session";
@@ -33,6 +33,10 @@ export interface IStorage {
   createRequest(request: InsertRequest): Promise<Request>;
   updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
   getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
+  // Offer management
+  createOffer(offer: InsertOffer): Promise<Offer>;
+  getOffers(requestId: number): Promise<Offer[]>;
+  getServiceOffers(serviceId: number): Promise<Offer[]>;
   sessionStore: session.Store;
 }
 
@@ -258,29 +262,66 @@ export class DatabaseStorage implements IStorage {
 
   async getRequestsByLocation(county: string, cities: string[]): Promise<Request[]> {
     try {
-      // Get all active requests from the specified county
+      // Fetch all active requests from the specified county
       const matchingRequests = await db
         .select()
         .from(requests)
         .where(eq(requests.county, county))
         .where(eq(requests.status, "Active"))
+        .where(eq(requests.hasReceivedOffer, false))
         .orderBy(desc(requests.createdAt));
 
       // If service has cities specified, filter requests to match cities
       if (cities.length > 0) {
         return matchingRequests.filter(request => {
           const requestCities = request.cities || [];
-          return requestCities.some(requestCity =>
-            cities.includes(requestCity)
-          );
+          return requestCities.some(city => cities.includes(city));
         });
       }
 
-      // If service has no cities specified, return all requests from the county
       return matchingRequests;
     } catch (error) {
       console.error('Error getting requests by location:', error);
       throw error;
+    }
+  }
+
+  async createOffer(offer: InsertOffer): Promise<Offer> {
+    try {
+      const [newOffer] = await db
+        .insert(offers)
+        .values(offer)
+        .returning();
+      return newOffer;
+    } catch (error) {
+      console.error('Error creating offer:', error);
+      throw error;
+    }
+  }
+
+  async getOffers(requestId: number): Promise<Offer[]> {
+    try {
+      return await db
+        .select()
+        .from(offers)
+        .where(eq(offers.requestId, requestId))
+        .orderBy(desc(offers.createdAt));
+    } catch (error) {
+      console.error('Error getting offers:', error);
+      return [];
+    }
+  }
+
+  async getServiceOffers(serviceId: number): Promise<Offer[]> {
+    try {
+      return await db
+        .select()
+        .from(offers)
+        .where(eq(offers.serviceId, serviceId))
+        .orderBy(desc(offers.createdAt));
+    } catch (error) {
+      console.error('Error getting service offers:', error);
+      return [];
     }
   }
 }
