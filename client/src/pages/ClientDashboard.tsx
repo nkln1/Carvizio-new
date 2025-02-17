@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -373,6 +373,47 @@ export default function ClientDashboard() {
       </div>
 
       <Footer />
+
+      {/* Add Car Dialog */}
+      <Dialog open={showCarDialog} onOpenChange={setShowCarDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedCar ? "Editare mașină" : "Adăugare mașină nouă"}
+            </DialogTitle>
+          </DialogHeader>
+          <CarForm
+            onSubmit={selectedCar ? handleUpdateCar : handleCarSubmit}
+            onCancel={() => {
+              setShowCarDialog(false);
+              setSelectedCar(undefined);
+            }}
+            initialData={selectedCar}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Dialog */}
+      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Creare cerere nouă</DialogTitle>
+          </DialogHeader>
+          <RequestForm
+            onSubmit={handleRequestSubmit}
+            onCancel={() => {
+              setShowRequestDialog(false);
+              setPendingRequestData(null);
+            }}
+            onAddCar={(formData) => {
+              setPendingRequestData(formData);
+              setShowRequestDialog(false);
+              setShowCarDialog(true);
+            }}
+            initialData={pendingRequestData}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -66,7 +66,9 @@ export default function RequestsTab() {
     };
 
     return () => {
-      socket.close();
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
     };
   }, [queryClient]);
 
@@ -142,91 +144,91 @@ export default function RequestsTab() {
               {activeRequests
                 .filter(request => !showOnlyNew || !viewedRequests.has(request.id))
                 .map((request) => (
-                <TableRow 
-                  key={request.id} 
-                  className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {!viewedRequests.has(request.id) && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                          NEW
-                        </span>
-                      )}
-                      {request.title}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    {request.cities?.join(", ")}, {request.county}
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                      {request.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewRequest(request.id)}
-                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Detalii
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Mesaj
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <SendHorizontal className="h-4 w-4" />
-                        Trimite Ofertă
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                        Respinge
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                  <TableRow
+                    key={request.id}
+                    className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {!viewedRequests.has(request.id) && (
+                          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                            NEW
+                          </span>
+                        )}
+                        {request.title}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {request.cities?.join(", ")}, {request.county}
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                        {request.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewRequest(request.id)}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Detalii
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                          onClick={() => {
+                            toast({
+                              title: "În curând",
+                              description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                            });
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Mesaj
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
+                          onClick={() => {
+                            toast({
+                              title: "În curând",
+                              description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                            });
+                          }}
+                        >
+                          <SendHorizontal className="h-4 w-4" />
+                          Trimite Ofertă
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                          onClick={() => {
+                            toast({
+                              title: "În curând",
+                              description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                            });
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                          Respinge
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         ) : (
