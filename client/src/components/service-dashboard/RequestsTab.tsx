@@ -31,9 +31,9 @@ import type { Request as RequestType } from "@shared/schema";
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
+  const [viewedRequests, setViewedRequests] = useState<Set<number>>(() => {
     const saved = localStorage.getItem('viewedRequests');
-    return saved ? new Set(JSON.parse(saved)) : new Set<string>();
+    return saved ? new Set(JSON.parse(saved)) : new Set<number>();
   });
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
@@ -41,32 +41,41 @@ export default function RequestsTab() {
 
   // WebSocket connection
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
+    let ws: WebSocket | null = null;
 
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-    };
+    try {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'NEW_REQUEST') {
-          // Invalidate and refetch requests when a new one is received
-          queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connection established for service requests');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'NEW_REQUEST') {
+            // Invalidate and refetch requests when a new one is received
+            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+          }
+        } catch (error) {
+          console.error('Error handling WebSocket message:', error);
         }
-      } catch (error) {
-        console.error('Error handling WebSocket message:', error);
-      }
-    };
+      };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error);
+    }
 
     return () => {
-      socket.close();
+      if (ws) {
+        ws.close();
+      }
     };
   }, [queryClient]);
 
@@ -96,7 +105,7 @@ export default function RequestsTab() {
 
   const handleViewRequest = (requestId: string) => {
     setViewedRequests(prevViewed => {
-      const newSet = new Set([...prevViewed, requestId]);
+      const newSet = new Set([...prevViewed, parseInt(requestId)]); // Assuming requestId is a string representation of a number
       localStorage.setItem('viewedRequests', JSON.stringify([...newSet]));
       return newSet;
     });
@@ -126,7 +135,7 @@ export default function RequestsTab() {
         </div>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(request.id)).length > 0 ? (
+        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(parseInt(request.id))).length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -140,93 +149,93 @@ export default function RequestsTab() {
             </TableHeader>
             <TableBody>
               {activeRequests
-                .filter(request => !showOnlyNew || !viewedRequests.has(request.id))
+                .filter(request => !showOnlyNew || !viewedRequests.has(parseInt(request.id)))
                 .map((request) => (
-                <TableRow 
-                  key={request.id} 
-                  className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {!viewedRequests.has(request.id) && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                          NEW
-                        </span>
-                      )}
-                      {request.title}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    {request.cities?.join(", ")}, {request.county}
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                      {request.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewRequest(request.id)}
-                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Detalii
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Mesaj
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <SendHorizontal className="h-4 w-4" />
-                        Trimite Ofertă
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                        Respinge
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                  <TableRow
+                    key={request.id}
+                    className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(parseInt(request.id)) ? "bg-blue-50 font-bold" : ""}`}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {!viewedRequests.has(parseInt(request.id)) && (
+                          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                            NEW
+                          </span>
+                        )}
+                        {request.title}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {request.cities?.join(", ")}, {request.county}
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                        {request.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewRequest(request.id)}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Detalii
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                          onClick={() => {
+                            toast({
+                              title: "În curând",
+                              description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                            });
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Mesaj
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
+                          onClick={() => {
+                            toast({
+                              title: "În curând",
+                              description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                            });
+                          }}
+                        >
+                          <SendHorizontal className="h-4 w-4" />
+                          Trimite Ofertă
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                          onClick={() => {
+                            toast({
+                              title: "În curând",
+                              description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                            });
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                          Respinge
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         ) : (
