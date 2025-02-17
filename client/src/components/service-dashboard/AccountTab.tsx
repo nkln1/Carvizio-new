@@ -5,34 +5,14 @@ import { EditProfileService } from "@/components/auth/EditProfileService";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import type { User as UserType } from "@shared/schema";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 
-export default function AccountTab() {
+interface AccountTabProps {
+  userProfile: UserType;
+}
+
+export default function AccountTab({ userProfile }: AccountTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/auth/me'],
-    retry: 1,
-    refetchOnWindowFocus: false
-  });
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profilul Meu
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!userProfile || userProfile.role !== 'service') {
     return null;
