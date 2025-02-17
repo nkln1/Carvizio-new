@@ -50,33 +50,6 @@ export default function ClientDashboard() {
     return () => unsubscribe();
   }, [setLocation]);
 
-  // WebSocket setup with proper error handling
-  useEffect(() => {
-    if (!user) return;
-
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      console.log('Attempting WebSocket connection to:', wsUrl);
-
-      const ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log('WebSocket connection established');
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      return () => {
-        ws.close();
-      };
-    } catch (error) {
-      console.error('Error setting up WebSocket:', error);
-    }
-  }, [user]);
-
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/client/profile'],
     queryFn: async () => {
