@@ -14,8 +14,8 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
-  if (userProfile.role !== "client") {
-    return null; // Don't render anything if not a client
+  if (!userProfile || userProfile.role !== "client") {
+    return null;
   }
 
   return (
