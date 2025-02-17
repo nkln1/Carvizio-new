@@ -21,7 +21,6 @@ import { Settings } from "lucide-react";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { useAuth } from "@/context/AuthContext";
-import { ClientProfileTab } from "@/components/dashboard/ClientProfileTab";
 
 interface ServiceOffer {
   id: number;
@@ -364,7 +363,7 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "profile" && userProfile && (
-              <ClientProfileTab userProfile={userProfile} />
+              <ProfileTab userProfile={userProfile} />
             )}
           </>
         )}
