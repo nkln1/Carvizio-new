@@ -20,15 +20,6 @@ import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { useAuth } from "@/context/AuthContext";
 
-interface ServiceOffer {
-  id: number;
-  serviceId: string;
-  serviceName: string;
-  price: number;
-  availability: string;
-  description: string;
-}
-
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
@@ -38,7 +29,6 @@ export default function ClientDashboard() {
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const { toast } = useToast();
-  const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -50,10 +40,9 @@ export default function ClientDashboard() {
     return () => unsubscribe();
   }, [setLocation]);
 
-  const { data: userProfile, isLoading } = useQuery<UserType>({
+  const { data: userProfile, isLoading: profileLoading } = useQuery<UserType>({
     queryKey: ['/api/client/profile'],
     queryFn: async () => {
-      console.log('Fetching client profile...');
       const token = await auth.currentUser?.getIdToken(true);
       if (!token) {
         throw new Error('No authentication token available');
@@ -67,29 +56,27 @@ export default function ClientDashboard() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to fetch client profile:', errorText);
-        throw new Error(`Failed to fetch client profile: ${errorText}`);
+        const errorData = await response.json();
+        console.error('Client profile fetch error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch client profile');
       }
 
       const data = await response.json();
-      console.log('Received client profile:', data);
+      console.log('Client profile data received:', data);
       return data;
     },
     retry: 1,
     refetchOnWindowFocus: false
   });
 
-  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
+  const { data: userCars = [], isLoading: carsLoading } = useQuery<CarType[]>({
     queryKey: ['/api/cars'],
     enabled: !!userProfile,
   });
 
-  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
+  const { data: userRequests = [], isLoading: requestsLoading } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
   });
 
   const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
@@ -322,7 +309,7 @@ export default function ClientDashboard() {
             <CardContent className="space-y-4">
               <p className="text-gray-600">
                 Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
-                {user.email && `Am trimis un link de verificare la adresa ${user.email}.`}
+                {user.email && ` Am trimis un link de verificare la adresa ${user.email}.`}
               </p>
               <div className="flex flex-col gap-2">
                 <Button onClick={handleResendVerification}>
@@ -340,6 +327,8 @@ export default function ClientDashboard() {
     );
   }
 
+  const isLoading = profileLoading || carsLoading || requestsLoading;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation
@@ -355,26 +344,18 @@ export default function ClientDashboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {activeTab === "requests" && (
+            {activeTab === "requests" && userRequests && (
               <RequestsTab
                 requests={userRequests}
-                isLoading={isLoadingRequests}
+                isLoading={requestsLoading}
                 onCreateRequest={() => setShowRequestDialog(true)}
               />
             )}
 
-            {activeTab === "offers" && (
-              <OffersTab offers={offers} />
-            )}
-
-            {activeTab === "messages" && (
-              <MessagesTab />
-            )}
-
-            {activeTab === "car" && (
+            {activeTab === "car" && userCars && (
               <CarsTab
                 cars={userCars}
-                isLoading={isLoadingCars}
+                isLoading={carsLoading}
                 onAddCar={() => setShowCarDialog(true)}
                 onEditCar={(car) => {
                   setSelectedCar(car);
@@ -390,73 +371,6 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
-
-      <Dialog open={showCarDialog} onOpenChange={(open) => {
-        setShowCarDialog(open);
-        if (!open) {
-          setSelectedCar(undefined);
-          // Reopen request dialog with preserved data
-          if (pendingRequestData) {
-            setTimeout(() => {
-              setShowRequestDialog(true);
-            }, 100);
-          }
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedCar ? "Editează mașina" : "Adaugă mașină nouă"}
-            </DialogTitle>
-          </DialogHeader>
-          <CarForm
-            onSubmit={selectedCar ? handleUpdateCar : handleCarSubmit}
-            onCancel={() => {
-              setShowCarDialog(false);
-              setSelectedCar(undefined);
-              // Reopen request dialog with preserved data
-              if (pendingRequestData) {
-                setTimeout(() => {
-                  setShowRequestDialog(true);
-                }, 100);
-              }
-            }}
-            initialData={selectedCar}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Creează o nouă cerere</DialogTitle>
-            <DialogDescription>
-              Completați formularul pentru a trimite o nouă cerere de service
-            </DialogDescription>
-          </DialogHeader>
-          <RequestForm
-            onSubmit={handleRequestSubmit}
-            onCancel={() => {
-              setShowRequestDialog(false);
-              setPendingRequestData(null);
-            }}
-            onAddCar={(data) => {
-              // Store ALL form data before switching to car dialog
-              setPendingRequestData({
-                title: data.title,
-                description: data.description,
-                preferredDate: data.preferredDate,
-                county: data.county,
-                cities: data.cities,
-                carId: data.carId
-              });
-              setShowRequestDialog(false);
-              setShowCarDialog(true);
-            }}
-            initialData={pendingRequestData}
-          />
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>

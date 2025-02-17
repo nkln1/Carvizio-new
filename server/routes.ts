@@ -502,6 +502,32 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // Add client profile endpoint
+  app.get("/api/client/profile", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log('Fetching client profile for Firebase UID:', req.firebaseUser!.uid);
+
+      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      if (!user) {
+        console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Verify that this is a client user
+      if (user.role !== 'client') {
+        return res.status(403).json({ error: "Access denied. Only clients can access this endpoint." });
+      }
+
+      // Remove sensitive data from response
+      const { password, ...userWithoutPassword } = user;
+      console.log('Successfully retrieved client profile:', { id: user.id, email: user.email });
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error getting client profile:", error);
+      res.status(500).json({ error: "Failed to get client profile" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket server
