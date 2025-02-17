@@ -34,7 +34,7 @@ export default function AccountTab() {
     );
   }
 
-  if (!userProfile) {
+  if (!userProfile || userProfile.role !== 'service') {
     return null;
   }
 
@@ -91,6 +91,10 @@ export default function AccountTab() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Număr Registru Comerț</p>
                   <p className="mt-1 text-sm">{userProfile.tradeRegNumber || 'Nu este specificat'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Tip Cont</p>
+                  <p className="mt-1 text-sm">Service Auto</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
