@@ -32,17 +32,24 @@ export default function ServiceDashboard() {
   }, [setLocation]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/service/profile'],
     queryFn: async () => {
-      const response = await fetch('/api/auth/me');
+      const token = await auth.currentUser?.getIdToken(true);
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch('/api/service/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
+        throw new Error('Failed to fetch service profile');
       }
+
       const data = await response.json();
-      // Ensure we only proceed if this is a service user
-      if (data.role !== 'service') {
-        throw new Error('Unauthorized: Not a service user');
-      }
       return data;
     },
     retry: 1,
@@ -66,7 +73,6 @@ export default function ServiceDashboard() {
     }
   };
 
-  // Early return if user is not available yet
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -75,7 +81,6 @@ export default function ServiceDashboard() {
     );
   }
 
-  // Show email verification message if email is not verified
   if (!user.emailVerified) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">

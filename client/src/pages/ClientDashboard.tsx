@@ -50,29 +50,24 @@ export default function ClientDashboard() {
   }, [setLocation]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/client/profile'],
     queryFn: async () => {
-      // Get the current Firebase token
       const token = await auth.currentUser?.getIdToken(true);
       if (!token) {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('/api/client/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
+        throw new Error('Failed to fetch client profile');
       }
 
       const data = await response.json();
-      // Ensure we only proceed if this is a client user
-      if (data.role !== 'client') {
-        throw new Error('Unauthorized: Not a client user');
-      }
       return data;
     },
     retry: 1,
