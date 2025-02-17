@@ -9,13 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-
 // Import the tab components
 import RequestsTab from "@/components/service-dashboard/RequestsTab";
 import SentOffersTab from "@/components/service-dashboard/SentOffersTab";
 import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab";
 import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
+import ServiceProfileTab from "@/components/service-dashboard/ServiceProfileTab";
 
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
@@ -114,7 +114,7 @@ export default function ServiceDashboard() {
       case "mesaje":
         return <MessagesTab />;
       case "cont":
-        return <AccountTab />;
+        return userProfile ? <ServiceProfileTab userProfile={userProfile} /> : null;
       default:
         return <RequestsTab />;
     }
