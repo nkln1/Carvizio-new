@@ -54,6 +54,18 @@ export default function ClientDashboard() {
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/me');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+      const data = await response.json();
+      // Ensure we only proceed if this is a client user
+      if (data.role !== 'client') {
+        throw new Error('Unauthorized: Not a client user');
+      }
+      return data;
+    },
     retry: 1,
     refetchOnWindowFocus: false
   });

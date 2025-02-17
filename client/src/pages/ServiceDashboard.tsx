@@ -32,9 +32,21 @@ export default function ServiceDashboard() {
   }, [setLocation]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ["/api/auth/me"],
+    queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/me');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+      const data = await response.json();
+      // Ensure we only proceed if this is a service user
+      if (data.role !== 'service') {
+        throw new Error('Unauthorized: Not a service user');
+      }
+      return data;
+    },
     retry: 1,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: false
   });
 
   const handleResendVerification = async () => {
