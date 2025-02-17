@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Users table
+// Update users table with unique phone constraint
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   phone: text("phone").unique(), 
   county: text("county"),
   city: text("city"),
+  // Service specific fields
   companyName: text("company_name"),
   representativeName: text("representative_name"),
   cui: text("cui"),
@@ -25,11 +26,10 @@ export const users = pgTable("users", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   cars: many(cars),
-  requests: many(requests),
-  offers: many(offers)
+  requests: many(requests)
 }));
 
-// Cars table
+// Cars table definition
 export const cars = pgTable("cars", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -55,7 +55,7 @@ export const carsRelations = relations(cars, ({ one, many }) => ({
   requests: many(requests)
 }));
 
-// Requests table with hasReceivedOffer field
+// Requests table definition
 export const requests = pgTable("requests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -68,11 +68,10 @@ export const requests = pgTable("requests", {
   preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
-  hasReceivedOffer: boolean("has_received_offer").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-export const requestsRelations = relations(requests, ({ one, many }) => ({
+export const requestsRelations = relations(requests, ({ one }) => ({
   user: one(users, {
     fields: [requests.userId],
     references: [users.id],
@@ -81,37 +80,8 @@ export const requestsRelations = relations(requests, ({ one, many }) => ({
     fields: [requests.carId],
     references: [cars.id],
   }),
-  offers: many(offers)
 }));
 
-// Offers table
-export const offers = pgTable("offers", {
-  id: serial("id").primaryKey(),
-  requestId: integer("request_id").notNull().references(() => requests.id),
-  serviceId: integer("service_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  details: text("details").notNull(),
-  price: integer("price").notNull(),
-  availableDates: text("available_dates").notNull(),
-  notes: text("notes"),
-  status: text("status", {
-    enum: ["Pending", "Accepted", "Rejected"]
-  }).default("Pending").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-});
-
-export const offersRelations = relations(offers, ({ one }) => ({
-  request: one(requests, {
-    fields: [offers.requestId],
-    references: [requests.id],
-  }),
-  service: one(users, {
-    fields: [offers.serviceId],
-    references: [users.id],
-  })
-}));
-
-// Schema exports
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
@@ -127,22 +97,12 @@ export const insertCarSchema = createInsertSchema(cars).omit({
 export const insertRequestSchema = createInsertSchema(requests).omit({
   id: true,
   status: true,
-  hasReceivedOffer: true,
   createdAt: true
 });
 
-export const insertOfferSchema = createInsertSchema(offers).omit({
-  id: true,
-  status: true,
-  createdAt: true
-});
-
-// Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type Request = typeof requests.$inferSelect;
-export type InsertOffer = z.infer<typeof insertOfferSchema>;
-export type Offer = typeof offers.$inferSelect;
