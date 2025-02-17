@@ -31,10 +31,7 @@ import type { Request as RequestType } from "@shared/schema";
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('viewedRequests');
-    return saved ? new Set(JSON.parse(saved)) : new Set<string>();
-  });
+  const [viewedRequests, setViewedRequests] = useState(new Set<string>()); // Track viewed requests
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -95,11 +92,7 @@ export default function RequestsTab() {
   const activeRequests = requests.filter(req => req.status === "Active");
 
   const handleViewRequest = (requestId: string) => {
-    setViewedRequests(prevViewed => {
-      const newSet = new Set([...prevViewed, requestId]);
-      localStorage.setItem('viewedRequests', JSON.stringify([...newSet]));
-      return newSet;
-    });
+    setViewedRequests(prevViewed => new Set([...prevViewed, requestId]));
     setSelectedRequest(requests.find(req => req.id === requestId));
     setShowViewDialog(true);
   };
