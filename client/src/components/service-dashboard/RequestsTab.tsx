@@ -39,38 +39,46 @@ export default function RequestsTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // WebSocket connection
+  // WebSocket connection - Service dashboard only
   useEffect(() => {
+    if (!window.location.pathname.includes('service-dashboard')) {
+      return; // Only connect WebSocket in service dashboard
+    }
+
     let ws: WebSocket | null = null;
 
-    try {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const connectWebSocket = () => {
+      try {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const host = window.location.host;
+        const wsUrl = `${protocol}//${host}/ws`;
 
-      ws = new WebSocket(wsUrl);
+        ws = new WebSocket(wsUrl);
 
-      ws.onopen = () => {
-        console.log('WebSocket connection established for service requests');
-      };
+        ws.onopen = () => {
+          console.log('WebSocket connection established for service requests');
+        };
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'NEW_REQUEST') {
-            // Invalidate and refetch requests when a new one is received
-            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'NEW_REQUEST') {
+              queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+            }
+          } catch (error) {
+            console.error('Error handling WebSocket message:', error);
           }
-        } catch (error) {
-          console.error('Error handling WebSocket message:', error);
-        }
-      };
+        };
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-    } catch (error) {
-      console.error('Error setting up WebSocket:', error);
-    }
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+      } catch (error) {
+        console.error('Error setting up WebSocket:', error);
+      }
+    };
+
+    connectWebSocket();
 
     return () => {
       if (ws) {
@@ -103,13 +111,13 @@ export default function RequestsTab() {
   // Filter only active requests
   const activeRequests = requests.filter(req => req.status === "Active");
 
-  const handleViewRequest = (requestId: string) => {
+  const handleViewRequest = (requestId: number) => {
     setViewedRequests(prevViewed => {
-      const newSet = new Set([...prevViewed, parseInt(requestId)]); // Assuming requestId is a string representation of a number
-      localStorage.setItem('viewedRequests', JSON.stringify([...newSet]));
+      const newSet = new Set(prevViewed).add(requestId);
+      localStorage.setItem('viewedRequests', JSON.stringify(Array.from(newSet)));
       return newSet;
     });
-    setSelectedRequest(requests.find(req => req.id === requestId));
+    setSelectedRequest(requests.find(req => req.id === requestId) || null);
     setShowViewDialog(true);
   };
 
@@ -135,7 +143,7 @@ export default function RequestsTab() {
         </div>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(parseInt(request.id))).length > 0 ? (
+        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(request.id)).length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -149,15 +157,15 @@ export default function RequestsTab() {
             </TableHeader>
             <TableBody>
               {activeRequests
-                .filter(request => !showOnlyNew || !viewedRequests.has(parseInt(request.id)))
+                .filter(request => !showOnlyNew || !viewedRequests.has(request.id))
                 .map((request) => (
                   <TableRow
                     key={request.id}
-                    className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(parseInt(request.id)) ? "bg-blue-50 font-bold" : ""}`}
+                    className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
                   >
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        {!viewedRequests.has(parseInt(request.id)) && (
+                        {!viewedRequests.has(request.id) && (
                           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                             NEW
                           </span>
