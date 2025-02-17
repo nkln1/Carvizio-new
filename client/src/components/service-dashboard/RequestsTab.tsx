@@ -121,7 +121,10 @@ export default function RequestsTab() {
             </TableHeader>
             <TableBody>
               {activeRequests.map((request) => (
-                <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
+                <TableRow 
+                  key={request.id} 
+                  className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {!viewedRequests.has(request.id) && (
@@ -129,9 +132,7 @@ export default function RequestsTab() {
                           NEW
                         </span>
                       )}
-                      <span className={!viewedRequests.has(request.id) ? "font-bold" : ""}>
-                        {request.title}
-                      </span>
+                      {request.title}
                     </div>
                   </TableCell>
                   <TableCell>
