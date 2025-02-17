@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { RequestForm } from "@/components/request/RequestForm";
 import { Navigation } from "@/components/dashboard/Navigation";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
+import { OffersTab } from "@/components/dashboard/OffersTab";
+import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { useAuth } from "@/context/AuthContext";
 
@@ -59,7 +61,9 @@ export default function ClientDashboard() {
         throw new Error(errorData.error || 'Failed to fetch client profile');
       }
 
-      return response.json();
+      const data = await response.json();
+      console.log('Client profile data received:', data);
+      return data;
     },
     retry: 1,
     refetchOnWindowFocus: false
@@ -107,7 +111,7 @@ export default function ClientDashboard() {
       if (pendingRequestData) {
         setPendingRequestData({
           ...pendingRequestData,
-          carId: newCar.id
+          carId: newCar.id.toString()
         });
       }
 
@@ -169,7 +173,7 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleDeleteCar = async (carId: number) => {
+  const handleDeleteCar = async (carId: string) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
@@ -204,11 +208,48 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleRequestSubmit = async (data: any) => {
-    try {
+  const createRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create request');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      toast({
+        title: "Success",
+        description: "Cererea a fost trimisă cu succes!",
+      });
+      setShowRequestDialog(false);
+      setPendingRequestData(null);
+    },
+    onError: (error) => {
+      console.error('Error creating request:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleRequestSubmit = async (data: any) => {
+    try {
       const requestData = {
         carId: parseInt(data.carId),
         title: data.title,
@@ -218,27 +259,8 @@ export default function ClientDashboard() {
         cities: data.cities
       };
 
-      const response = await fetch('/api/requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create request');
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
-      toast({
-        title: "Success",
-        description: "Cererea a fost trimisă cu succes!",
-      });
-      setShowRequestDialog(false);
-      setPendingRequestData(null);
+      console.log('Submitting request with data:', requestData);
+      await createRequestMutation.mutateAsync(requestData);
     } catch (error) {
       console.error('Error submitting request:', error);
       toast({
@@ -346,77 +368,9 @@ export default function ClientDashboard() {
             {activeTab === "profile" && userProfile && (
               <ClientProfileTab userProfile={userProfile} />
             )}
-            {activeTab === "messages" && <MessagesTab />}
           </div>
         )}
       </div>
-
-      <Dialog open={showCarDialog} onOpenChange={(open) => {
-        setShowCarDialog(open);
-        if (!open) {
-          setSelectedCar(undefined);
-          // Reopen request dialog with preserved data
-          if (pendingRequestData) {
-            setTimeout(() => {
-              setShowRequestDialog(true);
-            }, 100);
-          }
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedCar ? "Editează mașina" : "Adaugă mașină nouă"}
-            </DialogTitle>
-          </DialogHeader>
-          <CarForm
-            onSubmit={selectedCar ? handleUpdateCar : handleCarSubmit}
-            onCancel={() => {
-              setShowCarDialog(false);
-              setSelectedCar(undefined);
-              // Reopen request dialog with preserved data
-              if (pendingRequestData) {
-                setTimeout(() => {
-                  setShowRequestDialog(true);
-                }, 100);
-              }
-            }}
-            initialData={selectedCar}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Creează o nouă cerere</DialogTitle>
-            <DialogDescription>
-              Completați formularul pentru a trimite o nouă cerere de service
-            </DialogDescription>
-          </DialogHeader>
-          <RequestForm
-            onSubmit={handleRequestSubmit}
-            onCancel={() => {
-              setShowRequestDialog(false);
-              setPendingRequestData(null);
-            }}
-            onAddCar={(data) => {
-              // Store ALL form data before switching to car dialog
-              setPendingRequestData({
-                title: data.title,
-                description: data.description,
-                preferredDate: data.preferredDate,
-                county: data.county,
-                cities: data.cities,
-                carId: data.carId
-              });
-              setShowRequestDialog(false);
-              setShowCarDialog(true);
-            }}
-            initialData={pendingRequestData}
-          />
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>

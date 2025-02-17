@@ -1,5 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
+import {
+  MessageSquare,
+  SendHorizontal,
+  Loader2,
+  ArrowLeft,
+  CheckCircle2,
+  FileText,
+  Calendar,
+  CreditCard,
+} from "lucide-react";
 
 export function MessagesTab() {
   return (
