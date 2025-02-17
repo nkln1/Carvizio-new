@@ -20,7 +20,6 @@ import {
   Eye,
   MessageSquare,
   SendHorizontal,
-  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,11 +30,6 @@ import type { Request as RequestType } from "@shared/schema";
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('viewedRequests');
-    return saved ? new Set(JSON.parse(saved)) : new Set<string>();
-  });
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -94,45 +88,18 @@ export default function RequestsTab() {
   // Filter only active requests
   const activeRequests = requests.filter(req => req.status === "Active");
 
-  const handleViewRequest = (requestId: string) => {
-    setViewedRequests(prevViewed => {
-      const newSet = new Set([...prevViewed, requestId]);
-      localStorage.setItem('viewedRequests', JSON.stringify([...newSet]));
-      return newSet;
-    });
-    setSelectedRequest(requests.find(req => req.id === requestId));
-    setShowViewDialog(true);
-  };
-
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          {/* Titlul */}
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Cereri în Așteptare
-          </CardTitle>
-
-          {/* Toggle "Doar cereri noi" */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="show-new" className="text-sm text-muted-foreground">
-              Doar cereri noi
-            </label>
-            <input
-              id="show-new"
-              type="checkbox"
-              checked={showOnlyNew}
-              onChange={(e) => setShowOnlyNew(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-[#00aff5] focus:ring-[#00aff5]"
-            />
-          </div>
-        </div>
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Cereri în Așteptare
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(request.id)).length > 0 ? (
+        ) : activeRequests.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -145,22 +112,10 @@ export default function RequestsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeRequests
-                .filter(request => !showOnlyNew || !viewedRequests.has(request.id))
-                .map((request) => (
-                <TableRow 
-                  key={request.id} 
-                  className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
-                >
+              {activeRequests.map((request) => (
+                <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {!viewedRequests.has(request.id) && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                          NEW
-                        </span>
-                      )}
-                      {request.title}
-                    </div>
+                    {request.title}
                   </TableCell>
                   <TableCell>
                     {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -181,31 +136,21 @@ export default function RequestsTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleViewRequest(request.id)}
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setShowViewDialog(true);
+                        }}
                         className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                       >
                         <Eye className="h-4 w-4" />
                         Detalii
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Mesaj
-                      </Button>
-                      <Button
                         variant="default"
                         size="sm"
                         className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
                         onClick={() => {
+                          // TODO: Implement send offer functionality
                           toast({
                             title: "În curând",
                             description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
@@ -214,20 +159,6 @@ export default function RequestsTab() {
                       >
                         <SendHorizontal className="h-4 w-4" />
                         Trimite Ofertă
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                        Respinge
                       </Button>
                     </div>
                   </TableCell>

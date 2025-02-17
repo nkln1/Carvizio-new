@@ -114,7 +114,7 @@ export default function ServiceDashboard() {
       case "mesaje":
         return <MessagesTab />;
       case "cont":
-        return userProfile ? <AccountTab userProfile={userProfile} /> : null;
+        return <AccountTab />;
       default:
         return <RequestsTab />;
     }
