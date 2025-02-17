@@ -107,23 +107,29 @@ export default function RequestsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Cereri în Așteptare
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2 mb-4">
-          <label className="flex items-center space-x-2 cursor-pointer">
+        <div className="flex items-center justify-between">
+          {/* Titlul */}
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Cereri în Așteptare
+          </CardTitle>
+
+          {/* Toggle "Doar cereri noi" */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="show-new" className="text-sm text-muted-foreground">
+              Doar cereri noi
+            </label>
             <input
+              id="show-new"
               type="checkbox"
               checked={showOnlyNew}
               onChange={(e) => setShowOnlyNew(e.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-[#00aff5] focus:ring-[#00aff5]"
             />
-            <span>Doar cereri noi</span>
-          </label>
+          </div>
         </div>
+      </CardHeader>
+      <CardContent>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
         ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(request.id)).length > 0 ? (

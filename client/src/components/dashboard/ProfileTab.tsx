@@ -14,6 +14,10 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
+  if (userProfile.role !== "client") {
+    return null; // Don't render anything if not a client
+  }
+
   return (
     <Card>
       <CardHeader className="border-b bg-gray-50">
@@ -54,7 +58,7 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Tip Cont</p>
-                  <p className="mt-1 text-sm capitalize">{userProfile.role || 'Nu este specificat'}</p>
+                  <p className="mt-1 text-sm">Client</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>
