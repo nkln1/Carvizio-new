@@ -15,9 +15,6 @@ import { Navigation } from "@/components/dashboard/Navigation";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { useAuth } from "@/context/AuthContext";
@@ -55,10 +52,22 @@ export default function ClientDashboard() {
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
     queryFn: async () => {
-      const response = await fetch('/api/auth/me');
+      // Get the current Firebase token
+      const token = await auth.currentUser?.getIdToken(true);
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       if (!response.ok) {
         throw new Error('Failed to fetch user profile');
       }
+
       const data = await response.json();
       // Ensure we only proceed if this is a client user
       if (data.role !== 'client') {
