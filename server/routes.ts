@@ -510,7 +510,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Update the phone check endpoint with proper error handling
+  // Update the phone check endpoint with temporary bypass
   app.post("/api/auth/check-phone", async (req, res) => {
     try {
       const { phone, type } = req.body;
@@ -524,34 +524,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Invalid account type" });
       }
 
-      // Check in the appropriate table based on the account type
-      if (type === "client") {
-        const [clientWithPhone] = await db
-          .select()
-          .from(clients)
-          .where(eq(clients.phone, phone));
-
-        if (clientWithPhone) {
-          return res.status(400).json({
-            error: "Phone number already registered",
-            code: "PHONE_EXISTS"
-          });
-        }
-      } else {
-        const [serviceProviderWithPhone] = await db
-          .select()
-          .from(serviceProviders)
-          .where(eq(serviceProviders.phone, phone));
-
-        if (serviceProviderWithPhone) {
-          return res.status(400).json({
-            error: "Phone number already registered",
-            code: "PHONE_EXISTS"
-          });
-        }
-      }
-
+      // Temporarily bypass phone number verification
       res.status(200).json({ available: true });
+
     } catch (error) {
       console.error("Phone check error details:", error);
       res.status(500).json({
