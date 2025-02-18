@@ -10,7 +10,6 @@ import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
 
-// Extend the Express Request type to include firebaseUser
 declare global {
   namespace Express {
     interface Request {
@@ -27,13 +26,21 @@ declare module "express-session" {
 
 // Initialize Firebase Admin with credentials
 if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log('Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Firebase Admin:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+    }
+    throw error;
+  }
 }
 
-// Add this helper function at the top of the file
 async function getUserRole(userId: number): Promise<"client" | "service" | undefined> {
   const [client] = await db
     .select()
@@ -75,7 +82,6 @@ async function getUserLocation(userId: number): Promise<{ county?: string; city?
 }
 
 export function registerRoutes(app: Express): Server {
-  // Configure session middleware
   app.use(
     session({
       secret: process.env.REPL_ID || 'your-secret-key',
@@ -92,44 +98,50 @@ export function registerRoutes(app: Express): Server {
 
   app.use(json());
 
-  // Firebase Auth Middleware with improved error handling
   const validateFirebaseToken = async (req: Request, res: any, next: any) => {
     const authHeader = req.headers.authorization;
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No token provided in request');
+      console.log('No token provided in request headers');
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.split('Bearer ')[1];
     try {
+      console.log('Attempting to verify Firebase token...');
       const decodedToken = await admin.auth().verifyIdToken(token);
       req.firebaseUser = decodedToken;
-      console.log('Firebase token verified successfully for user:', decodedToken.uid);
+      console.log('Firebase token verified successfully for UID:', decodedToken.uid);
       next();
     } catch (error) {
-      console.error('Firebase token verification failed:', error);
+      console.error('Firebase token verification failed');
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
       return res.status(401).json({ error: 'Invalid token' });
     }
   };
 
-  // User registration endpoint
   app.post("/api/auth/register", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Registration attempt with data:", { ...req.body, password: '[REDACTED]' });
+      console.log("Registration attempt - Input data:", {
+        ...req.body,
+        password: '[REDACTED]',
+        firebaseUid: req.firebaseUser?.uid
+      });
 
-      // Extract role from request body
       const { role, ...registrationData } = req.body;
 
       if (!role || !["client", "service"].includes(role)) {
+        console.error("Invalid role specified:", role);
         return res.status(400).json({ error: "Invalid role specified" });
       }
 
-      // Validate base user data
       const userInput = insertUserSchema.parse(registrationData);
-      console.log("Validation passed, parsed user input:", { ...userInput, password: '[REDACTED]' });
+      console.log("User data validation passed");
 
       let result;
-      console.log("Attempting to create user with role:", role);
+      console.log("Creating user with role:", role);
 
       if (role === "client") {
         result = await storage.createClient(
@@ -166,37 +178,40 @@ export function registerRoutes(app: Express): Server {
         console.log("Service provider created successfully:", { id: result.user.id, email: result.user.email });
       }
 
-      // Set user in session
       req.session.userId = result.user.id;
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
-          if (err) reject(err);
-          resolve(true);
+          if (err) {
+            console.error("Session save error:", err);
+            reject(err);
+          }
+          resolve();
         });
       });
 
-      // Remove password from response
       const { password, ...userWithoutPassword } = result.user;
       res.status(201).json(userWithoutPassword);
-    } catch (error: any) {
-      console.error("Registration error details:", error);
-      res.status(400).json({
-        error: "Invalid registration data",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+        res.status(400).json({
+          error: "Registration failed",
+          message: process.env.NODE_ENV === 'development' ? error.message : 'Invalid registration data'
+        });
+      } else {
+        res.status(500).json({ error: "An unexpected error occurred during registration" });
+      }
     }
   });
 
-  // User login endpoint
   app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
     try {
-      // Find user by Firebase UID
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Set user in session
       req.session.userId = user.id;
       await new Promise((resolve, reject) => {
         req.session.save((err) => {
@@ -205,7 +220,6 @@ export function registerRoutes(app: Express): Server {
         });
       });
 
-      // Remove password from response
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
@@ -214,19 +228,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get current user endpoint with improved error handling
   app.get("/api/auth/me", validateFirebaseToken, async (req, res) => {
     try {
       console.log('Fetching user data for Firebase UID:', req.firebaseUser!.uid);
 
-      // Find user by Firebase UID
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Remove password from response
       const { password, ...userWithoutPassword } = user;
       console.log('Successfully retrieved user data:', { id: user.id, email: user.email });
       res.json(userWithoutPassword);
@@ -236,7 +247,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Logout endpoint
   app.post("/api/auth/logout", (req, res) => {
     if (req.session) {
       req.session.destroy((err) => {
@@ -252,23 +262,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add profile update endpoint
   app.patch("/api/auth/profile", validateFirebaseToken, async (req, res) => {
     try {
       console.log("Profile update attempt with data:", req.body);
 
-      // Find user by Firebase UID
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Update user data
       const updatedUser = await storage.updateUser(user.id, req.body);
       console.log('Successfully updated user data:', { id: updatedUser.id, email: updatedUser.email });
 
-      // Remove sensitive data from response
       const { password, ...userWithoutPassword } = updatedUser;
       res.json(userWithoutPassword);
     } catch (error) {
@@ -277,7 +283,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Car management endpoints
   app.get("/api/cars", validateFirebaseToken, async (req, res) => {
     try {
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
@@ -297,7 +302,6 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Car creation attempt with data:", req.body);
 
-      // Get the current user
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
@@ -306,7 +310,6 @@ export function registerRoutes(app: Express): Server {
 
       console.log("Found user:", { id: user.id, email: user.email });
 
-      // Validate and parse request body
       const carData = insertCarSchema.parse({
         ...req.body,
         userId: user.id
@@ -314,7 +317,6 @@ export function registerRoutes(app: Express): Server {
 
       console.log("Validated car data:", carData);
 
-      // Create the car
       const car = await storage.createCar(carData);
       console.log("Successfully created car:", car);
 
@@ -323,7 +325,6 @@ export function registerRoutes(app: Express): Server {
       console.error("Error creating car:", error);
 
       if (error.errors) {
-        // Zod validation error
         return res.status(400).json({
           error: "Invalid car data",
           details: error.errors
@@ -347,7 +348,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Fetch the car to verify ownership
       const car = await storage.getCar(parseInt(req.params.id));
       if (!car) {
         return res.status(404).json({ error: "Car not found" });
@@ -357,10 +357,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Not authorized to update this car" });
       }
 
-      // Update the car
       const updatedCar = await storage.updateCar(parseInt(req.params.id), {
         ...req.body,
-        userId: user.id // Ensure userId remains unchanged
+        userId: user.id 
       });
       console.log("Successfully updated car:", updatedCar);
 
@@ -392,7 +391,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Fetch the car to verify ownership
       const car = await storage.getCar(parseInt(req.params.id));
       if (!car) {
         return res.status(404).json({ error: "Car not found" });
@@ -402,7 +400,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Not authorized to delete this car" });
       }
 
-      // Delete the car
       await storage.deleteCar(parseInt(req.params.id));
       console.log("Successfully deleted car:", req.params.id);
 
@@ -416,12 +413,10 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add request endpoints
   app.post("/api/requests", validateFirebaseToken, async (req, res) => {
     try {
       console.log("Request creation attempt with data:", req.body);
 
-      // Get the current user
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
       if (!user) {
         console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
@@ -430,7 +425,6 @@ export function registerRoutes(app: Express): Server {
 
       console.log("Found user:", { id: user.id, email: user.email });
 
-      // Validate and parse request body
       const requestData = insertRequestSchema.parse({
         ...req.body,
         userId: user.id,
@@ -439,11 +433,9 @@ export function registerRoutes(app: Express): Server {
 
       console.log("Validated request data:", requestData);
 
-      // Create the request
       const request = await storage.createRequest(requestData);
       console.log("Successfully created request:", request);
 
-      // Broadcast the new request to all connected services
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({
@@ -458,7 +450,6 @@ export function registerRoutes(app: Express): Server {
       console.error("Error creating request:", error);
 
       if (error.errors) {
-        // Zod validation error
         return res.status(400).json({
           error: "Invalid request data",
           details: error.errors
@@ -472,7 +463,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add GET requests endpoint
   app.get("/api/requests", validateFirebaseToken, async (req, res) => {
     try {
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
@@ -488,7 +478,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add PATCH endpoint for request status update
   app.patch("/api/requests/:id", validateFirebaseToken, async (req, res) => {
     try {
       console.log("Request status update attempt for ID:", req.params.id, "with data:", req.body);
@@ -499,12 +488,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Validate status value
       if (!["Active", "Rezolvat", "Anulat"].includes(req.body.status)) {
         return res.status(400).json({ error: "Invalid status value" });
       }
 
-      // Update the request status
       const updatedRequest = await storage.updateRequest(parseInt(req.params.id), {
         status: req.body.status
       });
@@ -520,7 +507,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add service requests endpoint
   app.get("/api/service/requests", validateFirebaseToken, async (req, res) => {
     try {
       const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
@@ -547,13 +533,11 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Update the phone check endpoint with temporary bypass
   app.post("/api/auth/check-phone", async (req, res) => {
     try {
       const { phone } = req.body;
       console.log("Phone check bypassed for number:", phone);
 
-      // Temporarily bypass all phone number verification
       res.status(200).json({ available: true });
     } catch (error) {
       console.error("Phone check error details:", error);
@@ -564,8 +548,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-
-  // Add client profile endpoint
   app.get("/api/client/profile", validateFirebaseToken, async (req, res) => {
     try {
       console.log('Fetching client profile for Firebase UID:', req.firebaseUser!.uid);
@@ -576,12 +558,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Verify that this is a client user
       if (user.role !== 'client') {
         return res.status(403).json({ error: "Access denied. Only clients can access this endpoint." });
       }
 
-      // Remove sensitive data from response
       const { password, ...userWithoutPassword } = user;
       console.log('Successfully retrieved client profile:', { id: user.id, email: user.email });
       res.json(userWithoutPassword);
@@ -593,17 +573,34 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
 
-  // Initialize WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws',
+    clientTracking: true
+  });
 
-  // Handle WebSocket connections
-  wss.on('connection', ws => {
-    console.log('Client connected');
-    ws.on('message', message => {
-      console.log('Received:', message);
-      // handle message
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket client connected');
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
     });
-    ws.on('close', () => console.log('Client disconnected'));
+
+    ws.on('message', (message) => {
+      try {
+        console.log('Received WebSocket message:', message.toString());
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+  });
+
+  wss.on('error', (error) => {
+    console.error('WebSocket server error:', error);
   });
 
   return httpServer;
