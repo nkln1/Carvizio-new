@@ -3,33 +3,49 @@
  */
 
 let socket: WebSocket | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_INTERVAL = 5000;
 
 export const setupWebSocket = () => {
-  if (socket) {
+  if (socket?.readyState === WebSocket.OPEN) {
     return socket;
   }
 
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}/ws`;
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host || 'localhost:5000';
+    const wsUrl = `${protocol}//${host}/ws`;
 
-  socket = new WebSocket(wsUrl);
+    socket = new WebSocket(wsUrl);
 
-  socket.onopen = () => {
-    console.log('WebSocket connection established');
-  };
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+      reconnectAttempts = 0; // Reset attempts on successful connection
+    };
 
-  socket.onclose = () => {
-    console.log('WebSocket connection closed');
-    socket = null;
-    // Attempt to reconnect after 5 seconds
-    setTimeout(setupWebSocket, 5000);
-  };
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
 
-  socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        console.log(`Attempting to reconnect (${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})...`);
+        reconnectAttempts++;
+        setTimeout(setupWebSocket, RECONNECT_INTERVAL);
+      } else {
+        console.log('Max reconnection attempts reached');
+        socket = null;
+      }
+    };
 
-  return socket;
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return socket;
+  } catch (error) {
+    console.error('Error setting up WebSocket:', error);
+    return null;
+  }
 };
 
 export const getWebSocket = () => {
@@ -43,5 +59,6 @@ export const closeWebSocket = () => {
   if (socket) {
     socket.close();
     socket = null;
+    reconnectAttempts = 0;
   }
 };
