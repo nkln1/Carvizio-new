@@ -397,6 +397,12 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             )}
           />
         </div>
+
+        <div className="flex flex-col items-center space-y-4 pt-4">
+          <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
+            {isLoading ? "Se încarcă..." : "Creează cont"}
+          </Button>
+        </div>
       </form>
     </Form>
   );
@@ -609,6 +615,12 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="flex flex-col items-center space-y-4 pt-4">
+          <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
+            {isLoading ? "Se încarcă..." : "Creează cont"}
+          </Button>
         </div>
       </form>
     </Form>
