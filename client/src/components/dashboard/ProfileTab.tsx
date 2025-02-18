@@ -53,8 +53,8 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
                   <p className="mt-1 text-sm">{userProfile.city || 'Nu este specificat'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Adresă</p>
-                  <p className="mt-1 text-sm">{userProfile.address || 'Nu este specificat'}</p>
+                  <p className="text-sm font-medium text-gray-500">Tip Cont</p>
+                  <p className="mt-1 text-sm capitalize">{userProfile.role || 'Nu este specificat'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Data Înregistrării</p>

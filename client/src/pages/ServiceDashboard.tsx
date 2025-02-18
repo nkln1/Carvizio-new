@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+
+// Import the tab components
 import RequestsTab from "@/components/service-dashboard/RequestsTab";
 import SentOffersTab from "@/components/service-dashboard/SentOffersTab";
 import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab";
@@ -32,28 +34,9 @@ export default function ServiceDashboard() {
   }, [setLocation]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/service/profile'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken(true);
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch('/api/service/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch service profile');
-      }
-
-      const data = await response.json();
-      return data;
-    },
+    queryKey: ["/api/auth/me"],
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
   const handleResendVerification = async () => {
@@ -73,6 +56,7 @@ export default function ServiceDashboard() {
     }
   };
 
+  // Early return if user is not available yet
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -81,6 +65,7 @@ export default function ServiceDashboard() {
     );
   }
 
+  // Show email verification message if email is not verified
   if (!user.emailVerified) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">

@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
-import { ClientProfileTab } from "@/components/dashboard/ClientProfileTab";
+import { EditProfile } from "@/components/auth/EditProfile";
 import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
 import { RequestForm } from "@/components/request/RequestForm";
@@ -17,18 +15,32 @@ import { Navigation } from "@/components/dashboard/Navigation";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
+import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { useAuth } from "@/context/AuthContext";
+
+interface ServiceOffer {
+  id: number;
+  serviceId: string;
+  serviceName: string;
+  price: number;
+  availability: string;
+  description: string;
+}
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
-  const [activeTab, setActiveTab] = useState("requests");
+  const [activeTab, setActiveTab] = useState("profile");
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const { toast } = useToast();
+  const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -40,43 +52,22 @@ export default function ClientDashboard() {
     return () => unsubscribe();
   }, [setLocation]);
 
-  const { data: userProfile, isLoading: profileLoading } = useQuery<UserType>({
-    queryKey: ['/api/client/profile'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken(true);
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch('/api/client/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Client profile fetch error:', errorData);
-        throw new Error(errorData.error || 'Failed to fetch client profile');
-      }
-
-      const data = await response.json();
-      console.log('Client profile data received:', data);
-      return data;
-    },
+  const { data: userProfile, isLoading } = useQuery<UserType>({
+    queryKey: ['/api/auth/me'],
     retry: 1,
     refetchOnWindowFocus: false
   });
 
-  const { data: userCars = [], isLoading: carsLoading } = useQuery<CarType[]>({
+  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
     queryKey: ['/api/cars'],
     enabled: !!userProfile,
   });
 
-  const { data: userRequests = [], isLoading: requestsLoading } = useQuery<RequestType[]>({
+  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
@@ -309,7 +300,7 @@ export default function ClientDashboard() {
             <CardContent className="space-y-4">
               <p className="text-gray-600">
                 Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
-                {user.email && ` Am trimis un link de verificare la adresa ${user.email}.`}
+                {user.email && `Am trimis un link de verificare la adresa ${user.email}.`}
               </p>
               <div className="flex flex-col gap-2">
                 <Button onClick={handleResendVerification}>
@@ -327,8 +318,6 @@ export default function ClientDashboard() {
     );
   }
 
-  const isLoading = profileLoading || carsLoading || requestsLoading;
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation
@@ -343,19 +332,27 @@ export default function ClientDashboard() {
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
           </div>
         ) : (
-          <div className="space-y-6">
-            {activeTab === "requests" && userRequests && (
+          <>
+            {activeTab === "requests" && (
               <RequestsTab
                 requests={userRequests}
-                isLoading={requestsLoading}
+                isLoading={isLoadingRequests}
                 onCreateRequest={() => setShowRequestDialog(true)}
               />
             )}
 
-            {activeTab === "car" && userCars && (
+            {activeTab === "offers" && (
+              <OffersTab offers={offers} />
+            )}
+
+            {activeTab === "messages" && (
+              <MessagesTab />
+            )}
+
+            {activeTab === "car" && (
               <CarsTab
                 cars={userCars}
-                isLoading={carsLoading}
+                isLoading={isLoadingCars}
                 onAddCar={() => setShowCarDialog(true)}
                 onEditCar={(car) => {
                   setSelectedCar(car);
@@ -366,20 +363,28 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "profile" && userProfile && (
-              <ClientProfileTab userProfile={userProfile} />
+              <ProfileTab userProfile={userProfile} />
             )}
-          </div>
+          </>
         )}
       </div>
 
-      <Footer />
-
-      {/* Add Car Dialog */}
-      <Dialog open={showCarDialog} onOpenChange={setShowCarDialog}>
+      <Dialog open={showCarDialog} onOpenChange={(open) => {
+        setShowCarDialog(open);
+        if (!open) {
+          setSelectedCar(undefined);
+          // Reopen request dialog with preserved data
+          if (pendingRequestData) {
+            setTimeout(() => {
+              setShowRequestDialog(true);
+            }, 100);
+          }
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedCar ? "Editare mașină" : "Adăugare mașină nouă"}
+              {selectedCar ? "Editează mașina" : "Adaugă mașină nouă"}
             </DialogTitle>
           </DialogHeader>
           <CarForm
@@ -387,17 +392,25 @@ export default function ClientDashboard() {
             onCancel={() => {
               setShowCarDialog(false);
               setSelectedCar(undefined);
+              // Reopen request dialog with preserved data
+              if (pendingRequestData) {
+                setTimeout(() => {
+                  setShowRequestDialog(true);
+                }, 100);
+              }
             }}
             initialData={selectedCar}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Request Dialog */}
       <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Creare cerere nouă</DialogTitle>
+            <DialogTitle>Creează o nouă cerere</DialogTitle>
+            <DialogDescription>
+              Completați formularul pentru a trimite o nouă cerere de service
+            </DialogDescription>
           </DialogHeader>
           <RequestForm
             onSubmit={handleRequestSubmit}
@@ -405,8 +418,16 @@ export default function ClientDashboard() {
               setShowRequestDialog(false);
               setPendingRequestData(null);
             }}
-            onAddCar={(formData) => {
-              setPendingRequestData(formData);
+            onAddCar={(data) => {
+              // Store ALL form data before switching to car dialog
+              setPendingRequestData({
+                title: data.title,
+                description: data.description,
+                preferredDate: data.preferredDate,
+                county: data.county,
+                cities: data.cities,
+                carId: data.carId
+              });
               setShowRequestDialog(false);
               setShowCarDialog(true);
             }}
@@ -414,6 +435,8 @@ export default function ClientDashboard() {
           />
         </DialogContent>
       </Dialog>
+
+      <Footer />
     </div>
   );
 }

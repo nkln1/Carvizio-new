@@ -1,14 +1,6 @@
-import { 
-  users, clients, serviceProviders, cars, requests, messages,
-  type User, type InsertUser, 
-  type Client, type InsertClient,
-  type ServiceProvider, type InsertServiceProvider,
-  type Car, type InsertCar, 
-  type Request, type InsertRequest,
-  type Message, type InsertMessage
-} from "@shared/schema";
+import { users, cars, requests, type User, type InsertUser, type Car, type InsertCar, type Request, type InsertRequest } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -19,56 +11,28 @@ const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000
+  connectionTimeoutMillis: 10000,
+  ssl: false
 });
 
 export interface IStorage {
-  // User management
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
-  createUser(userData: InsertUser & { firebaseUid: string; role: "client" | "service" }): Promise<User>;
-
-  // Client registration
-  createClient(
-    userData: InsertUser & { firebaseUid: string },
-    clientData: InsertClient
-  ): Promise<{ user: User; client: Client }>;
-
-  // Service provider registration
-  createServiceProvider(
-    userData: InsertUser & { firebaseUid: string },
-    providerData: InsertServiceProvider
-  ): Promise<{ user: User; provider: ServiceProvider }>;
-
-  // Client management
-  getClient(userId: number): Promise<Client | undefined>;
-  updateClient(userId: number, clientData: Partial<Client>): Promise<Client>;
-
-  // Service provider management
-  getServiceProvider(userId: number): Promise<ServiceProvider | undefined>;
-  updateServiceProvider(userId: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
-
+  createUser(user: InsertUser & { firebaseUid: string }): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User>;
   // Car management
   getUserCars(userId: number): Promise<Car[]>;
   getCar(id: number): Promise<Car | undefined>;
   createCar(car: InsertCar): Promise<Car>;
   updateCar(id: number, carData: Partial<Car>): Promise<Car>;
   deleteCar(id: number): Promise<void>;
-
   // Request management
   getUserRequests(userId: number): Promise<Request[]>;
   getRequest(id: number): Promise<Request | undefined>;
   createRequest(request: InsertRequest): Promise<Request>;
   updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
   getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
-
-  // Message management
-  getUserMessages(userId: number): Promise<Message[]>;
-  getUnreadMessages(userId: number): Promise<Message[]>;
-  createMessage(message: InsertMessage): Promise<Message>;
-  markMessageAsRead(id: number): Promise<Message>;
-
   sessionStore: session.Store;
 }
 
@@ -82,7 +46,6 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // User management methods
   async getUser(id: number): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -113,15 +76,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createUser(userData: InsertUser & { firebaseUid: string; role: "client" | "service" }): Promise<User> {
+  async createUser(insertUser: InsertUser & { firebaseUid: string }): Promise<User> {
     try {
       const [user] = await db
         .insert(users)
         .values({
-          email: userData.email,
-          password: userData.password,
-          firebaseUid: userData.firebaseUid,
-          role: userData.role,
+          ...insertUser,
+          firebaseUid: insertUser.firebaseUid,
+          verified: false,
           createdAt: new Date(),
         })
         .returning();
@@ -132,137 +94,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Helper method to check if phone number exists
-  private async isPhoneNumberTaken(phone: string): Promise<{ inClients: boolean; inServiceProviders: boolean }> {
-    try {
-      const [clientWithPhone] = await db
-        .select()
-        .from(clients)
-        .where(eq(clients.phone, phone));
-
-      const [serviceProviderWithPhone] = await db
-        .select()
-        .from(serviceProviders)
-        .where(eq(serviceProviders.phone, phone));
-
-      return {
-        inClients: !!clientWithPhone,
-        inServiceProviders: !!serviceProviderWithPhone
-      };
-    } catch (error) {
-      console.error('Error checking phone number:', error);
-      throw new Error('Failed to check phone number');
-    }
-  }
-
-  // Updated client registration with phone check
-  async createClient(
-    userData: InsertUser & { firebaseUid: string },
-    clientData: InsertClient
-  ): Promise<{ user: User; client: Client }> {
-    try {
-      // Check if phone number is already taken
-      const phoneCheck = await this.isPhoneNumberTaken(clientData.phone);
-      if (phoneCheck.inClients || phoneCheck.inServiceProviders) {
-        throw new Error('Phone number is already registered');
-      }
-
-      const result = await db.transaction(async (tx) => {
-        // Create base user with client role
-        const [user] = await tx
-          .insert(users)
-          .values({
-            email: userData.email,
-            password: userData.password,
-            firebaseUid: userData.firebaseUid,
-            role: "client",
-            createdAt: new Date(),
-          })
-          .returning();
-
-        // Create client record
-        const [client] = await tx
-          .insert(clients)
-          .values({
-            userId: user.id,
-            ...clientData,
-            verified: false,
-            createdAt: new Date(),
-          })
-          .returning();
-
-        return { user, client };
-      });
-
-      return result;
-    } catch (error) {
-      console.error('Error creating client:', error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to create client account');
-    }
-  }
-
-  // Updated service provider registration with phone check
-  async createServiceProvider(
-    userData: InsertUser & { firebaseUid: string },
-    providerData: InsertServiceProvider
-  ): Promise<{ user: User; provider: ServiceProvider }> {
-    try {
-      // Check if phone number is already taken
-      const phoneCheck = await this.isPhoneNumberTaken(providerData.phone);
-      if (phoneCheck.inClients || phoneCheck.inServiceProviders) {
-        throw new Error('Phone number is already registered');
-      }
-
-      const result = await db.transaction(async (tx) => {
-        // Create base user with service role
-        const [user] = await tx
-          .insert(users)
-          .values({
-            email: userData.email,
-            password: userData.password,
-            firebaseUid: userData.firebaseUid,
-            role: "service",
-            createdAt: new Date(),
-          })
-          .returning();
-
-        // Create service provider record
-        const [provider] = await tx
-          .insert(serviceProviders)
-          .values({
-            userId: user.id,
-            ...providerData,
-            verified: false,
-            createdAt: new Date(),
-          })
-          .returning();
-
-        return { user, provider };
-      });
-
-      return result;
-    } catch (error) {
-      console.error('Error creating service provider:', error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to create service provider account');
-    }
-  }
-
   async updateUser(id: number, userData: Partial<User>): Promise<User> {
     try {
       const [updatedUser] = await db
         .update(users)
         .set({
           ...userData,
-          // Remove fields that shouldn't be updated
           email: undefined,
           password: undefined,
           firebaseUid: undefined,
+          role: undefined,
+          verified: undefined,
           createdAt: undefined,
         })
         .where(eq(users.id, id))
@@ -274,63 +116,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Client management methods
-  async getClient(userId: number): Promise<Client | undefined> {
-    try {
-      const [client] = await db.select().from(clients).where(eq(clients.userId, userId));
-      return client;
-    } catch (error) {
-      console.error('Error getting client:', error);
-      return undefined;
-    }
-  }
-
-  async updateClient(userId: number, clientData: Partial<Client>): Promise<Client> {
-    try {
-      const [updatedClient] = await db
-        .update(clients)
-        .set(clientData)
-        .where(eq(clients.userId, userId))
-        .returning();
-      return updatedClient;
-    } catch (error) {
-      console.error('Error updating client:', error);
-      throw error;
-    }
-  }
-
-  // Service provider management methods
-  async getServiceProvider(userId: number): Promise<ServiceProvider | undefined> {
-    try {
-      const [provider] = await db
-        .select()
-        .from(serviceProviders)
-        .where(eq(serviceProviders.userId, userId));
-      return provider;
-    } catch (error) {
-      console.error('Error getting service provider:', error);
-      return undefined;
-    }
-  }
-
-  async updateServiceProvider(
-    userId: number,
-    providerData: Partial<ServiceProvider>
-  ): Promise<ServiceProvider> {
-    try {
-      const [updatedProvider] = await db
-        .update(serviceProviders)
-        .set(providerData)
-        .where(eq(serviceProviders.userId, userId))
-        .returning();
-      return updatedProvider;
-    } catch (error) {
-      console.error('Error updating service provider:', error);
-      throw error;
-    }
-  }
-
-  // Car management methods
   async getUserCars(userId: number): Promise<Car[]> {
     try {
       return await db
@@ -356,10 +141,12 @@ export class DatabaseStorage implements IStorage {
 
   async createCar(car: InsertCar): Promise<Car> {
     try {
+      console.log('Creating car with data:', car);
       const [newCar] = await db
         .insert(cars)
         .values(car)
         .returning();
+      console.log('Created car:', newCar);
       return newCar;
     } catch (error) {
       console.error('Error creating car:', error);
@@ -369,11 +156,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateCar(id: number, carData: Partial<Car>): Promise<Car> {
     try {
+      console.log('Updating car with ID:', id, 'and data:', carData);
       const [updatedCar] = await db
         .update(cars)
         .set(carData)
         .where(eq(cars.id, id))
         .returning();
+      console.log('Updated car:', updatedCar);
       return updatedCar;
     } catch (error) {
       console.error('Error updating car:', error);
@@ -390,7 +179,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Request management methods
   async getUserRequests(userId: number): Promise<Request[]> {
     try {
       return await db
@@ -416,14 +204,30 @@ export class DatabaseStorage implements IStorage {
 
   async createRequest(request: InsertRequest): Promise<Request> {
     try {
+      console.log('Creating request with data:', JSON.stringify(request, null, 2));
+
+      // Validate required fields
+      if (!request.userId || !request.carId) {
+        throw new Error('Missing required fields: userId or carId');
+      }
+
+      // Create the request in the database
       const [newRequest] = await db
         .insert(requests)
         .values({
-          ...request,
+          userId: request.userId,
+          carId: request.carId,
+          title: request.title,
+          description: request.description,
+          preferredDate: new Date(request.preferredDate),
+          county: request.county,
+          cities: request.cities,
           status: "Active",
           createdAt: new Date(),
         })
         .returning();
+
+      console.log('Created request in database:', JSON.stringify(newRequest, null, 2));
       return newRequest;
     } catch (error) {
       console.error('Error creating request:', error);
@@ -433,11 +237,18 @@ export class DatabaseStorage implements IStorage {
 
   async updateRequest(id: number, requestData: Partial<Request>): Promise<Request> {
     try {
+      console.log('Updating request with ID:', id, 'and data:', requestData);
       const [updatedRequest] = await db
         .update(requests)
         .set(requestData)
         .where(eq(requests.id, id))
         .returning();
+
+      if (!updatedRequest) {
+        throw new Error('Request not found');
+      }
+
+      console.log('Updated request:', updatedRequest);
       return updatedRequest;
     } catch (error) {
       console.error('Error updating request:', error);
@@ -447,92 +258,28 @@ export class DatabaseStorage implements IStorage {
 
   async getRequestsByLocation(county: string, cities: string[]): Promise<Request[]> {
     try {
+      // Get all active requests from the specified county
       const matchingRequests = await db
         .select()
         .from(requests)
-        .where(
-          and(
-            eq(requests.county, county),
-            eq(requests.status, "Active")
-          )
-        )
+        .where(eq(requests.county, county))
+        .where(eq(requests.status, "Active"))
         .orderBy(desc(requests.createdAt));
 
+      // If service has cities specified, filter requests to match cities
       if (cities.length > 0) {
         return matchingRequests.filter(request => {
           const requestCities = request.cities || [];
-          return requestCities.some(requestCity => cities.includes(requestCity));
+          return requestCities.some(requestCity =>
+            cities.includes(requestCity)
+          );
         });
       }
 
+      // If service has no cities specified, return all requests from the county
       return matchingRequests;
     } catch (error) {
       console.error('Error getting requests by location:', error);
-      throw error;
-    }
-  }
-
-  // Message management methods
-  async getUserMessages(userId: number): Promise<Message[]> {
-    try {
-      return await db
-        .select()
-        .from(messages)
-        .where(
-          eq(messages.receiverId, userId)
-        )
-        .orderBy(desc(messages.createdAt));
-    } catch (error) {
-      console.error('Error getting user messages:', error);
-      return [];
-    }
-  }
-
-  async getUnreadMessages(userId: number): Promise<Message[]> {
-    try {
-      return await db
-        .select()
-        .from(messages)
-        .where(
-          and(
-            eq(messages.receiverId, userId),
-            eq(messages.read, false)
-          )
-        )
-        .orderBy(desc(messages.createdAt));
-    } catch (error) {
-      console.error('Error getting unread messages:', error);
-      return [];
-    }
-  }
-
-  async createMessage(message: InsertMessage): Promise<Message> {
-    try {
-      const [newMessage] = await db
-        .insert(messages)
-        .values({
-          ...message,
-          read: false,
-          createdAt: new Date(),
-        })
-        .returning();
-      return newMessage;
-    } catch (error) {
-      console.error('Error creating message:', error);
-      throw error;
-    }
-  }
-
-  async markMessageAsRead(id: number): Promise<Message> {
-    try {
-      const [updatedMessage] = await db
-        .update(messages)
-        .set({ read: true })
-        .where(eq(messages.id, id))
-        .returning();
-      return updatedMessage;
-    } catch (error) {
-      console.error('Error marking message as read:', error);
       throw error;
     }
   }

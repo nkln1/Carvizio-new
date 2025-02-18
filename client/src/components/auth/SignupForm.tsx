@@ -24,20 +24,40 @@ import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-rea
 import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword } from "firebase/auth";
 
-export type UserRole = "client" | "service";
+type UserRole = "client" | "service" | null;
 
-// Base schema without the refine
-const passwordSchema = z.object({
-  password: z.string().min(6, {
-    message: "Parola trebuie să conțină cel puțin 6 caractere.",
+interface ClientFormValues {
+  name: string;
+  email: string;
+  phone: string;
+  county: string;
+  city: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface ServiceFormValues {
+  companyName: string;
+  representativeName: string;
+  email: string;
+  phone: string;
+  cui: string;
+  tradeRegNumber: string;
+  address: string;
+  county: string;
+  city: string;
+  password: string;
+  confirmPassword: string;
+}
+
+type FormValues = ClientFormValues | ServiceFormValues;
+
+const clientSchema = z.object({
+  name: z.string().min(2, {
+    message: "Numele trebuie să conțină cel puțin 2 caractere.",
   }),
-  confirmPassword: z.string(),
-});
-
-// Common fields for both client and service
-const commonFields = {
   email: z.string().email({
     message: "Te rugăm să introduci o adresă de email validă.",
   }),
@@ -50,28 +70,27 @@ const commonFields = {
   city: z.string().min(1, {
     message: "Te rugăm să selectezi localitatea.",
   }),
-  ...passwordSchema.shape,
-};
-
-// Client schema
-const clientSchema = z.object({
-  ...commonFields,
-  name: z.string().min(2, {
-    message: "Numele trebuie să conțină cel puțin 2 caractere.",
+  password: z.string().min(6, {
+    message: "Parola trebuie să conțină cel puțin 6 caractere.",
   }),
+  confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Parolele nu coincid",
   path: ["confirmPassword"],
 });
 
-// Service schema
 const serviceSchema = z.object({
-  ...commonFields,
   companyName: z.string().min(2, {
     message: "Numele companiei trebuie să conțină cel puțin 2 caractere.",
   }),
   representativeName: z.string().min(2, {
     message: "Numele reprezentantului trebuie să conțină cel puțin 2 caractere.",
+  }),
+  email: z.string().email({
+    message: "Te rugăm să introduci o adresă de email validă.",
+  }),
+  phone: z.string().min(10, {
+    message: "Te rugăm să introduci un număr de telefon valid.",
   }),
   cui: z.string()
     .min(6, { message: "CUI trebuie să conțină minim 6 caractere." })
@@ -84,13 +103,20 @@ const serviceSchema = z.object({
   address: z.string().min(5, {
     message: "Te rugăm să introduci adresa completă.",
   }),
+  county: z.string().min(1, {
+    message: "Te rugăm să selectezi județul.",
+  }),
+  city: z.string().min(1, {
+    message: "Te rugăm să selectezi localitatea.",
+  }),
+  password: z.string().min(6, {
+    message: "Parola trebuie să conțină cel puțin 6 caractere.",
+  }),
+  confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Parolele nu coincid",
   path: ["confirmPassword"],
 });
-
-type ClientFormValues = z.infer<typeof clientSchema>;
-type ServiceFormValues = z.infer<typeof serviceSchema>;
 
 interface SignupFormProps {
   onSuccess?: (role: UserRole) => void;
@@ -98,7 +124,7 @@ interface SignupFormProps {
 
 export default function SignupForm({ onSuccess }: SignupFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [role, setRole] = useState<UserRole>(null);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const { toast } = useToast();
 
@@ -132,15 +158,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     },
   });
 
-  async function onSubmit(values: ClientFormValues | ServiceFormValues) {
-    if (!role || isLoading) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please select a role before continuing"
-      });
-      return;
-    }
+  const currentForm = role === "client" ? clientForm : serviceForm;
+
+  async function onSubmit(values: FormValues) {
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
@@ -161,32 +182,24 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             title: "Eroare",
             description: "Acest număr de telefon este deja înregistrat.",
           });
+          setIsLoading(false);
           return;
         }
         throw new Error('Failed to check phone number');
       }
 
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        values.email,
-        values.password
-      );
+      const { email, password } = values;
+      console.log('Starting user registration process...');
 
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
+      console.log('Firebase user created successfully');
+
       await sendEmailVerification(firebaseUser);
+      console.log('Verification email sent');
 
-      const idToken = await firebaseUser.getIdToken();
-
-      if (!role) {
-        throw new Error("Role must be selected");
-      }
-
-      // Ensure role is included in the registration data
-      const registrationData = {
-        ...values,
-        role,
-        firebaseUid: firebaseUser.uid,
-      };
+      const idToken = await firebaseUser.getIdToken(true);
+      console.log('Got Firebase token, registering with backend...');
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -194,24 +207,43 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`,
         },
-        body: JSON.stringify(registrationData),
+        body: JSON.stringify({
+          ...values,
+          role,
+          firebaseUid: firebaseUser.uid,
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to register user');
+        throw new Error('Failed to register user');
       }
 
-      await response.json();
+      const userData = await response.json();
+      console.log('Backend registration complete');
+
+      await auth.signOut();
+      await signInWithEmailAndPassword(auth, email, password);
+      const newIdToken = await firebaseUser.getIdToken(true);
+
+      const loginResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${newIdToken}`
+        },
+        credentials: 'include'
+      });
+
+      if (!loginResponse.ok) {
+        throw new Error('Failed to establish session');
+      }
 
       toast({
         title: "Success",
         description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
       });
 
-      if (onSuccess) {
-        onSuccess(role);
-      }
+      onSuccess?.(role);
 
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -227,8 +259,6 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       setIsLoading(false);
     }
   }
-
-  const currentForm = role === "client" ? clientForm : serviceForm;
 
   if (!role) {
     return <RoleSelection onSelect={setRole} />;
@@ -254,149 +284,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {role === "client" ? (
-              <>
-                <FormField
-                  control={currentForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="name">Nume și Prenume</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="name" {...field} placeholder="Ion Popescu" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="email">Email</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="phone">Telefon</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="county"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="county">Județ</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedCounty(value);
-                          clientForm.setValue("city", "");
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează județul" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {romanianCounties.map((county) => (
-                            <SelectItem key={county} value={county}>
-                              {county}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={currentForm.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="city">Localitate</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!selectedCounty}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează localitatea" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectedCounty &&
-                            getCitiesForCounty(selectedCounty).map((city) => (
-                              <SelectItem key={city} value={city}>
-                                {city}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="password">Parolă</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="confirmPassword">Confirmă Parola</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+              <FormField
+                control={currentForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="name">Nume și Prenume</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input id="name" {...field} placeholder="Ion Popescu" className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             ) : (
               <>
                 <FormField
@@ -479,132 +382,135 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={currentForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="email">Email</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="phone">Telefon</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="county"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="county">Județ</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedCounty(value);
-                          serviceForm.setValue("city", "");
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează județul" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {romanianCounties.map((county) => (
-                            <SelectItem key={county} value={county}>
-                              {county}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="city">Localitate</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!selectedCounty}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează localitatea" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectedCounty &&
-                            getCitiesForCounty(selectedCounty).map((city) => (
-                              <SelectItem key={city} value={city}>
-                                {city}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="password">Parolă</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={currentForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="confirmPassword">Confirmă Parola</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </>
             )}
+
+            <FormField
+              control={currentForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="email">Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="phone">Telefon</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="county"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="county">Județ</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedCounty(value);
+                      currentForm.setValue("city", "");
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează județul" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {romanianCounties.map((county) => (
+                        <SelectItem key={county} value={county}>
+                          {county}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={currentForm.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="city">Localitate</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={!selectedCounty}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează localitatea" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {selectedCounty &&
+                        getCitiesForCounty(selectedCounty).map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={currentForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="password">Parolă</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={currentForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="confirmPassword">Confirmă Parola</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <div className="flex flex-col items-center space-y-4 pt-4">

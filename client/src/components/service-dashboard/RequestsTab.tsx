@@ -20,7 +20,6 @@ import {
   Eye,
   MessageSquare,
   SendHorizontal,
-  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,11 +30,6 @@ import type { Request as RequestType } from "@shared/schema";
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [viewedRequests, setViewedRequests] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('viewedRequests');
-    return saved ? new Set(JSON.parse(saved)) : new Set<string>();
-  });
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -66,9 +60,7 @@ export default function RequestsTab() {
     };
 
     return () => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.close();
-      }
+      socket.close();
     };
   }, [queryClient]);
 
@@ -96,16 +88,6 @@ export default function RequestsTab() {
   // Filter only active requests
   const activeRequests = requests.filter(req => req.status === "Active");
 
-  const handleViewRequest = (requestId: string) => {
-    setViewedRequests(prevViewed => {
-      const newSet = new Set([...prevViewed, requestId]);
-      localStorage.setItem('viewedRequests', JSON.stringify([...newSet]));
-      return newSet;
-    });
-    setSelectedRequest(requests.find(req => req.id === requestId));
-    setShowViewDialog(true);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -115,20 +97,9 @@ export default function RequestsTab() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-2 mb-4">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showOnlyNew}
-              onChange={(e) => setShowOnlyNew(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-[#00aff5] focus:ring-[#00aff5]"
-            />
-            <span>Doar cereri noi</span>
-          </label>
-        </div>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : activeRequests.filter(request => !showOnlyNew || !viewedRequests.has(request.id)).length > 0 ? (
+        ) : activeRequests.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -141,94 +112,58 @@ export default function RequestsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeRequests
-                .filter(request => !showOnlyNew || !viewedRequests.has(request.id))
-                .map((request) => (
-                  <TableRow
-                    key={request.id}
-                    className={`hover:bg-gray-50 transition-colors ${!viewedRequests.has(request.id) ? "bg-blue-50 font-bold" : ""}`}
-                  >
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {!viewedRequests.has(request.id) && (
-                          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                            NEW
-                          </span>
-                        )}
-                        {request.title}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      {request.cities?.join(", ")}, {request.county}
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                        {request.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewRequest(request.id)}
-                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Detalii
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                          onClick={() => {
-                            toast({
-                              title: "În curând",
-                              description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                            });
-                          }}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                          Mesaj
-                        </Button>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
-                          onClick={() => {
-                            toast({
-                              title: "În curând",
-                              description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                            });
-                          }}
-                        >
-                          <SendHorizontal className="h-4 w-4" />
-                          Trimite Ofertă
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                          onClick={() => {
-                            toast({
-                              title: "În curând",
-                              description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                            });
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                          Respinge
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {activeRequests.map((request) => (
+                <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="font-medium">
+                    {request.title}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    {request.cities?.join(", ")}, {request.county}
+                  </TableCell>
+                  <TableCell>
+                    <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                      {request.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setShowViewDialog(true);
+                        }}
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Detalii
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
+                        onClick={() => {
+                          // TODO: Implement send offer functionality
+                          toast({
+                            title: "În curând",
+                            description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                          });
+                        }}
+                      >
+                        <SendHorizontal className="h-4 w-4" />
+                        Trimite Ofertă
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         ) : (
