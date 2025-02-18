@@ -130,14 +130,15 @@ export function registerRoutes(app: Express): Server {
         firebaseUid: req.firebaseUser?.uid
       });
 
-      const { role, ...registrationData } = req.body;
+      const { role, ...userData } = req.body;
 
       if (!role || !["client", "service"].includes(role)) {
         console.error("Invalid role specified:", role);
         return res.status(400).json({ error: "Invalid role specified" });
       }
 
-      const userInput = insertUserSchema.parse(registrationData);
+      // Validate user data excluding role
+      const userInput = insertUserSchema.parse(userData);
       console.log("User data validation passed");
 
       let result;
@@ -148,12 +149,13 @@ export function registerRoutes(app: Express): Server {
           {
             ...userInput,
             firebaseUid: req.firebaseUser!.uid,
+            role: "client"
           },
           {
-            name: registrationData.name,
-            phone: registrationData.phone,
-            county: registrationData.county,
-            city: registrationData.city,
+            name: userData.name,
+            phone: userData.phone,
+            county: userData.county,
+            city: userData.city,
           }
         );
         console.log("Client created successfully:", { id: result.user.id, email: result.user.email });
@@ -162,17 +164,18 @@ export function registerRoutes(app: Express): Server {
           {
             ...userInput,
             firebaseUid: req.firebaseUser!.uid,
+            role: "service"
           },
           {
-            name: registrationData.name,
-            phone: registrationData.phone,
-            companyName: registrationData.companyName,
-            representativeName: registrationData.representativeName,
-            cui: registrationData.cui,
-            tradeRegNumber: registrationData.tradeRegNumber,
-            address: registrationData.address,
-            county: registrationData.county,
-            city: registrationData.city,
+            name: userData.name,
+            phone: userData.phone,
+            companyName: userData.companyName,
+            representativeName: userData.representativeName,
+            cui: userData.cui,
+            tradeRegNumber: userData.tradeRegNumber,
+            address: userData.address,
+            county: userData.county,
+            city: userData.city,
           }
         );
         console.log("Service provider created successfully:", { id: result.user.id, email: result.user.email });
@@ -359,7 +362,7 @@ export function registerRoutes(app: Express): Server {
 
       const updatedCar = await storage.updateCar(parseInt(req.params.id), {
         ...req.body,
-        userId: user.id 
+        userId: user.id
       });
       console.log("Successfully updated car:", updatedCar);
 
@@ -573,7 +576,7 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
 
-  const wss = new WebSocketServer({ 
+  const wss = new WebSocketServer({
     server: httpServer,
     path: '/ws',
     clientTracking: true
