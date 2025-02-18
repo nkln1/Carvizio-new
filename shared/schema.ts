@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firebaseUid: text("firebase_uid").notNull().unique(),
+  role: text("role", { enum: ["client", "service"] }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -44,8 +45,8 @@ export const cars = pgTable("cars", {
   brand: text("brand").notNull(),
   model: text("model").notNull(),
   year: text("year").notNull(),
-  fuelType: text("fuel_type", { 
-    enum: ["Benzină", "Motorină", "Hibrid", "Electric"] 
+  fuelType: text("fuel_type", {
+    enum: ["Benzină", "Motorină", "Hibrid", "Electric"]
   }).notNull(),
   transmission: text("transmission", {
     enum: ["Manuală", "Automată"]

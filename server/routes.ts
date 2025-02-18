@@ -117,20 +117,57 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Registration attempt with data:", { ...req.body, password: '[REDACTED]' });
 
-      // Validate request body
-      const userInput = insertUserSchema.parse(req.body);
+      // Extract role from request body
+      const { role, ...registrationData } = req.body;
+
+      if (!role || !["client", "service"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role specified" });
+      }
+
+      // Validate base user data
+      const userInput = insertUserSchema.parse(registrationData);
       console.log("Validation passed, parsed user input:", { ...userInput, password: '[REDACTED]' });
 
-      // Create user
-      console.log("Attempting to create user...");
-      const user = await storage.createUser({
-        ...userInput,
-        firebaseUid: req.firebaseUser!.uid
-      });
-      console.log("User created successfully:", { id: user.id, email: user.email });
+      let result;
+      console.log("Attempting to create user with role:", role);
+
+      if (role === "client") {
+        result = await storage.createClient(
+          {
+            ...userInput,
+            firebaseUid: req.firebaseUser!.uid,
+          },
+          {
+            name: registrationData.name,
+            phone: registrationData.phone,
+            county: registrationData.county,
+            city: registrationData.city,
+          }
+        );
+        console.log("Client created successfully:", { id: result.user.id, email: result.user.email });
+      } else {
+        result = await storage.createServiceProvider(
+          {
+            ...userInput,
+            firebaseUid: req.firebaseUser!.uid,
+          },
+          {
+            name: registrationData.name,
+            phone: registrationData.phone,
+            companyName: registrationData.companyName,
+            representativeName: registrationData.representativeName,
+            cui: registrationData.cui,
+            tradeRegNumber: registrationData.tradeRegNumber,
+            address: registrationData.address,
+            county: registrationData.county,
+            city: registrationData.city,
+          }
+        );
+        console.log("Service provider created successfully:", { id: result.user.id, email: result.user.email });
+      }
 
       // Set user in session
-      req.session.userId = user.id;
+      req.session.userId = result.user.id;
       await new Promise((resolve, reject) => {
         req.session.save((err) => {
           if (err) reject(err);
@@ -139,7 +176,7 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Remove password from response
-      const { password, ...userWithoutPassword } = user;
+      const { password, ...userWithoutPassword } = result.user;
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       console.error("Registration error details:", error);

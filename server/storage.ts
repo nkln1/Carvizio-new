@@ -27,7 +27,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
-  createUser(userData: InsertUser & { firebaseUid: string }): Promise<User>;
+  createUser(userData: InsertUser & { firebaseUid: string; role: "client" | "service" }): Promise<User>;
 
   // Client registration
   createClient(
@@ -113,8 +113,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Add createUser method
-  async createUser(userData: InsertUser & { firebaseUid: string }): Promise<User> {
+  async createUser(userData: InsertUser & { firebaseUid: string; role: "client" | "service" }): Promise<User> {
     try {
       const [user] = await db
         .insert(users)
@@ -122,6 +121,7 @@ export class DatabaseStorage implements IStorage {
           email: userData.email,
           password: userData.password,
           firebaseUid: userData.firebaseUid,
+          role: userData.role,
           createdAt: new Date(),
         })
         .returning();
@@ -168,13 +168,14 @@ export class DatabaseStorage implements IStorage {
       }
 
       const result = await db.transaction(async (tx) => {
-        // Create base user
+        // Create base user with client role
         const [user] = await tx
           .insert(users)
           .values({
             email: userData.email,
             password: userData.password,
             firebaseUid: userData.firebaseUid,
+            role: "client",
             createdAt: new Date(),
           })
           .returning();
@@ -216,13 +217,14 @@ export class DatabaseStorage implements IStorage {
       }
 
       const result = await db.transaction(async (tx) => {
-        // Create base user
+        // Create base user with service role
         const [user] = await tx
           .insert(users)
           .values({
             email: userData.email,
             password: userData.password,
             firebaseUid: userData.firebaseUid,
+            role: "service",
             createdAt: new Date(),
           })
           .returning();
