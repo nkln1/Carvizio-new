@@ -199,7 +199,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       console.log('Verification email sent');
 
       const idToken = await firebaseUser.getIdToken(true);
-      console.log('Got Firebase token, registering with backend...');
+      console.log('Got Firebase token, registering with backend...', { role });
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -209,18 +209,20 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         },
         body: JSON.stringify({
           ...values,
-          role,
+          role: role, // Explicitly including role in the request
           firebaseUid: firebaseUser.uid,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to register user');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to register user');
       }
 
       const userData = await response.json();
       console.log('Backend registration complete');
 
+      // Re-authenticate user after registration
       await auth.signOut();
       await signInWithEmailAndPassword(auth, email, password);
       const newIdToken = await firebaseUser.getIdToken(true);
