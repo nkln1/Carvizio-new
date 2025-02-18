@@ -21,7 +21,6 @@ import { Settings } from "lucide-react";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { useAuth } from "@/context/AuthContext";
-import { setupWebSocket } from "@/lib/websocket";
 
 interface ServiceOffer {
   id: number;
@@ -278,26 +277,6 @@ export default function ClientDashboard() {
       });
     }
   };
-
-  useEffect(() => {
-    const socket = setupWebSocket();
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'NEW_OFFER') {
-          setOffers(prevOffers => [...prevOffers, data.payload]);
-        }
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
-
-    return () => {
-      // Cleanup WebSocket connection when component unmounts
-      socket.close();
-    };
-  }, []);
 
   if (!user) {
     return (
