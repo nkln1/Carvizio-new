@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { setupWebSocket } from "@/lib/websocket";
+import { setupWebSocket, closeWebSocket, sendWebSocketMessage } from "@/lib/websocket";
 
 // Import the tab components
 import RequestsTab from "@/components/service-dashboard/RequestsTab";
@@ -18,7 +18,7 @@ import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab"
 import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
 
-const queryClient = new QueryClient(); //Added this line
+const queryClient = new QueryClient();
 
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
@@ -40,9 +40,18 @@ export default function ServiceDashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const socket = setupWebSocket();
+    const wsConnection = setupWebSocket();
+    if (!wsConnection) {
+      console.error('Failed to establish WebSocket connection');
+      toast({
+        title: "Eroare de conexiune",
+        description: "Nu s-a putut stabili conexiunea cu serverul. Încercăm reconectarea...",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    socket.onmessage = (event) => {
+    wsConnection.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         // Handle different types of WebSocket messages
@@ -71,17 +80,8 @@ export default function ServiceDashboard() {
       }
     };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      toast({
-        title: "Eroare de conexiune",
-        description: "A apărut o eroare în conexiunea cu serverul. Încercăm reconectarea...",
-        variant: "destructive",
-      });
-    };
-
     return () => {
-      socket.close();
+      closeWebSocket(wsConnection);
     };
   }, [user, toast]);
 
