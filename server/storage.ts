@@ -58,6 +58,9 @@ export interface IStorage {
   getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
 
   sessionStore: session.Store;
+  // Add new methods for phone number checks
+  getClientByPhone(phone: string): Promise<Client | undefined>;
+  getServiceProviderByPhone(phone: string): Promise<ServiceProvider | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -333,6 +336,25 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting requests by location:', error);
       throw error;
+    }
+  }
+  async getClientByPhone(phone: string): Promise<Client | undefined> {
+    try {
+      const [client] = await db.select().from(clients).where(eq(clients.phone, phone));
+      return client;
+    } catch (error) {
+      console.error('Error getting client by phone:', error);
+      return undefined;
+    }
+  }
+
+  async getServiceProviderByPhone(phone: string): Promise<ServiceProvider | undefined> {
+    try {
+      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.phone, phone));
+      return provider;
+    } catch (error) {
+      console.error('Error getting service provider by phone:', error);
+      return undefined;
     }
   }
 }

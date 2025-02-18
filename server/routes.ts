@@ -436,6 +436,18 @@ export function registerRoutes(app: Express): Server {
           return res.status(404).json({ error: "Client not found" });
         }
 
+        // Only update if phone number changed
+        if (req.body.phone && req.body.phone !== client.phone) {
+          // Check if phone is already taken by another user
+          const existingClientWithPhone = await storage.getClientByPhone(req.body.phone);
+          if (existingClientWithPhone && existingClientWithPhone.id !== client.id) {
+            return res.status(400).json({
+              error: "Phone number already in use",
+              field: "phone"
+            });
+          }
+        }
+
         const updatedClient = await storage.updateClient(client.id, {
           name: req.body.name,
           phone: req.body.phone,
@@ -450,6 +462,18 @@ export function registerRoutes(app: Express): Server {
         const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
         if (!provider) {
           return res.status(404).json({ error: "Service provider not found" });
+        }
+
+        // Only update if phone number changed
+        if (req.body.phone && req.body.phone !== provider.phone) {
+          // Check if phone is already taken by another provider
+          const existingProviderWithPhone = await storage.getServiceProviderByPhone(req.body.phone);
+          if (existingProviderWithPhone && existingProviderWithPhone.id !== provider.id) {
+            return res.status(400).json({
+              error: "Phone number already in use",
+              field: "phone"
+            });
+          }
         }
 
         const updatedProvider = await storage.updateServiceProvider(provider.id, {
@@ -470,6 +494,13 @@ export function registerRoutes(app: Express): Server {
       res.json(user);
     } catch (error) {
       console.error("Profile update error:", error);
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        // Handle unique constraint violation
+        return res.status(400).json({
+          error: "Phone number already in use",
+          field: "phone"
+        });
+      }
       res.status(500).json({ error: "Could not update profile" });
     }
   });
