@@ -82,7 +82,9 @@ export default function RequestsTab() {
       }
 
       return response.json();
-    }
+    },
+    staleTime: 0,
+    cacheTime: 0
   });
 
   // Filter only active requests

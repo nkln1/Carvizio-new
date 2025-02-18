@@ -55,12 +55,16 @@ export default function ClientDashboard() {
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+    cacheTime: 0
   });
 
   const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
     queryKey: ['/api/cars'],
     enabled: !!userProfile,
+    staleTime: 0,
+    cacheTime: 0
   });
 
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
@@ -68,6 +72,7 @@ export default function ClientDashboard() {
     enabled: !!userProfile,
     refetchOnWindowFocus: true,
     staleTime: 0,
+    cacheTime: 0
   });
 
   const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
