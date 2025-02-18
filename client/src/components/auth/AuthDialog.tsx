@@ -12,6 +12,8 @@ import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import { useAuth } from "@/context/AuthContext";
 
+type UserRole = "client" | "service";
+
 interface AuthDialogProps {
   trigger?: React.ReactNode;
   defaultView?: "login" | "signup";
@@ -26,7 +28,7 @@ export default function AuthDialog({
   const { user } = useAuth();
 
   // Handle dialog close after successful auth
-  const handleAuthSuccess = (role?: string) => {
+  const handleAuthSuccess = (role: UserRole) => {
     setOpen(false);
   };
 

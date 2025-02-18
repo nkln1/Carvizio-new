@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
-import { insertUserSchema, insertCarSchema, insertRequestSchema, users } from "@shared/schema";
+import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -22,6 +22,7 @@ declare global {
 declare module "express-session" {
   interface SessionData {
     userId?: number;
+    userType?: "client" | "service";
   }
 }
 
@@ -74,22 +75,31 @@ export function registerRoutes(app: Express): Server {
   // User registration endpoint
   app.post("/api/auth/register", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Registration attempt with data:", { ...req.body, password: '[REDACTED]' });
+      const { role, ...userData } = req.body;
+      console.log("Registration attempt with data:", { ...userData, password: '[REDACTED]', role });
 
-      // Validate request body
-      const userInput = insertUserSchema.parse(req.body);
-      console.log("Validation passed, parsed user input:", { ...userInput, password: '[REDACTED]' });
-
-      // Create user
-      console.log("Attempting to create user...");
-      const user = await storage.createUser({
-        ...userInput,
-        firebaseUid: req.firebaseUser!.uid
-      });
-      console.log("User created successfully:", { id: user.id, email: user.email });
+      let user;
+      if (role === "client") {
+        // Validate client data
+        const clientData = insertClientSchema.parse(userData);
+        user = await storage.createClient({
+          ...clientData,
+          firebaseUid: req.firebaseUser!.uid
+        });
+      } else if (role === "service") {
+        // Validate service provider data
+        const providerData = insertServiceProviderSchema.parse(userData);
+        user = await storage.createServiceProvider({
+          ...providerData,
+          firebaseUid: req.firebaseUser!.uid
+        });
+      } else {
+        return res.status(400).json({ error: "Invalid role specified" });
+      }
 
       // Set user in session
       req.session.userId = user.id;
+      req.session.userType = role;
       await new Promise((resolve, reject) => {
         req.session.save((err) => {
           if (err) reject(err);
@@ -97,6 +107,7 @@ export function registerRoutes(app: Express): Server {
         });
       });
 
+      console.log(`${role} created successfully:`, { id: user.id, email: user.email });
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
@@ -112,14 +123,22 @@ export function registerRoutes(app: Express): Server {
   // User login endpoint
   app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
     try {
-      // Find user by Firebase UID
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      // Try to find user in both tables
+      let user = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      let userType = "client";
+
+      if (!user) {
+        user = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+        userType = "service";
+      }
+
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
 
       // Set user in session
       req.session.userId = user.id;
+      req.session.userType = userType as "client" | "service";
       await new Promise((resolve, reject) => {
         req.session.save((err) => {
           if (err) reject(err);
@@ -129,7 +148,7 @@ export function registerRoutes(app: Express): Server {
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, role: userType });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
@@ -141,8 +160,15 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log('Fetching user data for Firebase UID:', req.firebaseUser!.uid);
 
-      // Find user by Firebase UID
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
+      // Try to find user in both tables
+      let user = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      let userType = "client";
+
+      if (!user) {
+        user = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+        userType = "service";
+      }
+
       if (!user) {
         console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(401).json({ error: "Not authenticated" });
@@ -150,8 +176,8 @@ export function registerRoutes(app: Express): Server {
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
-      console.log('Successfully retrieved user data:', { id: user.id, email: user.email });
-      res.json(userWithoutPassword);
+      console.log('Successfully retrieved user data:', { id: user.id, email: user.email, role: userType });
+      res.json({ ...userWithoutPassword, role: userType });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ error: "Failed to get user data" });
@@ -174,78 +200,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add profile update endpoint
-  app.patch("/api/auth/profile", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log("Profile update attempt with data:", req.body);
-
-      // Find user by Firebase UID
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        console.log('No user found for Firebase UID:', req.firebaseUser!.uid);
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      // Update user data
-      const updatedUser = await storage.updateUser(user.id, req.body);
-      console.log('Successfully updated user data:', { id: updatedUser.id, email: updatedUser.email });
-
-      // Remove sensitive data from response
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      console.error("Profile update error:", error);
-      res.status(500).json({ error: "Failed to update profile" });
-    }
-  });
-
   // Car management endpoints
   app.get("/api/cars", validateFirebaseToken, async (req, res) => {
     try {
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      const cars = await storage.getUserCars(user.id);
+      const cars = await storage.getClientCars(client.id);
       res.json(cars);
     } catch (error) {
-      console.error("Error getting user cars:", error);
+      console.error("Error getting client cars:", error);
       res.status(500).json({ error: "Failed to get cars" });
     }
   });
 
   app.post("/api/cars", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Car creation attempt with data:", req.body);
-
-      // Get the current user
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      console.log("Found user:", { id: user.id, email: user.email });
-
-      // Validate and parse request body
       const carData = insertCarSchema.parse({
         ...req.body,
-        userId: user.id
+        clientId: client.id
       });
 
-      console.log("Validated car data:", carData);
-
-      // Create the car
       const car = await storage.createCar(carData);
-      console.log("Successfully created car:", car);
-
       res.status(201).json(car);
     } catch (error: any) {
       console.error("Error creating car:", error);
 
       if (error.errors) {
-        // Zod validation error
         return res.status(400).json({
           error: "Invalid car data",
           details: error.errors
@@ -261,31 +249,21 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/cars/:id", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Car update attempt for ID:", req.params.id, "with data:", req.body);
-
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      // Fetch the car to verify ownership
       const car = await storage.getCar(parseInt(req.params.id));
       if (!car) {
         return res.status(404).json({ error: "Car not found" });
       }
 
-      if (car.userId !== user.id) {
+      if (car.clientId !== client.id) {
         return res.status(403).json({ error: "Not authorized to update this car" });
       }
 
-      // Update the car
-      const updatedCar = await storage.updateCar(parseInt(req.params.id), {
-        ...req.body,
-        userId: user.id // Ensure userId remains unchanged
-      });
-      console.log("Successfully updated car:", updatedCar);
-
+      const updatedCar = await storage.updateCar(parseInt(req.params.id), req.body);
       res.json(updatedCar);
     } catch (error: any) {
       console.error("Error updating car:", error);
@@ -306,28 +284,21 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/cars/:id", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Car deletion attempt for ID:", req.params.id);
-
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      // Fetch the car to verify ownership
       const car = await storage.getCar(parseInt(req.params.id));
       if (!car) {
         return res.status(404).json({ error: "Car not found" });
       }
 
-      if (car.userId !== user.id) {
+      if (car.clientId !== client.id) {
         return res.status(403).json({ error: "Not authorized to delete this car" });
       }
 
-      // Delete the car
       await storage.deleteCar(parseInt(req.params.id));
-      console.log("Successfully deleted car:", req.params.id);
-
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting car:", error);
@@ -338,32 +309,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add request endpoints
+  // Request management endpoints
   app.post("/api/requests", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Request creation attempt with data:", req.body);
-
-      // Get the current user
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      console.log("Found user:", { id: user.id, email: user.email });
-
-      // Validate and parse request body
       const requestData = insertRequestSchema.parse({
         ...req.body,
-        userId: user.id,
+        clientId: client.id,
         preferredDate: new Date(req.body.preferredDate)
       });
 
-      console.log("Validated request data:", requestData);
-
-      // Create the request
       const request = await storage.createRequest(requestData);
-      console.log("Successfully created request:", request);
 
       // Broadcast the new request to all connected services
       wss.clients.forEach((client) => {
@@ -380,7 +340,6 @@ export function registerRoutes(app: Express): Server {
       console.error("Error creating request:", error);
 
       if (error.errors) {
-        // Zod validation error
         return res.status(400).json({
           error: "Invalid request data",
           details: error.errors
@@ -394,31 +353,26 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add GET requests endpoint
   app.get("/api/requests", validateFirebaseToken, async (req, res) => {
     try {
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      const requests = await storage.getUserRequests(user.id);
+      const requests = await storage.getClientRequests(client.id);
       res.json(requests);
     } catch (error) {
-      console.error("Error getting user requests:", error);
+      console.error("Error getting client requests:", error);
       res.status(500).json({ error: "Failed to get requests" });
     }
   });
 
-  // Add PATCH endpoint for request status update
   app.patch("/api/requests/:id", validateFirebaseToken, async (req, res) => {
     try {
-      console.log("Request status update attempt for ID:", req.params.id, "with data:", req.body);
-
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        console.log("User not found for Firebase UID:", req.firebaseUser!.uid);
-        return res.status(401).json({ error: "User not found" });
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
       // Validate status value
@@ -426,12 +380,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Invalid status value" });
       }
 
-      // Update the request status
+      const request = await storage.getRequest(parseInt(req.params.id));
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      if (request.clientId !== client.id) {
+        return res.status(403).json({ error: "Not authorized to update this request" });
+      }
+
       const updatedRequest = await storage.updateRequest(parseInt(req.params.id), {
         status: req.body.status
       });
 
-      console.log("Successfully updated request:", updatedRequest);
       res.json(updatedRequest);
     } catch (error: any) {
       console.error("Error updating request status:", error);
@@ -445,26 +406,13 @@ export function registerRoutes(app: Express): Server {
   // Add service requests endpoint
   app.get("/api/service/requests", validateFirebaseToken, async (req, res) => {
     try {
-      const user = await storage.getUserByFirebaseUid(req.firebaseUser!.uid);
-      if (!user) {
-        return res.status(401).json({ error: "User not found" });
-      }
-
-      // Get service location details
-      if (user.role !== "service") { // Changed to lowercase to match database
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
         return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
       }
 
-      // Ensure county exists
-      if (!user.county) {
-        return res.status(400).json({ error: "Service provider must set their county" });
-      }
-
-      // Convert cities string to array if exists, or use empty array
-      const serviceCities = user.city ? [user.city] : [];
-
       // Fetch requests that match the service's location
-      const matchingRequests = await storage.getRequestsByLocation(user.county, serviceCities);
+      const matchingRequests = await storage.getRequestsByLocation(provider.county, [provider.city]);
       res.json(matchingRequests);
     } catch (error) {
       console.error("Error getting requests by location:", error);
@@ -472,7 +420,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add phone check endpoint with proper Drizzle implementation
+  // Add phone check endpoint
   app.post("/api/auth/check-phone", async (req, res) => {
     try {
       const { phone } = req.body;
@@ -481,13 +429,25 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Phone number is required" });
       }
 
-      // Check if phone already exists in database using Drizzle
-      const [existingUser] = await db
+      // Check if phone already exists in either clients or service_providers table
+      const [existingClient] = await db
         .select()
-        .from(users)
-        .where(eq(users.phone, phone));
+        .from(clients)
+        .where(eq(clients.phone, phone));
 
-      if (existingUser) {
+      if (existingClient) {
+        return res.status(400).json({
+          error: "Phone number already registered",
+          code: "PHONE_EXISTS"
+        });
+      }
+
+      const [existingProvider] = await db
+        .select()
+        .from(serviceProviders)
+        .where(eq(serviceProviders.phone, phone));
+
+      if (existingProvider) {
         return res.status(400).json({
           error: "Phone number already registered",
           code: "PHONE_EXISTS"
@@ -500,7 +460,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to check phone number" });
     }
   });
-
 
   const httpServer = createServer(app);
 

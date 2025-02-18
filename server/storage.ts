@@ -1,4 +1,17 @@
-import { users, cars, requests, type User, type InsertUser, type Car, type InsertCar, type Request, type InsertRequest } from "@shared/schema";
+import {
+  clients,
+  serviceProviders,
+  cars,
+  requests,
+  type Client,
+  type InsertClient,
+  type ServiceProvider,
+  type InsertServiceProvider,
+  type Car,
+  type InsertCar,
+  type Request,
+  type InsertRequest
+} from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import session from "express-session";
@@ -16,23 +29,34 @@ const sessionPool = new pg.Pool({
 });
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
-  createUser(user: InsertUser & { firebaseUid: string }): Promise<User>;
-  updateUser(id: number, userData: Partial<User>): Promise<User>;
+  // Client management
+  getClientById(id: number): Promise<Client | undefined>;
+  getClientByEmail(email: string): Promise<Client | undefined>;
+  getClientByFirebaseUid(firebaseUid: string): Promise<Client | undefined>;
+  createClient(client: InsertClient & { firebaseUid: string }): Promise<Client>;
+  updateClient(id: number, clientData: Partial<Client>): Promise<Client>;
+
+  // Service Provider management
+  getServiceProviderById(id: number): Promise<ServiceProvider | undefined>;
+  getServiceProviderByEmail(email: string): Promise<ServiceProvider | undefined>;
+  getServiceProviderByFirebaseUid(firebaseUid: string): Promise<ServiceProvider | undefined>;
+  createServiceProvider(provider: InsertServiceProvider & { firebaseUid: string }): Promise<ServiceProvider>;
+  updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
+
   // Car management
-  getUserCars(userId: number): Promise<Car[]>;
+  getClientCars(clientId: number): Promise<Car[]>;
   getCar(id: number): Promise<Car | undefined>;
   createCar(car: InsertCar): Promise<Car>;
   updateCar(id: number, carData: Partial<Car>): Promise<Car>;
   deleteCar(id: number): Promise<void>;
+
   // Request management
-  getUserRequests(userId: number): Promise<Request[]>;
+  getClientRequests(clientId: number): Promise<Request[]>;
   getRequest(id: number): Promise<Request | undefined>;
   createRequest(request: InsertRequest): Promise<Request>;
   updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
   getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
+
   sessionStore: session.Store;
 }
 
@@ -46,85 +70,142 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getUser(id: number): Promise<User | undefined> {
+  // Client methods
+  async getClientById(id: number): Promise<Client | undefined> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
-      return user;
+      const [client] = await db.select().from(clients).where(eq(clients.id, id));
+      return client;
     } catch (error) {
-      console.error('Error getting user by ID:', error);
+      console.error('Error getting client by ID:', error);
       return undefined;
     }
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
+  async getClientByEmail(email: string): Promise<Client | undefined> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user;
+      const [client] = await db.select().from(clients).where(eq(clients.email, email));
+      return client;
     } catch (error) {
-      console.error('Error getting user by email:', error);
+      console.error('Error getting client by email:', error);
       return undefined;
     }
   }
 
-  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+  async getClientByFirebaseUid(firebaseUid: string): Promise<Client | undefined> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
-      return user;
+      const [client] = await db.select().from(clients).where(eq(clients.firebaseUid, firebaseUid));
+      return client;
     } catch (error) {
-      console.error('Error getting user by Firebase UID:', error);
+      console.error('Error getting client by Firebase UID:', error);
       return undefined;
     }
   }
 
-  async createUser(insertUser: InsertUser & { firebaseUid: string }): Promise<User> {
+  async createClient(insertClient: InsertClient & { firebaseUid: string }): Promise<Client> {
     try {
-      const [user] = await db
-        .insert(users)
+      const [client] = await db
+        .insert(clients)
         .values({
-          ...insertUser,
-          firebaseUid: insertUser.firebaseUid,
+          ...insertClient,
+          firebaseUid: insertClient.firebaseUid,
           verified: false,
           createdAt: new Date(),
         })
         .returning();
-      return user;
+      return client;
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('Error creating client:', error);
       throw error;
     }
   }
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+  async updateClient(id: number, clientData: Partial<Client>): Promise<Client> {
     try {
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          ...userData,
-          email: undefined,
-          password: undefined,
-          firebaseUid: undefined,
-          role: undefined,
-          verified: undefined,
-          createdAt: undefined,
-        })
-        .where(eq(users.id, id))
+      const [updatedClient] = await db
+        .update(clients)
+        .set(clientData)
+        .where(eq(clients.id, id))
         .returning();
-      return updatedUser;
+      return updatedClient;
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error updating client:', error);
       throw error;
     }
   }
 
-  async getUserCars(userId: number): Promise<Car[]> {
+  // Service Provider methods
+  async getServiceProviderById(id: number): Promise<ServiceProvider | undefined> {
+    try {
+      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id));
+      return provider;
+    } catch (error) {
+      console.error('Error getting service provider by ID:', error);
+      return undefined;
+    }
+  }
+
+  async getServiceProviderByEmail(email: string): Promise<ServiceProvider | undefined> {
+    try {
+      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.email, email));
+      return provider;
+    } catch (error) {
+      console.error('Error getting service provider by email:', error);
+      return undefined;
+    }
+  }
+
+  async getServiceProviderByFirebaseUid(firebaseUid: string): Promise<ServiceProvider | undefined> {
+    try {
+      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.firebaseUid, firebaseUid));
+      return provider;
+    } catch (error) {
+      console.error('Error getting service provider by Firebase UID:', error);
+      return undefined;
+    }
+  }
+
+  async createServiceProvider(insertProvider: InsertServiceProvider & { firebaseUid: string }): Promise<ServiceProvider> {
+    try {
+      const [provider] = await db
+        .insert(serviceProviders)
+        .values({
+          ...insertProvider,
+          firebaseUid: insertProvider.firebaseUid,
+          verified: false,
+          createdAt: new Date(),
+        })
+        .returning();
+      return provider;
+    } catch (error) {
+      console.error('Error creating service provider:', error);
+      throw error;
+    }
+  }
+
+  async updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider> {
+    try {
+      const [updatedProvider] = await db
+        .update(serviceProviders)
+        .set(providerData)
+        .where(eq(serviceProviders.id, id))
+        .returning();
+      return updatedProvider;
+    } catch (error) {
+      console.error('Error updating service provider:', error);
+      throw error;
+    }
+  }
+
+  // Car methods
+  async getClientCars(clientId: number): Promise<Car[]> {
     try {
       return await db
         .select()
         .from(cars)
-        .where(eq(cars.userId, userId))
+        .where(eq(cars.clientId, clientId))
         .orderBy(desc(cars.createdAt));
     } catch (error) {
-      console.error('Error getting user cars:', error);
+      console.error('Error getting client cars:', error);
       return [];
     }
   }
@@ -141,12 +222,10 @@ export class DatabaseStorage implements IStorage {
 
   async createCar(car: InsertCar): Promise<Car> {
     try {
-      console.log('Creating car with data:', car);
       const [newCar] = await db
         .insert(cars)
         .values(car)
         .returning();
-      console.log('Created car:', newCar);
       return newCar;
     } catch (error) {
       console.error('Error creating car:', error);
@@ -156,13 +235,11 @@ export class DatabaseStorage implements IStorage {
 
   async updateCar(id: number, carData: Partial<Car>): Promise<Car> {
     try {
-      console.log('Updating car with ID:', id, 'and data:', carData);
       const [updatedCar] = await db
         .update(cars)
         .set(carData)
         .where(eq(cars.id, id))
         .returning();
-      console.log('Updated car:', updatedCar);
       return updatedCar;
     } catch (error) {
       console.error('Error updating car:', error);
@@ -179,15 +256,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserRequests(userId: number): Promise<Request[]> {
+  // Request methods
+  async getClientRequests(clientId: number): Promise<Request[]> {
     try {
       return await db
         .select()
         .from(requests)
-        .where(eq(requests.userId, userId))
+        .where(eq(requests.clientId, clientId))
         .orderBy(desc(requests.createdAt));
     } catch (error) {
-      console.error('Error getting user requests:', error);
+      console.error('Error getting client requests:', error);
       return [];
     }
   }
@@ -204,30 +282,14 @@ export class DatabaseStorage implements IStorage {
 
   async createRequest(request: InsertRequest): Promise<Request> {
     try {
-      console.log('Creating request with data:', JSON.stringify(request, null, 2));
-
-      // Validate required fields
-      if (!request.userId || !request.carId) {
-        throw new Error('Missing required fields: userId or carId');
-      }
-
-      // Create the request in the database
       const [newRequest] = await db
         .insert(requests)
         .values({
-          userId: request.userId,
-          carId: request.carId,
-          title: request.title,
-          description: request.description,
-          preferredDate: new Date(request.preferredDate),
-          county: request.county,
-          cities: request.cities,
+          ...request,
           status: "Active",
           createdAt: new Date(),
         })
         .returning();
-
-      console.log('Created request in database:', JSON.stringify(newRequest, null, 2));
       return newRequest;
     } catch (error) {
       console.error('Error creating request:', error);
@@ -237,18 +299,11 @@ export class DatabaseStorage implements IStorage {
 
   async updateRequest(id: number, requestData: Partial<Request>): Promise<Request> {
     try {
-      console.log('Updating request with ID:', id, 'and data:', requestData);
       const [updatedRequest] = await db
         .update(requests)
         .set(requestData)
         .where(eq(requests.id, id))
         .returning();
-
-      if (!updatedRequest) {
-        throw new Error('Request not found');
-      }
-
-      console.log('Updated request:', updatedRequest);
       return updatedRequest;
     } catch (error) {
       console.error('Error updating request:', error);
@@ -258,7 +313,6 @@ export class DatabaseStorage implements IStorage {
 
   async getRequestsByLocation(county: string, cities: string[]): Promise<Request[]> {
     try {
-      // Get all active requests from the specified county
       const matchingRequests = await db
         .select()
         .from(requests)
@@ -266,7 +320,6 @@ export class DatabaseStorage implements IStorage {
         .where(eq(requests.status, "Active"))
         .orderBy(desc(requests.createdAt));
 
-      // If service has cities specified, filter requests to match cities
       if (cities.length > 0) {
         return matchingRequests.filter(request => {
           const requestCities = request.cities || [];
@@ -276,7 +329,6 @@ export class DatabaseStorage implements IStorage {
         });
       }
 
-      // If service has no cities specified, return all requests from the county
       return matchingRequests;
     } catch (error) {
       console.error('Error getting requests by location:', error);

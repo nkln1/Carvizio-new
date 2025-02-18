@@ -3,36 +3,47 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Update users table with unique phone constraint
-export const users = pgTable("users", {
+// Clients table definition
+export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firebaseUid: text("firebase_uid").notNull().unique(),
-  role: text("role", { enum: ["client", "service"] }).notNull(),
-  name: text("name"),
-  phone: text("phone").unique(), 
-  county: text("county"),
-  city: text("city"),
-  // Service specific fields
-  companyName: text("company_name"),
-  representativeName: text("representative_name"),
-  cui: text("cui"),
-  tradeRegNumber: text("trade_reg_number"),
-  address: text("address"),
+  name: text("name").notNull(),
+  phone: text("phone").unique().notNull(),
+  county: text("county").notNull(),
+  city: text("city").notNull(),
   verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const clientsRelations = relations(clients, ({ many }) => ({
   cars: many(cars),
   requests: many(requests)
 }));
 
+// Service Providers table definition
+export const serviceProviders = pgTable("service_providers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  firebaseUid: text("firebase_uid").notNull().unique(),
+  companyName: text("company_name").notNull(),
+  representativeName: text("representative_name").notNull(),
+  phone: text("phone").unique().notNull(),
+  cui: text("cui").notNull(),
+  tradeRegNumber: text("trade_reg_number").notNull(),
+  address: text("address").notNull(),
+  county: text("county").notNull(),
+  city: text("city").notNull(),
+  verified: boolean("verified").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 // Cars table definition
 export const cars = pgTable("cars", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
   brand: text("brand").notNull(),
   model: text("model").notNull(),
   year: text("year").notNull(),
@@ -48,9 +59,9 @@ export const cars = pgTable("cars", {
 });
 
 export const carsRelations = relations(cars, ({ one, many }) => ({
-  user: one(users, {
-    fields: [cars.userId],
-    references: [users.id],
+  client: one(clients, {
+    fields: [cars.clientId],
+    references: [clients.id],
   }),
   requests: many(requests)
 }));
@@ -58,7 +69,7 @@ export const carsRelations = relations(cars, ({ one, many }) => ({
 // Requests table definition
 export const requests = pgTable("requests", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
   carId: integer("car_id").notNull().references(() => cars.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -72,9 +83,9 @@ export const requests = pgTable("requests", {
 });
 
 export const requestsRelations = relations(requests, ({ one }) => ({
-  user: one(users, {
-    fields: [requests.userId],
-    references: [users.id],
+  client: one(clients, {
+    fields: [requests.clientId],
+    references: [clients.id],
   }),
   car: one(cars, {
     fields: [requests.carId],
@@ -82,13 +93,23 @@ export const requestsRelations = relations(requests, ({ one }) => ({
   }),
 }));
 
-export const insertUserSchema = createInsertSchema(users).omit({
+// Schema for client registration
+export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   verified: true,
   createdAt: true,
   firebaseUid: true
 });
 
+// Schema for service provider registration
+export const insertServiceProviderSchema = createInsertSchema(serviceProviders).omit({
+  id: true,
+  verified: true,
+  createdAt: true,
+  firebaseUid: true
+});
+
+// Car and request schemas remain the same
 export const insertCarSchema = createInsertSchema(cars).omit({
   id: true,
   createdAt: true
@@ -100,8 +121,11 @@ export const insertRequestSchema = createInsertSchema(requests).omit({
   createdAt: true
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+// Export types
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type Client = typeof clients.$inferSelect;
+export type InsertServiceProvider = z.infer<typeof insertServiceProviderSchema>;
+export type ServiceProvider = typeof serviceProviders.$inferSelect;
 export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
