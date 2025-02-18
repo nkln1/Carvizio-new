@@ -16,9 +16,9 @@ if (!process.env.DATABASE_URL) {
 // Create a new pool with improved settings
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 30000,
-  max: 20
+  ssl: {
+    rejectUnauthorized: false // Allow self-signed certificates for development
+  }
 });
 
 // Add connection error handling
@@ -27,7 +27,7 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle(pool, { schema });
 
 // Test database connection
 pool.connect()
@@ -36,5 +36,6 @@ pool.connect()
     client.release();
   })
   .catch(err => {
-    console.error('Error connecting to the database:', err);
+    console.error('Error connecting to the database:', err.stack);
+    throw err; // Re-throw to fail fast if we can't connect
   });

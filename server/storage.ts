@@ -8,7 +8,7 @@ import {
   type Message, type InsertMessage
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -20,7 +20,7 @@ const sessionPool = new pg.Pool({
   max: 10,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 10000,
-  ssl: false
+  ssl: true
 });
 
 export interface IStorage {

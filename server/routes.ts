@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
-import { insertUserSchema, insertCarSchema, insertRequestSchema, users } from "@shared/schema";
+import { insertUserSchema, insertCarSchema, insertRequestSchema, users, clients, serviceProviders } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -472,22 +472,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add phone check endpoint with proper Drizzle implementation
+  // Add phone check endpoint with enhanced error handling
   app.post("/api/auth/check-phone", async (req, res) => {
     try {
       const { phone } = req.body;
+      console.log("Checking phone number:", phone);
 
       if (!phone) {
         return res.status(400).json({ error: "Phone number is required" });
       }
 
-      // Check if phone already exists in database using Drizzle
-      const [existingUser] = await db
+      // Check if phone already exists in either clients or service providers tables
+      const [clientWithPhone] = await db
         .select()
-        .from(users)
-        .where(eq(users.phone, phone));
+        .from(clients)
+        .where(eq(clients.phone, phone));
 
-      if (existingUser) {
+      const [serviceProviderWithPhone] = await db
+        .select()
+        .from(serviceProviders)
+        .where(eq(serviceProviders.phone, phone));
+
+      console.log("Phone check results:", {
+        clientExists: !!clientWithPhone,
+        serviceProviderExists: !!serviceProviderWithPhone
+      });
+
+      if (clientWithPhone || serviceProviderWithPhone) {
         return res.status(400).json({
           error: "Phone number already registered",
           code: "PHONE_EXISTS"
@@ -496,8 +507,11 @@ export function registerRoutes(app: Express): Server {
 
       res.status(200).json({ available: true });
     } catch (error) {
-      console.error("Phone check error:", error);
-      res.status(500).json({ error: "Failed to check phone number" });
+      console.error("Phone check error details:", error);
+      res.status(500).json({
+        error: "Failed to check phone number",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
