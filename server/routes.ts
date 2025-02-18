@@ -513,25 +513,16 @@ export function registerRoutes(app: Express): Server {
   // Update the phone check endpoint with temporary bypass
   app.post("/api/auth/check-phone", async (req, res) => {
     try {
-      const { phone, type } = req.body;
-      console.log("Checking phone number:", phone, "for type:", type);
+      const { phone } = req.body;
+      console.log("Phone check bypassed for number:", phone);
 
-      if (!phone) {
-        return res.status(400).json({ error: "Phone number is required" });
-      }
-
-      if (!type || !["client", "service"].includes(type)) {
-        return res.status(400).json({ error: "Invalid account type" });
-      }
-
-      // Temporarily bypass phone number verification
+      // Temporarily bypass all phone number verification
       res.status(200).json({ available: true });
-
     } catch (error) {
       console.error("Phone check error details:", error);
       res.status(500).json({
         error: "Failed to check phone number",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       });
     }
   });
