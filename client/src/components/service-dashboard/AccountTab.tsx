@@ -1,4 +1,4 @@
-noimport { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Settings, Loader2 } from "lucide-react";
 import { EditProfileService } from "@/components/auth/EditProfileService";
