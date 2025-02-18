@@ -3,7 +3,6 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Base users table with only authentication-related fields
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
@@ -12,24 +11,22 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Clients table with all client-specific fields
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id).unique(),
   name: text("name").notNull(),
-  phone: text("phone").unique(),
+  phone: text("phone").notNull().unique(),
   county: text("county").notNull(),
   city: text("city").notNull(),
   verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Service providers table with all service-specific fields
 export const serviceProviders = pgTable("service_providers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id).unique(),
   name: text("name").notNull(),
-  phone: text("phone").unique(),
+  phone: text("phone").notNull().unique(),
   companyName: text("company_name").notNull(),
   representativeName: text("representative_name").notNull(),
   cui: text("cui").notNull(),
@@ -41,7 +38,6 @@ export const serviceProviders = pgTable("service_providers", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Rest of the tables remain unchanged
 export const cars = pgTable("cars", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -84,7 +80,6 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Updated relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   client: one(clients, {
     fields: [users.id],
@@ -151,24 +146,39 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   })
 }));
 
-// Schema types
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   firebaseUid: true
 });
 
-export const insertClientSchema = createInsertSchema(clients).omit({
-  id: true,
-  verified: true,
-  createdAt: true
-});
+export const insertClientSchema = createInsertSchema(clients)
+  .extend({
+    phone: z.string()
+      .min(10, "Phone number must be at least 10 digits")
+      .max(15, "Phone number must not exceed 15 digits")
+      .regex(/^[0-9+]+$/, "Phone number can only contain digits and + symbol")
+  })
+  .omit({
+    id: true,
+    userId: true,
+    verified: true,
+    createdAt: true
+  });
 
-export const insertServiceProviderSchema = createInsertSchema(serviceProviders).omit({
-  id: true,
-  verified: true,
-  createdAt: true
-});
+export const insertServiceProviderSchema = createInsertSchema(serviceProviders)
+  .extend({
+    phone: z.string()
+      .min(10, "Phone number must be at least 10 digits")
+      .max(15, "Phone number must not exceed 15 digits")
+      .regex(/^[0-9+]+$/, "Phone number can only contain digits and + symbol")
+  })
+  .omit({
+    id: true,
+    userId: true,
+    verified: true,
+    createdAt: true
+  });
 
 export const insertCarSchema = createInsertSchema(cars).omit({
   id: true,
@@ -187,7 +197,6 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   createdAt: true
 });
 
-// Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Client = typeof clients.$inferSelect;

@@ -8,7 +8,7 @@ import {
   type Message, type InsertMessage
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -113,12 +113,41 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Client registration
+  // Helper method to check if phone number exists
+  private async isPhoneNumberTaken(phone: string): Promise<{ inClients: boolean; inServiceProviders: boolean }> {
+    try {
+      const [clientWithPhone] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.phone, phone));
+
+      const [serviceProviderWithPhone] = await db
+        .select()
+        .from(serviceProviders)
+        .where(eq(serviceProviders.phone, phone));
+
+      return {
+        inClients: !!clientWithPhone,
+        inServiceProviders: !!serviceProviderWithPhone
+      };
+    } catch (error) {
+      console.error('Error checking phone number:', error);
+      throw new Error('Failed to check phone number');
+    }
+  }
+
+  // Updated client registration with phone check
   async createClient(
     userData: InsertUser & { firebaseUid: string },
     clientData: InsertClient
   ): Promise<{ user: User; client: Client }> {
     try {
+      // Check if phone number is already taken
+      const phoneCheck = await this.isPhoneNumberTaken(clientData.phone);
+      if (phoneCheck.inClients || phoneCheck.inServiceProviders) {
+        throw new Error('Phone number is already registered');
+      }
+
       const result = await db.transaction(async (tx) => {
         // Create base user
         const [user] = await tx
@@ -148,16 +177,25 @@ export class DatabaseStorage implements IStorage {
       return result;
     } catch (error) {
       console.error('Error creating client:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to create client account');
     }
   }
 
-  // Service provider registration
+  // Updated service provider registration with phone check
   async createServiceProvider(
     userData: InsertUser & { firebaseUid: string },
     providerData: InsertServiceProvider
   ): Promise<{ user: User; provider: ServiceProvider }> {
     try {
+      // Check if phone number is already taken
+      const phoneCheck = await this.isPhoneNumberTaken(providerData.phone);
+      if (phoneCheck.inClients || phoneCheck.inServiceProviders) {
+        throw new Error('Phone number is already registered');
+      }
+
       const result = await db.transaction(async (tx) => {
         // Create base user
         const [user] = await tx
@@ -187,7 +225,10 @@ export class DatabaseStorage implements IStorage {
       return result;
     } catch (error) {
       console.error('Error creating service provider:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to create service provider account');
     }
   }
 
