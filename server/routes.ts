@@ -420,6 +420,60 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add profile update endpoints for both client and service provider
+  app.patch("/api/auth/profile", validateFirebaseToken, async (req, res) => {
+    try {
+      const { userType } = req.session;
+
+      if (!userType) {
+        return res.status(401).json({ error: "Session not found" });
+      }
+
+      let user;
+      if (userType === "client") {
+        const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+        if (!client) {
+          return res.status(404).json({ error: "Client not found" });
+        }
+
+        const updatedClient = await storage.updateClient(client.id, {
+          name: req.body.name,
+          phone: req.body.phone,
+          county: req.body.county,
+          city: req.body.city,
+        });
+
+        const { password, ...clientWithoutPassword } = updatedClient;
+        user = { ...clientWithoutPassword, role: "client" };
+
+      } else if (userType === "service") {
+        const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+        if (!provider) {
+          return res.status(404).json({ error: "Service provider not found" });
+        }
+
+        const updatedProvider = await storage.updateServiceProvider(provider.id, {
+          companyName: req.body.companyName,
+          representativeName: req.body.representativeName,
+          phone: req.body.phone,
+          cui: req.body.cui,
+          tradeRegNumber: req.body.tradeRegNumber,
+          address: req.body.address,
+          county: req.body.county,
+          city: req.body.city,
+        });
+
+        const { password, ...providerWithoutPassword } = updatedProvider;
+        user = { ...providerWithoutPassword, role: "service" };
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: "Could not update profile" });
+    }
+  });
+
   // Add phone check endpoint
   app.post("/api/auth/check-phone", async (req, res) => {
     // Temporarily disabled phone number check
