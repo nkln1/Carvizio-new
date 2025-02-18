@@ -28,20 +28,25 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
-  createUser(user: InsertUser & { firebaseUid: string } & {
-    clientData?: InsertClient;
-    serviceProviderData?: InsertServiceProvider;
-  }): Promise<User>;
-  updateUser(id: number, userData: Partial<User>): Promise<User>;
+
+  // Client registration
+  createClient(
+    userData: InsertUser & { firebaseUid: string },
+    clientData: InsertClient
+  ): Promise<{ user: User; client: Client }>;
+
+  // Service provider registration
+  createServiceProvider(
+    userData: InsertUser & { firebaseUid: string },
+    providerData: InsertServiceProvider
+  ): Promise<{ user: User; provider: ServiceProvider }>;
 
   // Client management
   getClient(userId: number): Promise<Client | undefined>;
-  createClient(client: InsertClient): Promise<Client>;
   updateClient(userId: number, clientData: Partial<Client>): Promise<Client>;
 
   // Service provider management
   getServiceProvider(userId: number): Promise<ServiceProvider | undefined>;
-  createServiceProvider(provider: InsertServiceProvider): Promise<ServiceProvider>;
   updateServiceProvider(userId: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
 
   // Car management
@@ -108,55 +113,80 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createUser(insertUser: InsertUser & { firebaseUid: string } & {
-    clientData?: InsertClient;
-    serviceProviderData?: InsertServiceProvider;
-  }): Promise<User> {
+  // Client registration
+  async createClient(
+    userData: InsertUser & { firebaseUid: string },
+    clientData: InsertClient
+  ): Promise<{ user: User; client: Client }> {
     try {
       const result = await db.transaction(async (tx) => {
         // Create base user
         const [user] = await tx
           .insert(users)
           .values({
-            ...insertUser,
-            firebaseUid: insertUser.firebaseUid,
+            email: userData.email,
+            password: userData.password,
+            firebaseUid: userData.firebaseUid,
+            createdAt: new Date(),
+          })
+          .returning();
+
+        // Create client record
+        const [client] = await tx
+          .insert(clients)
+          .values({
+            userId: user.id,
+            ...clientData,
             verified: false,
             createdAt: new Date(),
           })
           .returning();
 
-        // Create role-specific record with provided data
-        if (user.role === 'client' && insertUser.clientData) {
-          await tx
-            .insert(clients)
-            .values({
-              userId: user.id,
-              county: insertUser.clientData.county,
-              city: insertUser.clientData.city,
-              createdAt: new Date(),
-            });
-        } else if (user.role === 'service' && insertUser.serviceProviderData) {
-          await tx
-            .insert(serviceProviders)
-            .values({
-              userId: user.id,
-              companyName: insertUser.serviceProviderData.companyName,
-              representativeName: insertUser.serviceProviderData.representativeName,
-              cui: insertUser.serviceProviderData.cui,
-              tradeRegNumber: insertUser.serviceProviderData.tradeRegNumber,
-              address: insertUser.serviceProviderData.address,
-              county: insertUser.serviceProviderData.county,
-              city: insertUser.serviceProviderData.city,
-              createdAt: new Date(),
-            });
-        }
-
-        return user;
+        return { user, client };
       });
 
       return result;
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('Error creating client:', error);
+      throw error;
+    }
+  }
+
+  // Service provider registration
+  async createServiceProvider(
+    userData: InsertUser & { firebaseUid: string },
+    providerData: InsertServiceProvider
+  ): Promise<{ user: User; provider: ServiceProvider }> {
+    try {
+      const result = await db.transaction(async (tx) => {
+        // Create base user
+        const [user] = await tx
+          .insert(users)
+          .values({
+            email: userData.email,
+            password: userData.password,
+            firebaseUid: userData.firebaseUid,
+            createdAt: new Date(),
+          })
+          .returning();
+
+        // Create service provider record
+        const [provider] = await tx
+          .insert(serviceProviders)
+          .values({
+            userId: user.id,
+            ...providerData,
+            verified: false,
+            createdAt: new Date(),
+          })
+          .returning();
+
+        return { user, provider };
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Error creating service provider:', error);
       throw error;
     }
   }
@@ -194,19 +224,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createClient(client: InsertClient): Promise<Client> {
-    try {
-      const [newClient] = await db
-        .insert(clients)
-        .values(client)
-        .returning();
-      return newClient;
-    } catch (error) {
-      console.error('Error creating client:', error);
-      throw error;
-    }
-  }
-
   async updateClient(userId: number, clientData: Partial<Client>): Promise<Client> {
     try {
       const [updatedClient] = await db
@@ -232,19 +249,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting service provider:', error);
       return undefined;
-    }
-  }
-
-  async createServiceProvider(provider: InsertServiceProvider): Promise<ServiceProvider> {
-    try {
-      const [newProvider] = await db
-        .insert(serviceProviders)
-        .values(provider)
-        .returning();
-      return newProvider;
-    } catch (error) {
-      console.error('Error creating service provider:', error);
-      throw error;
     }
   }
 

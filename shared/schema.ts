@@ -3,43 +3,45 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Base users table with common fields
+// Base users table with only authentication-related fields
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firebaseUid: text("firebase_uid").notNull().unique(),
-  role: text("role", { enum: ["client", "service"] }).notNull(),
-  name: text("name"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Clients table with all client-specific fields
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id).unique(),
+  name: text("name").notNull(),
   phone: text("phone").unique(),
+  county: text("county").notNull(),
+  city: text("city").notNull(),
   verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Client-specific information
-export const clients = pgTable("clients", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id).unique(),
-  county: text("county"),
-  city: text("city"),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-});
-
-// Service provider-specific information
+// Service providers table with all service-specific fields
 export const serviceProviders = pgTable("service_providers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id).unique(),
-  companyName: text("company_name"),
-  representativeName: text("representative_name"),
-  cui: text("cui"),
-  tradeRegNumber: text("trade_reg_number"),
-  address: text("address"),
-  county: text("county"),
-  city: text("city"),
+  name: text("name").notNull(),
+  phone: text("phone").unique(),
+  companyName: text("company_name").notNull(),
+  representativeName: text("representative_name").notNull(),
+  cui: text("cui").notNull(),
+  tradeRegNumber: text("trade_reg_number").notNull(),
+  address: text("address").notNull(),
+  county: text("county").notNull(),
+  city: text("city").notNull(),
+  verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Cars table definition (unchanged)
+// Rest of the tables remain unchanged
 export const cars = pgTable("cars", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -57,7 +59,6 @@ export const cars = pgTable("cars", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Requests table definition (unchanged)
 export const requests = pgTable("requests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -73,7 +74,6 @@ export const requests = pgTable("requests", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Messages table for future messaging functionality
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").notNull().references(() => users.id),
@@ -84,7 +84,7 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Define relations
+// Updated relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   client: one(clients, {
     fields: [users.id],
@@ -154,18 +154,19 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 // Schema types
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  verified: true,
   createdAt: true,
   firebaseUid: true
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
+  verified: true,
   createdAt: true
 });
 
 export const insertServiceProviderSchema = createInsertSchema(serviceProviders).omit({
   id: true,
+  verified: true,
   createdAt: true
 });
 
