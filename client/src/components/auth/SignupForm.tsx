@@ -133,7 +133,14 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   });
 
   async function onSubmit(values: ClientFormValues | ServiceFormValues) {
-    if (!role || isLoading) return;
+    if (!role || isLoading) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select a role before continuing"
+      });
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -170,10 +177,14 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
       const idToken = await firebaseUser.getIdToken();
 
+      if (!role) {
+        throw new Error("Role must be selected");
+      }
+
       // Ensure role is included in the registration data
       const registrationData = {
         ...values,
-        role: role as "client" | "service",
+        role,
         firebaseUid: firebaseUser.uid,
       };
 
