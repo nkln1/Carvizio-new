@@ -422,43 +422,8 @@ export function registerRoutes(app: Express): Server {
 
   // Add phone check endpoint
   app.post("/api/auth/check-phone", async (req, res) => {
-    try {
-      const { phone } = req.body;
-
-      if (!phone) {
-        return res.status(400).json({ error: "Phone number is required" });
-      }
-
-      // Check if phone already exists in either clients or service_providers table
-      const [existingClient] = await db
-        .select()
-        .from(clients)
-        .where(eq(clients.phone, phone));
-
-      if (existingClient) {
-        return res.status(400).json({
-          error: "Phone number already registered",
-          code: "PHONE_EXISTS"
-        });
-      }
-
-      const [existingProvider] = await db
-        .select()
-        .from(serviceProviders)
-        .where(eq(serviceProviders.phone, phone));
-
-      if (existingProvider) {
-        return res.status(400).json({
-          error: "Phone number already registered",
-          code: "PHONE_EXISTS"
-        });
-      }
-
-      res.status(200).json({ available: true });
-    } catch (error) {
-      console.error("Phone check error:", error);
-      res.status(500).json({ error: "Failed to check phone number" });
-    }
+    // Temporarily disabled phone number check
+    res.status(200).json({ available: true });
   });
 
   const httpServer = createServer(app);
