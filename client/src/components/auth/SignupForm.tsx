@@ -170,6 +170,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
       const idToken = await firebaseUser.getIdToken();
 
+      // Ensure role is included in the registration data
       const registrationData = {
         ...values,
         role,
