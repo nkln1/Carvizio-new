@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, QueryClient } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { setupWebSocket } from "@/lib/websocket";
 
 // Import the tab components
 import RequestsTab from "@/components/service-dashboard/RequestsTab";
@@ -16,6 +17,8 @@ import SentOffersTab from "@/components/service-dashboard/SentOffersTab";
 import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab";
 import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
+
+const queryClient = new QueryClient(); //Added this line
 
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
@@ -32,6 +35,55 @@ export default function ServiceDashboard() {
 
     return () => unsubscribe();
   }, [setLocation]);
+
+  // Set up WebSocket connection
+  useEffect(() => {
+    if (!user) return;
+
+    const socket = setupWebSocket();
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // Handle different types of WebSocket messages
+        switch (data.type) {
+          case 'NEW_REQUEST':
+            // Trigger a refetch of requests when a new one arrives
+            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+            toast({
+              title: "Cerere nouă",
+              description: "Ați primit o nouă cerere de service.",
+            });
+            break;
+          case 'MESSAGE':
+            // Handle new messages
+            queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+            toast({
+              title: "Mesaj nou",
+              description: data.message,
+            });
+            break;
+          default:
+            console.log('Unhandled WebSocket message type:', data.type);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      toast({
+        title: "Eroare de conexiune",
+        description: "A apărut o eroare în conexiunea cu serverul. Încercăm reconectarea...",
+        variant: "destructive",
+      });
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, [user, toast]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ["/api/auth/me"],
