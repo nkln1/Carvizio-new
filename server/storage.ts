@@ -19,8 +19,7 @@ const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000,
-  ssl: true
+  connectionTimeoutMillis: 10000
 });
 
 export interface IStorage {
@@ -28,6 +27,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
+  createUser(userData: InsertUser & { firebaseUid: string }): Promise<User>;
 
   // Client registration
   createClient(
@@ -110,6 +110,25 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting user by Firebase UID:', error);
       return undefined;
+    }
+  }
+
+  // Add createUser method
+  async createUser(userData: InsertUser & { firebaseUid: string }): Promise<User> {
+    try {
+      const [user] = await db
+        .insert(users)
+        .values({
+          email: userData.email,
+          password: userData.password,
+          firebaseUid: userData.firebaseUid,
+          createdAt: new Date(),
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
     }
   }
 
@@ -238,11 +257,10 @@ export class DatabaseStorage implements IStorage {
         .update(users)
         .set({
           ...userData,
+          // Remove fields that shouldn't be updated
           email: undefined,
           password: undefined,
           firebaseUid: undefined,
-          role: undefined,
-          verified: undefined,
           createdAt: undefined,
         })
         .where(eq(users.id, id))

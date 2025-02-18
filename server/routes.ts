@@ -33,6 +33,47 @@ if (!admin.apps.length) {
   });
 }
 
+// Add this helper function at the top of the file
+async function getUserRole(userId: number): Promise<"client" | "service" | undefined> {
+  const [client] = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.userId, userId));
+
+  if (client) return "client";
+
+  const [serviceProvider] = await db
+    .select()
+    .from(serviceProviders)
+    .where(eq(serviceProviders.userId, userId));
+
+  if (serviceProvider) return "service";
+
+  return undefined;
+}
+
+async function getUserLocation(userId: number): Promise<{ county?: string; city?: string }> {
+  const [client] = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.userId, userId));
+
+  if (client) {
+    return { county: client.county, city: client.city };
+  }
+
+  const [serviceProvider] = await db
+    .select()
+    .from(serviceProviders)
+    .where(eq(serviceProviders.userId, userId));
+
+  if (serviceProvider) {
+    return { county: serviceProvider.county, city: serviceProvider.city };
+  }
+
+  return {};
+}
+
 export function registerRoutes(app: Express): Server {
   // Configure session middleware
   app.use(
@@ -450,21 +491,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Get service location details
-      if (user.role !== "service") { // Changed to lowercase to match database
+      const role = await getUserRole(user.id);
+      if (role !== "service") {
         return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
       }
 
-      // Ensure county exists
-      if (!user.county) {
+      const location = await getUserLocation(user.id);
+      if (!location.county) {
         return res.status(400).json({ error: "Service provider must set their county" });
       }
 
-      // Convert cities string to array if exists, or use empty array
-      const serviceCities = user.city ? [user.city] : [];
-
-      // Fetch requests that match the service's location
-      const matchingRequests = await storage.getRequestsByLocation(user.county, serviceCities);
+      const serviceCities = location.city ? [location.city] : [];
+      const matchingRequests = await storage.getRequestsByLocation(location.county, serviceCities);
       res.json(matchingRequests);
     } catch (error) {
       console.error("Error getting requests by location:", error);
@@ -472,37 +510,45 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add phone check endpoint with enhanced error handling
+  // Update the phone check endpoint with proper error handling
   app.post("/api/auth/check-phone", async (req, res) => {
     try {
-      const { phone } = req.body;
-      console.log("Checking phone number:", phone);
+      const { phone, type } = req.body;
+      console.log("Checking phone number:", phone, "for type:", type);
 
       if (!phone) {
         return res.status(400).json({ error: "Phone number is required" });
       }
 
-      // Check if phone already exists in either clients or service providers tables
-      const [clientWithPhone] = await db
-        .select()
-        .from(clients)
-        .where(eq(clients.phone, phone));
+      if (!type || !["client", "service"].includes(type)) {
+        return res.status(400).json({ error: "Invalid account type" });
+      }
 
-      const [serviceProviderWithPhone] = await db
-        .select()
-        .from(serviceProviders)
-        .where(eq(serviceProviders.phone, phone));
+      // Check in the appropriate table based on the account type
+      if (type === "client") {
+        const [clientWithPhone] = await db
+          .select()
+          .from(clients)
+          .where(eq(clients.phone, phone));
 
-      console.log("Phone check results:", {
-        clientExists: !!clientWithPhone,
-        serviceProviderExists: !!serviceProviderWithPhone
-      });
+        if (clientWithPhone) {
+          return res.status(400).json({
+            error: "Phone number already registered",
+            code: "PHONE_EXISTS"
+          });
+        }
+      } else {
+        const [serviceProviderWithPhone] = await db
+          .select()
+          .from(serviceProviders)
+          .where(eq(serviceProviders.phone, phone));
 
-      if (clientWithPhone || serviceProviderWithPhone) {
-        return res.status(400).json({
-          error: "Phone number already registered",
-          code: "PHONE_EXISTS"
-        });
+        if (serviceProviderWithPhone) {
+          return res.status(400).json({
+            error: "Phone number already registered",
+            code: "PHONE_EXISTS"
+          });
+        }
       }
 
       res.status(200).json({ available: true });
