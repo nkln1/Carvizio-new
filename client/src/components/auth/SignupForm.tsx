@@ -173,7 +173,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       // Ensure role is included in the registration data
       const registrationData = {
         ...values,
-        role,
+        role: role as "client" | "service",
         firebaseUid: firebaseUser.uid,
       };
 
