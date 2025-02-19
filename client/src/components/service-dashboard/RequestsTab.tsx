@@ -34,10 +34,6 @@ import { Switch } from "@/components/ui/switch";
 
 const ITEMS_PER_PAGE = 5;
 
-if (import.meta.hot) {
-  import.meta.hot.accept();
-}
-
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
