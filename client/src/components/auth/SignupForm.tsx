@@ -175,8 +175,8 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         if (error.code === 'PHONE_EXISTS') {
           toast({
             variant: "destructive",
-            title: "Eroare",
-            description: "Acest număr de telefon este deja înregistrat.",
+            title: "Număr de telefon indisponibil",
+            description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
           });
           setIsLoading(false);
           return;
@@ -189,13 +189,12 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       if (methods.length > 0) {
         toast({
           variant: "destructive",
-          title: "Eroare",
-          description: "Această adresă de email este deja folosită.",
+          title: "Email indisponibil",
+          description: "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
         });
         setIsLoading(false);
         return;
       }
-
 
       const { email, password } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -243,8 +242,8 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         }
 
         toast({
-          title: "Success",
-          description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
+          title: "Cont creat cu succes",
+          description: "Te rugăm să verifici email-ul pentru a confirma adresa.",
         });
 
         if (role) {
@@ -260,16 +259,18 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           title: "Eroare",
           description: error.message || "A apărut o eroare. Te rugăm să încerci din nou.",
         });
-        throw error; // Re-throw the error to be caught by the outer catch block
       }
 
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: error.message || "A apărut o eroare la înregistrare. Te rugăm să încerci din nou.",
-      });
+      // Only show generic error if it's not already handled
+      if (!error.message?.includes("telefon") && !error.message?.includes("email")) {
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "A apărut o eroare la înregistrare. Te rugăm să încerci din nou.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
