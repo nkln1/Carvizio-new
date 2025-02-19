@@ -3,6 +3,7 @@ import {
   serviceProviders,
   cars,
   requests,
+  sentOffers,
   type Client,
   type InsertClient,
   type ServiceProvider,
@@ -10,7 +11,9 @@ import {
   type Car,
   type InsertCar,
   type Request,
-  type InsertRequest
+  type InsertRequest,
+  type SentOffer,
+  type InsertSentOffer
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -61,6 +64,12 @@ export interface IStorage {
   // Add new methods for phone number checks
   getClientByPhone(phone: string): Promise<Client | undefined>;
   getServiceProviderByPhone(phone: string): Promise<ServiceProvider | undefined>;
+
+  // Sent Offers management
+  createSentOffer(offer: InsertSentOffer): Promise<SentOffer>;
+  getSentOffersByServiceProvider(serviceProviderId: number): Promise<SentOffer[]>;
+  getSentOffersByRequest(requestId: number): Promise<SentOffer[]>;
+  updateSentOfferStatus(id: number, status: "Pending" | "Accepted" | "Rejected"): Promise<SentOffer>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -355,6 +364,62 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting service provider by phone:', error);
       return undefined;
+    }
+  }
+  async createSentOffer(offer: InsertSentOffer): Promise<SentOffer> {
+    try {
+      const [newOffer] = await db
+        .insert(sentOffers)
+        .values({
+          ...offer,
+          status: "Pending",
+          createdAt: new Date(),
+        })
+        .returning();
+      return newOffer;
+    } catch (error) {
+      console.error('Error creating sent offer:', error);
+      throw error;
+    }
+  }
+
+  async getSentOffersByServiceProvider(serviceProviderId: number): Promise<SentOffer[]> {
+    try {
+      return await db
+        .select()
+        .from(sentOffers)
+        .where(eq(sentOffers.serviceProviderId, serviceProviderId))
+        .orderBy(desc(sentOffers.createdAt));
+    } catch (error) {
+      console.error('Error getting sent offers by service provider:', error);
+      return [];
+    }
+  }
+
+  async getSentOffersByRequest(requestId: number): Promise<SentOffer[]> {
+    try {
+      return await db
+        .select()
+        .from(sentOffers)
+        .where(eq(sentOffers.requestId, requestId))
+        .orderBy(desc(sentOffers.createdAt));
+    } catch (error) {
+      console.error('Error getting sent offers by request:', error);
+      return [];
+    }
+  }
+
+  async updateSentOfferStatus(id: number, status: "Pending" | "Accepted" | "Rejected"): Promise<SentOffer> {
+    try {
+      const [updatedOffer] = await db
+        .update(sentOffers)
+        .set({ status })
+        .where(eq(sentOffers.id, id))
+        .returning();
+      return updatedOffer;
+    } catch (error) {
+      console.error('Error updating sent offer status:', error);
+      throw error;
     }
   }
 }

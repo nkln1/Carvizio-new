@@ -129,6 +129,33 @@ export const requestsRelations = relations(requests, ({ one }) => ({
   }),
 }));
 
+// Sent Offers table definition
+export const sentOffers = pgTable("sent_offers", {
+  id: serial("id").primaryKey(),
+  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
+  requestId: integer("request_id").notNull().references(() => requests.id),
+  title: text("title").notNull(),
+  details: text("details").notNull(),
+  availableDates: timestamp("available_dates").array().notNull(),
+  price: integer("price").notNull(),
+  notes: text("notes"),
+  status: text("status", {
+    enum: ["Pending", "Accepted", "Rejected"]
+  }).default("Pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
+  serviceProvider: one(serviceProviders, {
+    fields: [sentOffers.serviceProviderId],
+    references: [serviceProviders.id],
+  }),
+  request: one(requests, {
+    fields: [sentOffers.requestId],
+    references: [requests.id],
+  }),
+}));
+
 // Schema for client registration
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
@@ -157,6 +184,13 @@ export const insertRequestSchema = createInsertSchema(requests).omit({
   createdAt: true
 });
 
+// Add the insertSentOfferSchema
+export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
+  id: true,
+  status: true,
+  createdAt: true
+});
+
 // Export types
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
@@ -166,6 +200,8 @@ export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type Request = typeof requests.$inferSelect;
+export type InsertSentOffer = z.infer<typeof insertSentOfferSchema>;
+export type SentOffer = typeof sentOffers.$inferSelect;
 
 // Type guards for user types
 export const isClientUser = (user: User): user is ClientUser => {
