@@ -3,11 +3,12 @@ import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Menu, X } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 
 // Import the tab components
@@ -21,6 +22,7 @@ export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState("cereri");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,7 +58,11 @@ export default function ServiceDashboard() {
     }
   };
 
-  // Early return if user is not available yet
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setIsMenuOpen(false);
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -65,11 +71,10 @@ export default function ServiceDashboard() {
     );
   }
 
-  // Show email verification message if email is not verified
   if (!user.emailVerified) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <div className="container mx-auto p-6 flex-grow flex items-center justify-center">
+        <div className="container mx-auto p-4 sm:p-6 flex-grow flex items-center justify-center">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -120,78 +125,74 @@ export default function ServiceDashboard() {
     }
   };
 
+  const navigationItems = [
+    { id: "cereri", label: "Cereri" },
+    { id: "oferte-trimise", label: "Oferte trimise" },
+    { id: "oferte-acceptate", label: "Oferte acceptate" },
+    { id: "mesaje", label: "Mesaje" },
+    { id: "cont", label: "Cont" },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <nav className="bg-white border-b">
-        <div className="container mx-auto px-6">
+      <nav className="bg-white border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center">
               <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
-              <div className="hidden md:flex items-center space-x-4">
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              {navigationItems.map((item) => (
                 <Button
-                  variant={activeTab === "cereri" ? "default" : "ghost"}
-                  onClick={() => setActiveTab("cereri")}
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  onClick={() => handleTabChange(item.id)}
                   className={
-                    activeTab === "cereri"
+                    activeTab === item.id
                       ? "bg-[#00aff5] hover:bg-[#0099d6]"
                       : ""
                   }
                 >
-                  Cereri
+                  {item.label}
                 </Button>
-                <Button
-                  variant={activeTab === "oferte-trimise" ? "default" : "ghost"}
-                  onClick={() => setActiveTab("oferte-trimise")}
-                  className={
-                    activeTab === "oferte-trimise"
-                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                      : ""
-                  }
-                >
-                  Oferte trimise
-                </Button>
-                <Button
-                  variant={
-                    activeTab === "oferte-acceptate" ? "default" : "ghost"
-                  }
-                  onClick={() => setActiveTab("oferte-acceptate")}
-                  className={
-                    activeTab === "oferte-acceptate"
-                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                      : ""
-                  }
-                >
-                  Oferte acceptate
-                </Button>
-                <Button
-                  variant={activeTab === "mesaje" ? "default" : "ghost"}
-                  onClick={() => setActiveTab("mesaje")}
-                  className={
-                    activeTab === "mesaje"
-                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                      : ""
-                  }
-                >
-                  Mesaje
-                </Button>
-                <Button
-                  variant={activeTab === "cont" ? "default" : "ghost"}
-                  onClick={() => setActiveTab("cont")}
-                  className={
-                    activeTab === "cont"
-                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                      : ""
-                  }
-                >
-                  Cont
-                </Button>
-              </div>
+              ))}
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[80%] sm:w-[385px]">
+                  <div className="flex flex-col gap-4 mt-6">
+                    {navigationItems.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant={activeTab === item.id ? "default" : "ghost"}
+                        onClick={() => handleTabChange(item.id)}
+                        className={`w-full justify-start text-left ${
+                          activeTab === item.id
+                            ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                            : ""
+                        }`}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="container mx-auto p-6 flex-grow">
+      <div className="container mx-auto p-4 sm:p-6 flex-grow">
         {isLoading ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />

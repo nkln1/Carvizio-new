@@ -5,19 +5,17 @@ import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Menu } from "lucide-react";
 import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
-import { EditProfile } from "@/components/auth/EditProfile";
 import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
 import { RequestForm } from "@/components/request/RequestForm";
-import { Navigation } from "@/components/dashboard/Navigation";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +37,7 @@ export default function ClientDashboard() {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CarType | undefined>();
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
   const [offers, setOffers] = useState<ServiceOffer[]>([]);
 
@@ -56,24 +55,23 @@ export default function ClientDashboard() {
     queryKey: ['/api/auth/me'],
     retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 0,
-    cacheTime: 0
   });
 
   const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
     queryKey: ['/api/cars'],
     enabled: !!userProfile,
-    staleTime: 0,
-    cacheTime: 0
   });
 
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
     queryKey: ['/api/requests'],
     enabled: !!userProfile,
     refetchOnWindowFocus: true,
-    staleTime: 0,
-    cacheTime: 0
   });
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setIsMenuOpen(false);
+  };
 
   const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
     try {
@@ -103,7 +101,6 @@ export default function ClientDashboard() {
         description: "Car added successfully",
       });
 
-      // Update the pendingRequestData with the new car ID
       if (pendingRequestData) {
         setPendingRequestData({
           ...pendingRequestData,
@@ -114,7 +111,6 @@ export default function ClientDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
       setShowCarDialog(false);
 
-      // Always reopen the request dialog with the preserved data
       if (pendingRequestData) {
         setShowRequestDialog(true);
       }
@@ -283,6 +279,14 @@ export default function ClientDashboard() {
     }
   };
 
+  const navigationItems = [
+    { id: "profile", label: "Profil" },
+    { id: "requests", label: "Cereri" },
+    { id: "offers", label: "Oferte" },
+    { id: "car", label: "Mașini" },
+    { id: "messages", label: "Mesaje" },
+  ];
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -294,7 +298,7 @@ export default function ClientDashboard() {
   if (!user.emailVerified) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <div className="container mx-auto p-6 flex-grow flex items-center justify-center">
+        <div className="container mx-auto p-4 sm:p-6 flex-grow flex items-center justify-center">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -325,13 +329,62 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navigation
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onCreateRequest={() => setShowRequestDialog(true)}
-      />
+      <nav className="bg-white border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-[#00aff5]">Dashboard</h1>
+            </div>
 
-      <div className="container mx-auto p-6 flex-grow">
+            <div className="hidden md:flex items-center space-x-4">
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  onClick={() => handleTabChange(item.id)}
+                  className={
+                    activeTab === item.id
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+
+            <div className="md:hidden">
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[80%] sm:w-[385px]">
+                  <div className="flex flex-col gap-4 mt-6">
+                    {navigationItems.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant={activeTab === item.id ? "default" : "ghost"}
+                        onClick={() => handleTabChange(item.id)}
+                        className={`w-full justify-start text-left ${
+                          activeTab === item.id
+                            ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                            : ""
+                        }`}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto p-4 sm:p-6 flex-grow">
         {isLoading ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -378,7 +431,6 @@ export default function ClientDashboard() {
         setShowCarDialog(open);
         if (!open) {
           setSelectedCar(undefined);
-          // Reopen request dialog with preserved data
           if (pendingRequestData) {
             setTimeout(() => {
               setShowRequestDialog(true);
@@ -386,7 +438,7 @@ export default function ClientDashboard() {
           }
         }
       }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
               {selectedCar ? "Editează mașina" : "Adaugă mașină nouă"}
@@ -397,7 +449,6 @@ export default function ClientDashboard() {
             onCancel={() => {
               setShowCarDialog(false);
               setSelectedCar(undefined);
-              // Reopen request dialog with preserved data
               if (pendingRequestData) {
                 setTimeout(() => {
                   setShowRequestDialog(true);
@@ -424,7 +475,6 @@ export default function ClientDashboard() {
               setPendingRequestData(null);
             }}
             onAddCar={(data) => {
-              // Store ALL form data before switching to car dialog
               setPendingRequestData({
                 title: data.title,
                 description: data.description,
