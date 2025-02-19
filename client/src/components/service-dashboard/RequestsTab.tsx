@@ -48,7 +48,6 @@ export default function RequestsTab() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'NEW_REQUEST') {
-          // Invalidate and refetch requests when a new one is received
           queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
         }
       } catch (error) {
@@ -64,6 +63,29 @@ export default function RequestsTab() {
       socket.close();
     };
   }, [queryClient]);
+
+  const markRequestAsViewed = async (requestId: number) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/requests/${requestId}/view`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark request as viewed');
+      }
+
+      // Invalidate and refetch requests
+      queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+    } catch (error) {
+      console.error('Error marking request as viewed:', error);
+    }
+  };
 
   // Fetch requests that match the service's location
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
@@ -84,12 +106,12 @@ export default function RequestsTab() {
 
       return response.json();
     },
-    staleTime: 0,
-    cacheTime: 0
+    gcTime: 0,
+    staleTime: 0
   });
 
   // Filter only active requests
-  const activeRequests = requests.filter(req => req.status === "Active");
+  const activeRequests = requests?.filter(req => req.status === "Active") || [];
 
   return (
     <Card>
@@ -116,9 +138,23 @@ export default function RequestsTab() {
             </TableHeader>
             <TableBody>
               {activeRequests.map((request) => (
-                <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
+                <TableRow 
+                  key={request.id} 
+                  className={`transition-colors ${
+                    !request.viewed 
+                      ? 'bg-blue-50 hover:bg-blue-100'
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
                   <TableCell className="font-medium">
-                    {request.title}
+                    <div className="flex items-center gap-2">
+                      {request.title}
+                      {!request.viewed && (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 font-semibold">
+                          Nou
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -142,6 +178,9 @@ export default function RequestsTab() {
                         onClick={() => {
                           setSelectedRequest(request);
                           setShowViewDialog(true);
+                          if (!request.viewed) {
+                            markRequestAsViewed(request.id);
+                          }
                         }}
                         className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                       >
@@ -152,6 +191,9 @@ export default function RequestsTab() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
+                          if (!request.viewed) {
+                            markRequestAsViewed(request.id);
+                          }
                           toast({
                             title: "În curând",
                             description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
@@ -167,6 +209,9 @@ export default function RequestsTab() {
                         size="sm"
                         className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
                         onClick={() => {
+                          if (!request.viewed) {
+                            markRequestAsViewed(request.id);
+                          }
                           toast({
                             title: "În curând",
                             description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
@@ -180,6 +225,9 @@ export default function RequestsTab() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
+                          if (!request.viewed) {
+                            markRequestAsViewed(request.id);
+                          }
                           toast({
                             title: "În curând",
                             description: "Funcționalitatea de respingere va fi disponibilă în curând.",
