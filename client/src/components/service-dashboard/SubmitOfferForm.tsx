@@ -75,7 +75,6 @@ export function SubmitOfferForm({
   const handleSubmit = async (values: OfferFormValues) => {
     try {
       setIsSubmitting(true);
-      // Convert dates to ISO strings before sending to server
       const formattedValues = {
         ...values,
         availableDates: values.availableDates.map(date => date.toISOString())
@@ -108,10 +107,13 @@ export function SubmitOfferForm({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
-        description="Completați detaliile ofertei pentru această cerere de service"
+        aria-describedby="offer-form-description"
       >
         <DialogHeader>
           <DialogTitle>Trimite Ofertă</DialogTitle>
+          <p id="offer-form-description" className="text-sm text-muted-foreground">
+            Completați detaliile ofertei pentru această cerere de service
+          </p>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">

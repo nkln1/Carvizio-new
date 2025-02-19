@@ -79,10 +79,10 @@ export default function RequestsTab() {
     const connect = () => {
       cleanup();
 
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-
       try {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
@@ -103,21 +103,24 @@ export default function RequestsTab() {
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error);
+          // Don't immediately try to reconnect on error, wait for close event
         };
 
-        ws.onclose = () => {
-          console.log('WebSocket connection closed');
+        ws.onclose = (event) => {
+          console.log('WebSocket connection closed', event.code, event.reason);
           if (reconnectAttempt < maxReconnectAttempts) {
             reconnectAttempt++;
             console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts})...`);
-            reconnectTimeout = setTimeout(connect, reconnectDelay);
+            reconnectTimeout = setTimeout(connect, reconnectDelay * Math.pow(2, reconnectAttempt - 1));
+          } else {
+            console.log('Max reconnection attempts reached');
           }
         };
       } catch (error) {
         console.error('Error creating WebSocket:', error);
         if (reconnectAttempt < maxReconnectAttempts) {
           reconnectAttempt++;
-          reconnectTimeout = setTimeout(connect, reconnectDelay);
+          reconnectTimeout = setTimeout(connect, reconnectDelay * Math.pow(2, reconnectAttempt - 1));
         }
       }
     };
@@ -378,7 +381,7 @@ export default function RequestsTab() {
         )}
 
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent>
+          <DialogContent aria-describedby="request-details"> {/* Added aria-describedby */}
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
             </DialogHeader>
