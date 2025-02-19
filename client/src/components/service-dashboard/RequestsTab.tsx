@@ -34,6 +34,10 @@ import { Switch } from "@/components/ui/switch";
 
 const ITEMS_PER_PAGE = 5;
 
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}
+
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
@@ -145,7 +149,7 @@ export default function RequestsTab() {
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[#00aff5]" />
             <CardTitle className="text-[#00aff5]">
-              Cereri în Așteptareeee
+              Cereri în Așteptare
               {newRequestsCount > 0 && (
                 <span className="ml-2 px-2 py-1 text-sm bg-[#00aff5] text-white rounded-full">
                   {newRequestsCount}
