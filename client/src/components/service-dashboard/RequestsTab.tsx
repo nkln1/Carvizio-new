@@ -177,13 +177,12 @@ export default function RequestsTab() {
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data trimiterii</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Locație</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
-                    <TableHead className="h-10 px-2 text-right text-xs text-gray-500">Acțiuni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentRequests.map((request) => (
                     <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
-                      <TableCell className="font-medium">
+                      <TableCell className="p-2">
                         <div className="flex items-center gap-2">
                           {request.title}
                           {!viewedRequests.has(request.id) && (
@@ -193,86 +192,84 @@ export default function RequestsTab() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         {format(new Date(request.preferredDate), "dd.MM.yyyy")}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         {format(new Date(request.createdAt), "dd.MM.yyyy")}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         {request.cities?.join(", ")}, {request.county}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
                           {request.status}
                         </span>
                       </TableCell>
-                      <TableCell className="p-2 align-middle [&:has([role=checkbox])]:pr-0">
-                        <div className="flex flex-col">
-                          <div className="flex justify-end" style={{ gap: '24px' }}>
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-gray-500 mb-1">Detalii</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewRequest(request)}
-                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                title="Detalii"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-gray-500 mb-1">Mesaj</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  toast({
-                                    title: "În curând",
-                                    description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                                  });
-                                }}
-                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                title="Mesaj"
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-gray-500 mb-1">Trimite ofertă</span>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-[#00aff5] hover:bg-[#0099d6]"
-                                title="Trimite Ofertă"
-                                onClick={() => {
-                                  toast({
-                                    title: "În curând",
-                                    description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                                  });
-                                }}
-                              >
-                                <SendHorizontal className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-gray-500 mb-1">Respinge</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  toast({
-                                    title: "În curând",
-                                    description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                                  });
-                                }}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                title="Respinge"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
+                      <TableCell className="p-2">
+                        <div className="flex justify-end gap-6">
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-500 mb-1">Detalii</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewRequest(request)}
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                              title="Detalii"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-500 mb-1">Mesaj</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                toast({
+                                  title: "În curând",
+                                  description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                                });
+                              }}
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                              title="Mesaj"
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-500 mb-1">Trimite ofertă</span>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-[#00aff5] hover:bg-[#0099d6]"
+                              title="Trimite Ofertă"
+                              onClick={() => {
+                                toast({
+                                  title: "În curând",
+                                  description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                                });
+                              }}
+                            >
+                              <SendHorizontal className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-500 mb-1">Respinge</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                toast({
+                                  title: "În curând",
+                                  description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                                });
+                              }}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              title="Respinge"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </TableCell>
