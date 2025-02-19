@@ -254,21 +254,28 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
   const renderClientForm = () => (
     <Form {...clientForm}>
-      <form onSubmit={clientForm.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={clientForm.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <FormField
             control={clientForm.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="name">Nume și Prenume</FormLabel>
+                <FormLabel htmlFor="name" className="text-sm sm:text-base font-medium text-gray-700">
+                  Nume și Prenume
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="name" {...field} placeholder="Ion Popescu" className="pl-10" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="name"
+                      {...field}
+                      placeholder="Ion Popescu"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -277,14 +284,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="email">Email</FormLabel>
+                <FormLabel htmlFor="email" className="text-sm sm:text-base font-medium text-gray-700">
+                  Email
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -293,14 +302,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="phone">Telefon</FormLabel>
+                <FormLabel htmlFor="phone" className="text-sm sm:text-base font-medium text-gray-700">
+                  Telefon
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -309,7 +320,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="county"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="county">Județ</FormLabel>
+                <FormLabel htmlFor="county" className="text-sm sm:text-base font-medium text-gray-700">
+                  Județ
+                </FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={(value) => {
@@ -331,7 +344,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -340,7 +353,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="city">Localitate</FormLabel>
+                <FormLabel htmlFor="city" className="text-sm sm:text-base font-medium text-gray-700">
+                  Localitate
+                </FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
@@ -360,7 +375,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                       ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -369,14 +384,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="password">Parolă</FormLabel>
+                <FormLabel htmlFor="password" className="text-sm sm:text-base font-medium text-gray-700">
+                  Parolă
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -385,21 +402,27 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="confirmPassword">Confirmă Parola</FormLabel>
+                <FormLabel htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700">
+                  Confirmă Parola
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
         </div>
 
-        <div className="flex flex-col items-center space-y-4 pt-4">
-          <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
+        <div className="flex flex-col items-center space-y-4 pt-6">
+          <Button
+            type="submit"
+            className="w-full max-w-md h-12 sm:h-10 text-base sm:text-sm bg-[#00aff5] hover:bg-[#0099d6] transition-colors duration-300"
+            disabled={isLoading}
+          >
             {isLoading ? "Se încarcă..." : "Creează cont"}
           </Button>
         </div>
@@ -409,21 +432,23 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
   const renderServiceForm = () => (
     <Form {...serviceForm}>
-      <form onSubmit={serviceForm.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={serviceForm.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <FormField
             control={serviceForm.control}
             name="companyName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="companyName">Nume Service</FormLabel>
+                <FormLabel htmlFor="companyName" className="text-sm sm:text-base font-medium text-gray-700">
+                  Nume Service
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="companyName" {...field} placeholder="Auto Service SRL" className="pl-10" />
+                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="companyName" {...field} placeholder="Auto Service SRL" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -432,14 +457,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="representativeName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="representativeName">Nume Reprezentant</FormLabel>
+                <FormLabel htmlFor="representativeName" className="text-sm sm:text-base font-medium text-gray-700">
+                  Nume Reprezentant
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="representativeName" {...field} placeholder="Ion Popescu" className="pl-10" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="representativeName" {...field} placeholder="Ion Popescu" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -448,14 +475,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="cui"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="cui">CUI</FormLabel>
+                <FormLabel htmlFor="cui" className="text-sm sm:text-base font-medium text-gray-700">
+                  CUI
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="cui" {...field} placeholder="12345678" className="pl-10" />
+                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="cui" {...field} placeholder="12345678" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -464,14 +493,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="tradeRegNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="tradeRegNumber">Nr. Înreg.</FormLabel>
+                <FormLabel htmlFor="tradeRegNumber" className="text-sm sm:text-base font-medium text-gray-700">
+                  Nr. Înreg.
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="tradeRegNumber" {...field} placeholder="J40/1234/2025" className="pl-10" />
+                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="tradeRegNumber" {...field} placeholder="J40/1234/2025" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -480,14 +511,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="address">Adresă</FormLabel>
+                <FormLabel htmlFor="address" className="text-sm sm:text-base font-medium text-gray-700">
+                  Adresă
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="address" {...field} placeholder="Strada, Număr" className="pl-10" />
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="address" {...field} placeholder="Strada, Număr" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -496,14 +529,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="email">Email</FormLabel>
+                <FormLabel htmlFor="email" className="text-sm sm:text-base font-medium text-gray-700">
+                  Email
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -512,14 +547,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="phone">Telefon</FormLabel>
+                <FormLabel htmlFor="phone" className="text-sm sm:text-base font-medium text-gray-700">
+                  Telefon
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -528,7 +565,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="county"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="county">Județ</FormLabel>
+                <FormLabel htmlFor="county" className="text-sm sm:text-base font-medium text-gray-700">
+                  Județ
+                </FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={(value) => {
@@ -550,7 +589,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -559,7 +598,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="city">Localitate</FormLabel>
+                <FormLabel htmlFor="city" className="text-sm sm:text-base font-medium text-gray-700">
+                  Localitate
+                </FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
@@ -579,7 +620,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                       ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -588,14 +629,16 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="password">Parolă</FormLabel>
+                <FormLabel htmlFor="password" className="text-sm sm:text-base font-medium text-gray-700">
+                  Parolă
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
@@ -604,21 +647,27 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="confirmPassword">Confirmă Parola</FormLabel>
+                <FormLabel htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700">
+                  Confirmă Parola
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
         </div>
 
-        <div className="flex flex-col items-center space-y-4 pt-4">
-          <Button type="submit" className="w-full max-w-md bg-[#00aff5] hover:bg-[#0099d6]" disabled={isLoading}>
+        <div className="flex flex-col items-center space-y-4 pt-6">
+          <Button
+            type="submit"
+            className="w-full max-w-md h-12 sm:h-10 text-base sm:text-sm bg-[#00aff5] hover:bg-[#0099d6] transition-colors duration-300"
+            disabled={isLoading}
+          >
             {isLoading ? "Se încarcă..." : "Creează cont"}
           </Button>
         </div>
@@ -627,17 +676,17 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   );
 
   return (
-    <div className="w-full max-w-4xl space-y-6 p-6 bg-white rounded-lg shadow-lg relative max-h-[80vh] overflow-y-auto">
+    <div className="w-full max-w-4xl space-y-6 p-4 sm:p-6 bg-white rounded-lg shadow-lg relative max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
       <Button
         variant="ghost"
-        className="absolute left-4 top-4 p-0 text-[#00aff5]"
+        className="absolute left-2 sm:left-4 top-2 sm:top-4 p-2 sm:p-0 text-[#00aff5] touch-manipulation"
         onClick={() => setRole(null)}
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-5 w-5 sm:h-4 sm:w-4" />
       </Button>
 
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-[#00aff5]">
+      <div className="space-y-2 text-center pt-8 sm:pt-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#00aff5]">
           {role === "client" ? "Înregistrare Client" : "Înregistrare Service Auto"}
         </h2>
       </div>
