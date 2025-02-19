@@ -280,11 +280,11 @@ export default function ClientDashboard() {
   };
 
   const navigationItems = [
-    { id: "profile", label: "Profil" },
     { id: "requests", label: "Cereri" },
     { id: "offers", label: "Oferte" },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
+    { id: "profile", label: "Cont" },
   ];
 
   if (!user) {
@@ -351,6 +351,14 @@ export default function ClientDashboard() {
                   {item.label}
                 </Button>
               ))}
+              {activeTab === "requests" && (
+                <Button
+                  onClick={() => setShowRequestDialog(true)}
+                  className="bg-[#00aff5] hover:bg-[#0099d6] ml-2"
+                >
+                  Adaugă cerere
+                </Button>
+              )}
             </div>
 
             <div className="md:hidden">
@@ -376,6 +384,17 @@ export default function ClientDashboard() {
                         {item.label}
                       </Button>
                     ))}
+                    {activeTab === "requests" && (
+                      <Button
+                        onClick={() => {
+                          setShowRequestDialog(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full bg-[#00aff5] hover:bg-[#0099d6]"
+                      >
+                        Adaugă cerere
+                      </Button>
+                    )}
                   </div>
                 </SheetContent>
               </Sheet>
