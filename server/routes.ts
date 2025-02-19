@@ -115,9 +115,9 @@ export function registerRoutes(app: Express): Server {
       console.error("Registration error details:", error);
 
       // Check for duplicate phone number error
-      if (error.code === '23505' && 
-          (error.constraint === 'clients_phone_key' || 
-           error.constraint === 'service_providers_phone_key')) {
+      if (error.code === '23505' &&
+        (error.constraint === 'clients_phone_key' ||
+          error.constraint === 'service_providers_phone_key')) {
         return res.status(400).json({
           error: "Phone number already registered",
           field: "phone",
@@ -432,6 +432,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add service offers endpoints
+  app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can send offers." });
+      }
+
+      const offer = await storage.createSentOffer({
+        serviceProviderId: provider.id,
+        requestId: req.body.requestId,
+        price: req.body.price,
+        description: req.body.description,
+        status: "Pending"
+      });
+
+      // Send notification through WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'NEW_OFFER',
+            payload: offer
+          }));
+        }
+      });
+
+      res.status(201).json(offer);
+    } catch (error: any) {
+      console.error("Error creating service offer:", error);
+      res.status(500).json({
+        error: "Failed to create offer",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
   // Add profile update endpoints for both client and service provider
   app.patch("/api/auth/profile", validateFirebaseToken, async (req, res) => {
     try {
@@ -528,14 +564,42 @@ export function registerRoutes(app: Express): Server {
   // Initialize WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
-  // Handle WebSocket connections
-  wss.on('connection', ws => {
-    console.log('Client connected');
-    ws.on('message', message => {
-      console.log('Received:', message);
-      // handle message
+  // WebSocket connection handler with improved error handling
+  wss.on('connection', (ws) => {
+    console.log('Client connected to WebSocket');
+
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Received message:', data);
+        // Handle different message types
+        switch (data.type) {
+          case 'OFFER_SENT':
+            // Broadcast to all connected clients
+            wss.clients.forEach(client => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                  type: 'NEW_OFFER',
+                  payload: data.payload
+                }));
+              }
+            });
+            break;
+          default:
+            console.log('Unknown message type:', data.type);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
     });
-    ws.on('close', () => console.log('Client disconnected'));
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    ws.on('close', () => {
+      console.log('Client disconnected from WebSocket');
+    });
   });
 
   return httpServer;

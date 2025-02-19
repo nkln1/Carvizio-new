@@ -376,6 +376,8 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date(),
         })
         .returning();
+
+      console.log('Created new offer:', newOffer); // Add logging
       return newOffer;
     } catch (error) {
       console.error('Error creating sent offer:', error);

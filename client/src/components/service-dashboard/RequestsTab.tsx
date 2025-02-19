@@ -87,7 +87,7 @@ export default function RequestsTab() {
 
         ws.onopen = () => {
           console.log('WebSocket connection established');
-          reconnectAttempt = 0;
+          reconnectAttempt = 0; // Reset reconnection attempts on successful connection
         };
 
         ws.onmessage = (event) => {
@@ -101,8 +101,8 @@ export default function RequestsTab() {
           }
         };
 
-        ws.onerror = () => {
-          console.warn('WebSocket encountered an error');
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
         };
 
         ws.onclose = () => {
@@ -199,6 +199,7 @@ export default function RequestsTab() {
         throw new Error(errorData.message || "Failed to submit offer");
       }
 
+      const data = await response.json(); //Added this line
       await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
       setShowOfferDialog(false);
       toast({
