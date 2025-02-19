@@ -177,7 +177,7 @@ export default function RequestsTab() {
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data trimiterii</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Locație</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
-                    <TableHead className="h-10 px-2 text-right text-xs text-gray-500">Detalii · Mesaj · Trimite ofertă · Respinge</TableHead>
+                    <TableHead className="h-10 px-2 text-right text-xs text-gray-500">Acțiuni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -208,58 +208,72 @@ export default function RequestsTab() {
                         </span>
                       </TableCell>
                       <TableCell className="p-2 align-middle [&:has([role=checkbox])]:pr-0">
-                        <div className="flex justify-end" style={{ gap: '24px' }}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewRequest(request)}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                            title="Detalii"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "În curând",
-                                description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                              });
-                            }}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                            title="Mesaj"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="bg-[#00aff5] hover:bg-[#0099d6]"
-                            title="Trimite Ofertă"
-                            onClick={() => {
-                              toast({
-                                title: "În curând",
-                                description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                              });
-                            }}
-                          >
-                            <SendHorizontal className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "În curând",
-                                description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                              });
-                            }}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            title="Respinge"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                        <div className="flex flex-col">
+                          <div className="flex justify-end" style={{ gap: '24px' }}>
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs text-gray-500 mb-1">Detalii</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewRequest(request)}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                title="Detalii"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs text-gray-500 mb-1">Mesaj</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  toast({
+                                    title: "În curând",
+                                    description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                                  });
+                                }}
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                title="Mesaj"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs text-gray-500 mb-1">Trimite ofertă</span>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-[#00aff5] hover:bg-[#0099d6]"
+                                title="Trimite Ofertă"
+                                onClick={() => {
+                                  toast({
+                                    title: "În curând",
+                                    description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                                  });
+                                }}
+                              >
+                                <SendHorizontal className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs text-gray-500 mb-1">Respinge</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  toast({
+                                    title: "În curând",
+                                    description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                                  });
+                                }}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                title="Respinge"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
