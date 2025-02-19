@@ -150,14 +150,15 @@ export default function RequestsTab() {
               {activeRequests.map((request) => (
                 <TableRow
                   key={request.id}
-                  className={`hover:bg-gray-50 transition-colors ${request.isNew ? 'bg-blue-50' : ''}`}
+                  className={`hover:bg-gray-50 transition-colors ${request.isNew ? 'bg-blue-50 font-semibold' : ''}`}
                 >
                   <TableCell className="font-medium relative">
-                    <span className={request.isNew ? 'font-bold' : ''}>
-                      {request.title}
-                    </span>
-                    {request.isNew && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    <div className="flex items-center gap-2">
+                      <span className={request.isNew ? 'font-bold' : ''}>
+                        {request.title}
+                      </span>
+                      {request.isNew && (
+                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap">
                         Nou
                       </span>
                     )}

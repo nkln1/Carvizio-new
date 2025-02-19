@@ -115,7 +115,8 @@ export const requests = pgTable("requests", {
   preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isNew: boolean("is_new").default(true).notNull()
 });
 
 export const requestsRelations = relations(requests, ({ one }) => ({
