@@ -161,7 +161,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     setIsLoading(true);
 
     try {
-      // Check phone number first
+      // Step 1: Check phone number first
       const phoneCheckResponse = await fetch('/api/auth/check-phone', {
         method: 'POST',
         headers: {
@@ -180,11 +180,12 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           });
           setIsLoading(false);
           return;
+        } else {
+          throw new Error('Failed to check phone number: ' + error.message);
         }
-        throw new Error('Failed to check phone number');
       }
 
-      // Check email availability in Firebase before creating account
+      // Step 2: Check email availability
       const methods = await fetchSignInMethodsForEmail(auth, values.email);
       if (methods.length > 0) {
         toast({
@@ -196,14 +197,14 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         return;
       }
 
+      // Step 3: Create Firebase account only if phone and email are available
       const { email, password } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
 
       try {
-        await sendEmailVerification(firebaseUser);
+        // Step 4: Register user in backend
         const idToken = await firebaseUser.getIdToken(true);
-
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
@@ -224,6 +225,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           throw new Error(error.message || 'Failed to register user');
         }
 
+        // Step 5: Only send verification email after successful registration
+        await sendEmailVerification(firebaseUser);
+
+        // Step 6: Sign in and establish session
         await signInWithEmailAndPassword(auth, email, password);
         const newIdToken = await firebaseUser.getIdToken(true);
 
@@ -251,7 +256,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         }
 
       } catch (error: any) {
-        // If any step after Firebase account creation fails, clean up the Firebase account
+        // Clean up Firebase account if anything fails after creation
         await firebaseUser.delete();
         console.error("Error after Firebase account creation:", error);
         toast({
@@ -263,8 +268,15 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     } catch (error: any) {
       console.error("Registration error:", error);
-      // Only show generic error if it's not already handled
-      if (!error.message?.includes("telefon") && !error.message?.includes("email")) {
+      if (error.code === "auth/email-already-in-use") {
+        toast({
+          variant: "destructive",
+          title: "Email indisponibil",
+          description: "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
+        });
+      } else if (error.message?.includes("telefon")) {
+        // Phone number error is already handled above
+      } else {
         toast({
           variant: "destructive",
           title: "Eroare",
