@@ -145,7 +145,7 @@ export default function RequestsTab() {
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[#00aff5]" />
             <CardTitle className="text-[#00aff5]">
-              Cereri în Așteptare
+              Cereri în Așteptareeee
               {newRequestsCount > 0 && (
                 <span className="ml-2 px-2 py-1 text-sm bg-[#00aff5] text-white rounded-full">
                   {newRequestsCount}

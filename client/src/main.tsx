@@ -6,8 +6,17 @@ import "./index.css";
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found");
 
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+const render = () => {
+  createRoot(root).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+};
+
+render();
+
+// Enable HMR
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}
