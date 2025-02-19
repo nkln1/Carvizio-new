@@ -64,7 +64,7 @@ export function SubmitOfferForm({
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
     defaultValues: {
-      title: `Ofertă pentru cererea #${request.id}`,
+      title: `Ofertă pentru ${request.title}`,
       details: "",
       availableDates: [],
       price: 0,
