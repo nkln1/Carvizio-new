@@ -24,7 +24,7 @@ import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-rea
 import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from "firebase/auth";
 
 type UserRole = "client" | "service";
 
@@ -161,6 +161,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     setIsLoading(true);
 
     try {
+      // Check phone number first
       const phoneCheckResponse = await fetch('/api/auth/check-phone', {
         method: 'POST',
         headers: {
@@ -183,61 +184,87 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         throw new Error('Failed to check phone number');
       }
 
+      // Check email availability in Firebase before creating account
+      const methods = await fetchSignInMethodsForEmail(auth, values.email);
+      if (methods.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Această adresă de email este deja folosită.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+
       const { email, password } = values;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
 
-      await sendEmailVerification(firebaseUser);
-      const idToken = await firebaseUser.getIdToken(true);
+      try {
+        await sendEmailVerification(firebaseUser);
+        const idToken = await firebaseUser.getIdToken(true);
 
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          ...values,
-          role,
-          firebaseUid: firebaseUser.uid,
-        }),
-      });
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            ...values,
+            role,
+            firebaseUid: firebaseUser.uid,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to register user');
-      }
+        if (!response.ok) {
+          // If backend registration fails, delete the Firebase account
+          await firebaseUser.delete();
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to register user');
+        }
 
-      await auth.signOut();
-      await signInWithEmailAndPassword(auth, email, password);
-      const newIdToken = await firebaseUser.getIdToken(true);
+        await signInWithEmailAndPassword(auth, email, password);
+        const newIdToken = await firebaseUser.getIdToken(true);
 
-      const loginResponse = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${newIdToken}`
-        },
-        credentials: 'include'
-      });
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${newIdToken}`
+          },
+          credentials: 'include'
+        });
 
-      if (!loginResponse.ok) {
-        throw new Error('Failed to establish session');
-      }
+        if (!loginResponse.ok) {
+          const error = await loginResponse.json();
+          throw new Error(error.message || 'Failed to establish session');
+        }
 
-      toast({
-        title: "Success",
-        description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
-      });
+        toast({
+          title: "Success",
+          description: "Cont creat cu succes! Te rugăm să verifici email-ul pentru a confirma adresa.",
+        });
 
-      if (role) {
-        onSuccess(role);
+        if (role) {
+          onSuccess(role);
+        }
+
+      } catch (error: any) {
+        // If any step after Firebase account creation fails, clean up the Firebase account
+        await firebaseUser.delete();
+        console.error("Error after Firebase account creation:", error);
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: error.message || "A apărut o eroare. Te rugăm să încerci din nou.",
+        });
+        throw error; // Re-throw the error to be caught by the outer catch block
       }
 
     } catch (error: any) {
       console.error("Registration error:", error);
-      if (auth.currentUser) {
-        await auth.currentUser.delete();
-      }
       toast({
         variant: "destructive",
         title: "Eroare",
