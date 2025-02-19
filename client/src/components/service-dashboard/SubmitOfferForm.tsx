@@ -31,7 +31,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import type { Request } from "@/types/dashboard";
+import type { Request } from "@shared/schema";
 import { useAuth } from "@/hooks/auth";
 import { auth } from "@/lib/firebase";
 
@@ -66,7 +66,7 @@ export function SubmitOfferForm({
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
     defaultValues: {
-      title: request.title,
+      title: `Ofertă pentru cererea #${request.id}`,
       details: "",
       availableDates: [],
       price: 0,
@@ -77,19 +77,7 @@ export function SubmitOfferForm({
   const handleSubmit = async (values: OfferFormValues) => {
     try {
       setIsSubmitting(true);
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) {
-        throw new Error("No authentication token available");
-      }
-
-      // Create the offer data
-      const offerData = {
-        serviceProviderId: user?.id,
-        requestId: request.id,
-        ...values,
-      };
-
-      await onSubmit(offerData);
+      await onSubmit(values);
       onClose();
     } catch (error) {
       console.error("Error submitting offer:", error);
@@ -134,7 +122,7 @@ export function SubmitOfferForm({
                 <FormItem>
                   <FormLabel>Titlul ofertei</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled placeholder="Se completează automat" />
+                    <Input {...field} placeholder="Titlul ofertei" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

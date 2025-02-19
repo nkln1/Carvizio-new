@@ -443,9 +443,11 @@ export function registerRoutes(app: Express): Server {
       const offer = await storage.createSentOffer({
         serviceProviderId: provider.id,
         requestId: req.body.requestId,
+        title: `Ofertă pentru cererea #${req.body.requestId}`,
+        details: req.body.description,
+        availableDates: [new Date()], // We'll need to update this to accept dates from the form
         price: req.body.price,
-        description: req.body.description,
-        status: "Pending"
+        notes: req.body.notes || null
       });
 
       // Send notification through WebSocket
