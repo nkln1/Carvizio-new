@@ -139,12 +139,12 @@ export default function RequestsTab() {
   const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
 
   return (
-    <Card className="shadow-md">
-      <CardHeader className="pb-4">
+    <Card>
+      <CardHeader>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[#00aff5]" />
-            <CardTitle className="text-[#00aff5] text-lg font-semibold">
+            <CardTitle className="text-[#00aff5]">
               Cereri în Așteptare
               {newRequestsCount > 0 && (
                 <span className="ml-2 px-2 py-1 text-sm bg-[#00aff5] text-white rounded-full">
@@ -169,10 +169,10 @@ export default function RequestsTab() {
         ) : currentRequests.length > 0 ? (
           <>
             <div className="overflow-x-auto">
-              <Table className="border rounded-lg overflow-hidden">
-                <TableHeader className="bg-gray-50">
-                  <TableRow className="hover:bg-gray-50">
-                    <TableHead className="h-9 px-2 text-left align-middle font-medium text-muted-foreground text-sm">Titlu</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Titlu</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data preferată</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data trimiterii</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Locație</TableHead>
@@ -182,7 +182,7 @@ export default function RequestsTab() {
                 </TableHeader>
                 <TableBody>
                   {currentRequests.map((request) => (
-                    <TableRow key={request.id} className="hover:bg-gray-50 transition-colors border-b">
+                    <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {request.title}
