@@ -113,6 +113,16 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       console.error("Registration error details:", error);
+
+      // Check for duplicate phone number error
+      if (error.code === '23505' && error.constraint === 'clients_phone_key') {
+        return res.status(400).json({
+          error: "Phone number already registered",
+          field: "phone",
+          message: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon."
+        });
+      }
+
       res.status(400).json({
         error: "Invalid registration data",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined

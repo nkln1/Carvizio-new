@@ -268,12 +268,24 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     } catch (error: any) {
       console.error("Registration error:", error);
+
       if (error.message?.includes('PHONE_CHECK_ERROR')) {
         toast({
           variant: "destructive",
           title: "Număr de telefon indisponibil",
           description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
         });
+      } else if (error.response?.data?.field === 'phone') {
+        toast({
+          variant: "destructive",
+          title: "Număr de telefon indisponibil",
+          description: error.response.data.message,
+        });
+        if (role === 'client') {
+          clientForm.setError('phone', { message: error.response.data.message });
+        } else {
+          serviceForm.setError('phone', { message: error.response.data.message });
+        }
       } else if (error.code === "auth/email-already-in-use") {
         toast({
           variant: "destructive",
