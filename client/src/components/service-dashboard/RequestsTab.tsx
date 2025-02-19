@@ -144,23 +144,22 @@ export default function RequestsTab() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="px-0 sm:px-6">
+      <CardContent>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
         ) : filteredRequests.length > 0 ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[120px]">Titlu</TableHead>
-                  <TableHead className="min-w-[120px]">Data preferată</TableHead>
-                  <TableHead className="min-w-[120px]">Data trimiterii</TableHead>
-                  <TableHead className="min-w-[150px]">Locație</TableHead>
-                  <TableHead className="min-w-[100px]">Status</TableHead>
-                  <TableHead className="text-right min-w-[280px]">Acțiuni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titlu</TableHead>
+                <TableHead>Data preferată</TableHead>
+                <TableHead>Data trimiterii</TableHead>
+                <TableHead>Locație</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Acțiuni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredRequests.map((request) => (
                 <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
                   <TableCell className="font-medium">
@@ -246,7 +245,6 @@ export default function RequestsTab() {
               ))}
             </TableBody>
           </Table>
-          </div>
         ) : (
           <div className="text-center py-4 text-gray-500">
             Nu există cereri active în acest moment pentru locația dvs.
