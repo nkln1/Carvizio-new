@@ -221,8 +221,23 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         if (!response.ok) {
           // If backend registration fails, delete the Firebase account
           await firebaseUser.delete();
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to register user');
+          const errorData = await response.json();
+
+          if (errorData.field === 'phone') {
+            toast({
+              variant: "destructive",
+              title: "Număr de telefon indisponibil",
+              description: errorData.message,
+            });
+            if (role === 'client') {
+              clientForm.setError('phone', { message: errorData.message });
+            } else {
+              serviceForm.setError('phone', { message: errorData.message });
+            }
+            throw new Error(errorData.message);
+          } else {
+            throw new Error(errorData.message || 'Failed to register user');
+          }
         }
 
         // Step 5: Only send verification email after successful registration
@@ -275,23 +290,23 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           title: "Număr de telefon indisponibil",
           description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
         });
-      } else if (error.response?.data?.field === 'phone') {
-        toast({
-          variant: "destructive",
-          title: "Număr de telefon indisponibil",
-          description: error.response.data.message,
-        });
-        if (role === 'client') {
-          clientForm.setError('phone', { message: error.response.data.message });
-        } else {
-          serviceForm.setError('phone', { message: error.response.data.message });
-        }
       } else if (error.code === "auth/email-already-in-use") {
         toast({
           variant: "destructive",
           title: "Email indisponibil",
           description: "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
         });
+      } else if (error.message?.includes('telefon')) { // Handle phone number error
+        toast({
+          variant: "destructive",
+          title: "Număr de telefon indisponibil",
+          description: error.message,
+        });
+        if (role === 'client') {
+          clientForm.setError('phone', { message: error.message });
+        } else {
+          serviceForm.setError('phone', { message: error.message });
+        }
       } else {
         toast({
           variant: "destructive",
