@@ -443,9 +443,9 @@ export function registerRoutes(app: Express): Server {
       const offer = await storage.createSentOffer({
         serviceProviderId: provider.id,
         requestId: req.body.requestId,
-        title: `Ofertă pentru cererea #${req.body.requestId}`,
-        details: req.body.description,
-        availableDates: [new Date()], // We'll need to update this to accept dates from the form
+        title: req.body.title,
+        details: req.body.details,
+        availableDates: req.body.availableDates,
         price: req.body.price,
         notes: req.body.notes || null
       });
