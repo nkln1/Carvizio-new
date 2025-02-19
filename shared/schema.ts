@@ -115,7 +115,6 @@ export const requests = pgTable("requests", {
   preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
-  viewed: boolean("viewed").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -146,7 +145,7 @@ export const insertServiceProviderSchema = createInsertSchema(serviceProviders).
   firebaseUid: true
 });
 
-// Car and request schemas
+// Car and request schemas remain the same
 export const insertCarSchema = createInsertSchema(cars).omit({
   id: true,
   createdAt: true
@@ -155,7 +154,6 @@ export const insertCarSchema = createInsertSchema(cars).omit({
 export const insertRequestSchema = createInsertSchema(requests).omit({
   id: true,
   status: true,
-  viewed: true,
   createdAt: true
 });
 

@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, requests } from "@shared/schema";
+import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -417,31 +417,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error getting requests by location:", error);
       res.status(500).json({ error: "Failed to get requests" });
-    }
-  });
-
-  // Add endpoint to mark request as viewed
-  app.post("/api/service/requests/:id/view", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
-      }
-
-      const requestId = parseInt(req.params.id);
-      if (isNaN(requestId)) {
-        return res.status(400).json({ error: "Invalid request ID" });
-      }
-
-      // Update the request's viewed status
-      await db.update(requests)
-        .set({ viewed: true })
-        .where(eq(requests.id, requestId));
-
-      res.status(200).json({ message: "Request marked as viewed" });
-    } catch (error) {
-      console.error("Error marking request as viewed:", error);
-      res.status(500).json({ error: "Failed to mark request as viewed" });
     }
   });
 

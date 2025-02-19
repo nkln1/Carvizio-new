@@ -13,7 +13,7 @@ import {
   type InsertRequest
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -319,18 +319,14 @@ export class DatabaseStorage implements IStorage {
       const matchingRequests = await db
         .select()
         .from(requests)
-        .where(
-          and(
-            eq(requests.county, county),
-            eq(requests.status, "Active")
-          )
-        )
+        .where(eq(requests.county, county))
+        .where(eq(requests.status, "Active"))
         .orderBy(desc(requests.createdAt));
 
       if (cities.length > 0) {
-        return matchingRequests.filter((request: Request) => {
+        return matchingRequests.filter(request => {
           const requestCities = request.cities || [];
-          return requestCities.some((requestCity: string) =>
+          return requestCities.some(requestCity =>
             cities.includes(requestCity)
           );
         });
