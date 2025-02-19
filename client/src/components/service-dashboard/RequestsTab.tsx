@@ -159,9 +159,10 @@ export default function RequestsTab() {
                       </span>
                       {request.isNew && (
                         <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap">
-                        Nou
-                      </span>
-                    )}
+                          Nou
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {format(new Date(request.preferredDate), "dd.MM.yyyy")}
