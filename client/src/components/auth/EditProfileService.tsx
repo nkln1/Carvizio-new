@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "@shared/schema";
+import { User, ServiceProviderUser, isServiceProviderUser } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -54,6 +54,10 @@ interface EditProfileServiceProps {
 }
 
 export function EditProfileService({ user, onCancel }: EditProfileServiceProps) {
+  if (!isServiceProviderUser(user)) {
+    throw new Error("EditProfileService can only be used with service provider users");
+  }
+
   const [selectedCounty, setSelectedCounty] = useState(user.county || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();

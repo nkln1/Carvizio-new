@@ -3,6 +3,42 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Enums and custom types
+export const UserRole = z.enum(["client", "service"]);
+export type UserRole = z.infer<typeof UserRole>;
+
+// Base user interface with common properties
+export interface BaseUser {
+  id: number;
+  email: string;
+  firebaseUid: string;
+  role: UserRole;
+  verified: boolean;
+  createdAt: Date;
+  phone: string;
+  county: string;
+  city: string;
+}
+
+// Client specific interface
+export interface ClientUser extends BaseUser {
+  role: "client";
+  name: string;
+}
+
+// Service Provider specific interface
+export interface ServiceProviderUser extends BaseUser {
+  role: "service";
+  companyName: string;
+  representativeName: string;
+  cui: string;
+  tradeRegNumber: string;
+  address: string;
+}
+
+// Union type for any kind of user
+export type User = ClientUser | ServiceProviderUser;
+
 // Clients table definition
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
@@ -47,8 +83,8 @@ export const cars = pgTable("cars", {
   brand: text("brand").notNull(),
   model: text("model").notNull(),
   year: text("year").notNull(),
-  fuelType: text("fuel_type", { 
-    enum: ["Benzină", "Motorină", "Hibrid", "Electric"] 
+  fuelType: text("fuel_type", {
+    enum: ["Benzină", "Motorină", "Hibrid", "Electric"]
   }).notNull(),
   transmission: text("transmission", {
     enum: ["Manuală", "Automată"]
@@ -130,3 +166,12 @@ export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type Request = typeof requests.$inferSelect;
+
+// Type guards for user types
+export const isClientUser = (user: User): user is ClientUser => {
+  return user.role === "client";
+};
+
+export const isServiceProviderUser = (user: User): user is ServiceProviderUser => {
+  return user.role === "service";
+};

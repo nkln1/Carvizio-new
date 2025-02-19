@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { UserRole } from "@shared/schema";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,7 +29,7 @@ const formSchema = z.object({
 });
 
 interface LoginFormProps {
-  onSuccess?: (role: string) => void;
+  onSuccess?: (role: UserRole) => void;
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
@@ -75,6 +76,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       }
 
       const userData = await response.json();
+      const userRole = userData.role as UserRole;
 
       toast({
         title: "Success",
@@ -82,14 +84,14 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       });
 
       // Handle redirect based on role immediately
-      if (userData.role === "client") {
+      if (userRole === "client") {
         setLocation("/dashboard");
-      } else if (userData.role === "service") {
+      } else if (userRole === "service") {
         setLocation("/service-dashboard");
       }
 
       // Notify parent component if needed
-      onSuccess?.(userData.role);
+      onSuccess?.(userRole);
 
     } catch (error: any) {
       console.error('Login error:', error);

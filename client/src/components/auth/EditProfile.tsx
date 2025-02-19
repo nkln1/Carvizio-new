@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "@shared/schema";
+import { User, ClientUser, isClientUser } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -48,6 +48,10 @@ interface EditProfileProps {
 }
 
 export function EditProfile({ user, onCancel }: EditProfileProps) {
+  if (!isClientUser(user)) {
+    throw new Error("EditProfile can only be used with client users");
+  }
+
   const [selectedCounty, setSelectedCounty] = useState(user.county || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();

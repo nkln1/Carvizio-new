@@ -11,8 +11,7 @@ import { Button } from "@/components/ui/button";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import { useAuth } from "@/context/AuthContext";
-
-type UserRole = "client" | "service";
+import { UserRole } from "@shared/schema";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
