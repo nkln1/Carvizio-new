@@ -22,9 +22,15 @@ import {
   SendHorizontal,
   X,
   Filter,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -116,10 +122,15 @@ export default function RequestsTab() {
       const newViewedRequests = new Set(viewedRequests);
       newViewedRequests.add(request.id);
       setViewedRequests(newViewedRequests);
-      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify([...newViewedRequests]));
+      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify(Array.from(newViewedRequests)));
     }
     setSelectedRequest(request);
     setShowViewDialog(true);
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   // Filter active and unviewed requests
@@ -137,6 +148,24 @@ export default function RequestsTab() {
 
   // Calculate new requests count
   const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
+
+  // Render pagination items
+  const renderPaginationItems = () => {
+    const items = [];
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            onClick={() => handlePageChange(i)}
+            isActive={currentPage === i}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    return items;
+  };
 
   return (
     <Card>
@@ -213,10 +242,10 @@ export default function RequestsTab() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewRequest(request)}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            title="Detalii"
                           >
                             <Eye className="h-4 w-4" />
-                            Detalii
                           </Button>
                           <Button
                             variant="ghost"
@@ -227,43 +256,39 @@ export default function RequestsTab() {
                                 description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
                               });
                             }}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            title="Mesaj"
                           >
                             <MessageSquare className="h-4 w-4" />
-                            Mesaj
                           </Button>
-                          {request.status === "Active" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  toast({
-                                    title: "În curând",
-                                    description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                                  });
-                                }}
-                                className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
-                              >
-                                <SendHorizontal className="h-4 w-4" />
-                                Trimite ofertă
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  toast({
-                                    title: "În curând",
-                                    description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                                  });
-                                }}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                              >
-                                <X className="h-4 w-4" />
-                                Respinge
-                              </Button>
-                            </>
-                          )}
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-[#00aff5] hover:bg-[#0099d6]"
+                            title="Trimite Ofertă"
+                            onClick={() => {
+                              toast({
+                                title: "În curând",
+                                description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                              });
+                            }}
+                          >
+                            <SendHorizontal className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              toast({
+                                title: "În curând",
+                                description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                              });
+                            }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Respinge"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -274,27 +299,26 @@ export default function RequestsTab() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Pagina {currentPage} din {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              <Pagination className="justify-center mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    />
+                  </PaginationItem>
+
+                  {/* Dynamically render pagination items */}
+                  {renderPaginationItems()}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             )}
           </>
         ) : (
