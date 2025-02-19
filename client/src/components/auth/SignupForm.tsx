@@ -192,7 +192,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         try {
           const error = await phoneCheckResponse.json();
 
-          if (error?.code === 'PHONE_EXISTS') {
+          if (error?.code === "PHONE_EXISTS") {
             toast({
               variant: "destructive",
               title: "Număr de telefon indisponibil",
@@ -266,15 +266,15 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             toast({
               variant: "destructive",
               title: "Număr de telefon indisponibil",
-              description: errorData.message || "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
+              description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
             });
             if (role === 'client') {
               clientForm.setError('phone', { 
-                message: errorData.message || "Acest număr de telefon este deja înregistrat."
+                message: "Acest număr de telefon este deja înregistrat."
               });
             } else {
               serviceForm.setError('phone', { 
-                message: errorData.message || "Acest număr de telefon este deja înregistrat."
+                message: "Acest număr de telefon este deja înregistrat."
               });
             }
             setIsLoading(false);

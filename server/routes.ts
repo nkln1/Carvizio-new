@@ -115,7 +115,9 @@ export function registerRoutes(app: Express): Server {
       console.error("Registration error details:", error);
 
       // Check for duplicate phone number error
-      if (error.code === '23505' && error.constraint === 'clients_phone_key') {
+      if (error.code === '23505' && 
+          (error.constraint === 'clients_phone_key' || 
+           error.constraint === 'service_providers_phone_key')) {
         return res.status(400).json({
           error: "Phone number already registered",
           field: "phone",
