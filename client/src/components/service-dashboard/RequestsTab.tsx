@@ -177,7 +177,7 @@ export default function RequestsTab() {
                     <TableHead>Data trimiterii</TableHead>
                     <TableHead>Locație</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Acțiuni</TableHead>
+                    <TableHead className="text-right text-xs text-gray-500">Detalii · Mesaj · Trimite ofertă · Respinge</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
