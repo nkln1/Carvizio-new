@@ -312,7 +312,7 @@ export default function RequestsTab() {
               <DialogTitle>Detalii Cerere</DialogTitle>
             </DialogHeader>
             {selectedRequest && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Titlu
@@ -334,7 +334,7 @@ export default function RequestsTab() {
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
+                  <h3 className="font-small text-sm text-muted-foreground">
                     Data trimiterii
                   </h3>
                   <p>
