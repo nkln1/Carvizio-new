@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -22,7 +21,9 @@ import {
   MessageSquare,
   SendHorizontal,
   X,
-  Filter
+  Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,11 +32,14 @@ import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 
+const ITEMS_PER_PAGE = 5;
+
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -102,8 +106,7 @@ export default function RequestsTab() {
 
       return response.json();
     },
-    staleTime: 0,
-    cacheTime: 0
+    staleTime: 0
   });
 
   // Handle request viewing
@@ -126,14 +129,30 @@ export default function RequestsTab() {
     return true;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+
+  // Calculate new requests count
+  const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
+
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Cereri în Așteptare
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-[#00aff5]" />
+            <CardTitle className="text-[#00aff5]">
+              Cereri în Așteptare
+              {newRequestsCount > 0 && (
+                <span className="ml-2 px-2 py-1 text-sm bg-blue-500 text-white rounded-full">
+                  {newRequestsCount} noi
+                </span>
+              )}
+            </CardTitle>
+          </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-500">Doar cereri noi</span>
@@ -147,104 +166,133 @@ export default function RequestsTab() {
       <CardContent>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : filteredRequests.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Titlu</TableHead>
-                <TableHead>Data preferată</TableHead>
-                <TableHead>Data trimiterii</TableHead>
-                <TableHead>Locație</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acțiuni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRequests.map((request) => (
-                <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {request.title}
-                      {!viewedRequests.has(request.id) && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                          NEW
+        ) : currentRequests.length > 0 ? (
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Titlu</TableHead>
+                    <TableHead>Data preferată</TableHead>
+                    <TableHead>Data trimiterii</TableHead>
+                    <TableHead>Locație</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentRequests.map((request) => (
+                    <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {request.title}
+                          {!viewedRequests.has(request.id) && (
+                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                              NOU
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {request.cities?.join(", ")}, {request.county}
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                          {request.status}
                         </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    {request.cities?.join(", ")}, {request.county}
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                      {request.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewRequest(request)}
-                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Detalii
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                          });
-                        }}
-                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Mesaj
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                          });
-                        }}
-                      >
-                        <SendHorizontal className="h-4 w-4" />
-                        Trimite Ofertă
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                          });
-                        }}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                      >
-                        <X className="h-4 w-4" />
-                        Respinge
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewRequest(request)}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            title="Detalii"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              toast({
+                                title: "În curând",
+                                description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                              });
+                            }}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            title="Mesaj"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-[#00aff5] hover:bg-[#0099d6]"
+                            title="Trimite Ofertă"
+                            onClick={() => {
+                              toast({
+                                title: "În curând",
+                                description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                              });
+                            }}
+                          >
+                            <SendHorizontal className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              toast({
+                                title: "În curând",
+                                description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                              });
+                            }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Respinge"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Pagina {currentPage} din {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-4 text-gray-500">
             Nu există cereri active în acest moment pentru locația dvs.
