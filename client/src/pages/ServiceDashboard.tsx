@@ -3,12 +3,13 @@ import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Mail, Menu, X } from "lucide-react";
+import { Loader2, Mail, Menu } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { TabWrapper } from "@/components/common/TabWrapper";
 import { useAuth } from "@/context/AuthContext";
 
 // Import the tab components
@@ -18,12 +19,36 @@ import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab"
 import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
 
+type TabId = "cereri" | "oferte-trimise" | "oferte-acceptate" | "mesaje" | "cont";
+
+const TAB_COMPONENTS: Record<TabId, React.ComponentType> = {
+  "cereri": RequestsTab,
+  "oferte-trimise": SentOffersTab,
+  "oferte-acceptate": AcceptedOffersTab,
+  "mesaje": MessagesTab,
+  "cont": AccountTab,
+};
+
+const TAB_NAMES: Record<TabId, string> = {
+  "cereri": "Cereri Service",
+  "oferte-trimise": "Oferte Trimise",
+  "oferte-acceptate": "Oferte Acceptate",
+  "mesaje": "Mesaje",
+  "cont": "Cont",
+};
+
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
-  const [activeTab, setActiveTab] = useState("cereri");
+  const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
+
+  const { data: userProfile, isLoading } = useQuery<UserType>({
+    queryKey: ['/api/auth/me'],
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -31,39 +56,23 @@ export default function ServiceDashboard() {
         setLocation("/");
       }
     });
-
     return () => unsubscribe();
   }, [setLocation]);
 
-  const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ["/api/auth/me"],
-    retry: 1,
-    refetchOnWindowFocus: false,
-  });
-
-  const handleResendVerification = async () => {
-    try {
-      await resendVerificationEmail();
-      toast({
-        title: "Email trimis",
-        description:
-          "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
-      });
-    } catch (error) {
-      toast({
-        title: "Eroare",
-        description: "A apărut o eroare la trimiterea emailului de verificare.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
     setIsMenuOpen(false);
   };
 
-  if (!user) {
+  const handleTabError = () => {
+    toast({
+      variant: "destructive",
+      title: "Eroare",
+      description: "A apărut o eroare la încărcarea tab-ului. Încercați din nou.",
+    });
+  };
+
+  if (!user || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -84,19 +93,14 @@ export default function ServiceDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de
-                email.
-                {user.email &&
-                  `Am trimis un link de verificare la adresa ${user.email}.`}
+                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
+                {user.email && ` Am trimis un link de verificare la adresa ${user.email}.`}
               </p>
               <div className="flex flex-col gap-2">
-                <Button onClick={handleResendVerification}>
+                <Button onClick={() => resendVerificationEmail()}>
                   Retrimite emailul de verificare
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                >
+                <Button variant="outline" onClick={() => window.location.reload()}>
                   Am verificat emailul
                 </Button>
               </div>
@@ -108,30 +112,12 @@ export default function ServiceDashboard() {
     );
   }
 
-  const renderActiveTab = () => {
-    switch (activeTab) {
-      case "cereri":
-        return <RequestsTab />;
-      case "oferte-trimise":
-        return <SentOffersTab />;
-      case "oferte-acceptate":
-        return <AcceptedOffersTab />;
-      case "mesaje":
-        return <MessagesTab />;
-      case "cont":
-        return <AccountTab />;
-      default:
-        return <RequestsTab />;
-    }
-  };
+  const navigationItems = Object.entries(TAB_NAMES).map(([id, label]) => ({
+    id: id as TabId,
+    label
+  }));
 
-  const navigationItems = [
-    { id: "cereri", label: "Cereri" },
-    { id: "oferte-trimise", label: "Oferte trimise" },
-    { id: "oferte-acceptate", label: "Oferte acceptate" },
-    { id: "mesaje", label: "Mesaje" },
-    { id: "cont", label: "Cont" },
-  ];
+  const ActiveTabComponent = TAB_COMPONENTS[activeTab];
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -149,11 +135,7 @@ export default function ServiceDashboard() {
                   key={item.id}
                   variant={activeTab === item.id ? "default" : "ghost"}
                   onClick={() => handleTabChange(item.id)}
-                  className={
-                    activeTab === item.id
-                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                      : ""
-                  }
+                  className={activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
                 >
                   {item.label}
                 </Button>
@@ -176,9 +158,7 @@ export default function ServiceDashboard() {
                         variant={activeTab === item.id ? "default" : "ghost"}
                         onClick={() => handleTabChange(item.id)}
                         className={`w-full justify-start text-left ${
-                          activeTab === item.id
-                            ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                            : ""
+                          activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
                         }`}
                       >
                         {item.label}
@@ -193,13 +173,9 @@ export default function ServiceDashboard() {
       </nav>
 
       <div className="container mx-auto p-4 sm:p-6 flex-grow">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-          </div>
-        ) : (
-          <div className="space-y-6">{renderActiveTab()}</div>
-        )}
+        <TabWrapper name={TAB_NAMES[activeTab]} onError={handleTabError}>
+          <ActiveTabComponent />
+        </TabWrapper>
       </div>
 
       <Footer />
