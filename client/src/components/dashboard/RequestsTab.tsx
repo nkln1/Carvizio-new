@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,28 +45,12 @@ export function RequestsTab({
   isLoading,
   onCreateRequest,
 }: RequestsTabProps) {
-  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(
+    null,
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
   const { toast } = useToast();
-
-  // Load viewed requests from localStorage on component mount
-  useEffect(() => {
-    const loadViewedRequests = () => {
-      const userId = auth.currentUser?.uid;
-      if (userId) {
-        const storedViewed = localStorage.getItem(`viewed_requests_${userId}`);
-        if (storedViewed) {
-          setViewedRequests(new Set(JSON.parse(storedViewed)));
-        }
-      }
-    };
-    loadViewedRequests();
-  }, []);
-
-  // Calculate new requests count
-  const newRequestsCount = requests.filter(req => !viewedRequests.has(req.id)).length;
 
   const handleDelete = async (requestId: number) => {
     try {
@@ -114,11 +98,6 @@ export function RequestsTab({
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Cererile mele
-          {newRequestsCount > 0 && (
-            <span className="ml-2 px-2 py-1 text-sm bg-blue-500 text-white rounded-full">
-              {newRequestsCount} noi
-            </span>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
@@ -199,14 +178,13 @@ export function RequestsTab({
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-end gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => {
                                 setSelectedRequest(request);
                                 setShowViewDialog(true);
-                                setViewedRequests(prev => new Set([...prev, request.id]))
                               }}
                               className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                             >

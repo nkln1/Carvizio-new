@@ -22,15 +22,9 @@ import {
   SendHorizontal,
   X,
   Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -122,15 +116,10 @@ export default function RequestsTab() {
       const newViewedRequests = new Set(viewedRequests);
       newViewedRequests.add(request.id);
       setViewedRequests(newViewedRequests);
-      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify(Array.from(newViewedRequests)));
+      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify([...newViewedRequests]));
     }
     setSelectedRequest(request);
     setShowViewDialog(true);
-  };
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
   };
 
   // Filter active and unviewed requests
@@ -148,24 +137,6 @@ export default function RequestsTab() {
 
   // Calculate new requests count
   const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
-
-  // Render pagination items
-  const renderPaginationItems = () => {
-    const items = [];
-    for (let i = 1; i <= totalPages; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink
-            onClick={() => handlePageChange(i)}
-            isActive={currentPage === i}
-          >
-            {i}
-          </PaginationLink>
-        </PaginationItem>
-      );
-    }
-    return items;
-  };
 
   return (
     <Card>
@@ -299,26 +270,27 @@ export default function RequestsTab() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <Pagination className="justify-center mt-4">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    />
-                  </PaginationItem>
-
-                  {/* Dynamically render pagination items */}
-                  {renderPaginationItems()}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Pagina {currentPage} din {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </>
         ) : (
