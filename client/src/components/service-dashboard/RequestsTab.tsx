@@ -31,11 +31,13 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
+import { SubmitOfferForm } from "./SubmitOfferForm";
 
 const ITEMS_PER_PAGE = 5;
 
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
@@ -138,6 +140,44 @@ export default function RequestsTab() {
   // Calculate new requests count
   const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
 
+  const handleSubmitOffer = async (values: any) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error("No authentication token available");
+
+      const response = await fetch(`/api/service/offers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          requestId: selectedRequest?.id,
+          ...values,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit offer");
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
+      setShowOfferDialog(false);
+      toast({
+        title: "Succes",
+        description: "Oferta a fost trimisă cu succes!",
+      });
+    } catch (error) {
+      console.error("Error submitting offer:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut trimite oferta. Încercați din nou.",
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -237,10 +277,8 @@ export default function RequestsTab() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                toast({
-                                  title: "În curând",
-                                  description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                                });
+                                setSelectedRequest(request);
+                                setShowOfferDialog(true);
                               }}
                               className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                             >
@@ -346,6 +384,14 @@ export default function RequestsTab() {
             )}
           </DialogContent>
         </Dialog>
+        {selectedRequest && (
+          <SubmitOfferForm
+            isOpen={showOfferDialog}
+            onClose={() => setShowOfferDialog(false)}
+            request={selectedRequest}
+            onSubmit={handleSubmitOffer}
+          />
+        )}
       </CardContent>
     </Card>
   );
