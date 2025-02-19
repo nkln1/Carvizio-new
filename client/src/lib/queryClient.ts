@@ -20,6 +20,9 @@ export async function apiRequest(
     headers: {
       ...(data ? { "Content-Type": "application/json" } : {}),
       ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0",
     },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
@@ -39,7 +42,12 @@ export const getQueryFn: <T>(options: {
 
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
-      headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      headers: {
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -55,9 +63,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: 0, // This means data is considered stale immediately
-      cacheTime: 0, // This disables caching completely
+      refetchOnWindowFocus: true, // Changed to true to get updates
+      staleTime: 0, // Data is considered stale immediately
+      gcTime: 0, // Disable garbage collection time (previously cacheTime)
       retry: false,
     },
     mutations: {
