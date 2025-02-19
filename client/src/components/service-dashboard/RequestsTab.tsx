@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -21,37 +20,19 @@ import {
   Eye,
   MessageSquare,
   SendHorizontal,
-  X,
-  Filter
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
-import { Switch } from "@/components/ui/switch";
 
 export default function RequestsTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
-  const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Load viewed requests from localStorage on component mount
-  useEffect(() => {
-    const loadViewedRequests = () => {
-      const userId = auth.currentUser?.uid;
-      if (userId) {
-        const storedViewed = localStorage.getItem(`viewed_requests_${userId}`);
-        if (storedViewed) {
-          setViewedRequests(new Set(JSON.parse(storedViewed)));
-        }
-      }
-    };
-    loadViewedRequests();
-  }, []);
 
   // WebSocket connection
   useEffect(() => {
@@ -67,6 +48,7 @@ export default function RequestsTab() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'NEW_REQUEST') {
+          // Invalidate and refetch requests when a new one is received
           queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
         }
       } catch (error) {
@@ -106,48 +88,21 @@ export default function RequestsTab() {
     cacheTime: 0
   });
 
-  // Handle request viewing
-  const handleViewRequest = (request: RequestType) => {
-    const userId = auth.currentUser?.uid;
-    if (userId) {
-      const newViewedRequests = new Set(viewedRequests);
-      newViewedRequests.add(request.id);
-      setViewedRequests(newViewedRequests);
-      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify([...newViewedRequests]));
-    }
-    setSelectedRequest(request);
-    setShowViewDialog(true);
-  };
-
-  // Filter active and unviewed requests
-  const filteredRequests = requests.filter(req => {
-    if (req.status !== "Active") return false;
-    if (showOnlyNew && viewedRequests.has(req.id)) return false;
-    return true;
-  });
+  // Filter only active requests
+  const activeRequests = requests.filter(req => req.status === "Active");
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Cereri în Așteptare
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-500">Doar cereri noi</span>
-            <Switch
-              checked={showOnlyNew}
-              onCheckedChange={setShowOnlyNew}
-            />
-          </div>
-        </div>
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Cereri în Așteptare
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : filteredRequests.length > 0 ? (
+        ) : activeRequests.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -160,17 +115,10 @@ export default function RequestsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRequests.map((request) => (
+              {activeRequests.map((request) => (
                 <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {request.title}
-                      {!viewedRequests.has(request.id) && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                          NEW
-                        </span>
-                      )}
-                    </div>
+                    {request.title}
                   </TableCell>
                   <TableCell>
                     {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -191,7 +139,10 @@ export default function RequestsTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleViewRequest(request)}
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setShowViewDialog(true);
+                        }}
                         className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                       >
                         <Eye className="h-4 w-4" />
