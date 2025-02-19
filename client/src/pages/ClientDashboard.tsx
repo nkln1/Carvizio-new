@@ -329,115 +329,102 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Mobile navigation - shown only on small screens */}
-      <nav className="md:hidden bg-white border-b sticky top-0 z-50">
+      <nav className="bg-white border-b sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-[#00aff5]">Dashboard</h1>
             </div>
 
-            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+            <div className="hidden md:flex items-center space-x-4">
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  onClick={() => handleTabChange(item.id)}
+                  className={
+                    activeTab === item.id
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  }
+                >
+                  {item.label}
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[80%] sm:w-[385px] p-0">
-                <div className="flex flex-col h-full">
-                  <div className="p-4 border-b bg-gray-50/80">
-                    <h2 className="text-lg font-semibold text-[#00aff5]">Meniu</h2>
+              ))}
+            </div>
+
+            <div className="md:hidden">
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[80%] sm:w-[385px]">
+                  <div className="flex flex-col gap-4 mt-6">
+                    {navigationItems.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant={activeTab === item.id ? "default" : "ghost"}
+                        onClick={() => handleTabChange(item.id)}
+                        className={`w-full justify-start text-left ${
+                          activeTab === item.id
+                            ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                            : ""
+                        }`}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
                   </div>
-                  <div className="flex-1 overflow-auto py-4">
-                    <div className="px-2 space-y-2">
-                      {navigationItems.map((item) => (
-                        <Button
-                          key={item.id}
-                          variant={activeTab === item.id ? "default" : "ghost"}
-                          onClick={() => handleTabChange(item.id)}
-                          className={`w-full justify-start text-left ${
-                            activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
-                          }`}
-                        >
-                          {item.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </nav>
 
-      <div className="flex-1 flex">
-        {/* Desktop navigation - shown on medium and larger screens */}
-        <nav className="hidden md:flex flex-col w-64 bg-white border-r min-h-screen sticky top-0">
-          <div className="p-4 border-b">
-            <h1 className="text-xl font-semibold text-[#00aff5]">Dashboard</h1>
+      <div className="container mx-auto p-4 sm:p-6 flex-grow">
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
           </div>
-          <div className="flex-1 p-4 space-y-2">
-            {navigationItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? "default" : "ghost"}
-                onClick={() => handleTabChange(item.id)}
-                className={`w-full justify-start text-left ${
-                  activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
-                }`}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </div>
-        </nav>
-
-        {/* Main content */}
-        <div className="flex-1">
-          <div className="container mx-auto p-4 sm:p-6">
-            {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-              </div>
-            ) : (
-              <>
-                {activeTab === "requests" && (
-                  <RequestsTab
-                    requests={userRequests}
-                    isLoading={isLoadingRequests}
-                    onCreateRequest={() => setShowRequestDialog(true)}
-                  />
-                )}
-
-                {activeTab === "offers" && (
-                  <OffersTab offers={offers} />
-                )}
-
-                {activeTab === "messages" && (
-                  <MessagesTab />
-                )}
-
-                {activeTab === "car" && (
-                  <CarsTab
-                    cars={userCars}
-                    isLoading={isLoadingCars}
-                    onAddCar={() => setShowCarDialog(true)}
-                    onEditCar={(car) => {
-                      setSelectedCar(car);
-                      setShowCarDialog(true);
-                    }}
-                    onDeleteCar={handleDeleteCar}
-                  />
-                )}
-
-                {activeTab === "profile" && userProfile && (
-                  <ProfileTab userProfile={userProfile} />
-                )}
-              </>
+        ) : (
+          <>
+            {activeTab === "requests" && (
+              <RequestsTab
+                requests={userRequests}
+                isLoading={isLoadingRequests}
+                onCreateRequest={() => setShowRequestDialog(true)}
+              />
             )}
-          </div>
-        </div>
+
+            {activeTab === "offers" && (
+              <OffersTab offers={offers} />
+            )}
+
+            {activeTab === "messages" && (
+              <MessagesTab />
+            )}
+
+            {activeTab === "car" && (
+              <CarsTab
+                cars={userCars}
+                isLoading={isLoadingCars}
+                onAddCar={() => setShowCarDialog(true)}
+                onEditCar={(car) => {
+                  setSelectedCar(car);
+                  setShowCarDialog(true);
+                }}
+                onDeleteCar={handleDeleteCar}
+              />
+            )}
+
+            {activeTab === "profile" && userProfile && (
+              <ProfileTab userProfile={userProfile} />
+            )}
+          </>
+        )}
       </div>
 
       <Dialog open={showCarDialog} onOpenChange={(open) => {
