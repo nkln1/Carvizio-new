@@ -30,7 +30,7 @@ const TAB_COMPONENTS: Record<TabId, React.ComponentType> = {
 };
 
 const TAB_NAMES: Record<TabId, string> = {
-  "cereri": "Cereri Service",
+  "cereri": "Cereri",
   "oferte-trimise": "Oferte Trimise",
   "oferte-acceptate": "Oferte Acceptate",
   "mesaje": "Mesaje",
