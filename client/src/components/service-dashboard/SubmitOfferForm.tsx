@@ -33,7 +33,6 @@ import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import type { Request } from "@shared/schema";
 import { useAuth } from "@/hooks/auth";
-import { auth } from "@/lib/firebase";
 
 const offerFormSchema = z.object({
   title: z.string().min(1, "Titlul este obligatoriu"),
@@ -61,7 +60,6 @@ export function SubmitOfferForm({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const { user } = useAuth();
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
@@ -77,7 +75,12 @@ export function SubmitOfferForm({
   const handleSubmit = async (values: OfferFormValues) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(values);
+      // Convert dates to ISO strings before sending to server
+      const formattedValues = {
+        ...values,
+        availableDates: values.availableDates.map(date => date.toISOString())
+      };
+      await onSubmit(formattedValues);
       onClose();
     } catch (error) {
       console.error("Error submitting offer:", error);
@@ -105,13 +108,10 @@ export function SubmitOfferForm({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
-        aria-describedby="offer-form-description"
+        description="Completați detaliile ofertei pentru această cerere de service"
       >
         <DialogHeader>
           <DialogTitle>Trimite Ofertă</DialogTitle>
-          <p id="offer-form-description" className="text-sm text-muted-foreground">
-            Completați detaliile ofertei pentru această cerere de service
-          </p>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">

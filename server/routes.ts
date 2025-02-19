@@ -440,12 +440,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Access denied. Only service providers can send offers." });
       }
 
+      // Convert ISO date strings back to Date objects
+      const availableDates = req.body.availableDates.map((dateStr: string) => new Date(dateStr));
+
       const offer = await storage.createSentOffer({
         serviceProviderId: provider.id,
         requestId: req.body.requestId,
         title: req.body.title,
         details: req.body.details,
-        availableDates: req.body.availableDates,
+        availableDates,
         price: req.body.price,
         notes: req.body.notes || null
       });
