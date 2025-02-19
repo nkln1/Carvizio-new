@@ -59,33 +59,55 @@ export default function RequestsTab() {
     loadViewedRequests();
   }, []);
 
-  // WebSocket connection
+  // WebSocket connection with reconnection logic
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
+    let ws: WebSocket | null = null;
+    let reconnectAttempt = 0;
+    const maxReconnectAttempts = 5;
+    const reconnectDelay = 3000; // 3 seconds
 
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-    };
+    const connect = () => {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'NEW_REQUEST') {
-          queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connection established');
+        reconnectAttempt = 0; // Reset reconnect attempts on successful connection
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'NEW_REQUEST') {
+            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+          }
+        } catch (error) {
+          console.error('Error handling WebSocket message:', error);
         }
-      } catch (error) {
-        console.error('Error handling WebSocket message:', error);
-      }
+      };
+
+      ws.onerror = (error) => {
+        console.warn('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+        if (reconnectAttempt < maxReconnectAttempts) {
+          reconnectAttempt++;
+          console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts})...`);
+          setTimeout(connect, reconnectDelay);
+        }
+      };
     };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    connect();
 
     return () => {
-      socket.close();
+      if (ws) {
+        ws.close();
+      }
     };
   }, [queryClient]);
 

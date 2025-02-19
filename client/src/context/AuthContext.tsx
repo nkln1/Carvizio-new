@@ -17,7 +17,8 @@ interface AuthContextType {
   resendVerificationEmail: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+// Create and export the context
+export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   signOut: async () => {},
@@ -40,7 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
           try {
-            console.log("Firebase auth state changed:", firebaseUser?.email);
             if (firebaseUser) {
               const idToken = await firebaseUser.getIdToken(true);
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   emailVerified: firebaseUser.emailVerified
                 });
               } else {
-                console.error("Failed to get user data from backend", await response.text());
+                console.error("Failed to get user data from backend:", await response.text());
                 await firebaseSignOut(auth);
                 setUser(null);
               }
@@ -119,4 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+// Export the hook
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

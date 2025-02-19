@@ -32,6 +32,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import type { Request } from "@/types/dashboard";
+import { useAuth } from "@/hooks/auth";
+import { auth } from "@/lib/firebase";
 
 const offerFormSchema = z.object({
   title: z.string().min(1, "Titlul este obligatoriu"),
@@ -59,6 +61,7 @@ export function SubmitOfferForm({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const { user } = useAuth();
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
@@ -74,18 +77,26 @@ export function SubmitOfferForm({
   const handleSubmit = async (values: OfferFormValues) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(values);
-      toast({
-        title: "Succes",
-        description: "Oferta a fost trimisă cu succes!",
-      });
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+
+      // Create the offer data
+      const offerData = {
+        serviceProviderId: user?.id,
+        requestId: request.id,
+        ...values,
+      };
+
+      await onSubmit(offerData);
       onClose();
     } catch (error) {
       console.error("Error submitting offer:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Eroare la trimiterea ofertei. Încercați din nou.",
+        description: "Nu s-a putut trimite oferta. Încercați din nou.",
       });
     } finally {
       setIsSubmitting(false);
@@ -104,9 +115,15 @@ export function SubmitOfferForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
+        aria-describedby="offer-form-description"
+      >
         <DialogHeader>
           <DialogTitle>Trimite Ofertă</DialogTitle>
+          <p id="offer-form-description" className="text-sm text-muted-foreground">
+            Completați detaliile ofertei pentru această cerere de service
+          </p>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
