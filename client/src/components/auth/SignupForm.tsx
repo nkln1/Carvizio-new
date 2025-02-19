@@ -181,7 +181,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           setIsLoading(false);
           return;
         } else {
-          throw new Error('Failed to check phone number: ' + error.message);
+          throw new Error('PHONE_CHECK_ERROR: ' + error.message);
         }
       }
 
@@ -268,14 +268,18 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     } catch (error: any) {
       console.error("Registration error:", error);
-      if (error.code === "auth/email-already-in-use") {
+      if (error.message?.includes('PHONE_CHECK_ERROR')) {
+        toast({
+          variant: "destructive",
+          title: "Număr de telefon indisponibil",
+          description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
+        });
+      } else if (error.code === "auth/email-already-in-use") {
         toast({
           variant: "destructive",
           title: "Email indisponibil",
           description: "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
         });
-      } else if (error.message?.includes("telefon")) {
-        // Phone number error is already handled above
       } else {
         toast({
           variant: "destructive",
