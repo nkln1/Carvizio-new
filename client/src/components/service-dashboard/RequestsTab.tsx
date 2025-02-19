@@ -172,12 +172,12 @@ export default function RequestsTab() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Titlu</TableHead>
-                    <TableHead>Data preferată</TableHead>
-                    <TableHead>Data trimiterii</TableHead>
-                    <TableHead>Locație</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right text-xs text-gray-500">Detalii · Mesaj · Trimite ofertă · Respinge</TableHead>
+                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Titlu</TableHead>
+                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data preferată</TableHead>
+                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data trimiterii</TableHead>
+                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Locație</TableHead>
+                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
+                    <TableHead className="h-10 px-2 text-right text-xs text-gray-500">Detalii · Mesaj · Trimite ofertă · Respinge</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -207,8 +207,8 @@ export default function RequestsTab() {
                           {request.status}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                      <TableCell className="p-2 align-middle [&:has([role=checkbox])]:pr-0">
+                        <div className="flex justify-end" style={{ gap: '24px' }}>
                           <Button
                             variant="ghost"
                             size="sm"
