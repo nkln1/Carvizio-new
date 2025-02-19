@@ -215,15 +215,15 @@ export default function RequestsTab() {
                         </span>
                       </TableCell>
                       <TableCell className="p-2">
-                        <div className="flex justify-end gap-6">
+                        <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewRequest(request)}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                            title="Detalii"
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <Eye className="h-4 w-4" />
+                            Detalii
                           </Button>
                           <Button
                             variant="ghost"
@@ -234,25 +234,27 @@ export default function RequestsTab() {
                                 description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
                               });
                             }}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                            title="Mesaj"
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
+                            Mesaj
                           </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="bg-[#00aff5] hover:bg-[#0099d6]"
-                            title="Trimite Ofertă"
-                            onClick={() => {
-                              toast({
-                                title: "În curând",
-                                description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
-                              });
-                            }}
-                          >
-                            <SendHorizontal className="h-4 w-4" />
-                          </Button>
+                          {request.status === "Active" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                toast({
+                                  title: "În curând",
+                                  description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
+                                });
+                              }}
+                              className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                            >
+                              <SendHorizontal className="h-4 w-4" />
+                              Trimite ofertă
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -262,10 +264,10 @@ export default function RequestsTab() {
                                 description: "Funcționalitatea de respingere va fi disponibilă în curând.",
                               });
                             }}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            title="Respinge"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
                           >
                             <X className="h-4 w-4" />
+                            Respinge
                           </Button>
                         </div>
                       </TableCell>
