@@ -115,8 +115,7 @@ export const requests = pgTable("requests", {
   preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  isNew: boolean("is_new").default(true).notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
 export const requestsRelations = relations(requests, ({ one }) => ({
@@ -166,7 +165,7 @@ export type ServiceProvider = typeof serviceProviders.$inferSelect;
 export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
-export type Request = typeof requests.$inferSelect & { isNew?: boolean };
+export type Request = typeof requests.$inferSelect;
 
 // Type guards for user types
 export const isClientUser = (user: User): user is ClientUser => {

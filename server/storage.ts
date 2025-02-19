@@ -291,7 +291,6 @@ export class DatabaseStorage implements IStorage {
           ...request,
           status: "Active",
           createdAt: new Date(),
-          isNew: true,
         })
         .returning();
       return newRequest;

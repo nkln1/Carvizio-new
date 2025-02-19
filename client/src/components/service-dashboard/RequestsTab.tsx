@@ -20,7 +20,6 @@ import {
   Eye,
   MessageSquare,
   SendHorizontal,
-  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,38 +90,6 @@ export default function RequestsTab() {
   // Filter only active requests
   const activeRequests = requests.filter(req => req.status === "Active");
 
-  const markRequestAsViewed = async (requestId: number) => {
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("No authentication token available");
-
-      const response = await fetch(`/api/service/requests/${requestId}/viewed`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to mark request as viewed");
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
-    } catch (error) {
-      console.error('Error marking request as viewed:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not mark request as viewed",
-      });
-    }
-  };
-
-  const handleDelete = async (requestId: number) => {
-    //Implementation for handleDelete
-  };
-
-
   return (
     <Card>
       <CardHeader>
@@ -148,21 +115,9 @@ export default function RequestsTab() {
             </TableHeader>
             <TableBody>
               {activeRequests.map((request) => (
-                <TableRow
-                  key={request.id}
-                  className={`hover:bg-gray-50 transition-colors ${request.isNew ? 'bg-blue-50 font-semibold' : ''}`}
-                >
-                  <TableCell className="font-medium relative">
-                    <div className="flex items-center gap-2">
-                      <span className={request.isNew ? 'font-bold' : ''}>
-                        {request.title}
-                      </span>
-                      {request.isNew && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap">
-                          Nou
-                        </span>
-                      )}
-                    </div>
+                <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="font-medium">
+                    {request.title}
                   </TableCell>
                   <TableCell>
                     {format(new Date(request.preferredDate), "dd.MM.yyyy")}
@@ -184,7 +139,6 @@ export default function RequestsTab() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          markRequestAsViewed(request.id); //Added this line
                           setSelectedRequest(request);
                           setShowViewDialog(true);
                         }}
@@ -194,26 +148,11 @@ export default function RequestsTab() {
                         Detalii
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          markRequestAsViewed(request.id); //Added this line
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                          });
-                        }}
-                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Mesaj
-                      </Button>
-                      <Button
                         variant="default"
                         size="sm"
                         className="bg-[#00aff5] hover:bg-[#0099d6] flex items-center gap-1"
                         onClick={() => {
-                          markRequestAsViewed(request.id); //Added this line
+                          // TODO: Implement send offer functionality
                           toast({
                             title: "În curând",
                             description: "Funcționalitatea de trimitere ofertă va fi disponibilă în curând.",
@@ -222,21 +161,6 @@ export default function RequestsTab() {
                       >
                         <SendHorizontal className="h-4 w-4" />
                         Trimite Ofertă
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          markRequestAsViewed(request.id); //Added this line
-                          toast({
-                            title: "În curând",
-                            description: "Funcționalitatea de respingere va fi disponibilă în curând.",
-                          });
-                        }}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                      >
-                        <X className="h-4 w-4" />
-                        Respinge
                       </Button>
                     </div>
                   </TableCell>
