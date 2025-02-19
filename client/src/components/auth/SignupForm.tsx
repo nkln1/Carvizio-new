@@ -20,11 +20,24 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, MapPin, Phone, Building, ArrowLeft } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  User,
+  MapPin,
+  Phone,
+  Building,
+  ArrowLeft,
+} from "lucide-react";
 import RoleSelection from "./RoleSelection";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+} from "firebase/auth";
 
 type UserRole = "client" | "service";
 
@@ -52,69 +65,74 @@ interface ServiceFormValues {
   confirmPassword: string;
 }
 
-const clientSchema = z.object({
-  name: z.string().min(2, {
-    message: "Numele trebuie să conțină cel puțin 2 caractere.",
-  }),
-  email: z.string().email({
-    message: "Te rugăm să introduci o adresă de email validă.",
-  }),
-  phone: z.string().min(10, {
-    message: "Te rugăm să introduci un număr de telefon valid.",
-  }),
-  county: z.string().min(1, {
-    message: "Te rugăm să selectezi județul.",
-  }),
-  city: z.string().min(1, {
-    message: "Te rugăm să selectezi localitatea.",
-  }),
-  password: z.string().min(6, {
-    message: "Parola trebuie să conțină cel puțin 6 caractere.",
-  }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Parolele nu coincid",
-  path: ["confirmPassword"],
-});
+const clientSchema = z
+  .object({
+    name: z.string().min(2, {
+      message: "Numele trebuie să conțină cel puțin 2 caractere.",
+    }),
+    email: z.string().email({
+      message: "Te rugăm să introduci o adresă de email validă.",
+    }),
+    phone: z.string().min(10, {
+      message: "Te rugăm să introduci un număr de telefon valid.",
+    }),
+    county: z.string().min(1, {
+      message: "Te rugăm să selectezi județul.",
+    }),
+    city: z.string().min(1, {
+      message: "Te rugăm să selectezi localitatea.",
+    }),
+    password: z.string().min(6, {
+      message: "Parola trebuie să conțină cel puțin 6 caractere.",
+    }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Parolele nu coincid",
+    path: ["confirmPassword"],
+  });
 
-const serviceSchema = z.object({
-  companyName: z.string().min(2, {
-    message: "Numele companiei trebuie să conțină cel puțin 2 caractere.",
-  }),
-  representativeName: z.string().min(2, {
-    message: "Numele reprezentantului trebuie să conțină cel puțin 2 caractere.",
-  }),
-  email: z.string().email({
-    message: "Te rugăm să introduci o adresă de email validă.",
-  }),
-  phone: z.string().min(10, {
-    message: "Te rugăm să introduci un număr de telefon valid.",
-  }),
-  cui: z.string()
-    .min(6, { message: "CUI trebuie să conțină minim 6 caractere." })
-    .max(10, { message: "CUI nu poate depăși 10 caractere." })
-    .regex(/^[0-9]+$/, { message: "CUI trebuie să conțină doar cifre." }),
-  tradeRegNumber: z.string()
-    .regex(/^J[0-9]{2}\/[0-9]{1,6}\/[0-9]{4}$/, {
+const serviceSchema = z
+  .object({
+    companyName: z.string().min(2, {
+      message: "Numele companiei trebuie să conțină cel puțin 2 caractere.",
+    }),
+    representativeName: z.string().min(2, {
+      message:
+        "Numele reprezentantului trebuie să conțină cel puțin 2 caractere.",
+    }),
+    email: z.string().email({
+      message: "Te rugăm să introduci o adresă de email validă.",
+    }),
+    phone: z.string().min(10, {
+      message: "Te rugăm să introduci un număr de telefon valid.",
+    }),
+    cui: z
+      .string()
+      .min(6, { message: "CUI trebuie să conțină minim 6 caractere." })
+      .max(10, { message: "CUI nu poate depăși 10 caractere." })
+      .regex(/^[0-9]+$/, { message: "CUI trebuie să conțină doar cifre." }),
+    tradeRegNumber: z.string().regex(/^J[0-9]{2}\/[0-9]{1,6}\/[0-9]{4}$/, {
       message: "Format invalid. Exemplu corect: J40/1234/2025",
     }),
-  address: z.string().min(5, {
-    message: "Te rugăm să introduci adresa completă.",
-  }),
-  county: z.string().min(1, {
-    message: "Te rugăm să selectezi județul.",
-  }),
-  city: z.string().min(1, {
-    message: "Te rugăm să selectezi localitatea.",
-  }),
-  password: z.string().min(6, {
-    message: "Parola trebuie să conțină cel puțin 6 caractere.",
-  }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Parolele nu coincid",
-  path: ["confirmPassword"],
-});
+    address: z.string().min(5, {
+      message: "Te rugăm să introduci adresa completă.",
+    }),
+    county: z.string().min(1, {
+      message: "Te rugăm să selectezi județul.",
+    }),
+    city: z.string().min(1, {
+      message: "Te rugăm să selectezi localitatea.",
+    }),
+    password: z.string().min(6, {
+      message: "Parola trebuie să conțină cel puțin 6 caractere.",
+    }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Parolele nu coincid",
+    path: ["confirmPassword"],
+  });
 
 interface SignupFormProps {
   onSuccess: (role: UserRole) => void;
@@ -162,28 +180,43 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
     try {
       // Step 1: Check phone number first
-      const phoneCheckResponse = await fetch('/api/auth/check-phone', {
-        method: 'POST',
+      const phoneCheckResponse = await fetch("/api/auth/check-phone", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ phone: values.phone }),
       });
 
       if (!phoneCheckResponse.ok) {
-        const error = await phoneCheckResponse.json();
-        if (error.code === 'PHONE_EXISTS') {
+        try {
+          const error = await phoneCheckResponse.json();
+
+          if (error?.code === 'PHONE_EXISTS') {
+            toast({
+              variant: "destructive",
+              title: "Număr de telefon indisponibil",
+              description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Eroare verificare număr",
+              description: error?.message || "A apărut o eroare la verificarea numărului de telefon.",
+            });
+          }
+        } catch (err) {
           toast({
             variant: "destructive",
-            title: "Număr de telefon indisponibil",
-            description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
+            title: "Eroare conexiune",
+            description: "Nu s-a putut verifica numărul de telefon. Te rugăm să încerci din nou.",
           });
-          setIsLoading(false);
-          return;
-        } else {
-          throw new Error('PHONE_CHECK_ERROR: ' + error.message);
         }
+
+        setIsLoading(false);
+        return;
       }
+
 
       // Step 2: Check email availability
       const methods = await fetchSignInMethodsForEmail(auth, values.email);
@@ -191,7 +224,8 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         toast({
           variant: "destructive",
           title: "Email indisponibil",
-          description: "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
+          description:
+            "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
         });
         setIsLoading(false);
         return;
@@ -199,17 +233,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
       // Step 3: Create Firebase account only if phone and email are available
       const { email, password } = values;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       const { user: firebaseUser } = userCredential;
 
       try {
         // Step 4: Register user in backend
         const idToken = await firebaseUser.getIdToken(true);
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
             ...values,
@@ -222,22 +260,28 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
           // If backend registration fails, delete the Firebase account
           await firebaseUser.delete();
           const errorData = await response.json();
+          console.error("Backend registration error:", errorData); // Add logging
 
-          if (errorData.field === 'phone') {
+          if (errorData.error === "Phone number already registered") {
             toast({
               variant: "destructive",
               title: "Număr de telefon indisponibil",
-              description: errorData.message,
+              description: errorData.message || "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
             });
             if (role === 'client') {
-              clientForm.setError('phone', { message: errorData.message });
+              clientForm.setError('phone', { 
+                message: errorData.message || "Acest număr de telefon este deja înregistrat."
+              });
             } else {
-              serviceForm.setError('phone', { message: errorData.message });
+              serviceForm.setError('phone', { 
+                message: errorData.message || "Acest număr de telefon este deja înregistrat."
+              });
             }
-            throw new Error(errorData.message);
-          } else {
-            throw new Error(errorData.message || 'Failed to register user');
+            setIsLoading(false);
+            return;
           }
+
+          throw new Error(errorData.message || 'Failed to register user');
         }
 
         // Step 5: Only send verification email after successful registration
@@ -247,29 +291,29 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         await signInWithEmailAndPassword(auth, email, password);
         const newIdToken = await firebaseUser.getIdToken(true);
 
-        const loginResponse = await fetch('/api/auth/login', {
-          method: 'POST',
+        const loginResponse = await fetch("/api/auth/login", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${newIdToken}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${newIdToken}`,
           },
-          credentials: 'include'
+          credentials: "include",
         });
 
         if (!loginResponse.ok) {
           const error = await loginResponse.json();
-          throw new Error(error.message || 'Failed to establish session');
+          throw new Error(error.message || "Failed to establish session");
         }
 
         toast({
           title: "Cont creat cu succes",
-          description: "Te rugăm să verifici email-ul pentru a confirma adresa.",
+          description:
+            "Te rugăm să verifici email-ul pentru a confirma adresa.",
         });
 
         if (role) {
           onSuccess(role);
         }
-
       } catch (error: any) {
         // Clean up Firebase account if anything fails after creation
         await firebaseUser.delete();
@@ -277,37 +321,37 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
         toast({
           variant: "destructive",
           title: "Eroare",
-          description: error.message || "A apărut o eroare. Te rugăm să încerci din nou.",
+          description:
+            error.message || "A apărut o eroare. Te rugăm să încerci din nou.",
         });
       }
-
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      if (error.message?.includes('PHONE_CHECK_ERROR')) {
+      // Handle phone number error
+      if (error.message?.includes('telefon') || error.message?.includes('phone')) {
         toast({
           variant: "destructive",
           title: "Număr de telefon indisponibil",
-          description: "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
+          description: error.message || "Acest număr de telefon este deja înregistrat. Te rugăm să folosești alt număr de telefon.",
         });
+        if (role === 'client') {
+          clientForm.setError('phone', { 
+            message: error.message || "Acest număr de telefon este deja înregistrat."
+          });
+        } else {
+          serviceForm.setError('phone', { 
+            message: error.message || "Acest număr de telefon este deja înregistrat."
+          });
+        }
       } else if (error.code === "auth/email-already-in-use") {
         toast({
           variant: "destructive",
           title: "Email indisponibil",
           description: "Această adresă de email este deja folosită. Te rugăm să folosești altă adresă de email.",
         });
-      } else if (error.message?.includes('telefon')) { // Handle phone number error
-        toast({
-          variant: "destructive",
-          title: "Număr de telefon indisponibil",
-          description: error.message,
-        });
-        if (role === 'client') {
-          clientForm.setError('phone', { message: error.message });
-        } else {
-          serviceForm.setError('phone', { message: error.message });
-        }
       } else {
+        console.error("Detailed error:", error);
         toast({
           variant: "destructive",
           title: "Eroare",
@@ -320,7 +364,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
   }
 
   if (!role) {
-    return <RoleSelection onSelect={(selectedRole: UserRole) => setRole(selectedRole)} />;
+    return (
+      <RoleSelection
+        onSelect={(selectedRole: UserRole) => setRole(selectedRole)}
+      />
+    );
   }
 
   const renderClientForm = () => (
@@ -332,8 +380,11 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="name" className="text-sm sm:text-base font-medium text-gray-700">
-                  Nume și Prenume
+                <FormLabel
+                  htmlFor="name"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
+                  Nume
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
@@ -355,13 +406,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="email" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="email"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Email
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="email"
+                      {...field}
+                      type="email"
+                      placeholder="email@example.com"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -373,13 +433,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="phone" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="phone"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Telefon
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="phone"
+                      {...field}
+                      placeholder="0712 345 678"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -391,7 +459,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="county"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="county" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="county"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Județ
                 </FormLabel>
                 <Select
@@ -424,7 +495,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="city" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="city"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Localitate
                 </FormLabel>
                 <Select
@@ -455,13 +529,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="password" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="password"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Parolă
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="password"
+                      {...field}
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -473,13 +556,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="confirmPassword"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Confirmă Parola
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="confirmPassword"
+                      {...field}
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -510,13 +602,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="companyName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="companyName" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="companyName"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Nume Service
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="companyName" {...field} placeholder="Auto Service SRL" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="companyName"
+                      {...field}
+                      placeholder="Auto Service SRL"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -528,13 +628,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="representativeName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="representativeName" className="text-sm sm:text-base font-medium text-gray-700">
-                  Nume Reprezentant
+                <FormLabel
+                  htmlFor="representativeName"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
+                  Reprezentant
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="representativeName" {...field} placeholder="Ion Popescu" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="representativeName"
+                      {...field}
+                      placeholder="Ion Popescu"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -546,13 +654,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="cui"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="cui" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="cui"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   CUI
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="cui" {...field} placeholder="12345678" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="cui"
+                      {...field}
+                      placeholder="12345678"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -564,13 +680,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="tradeRegNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="tradeRegNumber" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="tradeRegNumber"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Nr. Înreg.
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="tradeRegNumber" {...field} placeholder="J40/1234/2025" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="tradeRegNumber"
+                      {...field}
+                      placeholder="J40/1234/2025"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -582,13 +706,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="address" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="address"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Adresă
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="address" {...field} placeholder="Strada, Număr" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="address"
+                      {...field}
+                      placeholder="Strada, Număr"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -600,13 +732,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="email" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="email"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Email
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="email" {...field} type="email" placeholder="email@example.com" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="email"
+                      {...field}
+                      type="email"
+                      placeholder="email@example.com"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -618,13 +759,21 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="phone" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="phone"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Telefon
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="phone" {...field} placeholder="0712 345 678" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="phone"
+                      {...field}
+                      placeholder="0712 345 678"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -636,7 +785,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="county"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="county" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="county"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Județ
                 </FormLabel>
                 <Select
@@ -669,7 +821,10 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="city" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="city"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Localitate
                 </FormLabel>
                 <Select
@@ -700,13 +855,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="password" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="password"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Parolă
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="password" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="password"
+                      {...field}
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -718,13 +882,22 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700">
+                <FormLabel
+                  htmlFor="confirmPassword"
+                  className="text-sm sm:text-base font-medium text-gray-700"
+                >
                   Confirmă Parola
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="confirmPassword" {...field} type="password" placeholder="••••••••" className="pl-10 h-12 sm:h-10 text-base sm:text-sm" />
+                    <Input
+                      id="confirmPassword"
+                      {...field}
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10 h-12 sm:h-10 text-base sm:text-sm"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage className="text-sm" />
@@ -758,7 +931,9 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
 
       <div className="space-y-2 text-center pt-8 sm:pt-2">
         <h2 className="text-xl sm:text-2xl font-bold text-[#00aff5]">
-          {role === "client" ? "Înregistrare Client" : "Înregistrare Service Auto"}
+          {role === "client"
+            ? "Înregistrare Client"
+            : "Înregistrare Service Auto"}
         </h2>
       </div>
 
