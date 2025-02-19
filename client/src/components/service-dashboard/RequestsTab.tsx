@@ -59,56 +59,71 @@ export default function RequestsTab() {
     loadViewedRequests();
   }, []);
 
-  // WebSocket connection with reconnection logic
+  // WebSocket connection with better error handling
   useEffect(() => {
     let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
     let reconnectAttempt = 0;
     const maxReconnectAttempts = 5;
-    const reconnectDelay = 3000; // 3 seconds
+    const reconnectDelay = 3000;
 
-    const connect = () => {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log('WebSocket connection established');
-        reconnectAttempt = 0; // Reset reconnect attempts on successful connection
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'NEW_REQUEST') {
-            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
-          }
-        } catch (error) {
-          console.error('Error handling WebSocket message:', error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.warn('WebSocket error:', error);
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket connection closed');
-        if (reconnectAttempt < maxReconnectAttempts) {
-          reconnectAttempt++;
-          console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts})...`);
-          setTimeout(connect, reconnectDelay);
-        }
-      };
-    };
-
-    connect();
-
-    return () => {
+    const cleanup = () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (ws) {
         ws.close();
       }
     };
+
+    const connect = () => {
+      cleanup();
+
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+      try {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log('WebSocket connection established');
+          reconnectAttempt = 0;
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'NEW_REQUEST') {
+              queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+            }
+          } catch (error) {
+            console.error('Error handling WebSocket message:', error);
+          }
+        };
+
+        ws.onerror = () => {
+          console.warn('WebSocket encountered an error');
+        };
+
+        ws.onclose = () => {
+          console.log('WebSocket connection closed');
+          if (reconnectAttempt < maxReconnectAttempts) {
+            reconnectAttempt++;
+            console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts})...`);
+            reconnectTimeout = setTimeout(connect, reconnectDelay);
+          }
+        };
+      } catch (error) {
+        console.error('Error creating WebSocket:', error);
+        if (reconnectAttempt < maxReconnectAttempts) {
+          reconnectAttempt++;
+          reconnectTimeout = setTimeout(connect, reconnectDelay);
+        }
+      }
+    };
+
+    connect();
+    return cleanup;
   }, [queryClient]);
 
   // Fetch requests that match the service's location
