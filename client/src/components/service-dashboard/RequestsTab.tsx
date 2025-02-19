@@ -177,14 +177,7 @@ export default function RequestsTab() {
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data trimiterii</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Locație</TableHead>
                     <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
-                    <TableHead className="px-2">
-                      <div className="flex justify-end gap-6">
-                        <span className="text-xs text-muted-foreground w-10 text-center">Detalii</span>
-                        <span className="text-xs text-muted-foreground w-10 text-center">Mesaj</span>
-                        <span className="text-xs text-muted-foreground w-16 text-center">Trimite ofertă</span>
-                        <span className="text-xs text-muted-foreground w-10 text-center">Respinge</span>
-                      </div>
-                    </TableHead>
+                    <TableHead className="h-10 px-2 text-center align-middle font-medium text-muted-foreground">Acțiuni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
