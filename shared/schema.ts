@@ -165,7 +165,7 @@ export type ServiceProvider = typeof serviceProviders.$inferSelect;
 export type InsertCar = z.infer<typeof insertCarSchema>;
 export type Car = typeof cars.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
-export type Request = typeof requests.$inferSelect;
+export type Request = typeof requests.$inferSelect & { isNew?: boolean };
 
 // Type guards for user types
 export const isClientUser = (user: User): user is ClientUser => {

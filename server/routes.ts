@@ -320,7 +320,8 @@ export function registerRoutes(app: Express): Server {
       const requestData = insertRequestSchema.parse({
         ...req.body,
         clientId: client.id,
-        preferredDate: new Date(req.body.preferredDate)
+        preferredDate: new Date(req.body.preferredDate),
+        isNew: true // added isNew field
       });
 
       const request = await storage.createRequest(requestData);
@@ -368,6 +369,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/service/requests/:id/viewed", validateFirebaseToken, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      await storage.updateRequest(requestId, { isNew: false });
+      res.status(200).json({ message: "Request marked as viewed" });
+    } catch (error) {
+      console.error('Error marking request as viewed:', error);
+      res.status(500).json({ error: "Failed to mark request as viewed" });
+    }
+  });
+
   app.patch("/api/requests/:id", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
@@ -390,7 +402,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       const updatedRequest = await storage.updateRequest(parseInt(req.params.id), {
-        status: req.body.status
+        status: req.body.status,
+        isNew: false // added isNew field
       });
 
       res.json(updatedRequest);
