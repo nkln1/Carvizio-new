@@ -183,6 +183,10 @@ export default function SentOffersTab() {
                               <p className="font-medium text-gray-700">Detalii cerere client:</p>
                               <p className="text-sm text-gray-600 mt-1">{offer.request.title}</p>
                               <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.request.description}</p>
+                              <div className="mt-2 text-sm text-gray-500">
+                                <p>Data preferată: {format(new Date(offer.request.preferredDate), "dd.MM.yyyy")}</p>
+                                <p>Locație: {offer.request.cities?.join(", ")}, {offer.request.county}</p>
+                              </div>
                             </div>
                           )}
                         </div>
