@@ -125,7 +125,7 @@ export default function SentOffersTab() {
                         </p>
                         <div className="flex items-center gap-4 mt-2">
                           <span className="text-sm text-gray-500">
-                            Data disponibilă: {format(new Date(offer.availableDate), "dd.MM.yyyy")}
+                            Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
                           </span>
                           <span className="text-sm text-gray-500">
                             Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
@@ -211,9 +211,11 @@ export default function SentOffersTab() {
                     <p className="font-medium text-[#00aff5]">{selectedOffer.price} RON</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Data disponibilă</p>
+                    <p className="text-sm text-gray-600">Date disponibile</p>
                     <p className="font-medium">
-                      {format(new Date(selectedOffer.availableDate), "dd.MM.yyyy")}
+                      {selectedOffer.availableDates.map(date => 
+                        format(new Date(date), "dd.MM.yyyy")
+                      ).join(", ")}
                     </p>
                   </div>
                   <div>
@@ -237,12 +239,6 @@ export default function SentOffersTab() {
                     <span className="w-32">Creat:</span>
                     <span>{format(new Date(selectedOffer.createdAt), "dd.MM.yyyy HH:mm")}</span>
                   </div>
-                  {selectedOffer.updatedAt && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className="w-32">Ultima actualizare:</span>
-                      <span>{format(new Date(selectedOffer.updatedAt), "dd.MM.yyyy HH:mm")}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
