@@ -194,7 +194,13 @@ export const insertRequestSchema = createInsertSchema(requests).omit({
 export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
   id: true,
   status: true,
-  createdAt: true
+  createdAt: true,
+  // These fields will be filled automatically from the request
+  requestTitle: true,
+  requestDescription: true,
+  requestPreferredDate: true,
+  requestCounty: true,
+  requestCities: true
 });
 
 // Export types

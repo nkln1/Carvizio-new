@@ -23,6 +23,11 @@ const ITEMS_PER_PAGE = 9;
 
 interface OfferWithRequest extends SentOffer {
   request?: RequestType;
+  requestTitle?: string;
+  requestDescription?: string;
+  requestPreferredDate?: string;
+  requestCities?: string[];
+  requestCounty?: string;
 }
 
 export default function SentOffersTab() {
@@ -32,14 +37,13 @@ export default function SentOffersTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  // Fetch offers and corresponding requests
+  // Update the query to use the embedded request details
   const { data: offers = [], isLoading, error } = useQuery<OfferWithRequest[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // First fetch offers
       const response = await fetch('/api/service/offers', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -50,31 +54,7 @@ export default function SentOffersTab() {
         throw new Error('Failed to fetch offers');
       }
 
-      const offers = await response.json();
-
-      // Then fetch requests for each offer
-      const offersWithRequests = await Promise.all(
-        offers.map(async (offer: SentOffer) => {
-          try {
-            const requestResponse = await fetch(`/api/requests/${offer.requestId}`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            if (requestResponse.ok) {
-              const request = await requestResponse.json();
-              return { ...offer, request };
-            }
-            return offer;
-          } catch (error) {
-            console.error(`Error fetching request for offer ${offer.id}:`, error);
-            return offer;
-          }
-        })
-      );
-
-      return offersWithRequests;
+      return response.json();
     }
   });
 
@@ -100,8 +80,8 @@ export default function SentOffersTab() {
       offer.title.toLowerCase().includes(searchLower) ||
       offer.details.toLowerCase().includes(searchLower) ||
       offer.price.toString().includes(searchLower) ||
-      offer.request?.title?.toLowerCase().includes(searchLower) ||
-      offer.request?.description?.toLowerCase().includes(searchLower)
+      offer.requestTitle?.toLowerCase().includes(searchLower) ||
+      offer.requestDescription?.toLowerCase().includes(searchLower)
     );
   };
 
@@ -178,24 +158,24 @@ export default function SentOffersTab() {
                           <h3 className="font-medium text-lg text-[#00aff5]">
                             {offer.title}
                           </h3>
-                          {offer.request && (
-                            <div className="mt-2 bg-gray-50 p-3 rounded-lg">
-                              <p className="font-medium text-gray-700">Detalii cerere client:</p>
-                              <p className="text-sm text-gray-600 mt-1">{offer.request.title}</p>
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.request.description}</p>
-                              <div className="mt-2 text-sm text-gray-500">
-                                <p>Data preferată: {format(new Date(offer.request.preferredDate), "dd.MM.yyyy")}</p>
-                                <p>Locație: {offer.request.cities?.join(", ")}, {offer.request.county}</p>
-                              </div>
+                          <div className="mt-2 bg-gray-50 p-3 rounded-lg">
+                            <p className="font-medium text-gray-700">Detalii cerere client:</p>
+                            <p className="text-sm text-gray-600 mt-1">{offer.requestTitle}</p>
+                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.requestDescription}</p>
+                            <div className="mt-2 text-sm text-gray-500">
+                              <p>Data preferată: {format(new Date(offer.requestPreferredDate!), "dd.MM.yyyy")}</p>
+                              <p>Locație: {offer.requestCities?.join(", ")}, {offer.requestCounty}</p>
                             </div>
-                          )}
+                          </div>
                         </div>
                         <p className="text-sm text-gray-600 mt-2">
                           <span className="font-medium">Răspunsul dvs.:</span> {offer.details}
                         </p>
                         <div className="flex items-center gap-4 mt-3">
                           <span className="text-sm text-gray-500">
-                            Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
+                            Data disponibilă: {offer.availableDates.map(date =>
+                              format(new Date(date), "dd.MM.yyyy")
+                            ).join(", ")}
                           </span>
                           <span className="text-sm text-gray-500">
                             Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
@@ -206,8 +186,8 @@ export default function SentOffersTab() {
                         <span className="font-bold text-lg text-[#00aff5]">
                           {offer.price} RON
                         </span>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="mt-2"
                           onClick={() => setSelectedOffer(offer)}
                         >
@@ -272,33 +252,31 @@ export default function SentOffersTab() {
           </DialogHeader>
           {selectedOffer && (
             <div className="space-y-6">
-              {selectedOffer.request && (
-                <div>
-                  <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
-                  <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Titlu Cerere</p>
-                      <p className="font-medium">{selectedOffer.request.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Descriere Cerere</p>
-                      <p className="font-medium">{selectedOffer.request.description}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Data Preferată Client</p>
-                      <p className="font-medium">
-                        {format(new Date(selectedOffer.request.preferredDate), "dd.MM.yyyy")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Locație</p>
-                      <p className="font-medium">
-                        {selectedOffer.request.cities?.join(", ")}, {selectedOffer.request.county}
-                      </p>
-                    </div>
+              <div>
+                <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
+                <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm text-gray-600">Titlu Cerere</p>
+                    <p className="font-medium">{selectedOffer.requestTitle}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Descriere Cerere</p>
+                    <p className="font-medium">{selectedOffer.requestDescription}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Data Preferată Client</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedOffer.requestPreferredDate!), "dd.MM.yyyy")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Locație</p>
+                    <p className="font-medium">
+                      {selectedOffer.requestCities?.join(", ")}, {selectedOffer.requestCounty}
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
 
               <div>
                 <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
@@ -314,7 +292,7 @@ export default function SentOffersTab() {
                   <div>
                     <p className="text-sm text-gray-600">Date disponibile</p>
                     <p className="font-medium">
-                      {selectedOffer.availableDates.map(date => 
+                      {selectedOffer.availableDates.map(date =>
                         format(new Date(date), "dd.MM.yyyy")
                       ).join(", ")}
                     </p>
