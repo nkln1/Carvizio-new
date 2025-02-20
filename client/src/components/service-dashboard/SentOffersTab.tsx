@@ -102,15 +102,12 @@ export default function SentOffersTab() {
             const acceptedCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "accepted").length;
 
             return (
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-                  În așteptare ({pendingCount})
-                </TabsTrigger>
-                <TabsTrigger value="accepted" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-                  Acceptate ({acceptedCount})
+                  Oferte trimise ({pendingCount})
                 </TabsTrigger>
                 <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-                  Respinse ({rejectedCount})
+                  Oferte Respinse ({rejectedCount})
                 </TabsTrigger>
               </TabsList>
             );

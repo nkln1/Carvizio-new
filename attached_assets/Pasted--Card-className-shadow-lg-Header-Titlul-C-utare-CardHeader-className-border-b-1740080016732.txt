@@ -1,0 +1,71 @@
+<Card className="shadow-lg">
+  {/* Header - Titlul + Căutare */}
+  <CardHeader className="border-b bg-gray-50">
+    <CardTitle className="text-[#00aff5] flex items-center gap-2">
+      <SendHorizontal className="h-5 w-5" />
+      Oferte Trimise
+    </CardTitle>
+    <CardDescription>Urmărește și gestionează ofertele trimise către clienți</CardDescription>
+    <div className="mt-4">
+      <SearchBar value={searchTerm} onChange={setSearchTerm} />
+    </div>
+  </CardHeader>
+
+  <CardContent className="p-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      {/* Calculare număr de oferte pe categorii */}
+      {(() => {
+        const pendingOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
+        const rejectedOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
+
+        return (
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+              Oferte Trimise ({pendingOffersCount})
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
+              Oferte Respinse ({rejectedOffersCount})
+            </TabsTrigger>
+          </TabsList>
+        );
+      })()}
+
+      {/* Conținutul tab-urilor - Lista ofertelor */}
+      <TabsContent value={activeTab}>
+        <OfferList offers={paginatedOffers} cars={cars} onViewDetails={setSelectedOffer} />
+
+        {/* Paginare dacă sunt mai multe oferte */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }).map((_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink onClick={() => setCurrentPage(index + 1)} isActive={currentPage === index + 1}>
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+
+  {/* Pop-up pentru detaliile ofertei */}
+  <OfferDetails offer={selectedOffer} cars={cars} open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)} />
+</Card>
