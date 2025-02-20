@@ -699,10 +699,8 @@ export function registerRoutes(app: Express): Server {
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Pending");
 
       // Update request status back to Active
-      const requestRef = doc(db, "requests", updatedOffer.requestId);
-      await updateDoc(requestRef, {
-        status: "Active",
-        lastUpdated: new Date(),
+      await storage.updateRequest(updatedOffer.requestId, {
+        status: "Active"
       });
 
       // Send notification through WebSocket
