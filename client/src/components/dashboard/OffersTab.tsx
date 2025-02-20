@@ -147,6 +147,42 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
     }
   };
 
+  const handleCancelOffer = async (offer: OfferWithProvider) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/client/offers/${offer.id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel offer');
+      }
+
+      // Invalidate offers query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
+
+      // Switch to pending tab after successful cancellation
+      setActiveTab("pending");
+
+      toast({
+        title: "Ofertă anulată",
+        description: "Oferta a fost anulată cu succes.",
+      });
+    } catch (error) {
+      console.error("Error canceling offer:", error);
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la anularea ofertei. Încercați din nou.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="shadow-lg">
@@ -219,7 +255,7 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
         <div className="p-2 flex-1 overflow-hidden flex flex-col min-h-0">
           <div className="mb-1">
             <h4 className="text-sm font-medium flex items-center gap-1">
-              <User className="w-3 h-3 text-blue-500" /> 
+              <User className="w-3 h-3 text-blue-500" />
               <span className="text-xs text-gray-700">Service Auto:</span>
               <span className="text-xs font-normal line-clamp-1">
                 {offer.serviceProviderName}
@@ -293,6 +329,18 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
                     Respinge
                   </Button>
                 </>
+              )}
+
+              {offer.status === "Accepted" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50"
+                  onClick={() => handleCancelOffer(offer)}
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  Anulează
+                </Button>
               )}
             </div>
           </div>
