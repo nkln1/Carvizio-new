@@ -606,16 +606,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Access denied. Only clients can accept offers." });
       }
 
-      // Get the offer first to get the requestId
+      // Check if there's already an accepted offer for this request
       const offerId = parseInt(req.params.id);
-      const offer = await storage.getSentOffer(offerId);
+      const allOffers = await storage.getOffersForClient(client.id);
+      const offer = allOffers.find(o => o.id === offerId);
+
       if (!offer) {
         return res.status(404).json({ error: "Offer not found" });
       }
 
-      // Check if there's already an accepted offer for this request
-      const existingAcceptedOffers = await storage.getSentOffersByRequestId(offer.requestId);
-      if (existingAcceptedOffers.some(o => o.status === "Accepted")) {
+      // Check for existing accepted offers
+      const existingAcceptedOffers = allOffers.filter(o => 
+        o.requestId === offer.requestId && o.status === "Accepted"
+      );
+
+      if (existingAcceptedOffers.length > 0) {
         return res.status(400).json({ 
           error: "Cannot accept offer", 
           message: "There is already an accepted offer for this request"
@@ -627,8 +632,7 @@ export function registerRoutes(app: Express): Server {
 
       // Update request status to Rezolvat
       const updatedRequest = await storage.updateRequest(offer.requestId, {
-        status: "Rezolvat",
-        lastUpdated: new Date()
+        status: "Rezolvat"
       });
 
       // Send notification through WebSocket for both changes
