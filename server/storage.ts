@@ -368,16 +368,27 @@ export class DatabaseStorage implements IStorage {
   }
   async createSentOffer(offer: InsertSentOffer): Promise<SentOffer> {
     try {
+      // First, get the request details
+      const request = await this.getRequest(offer.requestId);
+      if (!request) {
+        throw new Error('Request not found');
+      }
+
       const [newOffer] = await db
         .insert(sentOffers)
         .values({
           ...offer,
+          // Add request details
+          requestTitle: request.title,
+          requestDescription: request.description,
+          requestPreferredDate: request.preferredDate,
+          requestCounty: request.county,
+          requestCities: request.cities,
           status: "Pending",
           createdAt: new Date(),
         })
         .returning();
 
-      console.log('Created new offer:', newOffer); // Add logging
       return newOffer;
     } catch (error) {
       console.error('Error creating sent offer:', error);

@@ -139,6 +139,12 @@ export const sentOffers = pgTable("sent_offers", {
   availableDates: timestamp("available_dates").array().notNull(),
   price: integer("price").notNull(),
   notes: text("notes"),
+  // Added request details columns
+  requestTitle: text("request_title").notNull(),
+  requestDescription: text("request_description").notNull(),
+  requestPreferredDate: timestamp("request_preferred_date").notNull(),
+  requestCounty: text("request_county").notNull(),
+  requestCities: text("request_cities").array().notNull(),
   status: text("status", {
     enum: ["Pending", "Accepted", "Rejected"]
   }).default("Pending").notNull(),
