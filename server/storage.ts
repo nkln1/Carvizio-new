@@ -70,7 +70,7 @@ export interface IStorage {
   getSentOffersByServiceProvider(serviceProviderId: number): Promise<SentOffer[]>;
   getSentOffersByRequest(requestId: number): Promise<SentOffer[]>;
   updateSentOfferStatus(id: number, status: "Pending" | "Accepted" | "Rejected"): Promise<SentOffer>;
-  getOffersForClient(clientId: number): Promise<SentOffer[]>;
+  getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -436,7 +436,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  async getOffersForClient(clientId: number): Promise<SentOffer[]> {
+  async getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string })[]> {
     try {
       // First get all requests for this client
       const clientRequests = await this.getClientRequests(clientId);
@@ -448,10 +448,14 @@ export class DatabaseStorage implements IStorage {
       // Get the request IDs
       const requestIds = clientRequests.map(request => request.id);
 
-      // Get all offers for these requests
+      // Get all offers for these requests with service provider details
       const offers = await db
-        .select()
+        .select({
+          ...sentOffers,
+          serviceProviderName: serviceProviders.companyName
+        })
         .from(sentOffers)
+        .leftJoin(serviceProviders, eq(sentOffers.serviceProviderId, serviceProviders.id))
         .where(inArray(sentOffers.requestId, requestIds))
         .orderBy(desc(sentOffers.createdAt));
 

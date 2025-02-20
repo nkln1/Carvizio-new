@@ -28,11 +28,13 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 
+type OfferWithProvider = SentOffer & { serviceProviderName: string };
+
 export function OffersTab() {
-  const [selectedOffer, setSelectedOffer] = useState<SentOffer | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const { toast } = useToast();
 
-  const { data: offers = [], isLoading, error } = useQuery<SentOffer[]>({
+  const { data: offers = [], isLoading, error } = useQuery<OfferWithProvider[]>({
     queryKey: ['/api/client/offers'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -98,9 +100,14 @@ export function OffersTab() {
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div className="flex-1">
                       <div className="mb-4">
-                        <h3 className="font-medium text-lg text-[#00aff5]">
-                          {offer.title}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-lg text-[#00aff5]">
+                            {offer.title}
+                          </h3>
+                          <span className="text-sm text-gray-600">
+                            de la {offer.serviceProviderName}
+                          </span>
+                        </div>
                         <div className="mt-2 bg-gray-50 p-3 rounded-lg">
                           <p className="font-medium text-gray-700">Detalii ofertă:</p>
                           <p className="text-sm text-gray-600 mt-1">{offer.details}</p>
@@ -155,6 +162,13 @@ export function OffersTab() {
           </DialogHeader>
           {selectedOffer && (
             <div className="space-y-6">
+              <div>
+                <h3 className="font-medium text-lg mb-2">Informații Service Auto</h3>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="font-medium">{selectedOffer.serviceProviderName}</p>
+                </div>
+              </div>
+
               <div>
                 <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
