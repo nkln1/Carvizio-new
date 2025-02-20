@@ -696,10 +696,20 @@ export function registerRoutes(app: Express): Server {
       }
 
       const offerId = parseInt(req.params.id);
+
+      // Get all offers for this client to verify ownership
+      const allOffers = await storage.getOffersForClient(client.id);
+      const offer = allOffers.find(o => o.id === offerId);
+
+      if (!offer) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+
+      // Update offer status to Pending
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Pending");
 
       // Update request status back to Active
-      await storage.updateRequest(updatedOffer.requestId, {
+      await storage.updateRequest(offer.requestId, {
         status: "Active"
       });
 
@@ -715,7 +725,7 @@ export function registerRoutes(app: Express): Server {
           // Notify about request status change
           client.send(JSON.stringify({
             type: 'REQUEST_STATUS_CHANGED',
-            payload: { requestId: updatedOffer.requestId, status: "Active" }
+            payload: { requestId: offer.requestId, status: "Active" }
           }));
         }
       });
@@ -726,7 +736,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to cancel offer" });
     }
   });
-
 
 
   const httpServer = createServer(app);
