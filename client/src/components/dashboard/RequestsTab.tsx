@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
+import websocketService from "@/lib/websocket";
+
 
 interface RequestsTabProps {
   requests: RequestType[];
@@ -45,12 +47,30 @@ export function RequestsTab({
   isLoading,
   onCreateRequest,
 }: RequestsTabProps) {
-  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(
-    null,
-  );
+  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const { toast } = useToast();
+
+  // Calculate request counts
+  const activeCount = requests.filter(req => req.status === "Active").length;
+  const solvedCount = requests.filter(req => req.status === "Rezolvat").length;
+  const canceledCount = requests.filter(req => req.status === "Anulat").length;
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'REQUEST_STATUS_CHANGED') {
+        queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      }
+    };
+
+    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+
+    return () => {
+      removeHandler();
+    };
+  }, []);
 
   const handleDelete = async (requestId: number) => {
     try {
@@ -59,7 +79,6 @@ export function RequestsTab({
         throw new Error("No authentication token available");
       }
 
-      // First update the database
       const response = await fetch(`/api/requests/${requestId}`, {
         method: "PATCH",
         headers: {
@@ -74,7 +93,6 @@ export function RequestsTab({
         throw new Error(errorData.message || "Failed to cancel request");
       }
 
-      // After successful database update, invalidate the cache to trigger a UI refresh
       await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
 
       toast({
@@ -107,19 +125,19 @@ export function RequestsTab({
               value="active"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
             >
-              Active
+              Active ({activeCount})
             </TabsTrigger>
             <TabsTrigger
               value="solved"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
             >
-              Rezolvate
+              Rezolvate ({solvedCount})
             </TabsTrigger>
             <TabsTrigger
               value="canceled"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
             >
-              Anulate
+              Anulate ({canceledCount})
             </TabsTrigger>
           </TabsList>
 
