@@ -37,27 +37,31 @@ interface OffersTabProps {
   offers: OfferWithProvider[];
   onMessageService?: (serviceId: number, requestId: number) => void;
   refreshRequests?: () => Promise<void>;
+  viewedOffers: Set<number>;
+  setViewedOffers: (offers: Set<number>) => void;
 }
 
-export function OffersTab({ offers, onMessageService, refreshRequests }: OffersTabProps) {
+export function OffersTab({ 
+  offers, 
+  onMessageService, 
+  refreshRequests,
+  viewedOffers,
+  setViewedOffers 
+}: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
-  const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState("pending");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Load viewed offers from localStorage
-  useEffect(() => {
-    const savedViewedOffers = localStorage.getItem('viewedOffers');
-    if (savedViewedOffers) {
-      setViewedOffers(new Set(JSON.parse(savedViewedOffers)));
-    }
-  }, []);
 
   const markOfferAsViewed = (offerId: number) => {
     const newViewedOffers = new Set(viewedOffers).add(offerId);
     setViewedOffers(newViewedOffers);
     localStorage.setItem('viewedOffers', JSON.stringify(Array.from(newViewedOffers)));
+  };
+
+  const handleActionClick = (action: () => void, offerId: number) => {
+    markOfferAsViewed(offerId);
+    action();
   };
 
   const handleAcceptOffer = async (offer: OfferWithProvider) => {
@@ -197,11 +201,6 @@ export function OffersTab({ offers, onMessageService, refreshRequests }: OffersT
 
   const renderOfferBox = (offer: OfferWithProvider) => {
     const isNew = !viewedOffers.has(offer.id);
-
-    const handleActionClick = (action: () => void, offerId: number) => {
-      markOfferAsViewed(offerId);
-      action();
-    };
 
     return (
       <div

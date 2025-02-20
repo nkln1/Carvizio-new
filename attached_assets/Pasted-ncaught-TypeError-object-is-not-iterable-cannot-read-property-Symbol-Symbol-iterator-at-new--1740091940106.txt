@@ -1,0 +1,114 @@
+ncaught TypeError: object is not iterable (cannot read property Symbol(Symbol.iterator))
+    at new Set (<anonymous>)
+    at ClientDashboard.tsx:64:23
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=f983bc4f:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=f983bc4f:18156:19)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=f983bc4f:18129:17)
+    at commitPassiveMountEffects_begin (chunk-RPCDYKBN.js?v=f983bc4f:18119:15)
+    at commitPassiveMountEffects (chunk-RPCDYKBN.js?v=f983bc4f:18109:11)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=f983bc4f:19490:11)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=f983bc4f:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=f983bc4f:18868:11)
+(anonymous) @ ClientDashboard.tsx:64
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=f983bc4f:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=f983bc4f:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=f983bc4f:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=f983bc4f:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=f983bc4f:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=f983bc4f:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=f983bc4f:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19432
+commitRoot @ chunk-RPCDYKBN.js?v=f983bc4f:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=f983bc4f:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18718
+workLoop @ chunk-RPCDYKBN.js?v=f983bc4f:197
+flushWork @ chunk-RPCDYKBN.js?v=f983bc4f:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=f983bc4f:384Understand this errorAI
+chunk-RPCDYKBN.js?v=f983bc4f:16670 Uncaught TypeError: object is not iterable (cannot read property Symbol(Symbol.iterator))
+    at new Set (<anonymous>)
+    at ClientDashboard.tsx:64:23
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=f983bc4f:16915:34)
+    at invokePassiveEffectMountInDEV (chunk-RPCDYKBN.js?v=f983bc4f:18324:19)
+    at invokeEffectsInDev (chunk-RPCDYKBN.js?v=f983bc4f:19701:19)
+    at commitDoubleInvokeEffectsInDEV (chunk-RPCDYKBN.js?v=f983bc4f:19686:15)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=f983bc4f:19503:13)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=f983bc4f:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=f983bc4f:18868:11)
+    at flushSyncCallbacks (chunk-RPCDYKBN.js?v=f983bc4f:9119:30)
+(anonymous) @ ClientDashboard.tsx:64
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=f983bc4f:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=f983bc4f:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=f983bc4f:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=f983bc4f:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=f983bc4f:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=f983bc4f:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19432
+commitRoot @ chunk-RPCDYKBN.js?v=f983bc4f:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=f983bc4f:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18718
+workLoop @ chunk-RPCDYKBN.js?v=f983bc4f:197
+flushWork @ chunk-RPCDYKBN.js?v=f983bc4f:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=f983bc4f:384Understand this errorAI
+2chunk-RPCDYKBN.js?v=f983bc4f:14032 The above error occurred in the <ClientDashboard> component:
+
+    at ClientDashboard (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/pages/ClientDashboard.tsx:47:27)
+    at Route (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=f983bc4f:323:16)
+    at Switch (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=f983bc4f:379:17)
+    at Router
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:29:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=f983bc4f:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-RPCDYKBN.js?v=f983bc4f:14032
+update.callback @ chunk-RPCDYKBN.js?v=f983bc4f:14052
+callCallback @ chunk-RPCDYKBN.js?v=f983bc4f:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=f983bc4f:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=f983bc4f:17093
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=f983bc4f:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=f983bc4f:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=f983bc4f:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19353
+commitRoot @ chunk-RPCDYKBN.js?v=f983bc4f:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=f983bc4f:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19432
+commitRoot @ chunk-RPCDYKBN.js?v=f983bc4f:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=f983bc4f:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18718
+workLoop @ chunk-RPCDYKBN.js?v=f983bc4f:197
+flushWork @ chunk-RPCDYKBN.js?v=f983bc4f:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=f983bc4f:384Understand this errorAI
+chunk-RPCDYKBN.js?v=f983bc4f:9129 Uncaught TypeError: object is not iterable (cannot read property Symbol(Symbol.iterator))
+    at new Set (<anonymous>)
+    at ClientDashboard.tsx:64:23
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=f983bc4f:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=f983bc4f:18156:19)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=f983bc4f:18129:17)
+    at commitPassiveMountEffects_begin (chunk-RPCDYKBN.js?v=f983bc4f:18119:15)
+    at commitPassiveMountEffects (chunk-RPCDYKBN.js?v=f983bc4f:18109:11)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=f983bc4f:19490:11)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=f983bc4f:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=f983bc4f:18868:11)
+(anonymous) @ ClientDashboard.tsx:64
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=f983bc4f:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=f983bc4f:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=f983bc4f:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=f983bc4f:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=f983bc4f:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=f983bc4f:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=f983bc4f:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=f983bc4f:19432
+commitRoot @ chunk-RPCDYKBN.js?v=f983bc4f:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=f983bc4f:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=f983bc4f:18718
+workLoop @ chunk-RPCDYKBN.js?v=f983bc4f:197
+flushWork @ chunk-RPCDYKBN.js?v=f983bc4f:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=f983bc4f:384Understand this errorAI

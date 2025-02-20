@@ -61,7 +61,17 @@ export default function ClientDashboard() {
   useEffect(() => {
     const savedViewedOffers = localStorage.getItem('viewedOffers');
     if (savedViewedOffers) {
-      setViewedOffers(new Set(JSON.parse(savedViewedOffers)));
+      try {
+        const parsed = JSON.parse(savedViewedOffers);
+        if (Array.isArray(parsed)) {
+          setViewedOffers(new Set(parsed));
+        } else {
+          setViewedOffers(new Set());
+        }
+      } catch (e) {
+        console.error('Error parsing viewedOffers from localStorage:', e);
+        setViewedOffers(new Set());
+      }
     }
   }, []);
 
@@ -108,9 +118,9 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (activeTab === "offers") {
       setNewOffersCount(0);
-      localStorage.setItem('viewedOffers', JSON.stringify(new Set()));
-      setViewedOffers(new Set());
-
+      const emptySet = new Set<number>();
+      setViewedOffers(emptySet);
+      localStorage.setItem('viewedOffers', JSON.stringify(Array.from(emptySet)));
     }
   }, [activeTab]);
 
@@ -367,7 +377,9 @@ export default function ClientDashboard() {
     { id: "requests", label: "Cereri" },
     {
       id: "offers",
-      label: `Oferte primite${offers.length > 0 ? ` (${getNewOffersCount(offers)})` : ''}`,
+      label: getNewOffersCount(offers) > 0
+        ? `Oferte primite (${getNewOffersCount(offers)})`
+        : "Oferte primite",
     },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
@@ -532,7 +544,6 @@ export default function ClientDashboard() {
                 }}
                 viewedOffers={viewedOffers}
                 setViewedOffers={setViewedOffers}
-
               />
             )}
 
