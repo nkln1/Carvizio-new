@@ -173,7 +173,7 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
     return (
       <div
         key={offer.id}
-        className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[320px] flex flex-col overflow-hidden"
+        className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[300px] flex flex-col overflow-hidden"
         onMouseEnter={() => isNew && markOfferAsViewed(offer.id)}
       >
         {isNew && (
@@ -182,8 +182,8 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
           </Badge>
         )}
 
-        <div className="p-3 border-b bg-gray-50">
-          <div className="flex justify-between items-start mb-2">
+        <div className="p-2 border-b bg-gray-50">
+          <div className="flex justify-between items-start mb-1">
             <h3 className="text-md font-semibold line-clamp-1 flex-1 mr-2">
               {offer.title}
             </h3>
@@ -195,33 +195,34 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
                   : offer.status === "Accepted"
                     ? "bg-green-100 text-green-800"
                     : "bg-red-100 text-red-800"
-              } flex-shrink-0`}
+              } flex-shrink-0 text-xs`}
             >
               {offer.status}
             </Badge>
           </div>
-          <div className="text-sm text-gray-600">
-            <Clock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+          <div className="text-xs text-gray-600">
+            <Clock className="inline-block w-3 h-3 mr-1 text-gray-500" />
             {format(new Date(offer.createdAt), "dd.MM.yyyy HH:mm")}
           </div>
         </div>
 
-        <div className="p-3 flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="mb-2">
-            <h4 className="text-sm font-medium flex items-center gap-2 mb-1">
-              <User className="w-4 h-4 text-blue-500" /> Service Auto:
-              <span className="font-normal line-clamp-1">
+        <div className="p-2 flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="mb-1">
+            <h4 className="text-sm font-medium flex items-center gap-1">
+              <User className="w-3 h-3 text-blue-500" /> 
+              <span className="text-xs text-gray-700">Service Auto:</span>
+              <span className="text-xs font-normal line-clamp-1">
                 {offer.serviceProviderName}
               </span>
             </h4>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="grid grid-cols-2 gap-2 mb-1">
             <div>
               <h4 className="text-xs font-medium text-gray-500">
                 Date disponibile
               </h4>
-              <p className="text-sm truncate">
+              <p className="text-xs truncate">
                 {offer.availableDates.map(date =>
                   format(new Date(date), "dd.MM.yyyy")
                 ).join(", ")}
@@ -229,57 +230,61 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-medium text-gray-500">Preț</h4>
-              <p className="text-sm">{offer.price} RON</p>
+              <p className="text-xs">{offer.price} RON</p>
             </div>
           </div>
 
           <div>
             <h4 className="text-xs font-medium text-gray-500 mb-1">Detalii</h4>
-            <p className="text-sm line-clamp-3">{offer.details}</p>
+            <p className="text-xs line-clamp-3">{offer.details}</p>
           </div>
 
-          <div className="flex justify-between items-center gap-2 mt-auto pt-3 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedOffer(offer)}
-            >
-              <Eye className="w-3 h-3 mr-1" />
-              Vezi detalii
-            </Button>
+          <div className="mt-auto pt-2 border-t">
+            <div className="flex flex-wrap gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setSelectedOffer(offer)}
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                Vezi detalii
+              </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onMessageService?.(offer.serviceProviderId, offer.requestId)}
-            >
-              <MessageSquare className="w-3 h-3 mr-1" />
-              Mesaj
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => onMessageService?.(offer.serviceProviderId, offer.requestId)}
+              >
+                <MessageSquare className="w-3 h-3 mr-1" />
+                Mesaj
+              </Button>
 
-            {offer.status === "Pending" && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                  onClick={() => handleAcceptOffer(offer)}
-                >
-                  <Check className="w-3 h-3 mr-1" />
-                  Acceptă
-                </Button>
+              {offer.status === "Pending" && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-green-500 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => handleAcceptOffer(offer)}
+                  >
+                    <Check className="w-3 h-3 mr-1" />
+                    Acceptă
+                  </Button>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => handleRejectOffer(offer)}
-                >
-                  <XCircle className="w-3 h-3 mr-1" />
-                  Respinge
-                </Button>
-              </>
-            )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleRejectOffer(offer)}
+                  >
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Respinge
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
