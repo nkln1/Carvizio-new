@@ -1,12 +1,22 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Loader2, Mail, Menu } from "lucide-react";
-import type { User as UserType, Car as CarType, Request as RequestType } from "@shared/schema";
+import type {
+  User as UserType,
+  Car as CarType,
+  Request as RequestType,
+} from "@shared/schema";
 import { CarForm } from "@/components/car/CarForm";
 import { useToast } from "@/hooks/use-toast";
 import { RequestForm } from "@/components/request/RequestForm";
@@ -52,18 +62,22 @@ export default function ClientDashboard() {
   }, [setLocation]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ['/api/auth/me'],
+    queryKey: ["/api/auth/me"],
     retry: 1,
     refetchOnWindowFocus: false,
   });
 
-  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
-    queryKey: ['/api/cars'],
-    enabled: !!userProfile,
-  });
+  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>(
+    {
+      queryKey: ["/api/cars"],
+      enabled: !!userProfile,
+    },
+  );
 
-  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
-    queryKey: ['/api/requests'],
+  const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<
+    RequestType[]
+  >({
+    queryKey: ["/api/requests"],
     enabled: !!userProfile,
     refetchOnWindowFocus: true,
   });
@@ -73,25 +87,27 @@ export default function ClientDashboard() {
     setIsMenuOpen(false);
   };
 
-  const handleCarSubmit = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
+  const handleCarSubmit = async (
+    carData: Omit<CarType, "id" | "userId" | "createdAt">,
+  ) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        throw new Error('No authentication token available');
+        throw new Error("No authentication token available");
       }
 
-      const response = await fetch('/api/cars', {
-        method: 'POST',
+      const response = await fetch("/api/cars", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(carData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save car');
+        throw new Error(errorData.message || "Failed to save car");
       }
 
       const newCar = await response.json();
@@ -104,47 +120,50 @@ export default function ClientDashboard() {
       if (pendingRequestData) {
         setPendingRequestData({
           ...pendingRequestData,
-          carId: newCar.id.toString()
+          carId: newCar.id.toString(),
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cars"] });
       setShowCarDialog(false);
 
       if (pendingRequestData) {
         setShowRequestDialog(true);
       }
     } catch (error) {
-      console.error('Error saving car:', error);
+      console.error("Error saving car:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save car",
+        description:
+          error instanceof Error ? error.message : "Failed to save car",
         variant: "destructive",
       });
     }
   };
 
-  const handleUpdateCar = async (carData: Omit<CarType, "id" | "userId" | "createdAt">) => {
+  const handleUpdateCar = async (
+    carData: Omit<CarType, "id" | "userId" | "createdAt">,
+  ) => {
     try {
       if (!selectedCar) return;
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        throw new Error('No authentication token available');
+        throw new Error("No authentication token available");
       }
 
       const response = await fetch(`/api/cars/${selectedCar.id}`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(carData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update car');
+        throw new Error(errorData.message || "Failed to update car");
       }
 
       toast({
@@ -152,14 +171,15 @@ export default function ClientDashboard() {
         description: "Car updated successfully",
       });
 
-      queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cars"] });
       setShowCarDialog(false);
       setSelectedCar(undefined);
     } catch (error) {
-      console.error('Error updating car:', error);
+      console.error("Error updating car:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update car",
+        description:
+          error instanceof Error ? error.message : "Failed to update car",
         variant: "destructive",
       });
     }
@@ -169,19 +189,19 @@ export default function ClientDashboard() {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        throw new Error('No authentication token available');
+        throw new Error("No authentication token available");
       }
 
       const response = await fetch(`/api/cars/${carId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete car');
+        throw new Error(errorData.message || "Failed to delete car");
       }
 
       toast({
@@ -189,12 +209,13 @@ export default function ClientDashboard() {
         description: "Car deleted successfully",
       });
 
-      queryClient.invalidateQueries({ queryKey: ['/api/cars'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cars"] });
     } catch (error) {
-      console.error('Error deleting car:', error);
+      console.error("Error deleting car:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete car",
+        description:
+          error instanceof Error ? error.message : "Failed to delete car",
         variant: "destructive",
       });
     }
@@ -203,26 +224,26 @@ export default function ClientDashboard() {
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch('/api/requests', {
-        method: 'POST',
+      const response = await fetch("/api/requests", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create request');
+        throw new Error(errorData.message || "Failed to create request");
       }
 
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       toast({
         title: "Success",
         description: "Cererea a fost trimisă cu succes!",
@@ -231,13 +252,16 @@ export default function ClientDashboard() {
       setPendingRequestData(null);
     },
     onError: (error) => {
-      console.error('Error creating request:', error);
+      console.error("Error creating request:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "A apărut o eroare la trimiterea cererii.",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleRequestSubmit = async (data: any) => {
@@ -248,16 +272,19 @@ export default function ClientDashboard() {
         description: data.description,
         preferredDate: new Date(data.preferredDate).toISOString(),
         county: data.county,
-        cities: data.cities
+        cities: data.cities,
       };
 
-      console.log('Submitting request with data:', requestData);
+      console.log("Submitting request with data:", requestData);
       await createRequestMutation.mutateAsync(requestData);
     } catch (error) {
-      console.error('Error submitting request:', error);
+      console.error("Error submitting request:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "A apărut o eroare la trimiterea cererii.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "A apărut o eroare la trimiterea cererii.",
         variant: "destructive",
       });
     }
@@ -268,7 +295,8 @@ export default function ClientDashboard() {
       await resendVerificationEmail();
       toast({
         title: "Email trimis",
-        description: "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
+        description:
+          "Un nou email de verificare a fost trimis. Te rugăm să verifici căsuța de email.",
       });
     } catch (error) {
       toast({
@@ -281,7 +309,7 @@ export default function ClientDashboard() {
 
   const navigationItems = [
     { id: "requests", label: "Cereri" },
-    { id: "offers", label: "Oferte" },
+    { id: "offers", label: "Oferte primite" },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
     { id: "profile", label: "Cont" },
@@ -308,14 +336,19 @@ export default function ClientDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de email.
-                {user.email && `Am trimis un link de verificare la adresa ${user.email}.`}
+                Pentru a accesa dashboard-ul, te rugăm să îți verifici adresa de
+                email.
+                {user.email &&
+                  `Am trimis un link de verificare la adresa ${user.email}.`}
               </p>
               <div className="flex flex-col gap-2">
                 <Button onClick={handleResendVerification}>
                   Retrimite emailul de verificare
                 </Button>
-                <Button variant="outline" onClick={() => window.location.reload()}>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
                   Am verificat emailul
                 </Button>
               </div>
@@ -333,7 +366,9 @@ export default function ClientDashboard() {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-[#00aff5]">Dashboard</h1>
+              <h1 className="text-xl font-semibold text-[#00aff5]">
+                Dashboard
+              </h1>
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
@@ -414,13 +449,9 @@ export default function ClientDashboard() {
               />
             )}
 
-            {activeTab === "offers" && (
-              <OffersTab offers={offers} />
-            )}
+            {activeTab === "offers" && <OffersTab offers={offers} />}
 
-            {activeTab === "messages" && (
-              <MessagesTab />
-            )}
+            {activeTab === "messages" && <MessagesTab />}
 
             {activeTab === "car" && (
               <CarsTab
@@ -442,17 +473,20 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      <Dialog open={showCarDialog} onOpenChange={(open) => {
-        setShowCarDialog(open);
-        if (!open) {
-          setSelectedCar(undefined);
-          if (pendingRequestData) {
-            setTimeout(() => {
-              setShowRequestDialog(true);
-            }, 100);
+      <Dialog
+        open={showCarDialog}
+        onOpenChange={(open) => {
+          setShowCarDialog(open);
+          if (!open) {
+            setSelectedCar(undefined);
+            if (pendingRequestData) {
+              setTimeout(() => {
+                setShowRequestDialog(true);
+              }, 100);
+            }
           }
-        }
-      }}>
+        }}
+      >
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
@@ -496,7 +530,7 @@ export default function ClientDashboard() {
                 preferredDate: data.preferredDate,
                 county: data.county,
                 cities: data.cities,
-                carId: data.carId
+                carId: data.carId,
               });
               setShowRequestDialog(false);
               setShowCarDialog(true);

@@ -598,6 +598,61 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add these endpoints after the existing /api/client/offers GET endpoint
+  app.post("/api/client/offers/:id/accept", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can accept offers." });
+      }
+
+      const offerId = parseInt(req.params.id);
+      const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
+
+      // Send notification through WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'OFFER_STATUS_CHANGED',
+            payload: { ...updatedOffer, status: "Accepted" }
+          }));
+        }
+      });
+
+      res.json(updatedOffer);
+    } catch (error) {
+      console.error("Error accepting offer:", error);
+      res.status(500).json({ error: "Failed to accept offer" });
+    }
+  });
+
+  app.post("/api/client/offers/:id/reject", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can reject offers." });
+      }
+
+      const offerId = parseInt(req.params.id);
+      const updatedOffer = await storage.updateSentOfferStatus(offerId, "Rejected");
+
+      // Send notification through WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'OFFER_STATUS_CHANGED',
+            payload: { ...updatedOffer, status: "Rejected" }
+          }));
+        }
+      });
+
+      res.json(updatedOffer);
+    } catch (error) {
+      console.error("Error rejecting offer:", error);
+      res.status(500).json({ error: "Failed to reject offer" });
+    }
+  });
+
 
   const httpServer = createServer(app);
 
