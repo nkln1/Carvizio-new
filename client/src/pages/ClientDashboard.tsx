@@ -114,13 +114,10 @@ export default function ClientDashboard() {
     };
   }, [queryClient]);
 
-  // Reset new offers counter when switching to offers tab
+  // Update the useEffect to not reset viewedOffers when switching tabs
   useEffect(() => {
     if (activeTab === "offers") {
       setNewOffersCount(0);
-      const emptySet = new Set<number>();
-      setViewedOffers(emptySet);
-      localStorage.setItem('viewedOffers', JSON.stringify(Array.from(emptySet)));
     }
   }, [activeTab]);
 
@@ -377,9 +374,8 @@ export default function ClientDashboard() {
     { id: "requests", label: "Cereri" },
     {
       id: "offers",
-      label: getNewOffersCount(offers) > 0
-        ? `Oferte primite (${getNewOffersCount(offers)})`
-        : "Oferte primite",
+      label: "Oferte primite",
+      count: getNewOffersCount(offers)
     },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
@@ -455,9 +451,9 @@ export default function ClientDashboard() {
                   } relative`}
                 >
                   {item.label}
-                  {item.id === "offers" && getNewOffersCount(offers) > 0 && activeTab !== "offers" && (
+                  {item.id === "offers" && item.count > 0 && activeTab !== "offers" && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {getNewOffersCount(offers)}
+                      {item.count}
                     </span>
                   )}
                 </Button>
@@ -491,9 +487,9 @@ export default function ClientDashboard() {
                         }`}
                       >
                         {item.label}
-                        {item.id === "offers" && getNewOffersCount(offers) > 0 && activeTab !== "offers" && (
+                        {item.id === "offers" && item.count > 0 && activeTab !== "offers" && (
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {getNewOffersCount(offers)}
+                            {item.count}
                           </span>
                         )}
                       </Button>
