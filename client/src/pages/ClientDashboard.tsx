@@ -40,6 +40,12 @@ interface ServiceOffer {
   description: string;
 }
 
+interface OfferWithProvider extends ServiceOffer{
+    providerName: string;
+    providerRating: number;
+    providerImageUrl: string;
+}
+
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
@@ -50,7 +56,13 @@ export default function ClientDashboard() {
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
-  const [offers, setOffers] = useState<ServiceOffer[]>([]);
+  const [newOffersCount, setNewOffersCount] = useState(0);
+
+  // Fetch offers using react-query with proper typing
+  const { data: offers = [] } = useQuery<OfferWithProvider[]>({
+    queryKey: ["/api/client/offers"],
+    enabled: !!user,
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -61,6 +73,35 @@ export default function ClientDashboard() {
 
     return () => unsubscribe();
   }, [setLocation]);
+
+  // Add WebSocket effect for real-time updates
+  useEffect(() => {
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'NEW_OFFER') {
+        // Increment the new offers counter
+        setNewOffersCount(prev => prev + 1);
+        // Update offers data
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+      } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
+        // Invalidate both requests and offers queries
+        queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+      }
+    };
+
+    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+
+    return () => {
+      removeHandler();
+    };
+  }, [queryClient]);
+
+  // Reset new offers counter when switching to offers tab
+  useEffect(() => {
+    if (activeTab === "offers") {
+      setNewOffersCount(0);
+    }
+  }, [activeTab]);
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ["/api/auth/me"],
@@ -308,29 +349,11 @@ export default function ClientDashboard() {
 
   const navigationItems = [
     { id: "requests", label: "Cereri" },
-    { id: "offers", label: "Oferte primite" },
+    { id: "offers", label: `Oferte primite${newOffersCount > 0 ? ` (${newOffersCount})` : ''}` },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
     { id: "profile", label: "Cont" },
   ];
-
-  // Add WebSocket effect for real-time updates
-  useEffect(() => {
-    const handleWebSocketMessage = (data: any) => {
-      if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
-        // Invalidate both requests and offers queries
-        queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-      }
-    };
-
-    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-
-    return () => {
-      removeHandler();
-    };
-  }, [queryClient]);
-
 
   if (!user) {
     return (
@@ -394,13 +417,18 @@ export default function ClientDashboard() {
                   key={item.id}
                   variant={activeTab === item.id ? "default" : "ghost"}
                   onClick={() => handleTabChange(item.id)}
-                  className={
+                  className={`${
                     activeTab === item.id
                       ? "bg-[#00aff5] hover:bg-[#0099d6]"
                       : ""
-                  }
+                  } relative`}
                 >
                   {item.label}
+                  {item.id === "offers" && newOffersCount > 0 && activeTab !== "offers" && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {newOffersCount}
+                    </span>
+                  )}
                 </Button>
               ))}
               <Button
@@ -425,13 +453,18 @@ export default function ClientDashboard() {
                         key={item.id}
                         variant={activeTab === item.id ? "default" : "ghost"}
                         onClick={() => handleTabChange(item.id)}
-                        className={`w-full justify-start text-left ${
+                        className={`w-full justify-start text-left relative ${
                           activeTab === item.id
                             ? "bg-[#00aff5] hover:bg-[#0099d6]"
                             : ""
                         }`}
                       >
                         {item.label}
+                        {item.id === "offers" && newOffersCount > 0 && activeTab !== "offers" && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {newOffersCount}
+                          </span>
+                        )}
                       </Button>
                     ))}
                     <Button
@@ -466,7 +499,20 @@ export default function ClientDashboard() {
               />
             )}
 
-            {activeTab === "offers" && <OffersTab offers={offers} />}
+            {activeTab === "offers" && (
+              <OffersTab 
+                offers={offers}
+                onMessageService={(serviceId, requestId) => {
+                  toast({
+                    title: "În curând",
+                    description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                  });
+                }}
+                refreshRequests={async () => {
+                  await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+                }}
+              />
+            )}
 
             {activeTab === "messages" && <MessagesTab />}
 
