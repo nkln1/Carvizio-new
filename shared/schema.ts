@@ -139,7 +139,7 @@ export const sentOffers = pgTable("sent_offers", {
   availableDates: timestamp("available_dates").array().notNull(),
   price: integer("price").notNull(),
   notes: text("notes"),
-  // Added request details columns
+  // Request details columns
   requestTitle: text("request_title").notNull(),
   requestDescription: text("request_description").notNull(),
   requestPreferredDate: timestamp("request_preferred_date").notNull(),
@@ -151,6 +151,7 @@ export const sentOffers = pgTable("sent_offers", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+// Relations remain unchanged
 export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
   serviceProvider: one(serviceProviders, {
     fields: [sentOffers.serviceProviderId],

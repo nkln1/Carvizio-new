@@ -12,7 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { SentOffer, Request as RequestType } from "@shared/schema";
+import type { SentOffer } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -21,24 +21,15 @@ import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 9;
 
-interface OfferWithRequest extends SentOffer {
-  request?: RequestType;
-  requestTitle?: string;
-  requestDescription?: string;
-  requestPreferredDate?: string;
-  requestCities?: string[];
-  requestCounty?: string;
-}
-
 export default function SentOffersTab() {
-  const [selectedOffer, setSelectedOffer] = useState<OfferWithRequest | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<SentOffer | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   // Update the query to use the embedded request details
-  const { data: offers = [], isLoading, error } = useQuery<OfferWithRequest[]>({
+  const { data: offers = [], isLoading, error } = useQuery<SentOffer[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -72,7 +63,7 @@ export default function SentOffersTab() {
     setCurrentPage(1);
   }, [searchTerm, activeTab]);
 
-  const filterOffers = (offers: OfferWithRequest[]) => {
+  const filterOffers = (offers: SentOffer[]) => {
     if (!searchTerm) return offers;
 
     const searchLower = searchTerm.toLowerCase();
@@ -163,8 +154,8 @@ export default function SentOffersTab() {
                             <p className="text-sm text-gray-600 mt-1">{offer.requestTitle}</p>
                             <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.requestDescription}</p>
                             <div className="mt-2 text-sm text-gray-500">
-                              <p>Data preferată: {format(new Date(offer.requestPreferredDate!), "dd.MM.yyyy")}</p>
-                              <p>Locație: {offer.requestCities?.join(", ")}, {offer.requestCounty}</p>
+                              <p>Data preferată: {format(new Date(offer.requestPreferredDate), "dd.MM.yyyy")}</p>
+                              <p>Locație: {offer.requestCities.join(", ")}, {offer.requestCounty}</p>
                             </div>
                           </div>
                         </div>
@@ -266,13 +257,13 @@ export default function SentOffersTab() {
                   <div>
                     <p className="text-sm text-gray-600">Data Preferată Client</p>
                     <p className="font-medium">
-                      {format(new Date(selectedOffer.requestPreferredDate!), "dd.MM.yyyy")}
+                      {format(new Date(selectedOffer.requestPreferredDate), "dd.MM.yyyy")}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Locație</p>
                     <p className="font-medium">
-                      {selectedOffer.requestCities?.join(", ")}, {selectedOffer.requestCounty}
+                      {selectedOffer.requestCities.join(", ")}, {selectedOffer.requestCounty}
                     </p>
                   </div>
                 </div>
