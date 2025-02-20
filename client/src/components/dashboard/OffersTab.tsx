@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { SentOffer } from "@shared/schema";
@@ -42,6 +42,7 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
   const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState("pending");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: offers = [], isLoading, error } = useQuery<OfferWithProvider[]>({
     queryKey: ['/api/client/offers'],
@@ -93,6 +94,9 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
         throw new Error('Failed to accept offer');
       }
 
+      // Invalidate offers query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
+
       toast({
         title: "Succes!",
         description: "Oferta a fost acceptată cu succes.",
@@ -122,6 +126,12 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
       if (!response.ok) {
         throw new Error('Failed to reject offer');
       }
+
+      // Invalidate offers query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
+
+      // Switch to rejected tab after successful rejection
+      setActiveTab("rejected");
 
       toast({
         title: "Ofertă respinsă",
@@ -197,7 +207,7 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
                     : "bg-red-100 text-red-800"
               } flex-shrink-0 text-xs`}
             >
-              {offer.status}
+              {offer.status === "Rejected" ? "Respinsă" : offer.status}
             </Badge>
           </div>
           <div className="text-xs text-gray-600">
@@ -251,18 +261,18 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
                 Vezi detalii
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => onMessageService?.(offer.serviceProviderId, offer.requestId)}
-              >
-                <MessageSquare className="w-3 h-3 mr-1" />
-                Mesaj
-              </Button>
-
               {offer.status === "Pending" && (
                 <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => onMessageService?.(offer.serviceProviderId, offer.requestId)}
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Mesaj
+                  </Button>
+
                   <Button
                     variant="outline"
                     size="sm"
