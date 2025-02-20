@@ -566,8 +566,11 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
 
-  // Initialize WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Initialize WebSocket server with the correct path to match client
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/api/ws'  // Update path to match client configuration
+  });
 
   // WebSocket connection handler with improved error handling
   wss.on('connection', (ws) => {
