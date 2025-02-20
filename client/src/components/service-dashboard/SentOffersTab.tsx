@@ -7,16 +7,17 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious
+  PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { SentOffer, Request as RequestType } from "@shared/schema";
+import type { SentOffer } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SearchBar } from "./offers/SearchBar";
+import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -27,7 +28,6 @@ export default function SentOffersTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  // Fetch sent offers
   const { data: offers = [], isLoading } = useQuery<SentOffer[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
@@ -93,18 +93,17 @@ export default function SentOffersTab() {
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
         </div>
       </CardHeader>
+
       <CardContent className="p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Calculate counts */}
           {(() => {
             const pendingCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
             const rejectedCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
-            const acceptedCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "accepted").length;
 
             return (
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-                  Oferte trimise ({pendingCount})
+                  Oferte Trimise ({pendingCount})
                 </TabsTrigger>
                 <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
                   Oferte Respinse ({rejectedCount})
@@ -114,30 +113,37 @@ export default function SentOffersTab() {
           })()}
 
           <TabsContent value={activeTab}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {paginatedOffers.map((offer) => (
                 <Card key={offer.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{offer.title}</CardTitle>
-                    <CardDescription>
-                      Preț: {offer.price} RON
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                      {offer.details}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">
-                        {format(new Date(offer.createdAt), "dd.MM.yyyy")}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        offer.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
-                        offer.status === "Accepted" ? "bg-green-100 text-green-800" :
-                        "bg-red-100 text-red-800"
-                      }`}>
-                        {offer.status}
-                      </span>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-lg">{offer.title}</h3>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                          {offer.details}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-sm text-gray-500">
+                            Data disponibilă: {format(new Date(offer.availableDate), "dd.MM.yyyy")}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="font-bold text-lg text-[#00aff5]">
+                          {offer.price} RON
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          className="mt-2"
+                          onClick={() => setSelectedOffer(offer)}
+                        >
+                          Vezi detalii complete
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -149,15 +155,19 @@ export default function SentOffersTab() {
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
-                        disabled={currentPage === 1} 
-                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <PaginationPrevious />
+                      </Button>
                     </PaginationItem>
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <PaginationItem key={index}>
-                        <PaginationLink 
-                          onClick={() => setCurrentPage(index + 1)} 
+                        <PaginationLink
+                          onClick={() => setCurrentPage(index + 1)}
                           isActive={currentPage === index + 1}
                         >
                           {index + 1}
@@ -165,10 +175,14 @@ export default function SentOffersTab() {
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
-                        disabled={currentPage === totalPages} 
-                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        <PaginationNext />
+                      </Button>
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -179,31 +193,57 @@ export default function SentOffersTab() {
       </CardContent>
 
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Detalii Ofertă</DialogTitle>
+            <DialogTitle>Detalii Complete Ofertă</DialogTitle>
           </DialogHeader>
           {selectedOffer && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <h3 className="font-medium">Titlu</h3>
-                <p>{selectedOffer.title}</p>
+                <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm text-gray-600">Titlu</p>
+                    <p className="font-medium">{selectedOffer.title}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Preț</p>
+                    <p className="font-medium text-[#00aff5]">{selectedOffer.price} RON</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Data disponibilă</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedOffer.availableDate), "dd.MM.yyyy")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <p className="font-medium">{selectedOffer.status}</p>
+                  </div>
+                </div>
               </div>
+
               <div>
-                <h3 className="font-medium">Detalii</h3>
-                <p className="whitespace-pre-line">{selectedOffer.details}</p>
+                <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
+                <p className="whitespace-pre-line bg-gray-50 p-4 rounded-lg">
+                  {selectedOffer.details}
+                </p>
               </div>
+
               <div>
-                <h3 className="font-medium">Preț</h3>
-                <p>{selectedOffer.price} RON</p>
-              </div>
-              <div>
-                <h3 className="font-medium">Status</h3>
-                <p>{selectedOffer.status}</p>
-              </div>
-              <div>
-                <h3 className="font-medium">Data trimiterii</h3>
-                <p>{format(new Date(selectedOffer.createdAt), "dd.MM.yyyy")}</p>
+                <h3 className="font-medium text-lg mb-2">Istoric</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="w-32">Creat:</span>
+                    <span>{format(new Date(selectedOffer.createdAt), "dd.MM.yyyy HH:mm")}</span>
+                  </div>
+                  {selectedOffer.updatedAt && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="w-32">Ultima actualizare:</span>
+                      <span>{format(new Date(selectedOffer.updatedAt), "dd.MM.yyyy HH:mm")}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
