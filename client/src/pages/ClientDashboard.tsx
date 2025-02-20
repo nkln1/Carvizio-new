@@ -451,8 +451,8 @@ export default function ClientDashboard() {
                   } relative`}
                 >
                   {item.label}
-                  {item.id === "offers" && item.count > 0 && activeTab !== "offers" && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {item.id === "offers" && item.count > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {item.count}
                     </span>
                   )}
@@ -487,8 +487,8 @@ export default function ClientDashboard() {
                         }`}
                       >
                         {item.label}
-                        {item.id === "offers" && item.count > 0 && activeTab !== "offers" && (
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {item.id === "offers" && item.count > 0 && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                             {item.count}
                           </span>
                         )}
