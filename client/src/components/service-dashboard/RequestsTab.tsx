@@ -83,7 +83,6 @@ export default function RequestsTab() {
     };
   }, [queryClient, toast]);
 
-
   // Fetch requests that match the service's location
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
     queryKey: ['/api/service/requests'],
@@ -113,7 +112,8 @@ export default function RequestsTab() {
       const newViewedRequests = new Set(viewedRequests);
       newViewedRequests.add(request.id);
       setViewedRequests(newViewedRequests);
-      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify([...newViewedRequests]));
+      // Convert Set to Array before storing
+      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify(Array.from(newViewedRequests)));
     }
     setSelectedRequest(request);
     setShowViewDialog(true);
