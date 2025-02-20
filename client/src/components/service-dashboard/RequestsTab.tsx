@@ -336,7 +336,7 @@ export default function RequestsTab() {
         )}
 
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent aria-describedby="request-details">
+          <DialogContent aria-describedby="request-details" className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
             </DialogHeader>

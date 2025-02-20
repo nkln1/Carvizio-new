@@ -250,7 +250,7 @@ export function RequestsTab({
       </CardContent>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Anulați această cerere?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -273,7 +273,7 @@ export function RequestsTab({
       </AlertDialog>
 
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalii Cerere</DialogTitle>
           </DialogHeader>

@@ -504,7 +504,7 @@ export default function ClientDashboard() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedCar ? "Editează mașina" : "Adaugă mașină nouă"}
@@ -527,7 +527,7 @@ export default function ClientDashboard() {
       </Dialog>
 
       <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Creează o nouă cerere</DialogTitle>
             <DialogDescription>
