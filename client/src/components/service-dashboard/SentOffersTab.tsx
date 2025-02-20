@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
+import { SendHorizontal, Loader2, MessageSquare, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -12,7 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { SentOffer, Request } from "@shared/schema";
+import type { SentOffer, Request as RequestType } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 const ITEMS_PER_PAGE = 9;
 
 interface OfferWithRequest extends SentOffer {
-  request?: Request;
+  request?: RequestType;
 }
 
 export default function SentOffersTab() {
@@ -32,13 +32,14 @@ export default function SentOffersTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
+  // Fetch offers and corresponding requests
   const { data: offers = [], isLoading, error } = useQuery<OfferWithRequest[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
-      console.log("Fetching offers...");
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      // First fetch offers
       const response = await fetch('/api/service/offers', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -46,14 +47,12 @@ export default function SentOffersTab() {
       });
 
       if (!response.ok) {
-        console.error('Failed to fetch offers:', await response.text());
         throw new Error('Failed to fetch offers');
       }
 
       const offers = await response.json();
-      console.log("Received offers:", offers);
 
-      // Fetch associated requests for each offer
+      // Then fetch requests for each offer
       const offersWithRequests = await Promise.all(
         offers.map(async (offer: SentOffer) => {
           try {
@@ -65,12 +64,9 @@ export default function SentOffersTab() {
 
             if (requestResponse.ok) {
               const request = await requestResponse.json();
-              console.log(`Fetched request for offer ${offer.id}:`, request);
               return { ...offer, request };
-            } else {
-              console.error(`Failed to fetch request ${offer.requestId} for offer ${offer.id}`);
-              return offer;
             }
+            return offer;
           } catch (error) {
             console.error(`Error fetching request for offer ${offer.id}:`, error);
             return offer;
@@ -78,14 +74,12 @@ export default function SentOffersTab() {
         })
       );
 
-      console.log("Processed offers with requests:", offersWithRequests);
       return offersWithRequests;
     }
   });
 
   useEffect(() => {
     if (error) {
-      console.error('Error in offers query:', error);
       toast({
         variant: "destructive",
         title: "Eroare la încărcarea ofertelor",
@@ -106,7 +100,8 @@ export default function SentOffersTab() {
       offer.title.toLowerCase().includes(searchLower) ||
       offer.details.toLowerCase().includes(searchLower) ||
       offer.price.toString().includes(searchLower) ||
-      offer.request?.title?.toLowerCase().includes(searchLower)
+      offer.request?.title?.toLowerCase().includes(searchLower) ||
+      offer.request?.description?.toLowerCase().includes(searchLower)
     );
   };
 
@@ -114,9 +109,6 @@ export default function SentOffersTab() {
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  console.log("Filtered offers:", filteredOffers);
-  console.log("Paginated offers:", paginatedOffers);
 
   if (isLoading) {
     return (
@@ -146,7 +138,6 @@ export default function SentOffersTab() {
 
   return (
     <Card className="shadow-lg">
-      {/* Header - Titlul + Căutare */}
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <SendHorizontal className="h-5 w-5" />
@@ -160,7 +151,6 @@ export default function SentOffersTab() {
 
       <CardContent className="p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Calculare număr de oferte pe categorii */}
           {(() => {
             const pendingOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
             const rejectedOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
@@ -177,7 +167,6 @@ export default function SentOffersTab() {
             );
           })()}
 
-          {/* Conținutul tab-urilor - Lista ofertelor */}
           <TabsContent value={activeTab}>
             <div className="grid grid-cols-1 gap-4">
               {paginatedOffers.map((offer) => (
@@ -185,18 +174,22 @@ export default function SentOffersTab() {
                   <CardContent className="p-4">
                     <div className="flex flex-col md:flex-row justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className="font-medium text-lg">
-                          Ofertă pentru "{offer.request?.title || `Cererea #${offer.requestId}`}"
-                        </h3>
-                        {offer.request && (
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                            Cerere client: {offer.request.description}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          Răspunsul dvs.: {offer.details}
+                        <div className="mb-4">
+                          <h3 className="font-medium text-lg text-[#00aff5]">
+                            {offer.title}
+                          </h3>
+                          {offer.request && (
+                            <div className="mt-2 bg-gray-50 p-3 rounded-lg">
+                              <p className="font-medium text-gray-700">Detalii cerere client:</p>
+                              <p className="text-sm text-gray-600 mt-1">{offer.request.title}</p>
+                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.request.description}</p>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          <span className="font-medium">Răspunsul dvs.:</span> {offer.details}
                         </p>
-                        <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-4 mt-3">
                           <span className="text-sm text-gray-500">
                             Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
                           </span>
@@ -223,29 +216,41 @@ export default function SentOffersTab() {
               ))}
             </div>
 
-            {/* Paginare dacă sunt mai multe oferte */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                      />
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
                     </PaginationItem>
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <PaginationItem key={index}>
-                        <PaginationLink onClick={() => setCurrentPage(index + 1)} isActive={currentPage === index + 1}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(index + 1)}
+                          className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
+                        >
                           {index + 1}
-                        </PaginationLink>
+                        </Button>
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <PaginationNext
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                      />
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -255,7 +260,7 @@ export default function SentOffersTab() {
         </Tabs>
       </CardContent>
 
-      {/* Pop-up pentru detaliile ofertei */}
+      {/* Dialog for complete offer details */}
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -279,6 +284,12 @@ export default function SentOffersTab() {
                       <p className="text-sm text-gray-600">Data Preferată Client</p>
                       <p className="font-medium">
                         {format(new Date(selectedOffer.request.preferredDate), "dd.MM.yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Locație</p>
+                      <p className="font-medium">
+                        {selectedOffer.request.cities?.join(", ")}, {selectedOffer.request.county}
                       </p>
                     </div>
                   </div>
