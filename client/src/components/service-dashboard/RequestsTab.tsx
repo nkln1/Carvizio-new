@@ -59,25 +59,25 @@ export default function RequestsTab() {
     loadViewedRequests();
   }, []);
 
-  // WebSocket connection with better error handling
+  // WebSocket connection management
   useEffect(() => {
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
     let reconnectAttempt = 0;
     const maxReconnectAttempts = 5;
-    const reconnectDelay = 3000;
+    const reconnectDelay = 3000; // Base delay in milliseconds
 
     const cleanup = () => {
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
-      if (ws) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
     };
 
     const connect = () => {
-      cleanup();
+      cleanup(); // Clean up existing connections before creating a new one
 
       try {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -97,23 +97,35 @@ export default function RequestsTab() {
               queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
             }
           } catch (error) {
-            console.error('Error handling WebSocket message:', error);
+            console.error('Error parsing WebSocket message:', error);
           }
         };
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error);
-          // Don't immediately try to reconnect on error, wait for close event
         };
 
         ws.onclose = (event) => {
-          console.log('WebSocket connection closed', event.code, event.reason);
+          console.log(`WebSocket connection closed with code: ${event.code}`);
+
+          // Only attempt to reconnect if we haven't reached max attempts
           if (reconnectAttempt < maxReconnectAttempts) {
             reconnectAttempt++;
-            console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts})...`);
-            reconnectTimeout = setTimeout(connect, reconnectDelay * Math.pow(2, reconnectAttempt - 1));
+            const delay = reconnectDelay * Math.pow(2, reconnectAttempt - 1); // Exponential backoff
+            console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts}) in ${delay}ms...`);
+
+            reconnectTimeout = setTimeout(() => {
+              if (!ws || ws.readyState === WebSocket.CLOSED) {
+                connect();
+              }
+            }, delay);
           } else {
             console.log('Max reconnection attempts reached');
+            toast({
+              variant: "destructive",
+              title: "Eroare de conexiune",
+              description: "Nu s-a putut stabili conexiunea în timp real. Vă rugăm să reîncărcați pagina.",
+            });
           }
         };
       } catch (error) {
@@ -125,9 +137,14 @@ export default function RequestsTab() {
       }
     };
 
+    // Initial connection
     connect();
-    return cleanup;
-  }, [queryClient]);
+
+    // Cleanup function
+    return () => {
+      cleanup();
+    };
+  }, [queryClient, toast]); // Dependencies array
 
   // Fetch requests that match the service's location
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
