@@ -23,11 +23,12 @@ import { RequestForm } from "@/components/request/RequestForm";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
+import { MessagesTab } from "@/components/dashboard/MessagesTab";
+import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { MessagesTab } from "@/components/dashboard/MessagesTab";
-import { ProfileTab } from "@/components/dashboard/ProfileTab";
+import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
 
 interface ServiceOffer {
@@ -67,12 +68,10 @@ export default function ClientDashboard() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>(
-    {
-      queryKey: ["/api/cars"],
-      enabled: !!userProfile,
-    },
-  );
+  const { data: userCars = [], isLoading: isLoadingCars } = useQuery<CarType[]>({
+    queryKey: ["/api/cars"],
+    enabled: !!userProfile,
+  });
 
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<
     RequestType[]
@@ -314,6 +313,24 @@ export default function ClientDashboard() {
     { id: "messages", label: "Mesaje" },
     { id: "profile", label: "Cont" },
   ];
+
+  // Add WebSocket effect for real-time updates
+  useEffect(() => {
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
+        // Invalidate both requests and offers queries
+        queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+      }
+    };
+
+    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+
+    return () => {
+      removeHandler();
+    };
+  }, [queryClient]);
+
 
   if (!user) {
     return (
