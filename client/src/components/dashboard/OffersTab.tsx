@@ -41,12 +41,12 @@ interface OffersTabProps {
   setViewedOffers: (offers: Set<number>) => void;
 }
 
-export function OffersTab({ 
-  offers, 
-  onMessageService, 
+export function OffersTab({
+  offers,
+  onMessageService,
   refreshRequests,
   viewedOffers,
-  setViewedOffers 
+  setViewedOffers
 }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
@@ -80,13 +80,9 @@ export function OffersTab({
         throw new Error('Failed to accept offer');
       }
 
-      // Invalidate offers query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
-
-      // Switch to accepted tab after successful acceptance
       setActiveTab("accepted");
 
-      // Refresh requests list to update the tabs
       if (refreshRequests) {
         await refreshRequests();
       }
@@ -121,10 +117,7 @@ export function OffersTab({
         throw new Error('Failed to reject offer');
       }
 
-      // Invalidate offers query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
-
-      // Switch to rejected tab after successful rejection
       setActiveTab("rejected");
 
       toast({
@@ -157,13 +150,9 @@ export function OffersTab({
         throw new Error('Failed to cancel offer');
       }
 
-      // Invalidate offers query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
-
-      // Switch to pending tab after successful cancellation
       setActiveTab("pending");
 
-      // Refresh requests list to update the tabs
       if (refreshRequests) {
         await refreshRequests();
       }
@@ -193,7 +182,6 @@ export function OffersTab({
       </Card>
     );
   }
-
 
   const pendingOffers = offers.filter((offer) => offer.status === "Pending");
   const acceptedOffers = offers.filter((offer) => offer.status === "Accepted");
@@ -352,22 +340,22 @@ export function OffersTab({
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-0 mb-4 h-auto sm:h-10">
             <TabsTrigger
               value="pending"
-              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white px-2 py-1.5 sm:py-2 text-sm whitespace-nowrap"
             >
               Oferte Primite ({pendingOffers.length})
             </TabsTrigger>
             <TabsTrigger
               value="accepted"
-              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white px-2 py-1.5 sm:py-2 text-sm whitespace-nowrap"
             >
               Oferte Acceptate ({acceptedOffers.length})
             </TabsTrigger>
             <TabsTrigger
               value="rejected"
-              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white px-2 py-1.5 sm:py-2 text-sm whitespace-nowrap"
             >
               Oferte Respinse ({rejectedOffers.length})
             </TabsTrigger>
@@ -411,7 +399,6 @@ export function OffersTab({
         </Tabs>
       </CardContent>
 
-      {/* Dialog for complete offer details */}
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
