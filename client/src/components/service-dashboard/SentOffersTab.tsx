@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2 } from "lucide-react";
+import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
