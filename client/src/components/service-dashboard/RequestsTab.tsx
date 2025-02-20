@@ -80,8 +80,10 @@ export default function RequestsTab() {
       cleanup(); // Clean up existing connections before creating a new one
 
       try {
-        // Simplified URL construction using current host
-        const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+        // Use a distinct path for our WebSocket to avoid conflicts with Vite's HMR
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const wsUrl = `${protocol}//${host}/ws`;
 
         ws = new WebSocket(wsUrl);
 
