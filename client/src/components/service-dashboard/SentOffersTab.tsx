@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Loader2 } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { SentOffer } from "@shared/schema";
+import type { SentOffer, Request } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -21,14 +21,18 @@ import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 9;
 
+interface OfferWithRequest extends SentOffer {
+  request?: Request;
+}
+
 export default function SentOffersTab() {
-  const [selectedOffer, setSelectedOffer] = useState<SentOffer | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<OfferWithRequest | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  const { data: offers = [], isLoading } = useQuery<SentOffer[]>({
+  const { data: offers = [], isLoading } = useQuery<OfferWithRequest[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -44,7 +48,26 @@ export default function SentOffersTab() {
         throw new Error('Failed to fetch offers');
       }
 
-      return response.json();
+      const offers = await response.json();
+
+      // Fetch associated requests for each offer
+      const offersWithRequests = await Promise.all(
+        offers.map(async (offer: SentOffer) => {
+          const requestResponse = await fetch(`/api/requests/${offer.requestId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (requestResponse.ok) {
+            const request = await requestResponse.json();
+            return { ...offer, request };
+          }
+          return offer;
+        })
+      );
+
+      return offersWithRequests;
     }
   });
 
@@ -52,14 +75,15 @@ export default function SentOffersTab() {
     setCurrentPage(1);
   }, [searchTerm, activeTab]);
 
-  const filterOffers = (offers: SentOffer[]) => {
+  const filterOffers = (offers: OfferWithRequest[]) => {
     if (!searchTerm) return offers;
 
     const searchLower = searchTerm.toLowerCase();
     return offers.filter(offer =>
       offer.title.toLowerCase().includes(searchLower) ||
       offer.details.toLowerCase().includes(searchLower) ||
-      offer.price.toString().includes(searchLower)
+      offer.price.toString().includes(searchLower) ||
+      offer.request?.title.toLowerCase().includes(searchLower)
     );
   };
 
@@ -119,9 +143,16 @@ export default function SentOffersTab() {
                   <CardContent className="p-4">
                     <div className="flex flex-col md:flex-row justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className="font-medium text-lg">{offer.title}</h3>
+                        <h3 className="font-medium text-lg">
+                          Ofertă pentru "{offer.request?.title || `Cererea #${offer.requestId}`}"
+                        </h3>
+                        {offer.request && (
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            Cerere client: {offer.request.description}
+                          </p>
+                        )}
                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          {offer.details}
+                          Răspunsul dvs.: {offer.details}
                         </p>
                         <div className="flex items-center gap-4 mt-2">
                           <span className="text-sm text-gray-500">
@@ -199,6 +230,28 @@ export default function SentOffersTab() {
           </DialogHeader>
           {selectedOffer && (
             <div className="space-y-6">
+              {selectedOffer.request && (
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
+                  <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm text-gray-600">Titlu Cerere</p>
+                      <p className="font-medium">{selectedOffer.request.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Descriere Cerere</p>
+                      <p className="font-medium">{selectedOffer.request.description}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data Preferată Client</p>
+                      <p className="font-medium">
+                        {format(new Date(selectedOffer.request.preferredDate), "dd.MM.yyyy")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
