@@ -178,6 +178,11 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
       // Switch to pending tab after successful cancellation
       setActiveTab("pending");
 
+      // Refresh requests list to update the tabs
+      if (refreshRequests) {
+        await refreshRequests();
+      }
+
       toast({
         title: "Ofertă anulată",
         description: "Oferta a fost anulată cu succes.",

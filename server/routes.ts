@@ -9,6 +9,8 @@ import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
+import { doc, updateDoc } from "firebase/firestore"; // Added import
+
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -616,13 +618,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Check for existing accepted offers
-      const existingAcceptedOffers = allOffers.filter(o => 
+      const existingAcceptedOffers = allOffers.filter(o =>
         o.requestId === offer.requestId && o.status === "Accepted"
       );
 
       if (existingAcceptedOffers.length > 0) {
-        return res.status(400).json({ 
-          error: "Cannot accept offer", 
+        return res.status(400).json({
+          error: "Cannot accept offer",
           message: "There is already an accepted offer for this request"
         });
       }
@@ -696,12 +698,26 @@ export function registerRoutes(app: Express): Server {
       const offerId = parseInt(req.params.id);
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Pending");
 
+      // Update request status back to Active
+      const requestRef = doc(db, "requests", updatedOffer.requestId);
+      await updateDoc(requestRef, {
+        status: "Active",
+        lastUpdated: new Date(),
+      });
+
       // Send notification through WebSocket
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
+          // Notify about offer status change
           client.send(JSON.stringify({
             type: 'OFFER_STATUS_CHANGED',
             payload: { ...updatedOffer, status: "Pending" }
+          }));
+
+          // Notify about request status change
+          client.send(JSON.stringify({
+            type: 'REQUEST_STATUS_CHANGED',
+            payload: { requestId: updatedOffer.requestId, status: "Active" }
           }));
         }
       });
@@ -712,6 +728,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to cancel offer" });
     }
   });
+
 
 
   const httpServer = createServer(app);
