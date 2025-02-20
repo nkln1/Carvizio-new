@@ -713,7 +713,7 @@ export function registerRoutes(app: Express): Server {
         status: "Active"
       });
 
-      // Send notification through WebSocket
+      // Send notification through WebSocket for both changes
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           // Notify about offer status change
