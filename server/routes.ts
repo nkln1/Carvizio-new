@@ -432,6 +432,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add the GET endpoint for service offers after the service/requests endpoint
+  app.get("/api/service/offers", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view their offers." });
+      }
+
+      // Fetch sent offers for this service provider
+      const sentOffers = await storage.getSentOffersByServiceProvider(provider.id);
+      res.json(sentOffers);
+    } catch (error) {
+      console.error("Error getting service offers:", error);
+      res.status(500).json({ error: "Failed to get offers" });
+    }
+  });
+
   // Add service offers endpoints
   app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
     try {
@@ -567,8 +584,8 @@ export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
   // Initialize WebSocket server with the correct path to match client
-  const wss = new WebSocketServer({ 
-    server: httpServer, 
+  const wss = new WebSocketServer({
+    server: httpServer,
     path: '/api/ws'  // Update path to match client configuration
   });
 
