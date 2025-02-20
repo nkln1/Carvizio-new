@@ -581,6 +581,24 @@ export function registerRoutes(app: Express): Server {
     res.status(200).json({ available: true });
   });
 
+  // Add client offers endpoint
+  app.get("/api/client/offers", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can view their offers." });
+      }
+
+      // Fetch offers for this client's requests
+      const offers = await storage.getOffersForClient(client.id);
+      res.json(offers);
+    } catch (error) {
+      console.error("Error getting client offers:", error);
+      res.status(500).json({ error: "Failed to get offers" });
+    }
+  });
+
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket server with the correct path to match client

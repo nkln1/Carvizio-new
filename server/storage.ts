@@ -16,7 +16,7 @@ import {
   type InsertSentOffer
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -70,6 +70,7 @@ export interface IStorage {
   getSentOffersByServiceProvider(serviceProviderId: number): Promise<SentOffer[]>;
   getSentOffersByRequest(requestId: number): Promise<SentOffer[]>;
   updateSentOfferStatus(id: number, status: "Pending" | "Accepted" | "Rejected"): Promise<SentOffer>;
+  getOffersForClient(clientId: number): Promise<SentOffer[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -433,6 +434,31 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error updating sent offer status:', error);
       throw error;
+    }
+  }
+  async getOffersForClient(clientId: number): Promise<SentOffer[]> {
+    try {
+      // First get all requests for this client
+      const clientRequests = await this.getClientRequests(clientId);
+
+      if (!clientRequests.length) {
+        return [];
+      }
+
+      // Get the request IDs
+      const requestIds = clientRequests.map(request => request.id);
+
+      // Get all offers for these requests
+      const offers = await db
+        .select()
+        .from(sentOffers)
+        .where(inArray(sentOffers.requestId, requestIds))
+        .orderBy(desc(sentOffers.createdAt));
+
+      return offers;
+    } catch (error) {
+      console.error('Error getting offers for client:', error);
+      return [];
     }
   }
 }
