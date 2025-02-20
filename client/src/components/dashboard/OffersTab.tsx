@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { SentOffer } from "@shared/schema";
@@ -34,36 +34,17 @@ import { useState, useEffect } from "react";
 type OfferWithProvider = SentOffer & { serviceProviderName: string };
 
 interface OffersTabProps {
+  offers: OfferWithProvider[];
   onMessageService?: (serviceId: number, requestId: number) => void;
-  refreshRequests?: () => Promise<void>;  // Add this prop
+  refreshRequests?: () => Promise<void>;
 }
 
-export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps) {
+export function OffersTab({ offers, onMessageService, refreshRequests }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState("pending");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const { data: offers = [], isLoading, error } = useQuery<OfferWithProvider[]>({
-    queryKey: ['/api/client/offers'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/client/offers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch offers');
-      }
-
-      return response.json();
-    }
-  });
 
   // Load viewed offers from localStorage
   useEffect(() => {
@@ -197,31 +178,18 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
     }
   };
 
-  if (isLoading) {
+  if (offers.length === 0) {
     return (
       <Card className="shadow-lg">
         <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
           <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-            <p className="text-muted-foreground">Se încarcă ofertele...</p>
+            <p className="text-muted-foreground">Nu există oferte.</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (error) {
-    return (
-      <Card className="shadow-lg">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-red-600 mb-2">A apărut o eroare la încărcarea ofertelor</p>
-            <Button onClick={() => window.location.reload()}>Reîncearcă</Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const pendingOffers = offers.filter((offer) => offer.status === "Pending");
   const acceptedOffers = offers.filter((offer) => offer.status === "Accepted");
@@ -230,11 +198,15 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
   const renderOfferBox = (offer: OfferWithProvider) => {
     const isNew = !viewedOffers.has(offer.id);
 
+    const handleActionClick = (action: () => void, offerId: number) => {
+      markOfferAsViewed(offerId);
+      action();
+    };
+
     return (
       <div
         key={offer.id}
         className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[300px] flex flex-col overflow-hidden"
-        onMouseEnter={() => isNew && markOfferAsViewed(offer.id)}
       >
         {isNew && (
           <Badge className="absolute -top-0 -right-0 bg-[#00aff5] text-white">
@@ -317,7 +289,7 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs"
-                    onClick={() => onMessageService?.(offer.serviceProviderId, offer.requestId)}
+                    onClick={() => handleActionClick(() => onMessageService?.(offer.serviceProviderId, offer.requestId), offer.id)}
                   >
                     <MessageSquare className="w-3 h-3 mr-1" />
                     Mesaj
@@ -327,7 +299,7 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs text-green-500 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleAcceptOffer(offer)}
+                    onClick={() => handleActionClick(() => handleAcceptOffer(offer), offer.id)}
                   >
                     <Check className="w-3 h-3 mr-1" />
                     Acceptă
@@ -337,7 +309,7 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleRejectOffer(offer)}
+                    onClick={() => handleActionClick(() => handleRejectOffer(offer), offer.id)}
                   >
                     <XCircle className="w-3 h-3 mr-1" />
                     Respinge
@@ -350,7 +322,7 @@ export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps)
                   variant="outline"
                   size="sm"
                   className="h-7 px-2 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50"
-                  onClick={() => handleCancelOffer(offer)}
+                  onClick={() => handleActionClick(() => handleCancelOffer(offer), offer.id)}
                 >
                   <RotateCcw className="w-3 h-3 mr-1" />
                   Anulează

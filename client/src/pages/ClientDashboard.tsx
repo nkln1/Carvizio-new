@@ -31,19 +31,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
 
-interface ServiceOffer {
+interface OfferWithProvider {
   id: number;
-  serviceId: string;
-  serviceName: string;
+  serviceProviderId: number;
+  requestId: number;
+  title: string;
+  details: string;
   price: number;
-  availability: string;
-  description: string;
-}
-
-interface OfferWithProvider extends ServiceOffer{
-    providerName: string;
-    providerRating: number;
-    providerImageUrl: string;
+  availableDates: string[];
+  status: string;
+  createdAt: string;
+  serviceProviderName: string;
 }
 
 export default function ClientDashboard() {
@@ -57,6 +55,16 @@ export default function ClientDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
   const [newOffersCount, setNewOffersCount] = useState(0);
+  const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
+
+  // Load viewed offers on component mount
+  useEffect(() => {
+    const savedViewedOffers = localStorage.getItem('viewedOffers');
+    if (savedViewedOffers) {
+      setViewedOffers(new Set(JSON.parse(savedViewedOffers)));
+    }
+  }, []);
+
 
   // Fetch offers using react-query with proper typing
   const { data: offers = [] } = useQuery<OfferWithProvider[]>({
@@ -100,6 +108,9 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (activeTab === "offers") {
       setNewOffersCount(0);
+      localStorage.setItem('viewedOffers', JSON.stringify(new Set()));
+      setViewedOffers(new Set());
+
     }
   }, [activeTab]);
 
@@ -347,9 +358,17 @@ export default function ClientDashboard() {
     }
   };
 
+  // Calculate number of new offers
+  const getNewOffersCount = (offers: OfferWithProvider[]) => {
+    return offers.filter(offer => !viewedOffers.has(offer.id) && offer.status === "Pending").length;
+  };
+
   const navigationItems = [
     { id: "requests", label: "Cereri" },
-    { id: "offers", label: `Oferte primite${newOffersCount > 0 ? ` (${newOffersCount})` : ''}` },
+    {
+      id: "offers",
+      label: `Oferte primite${offers.length > 0 ? ` (${getNewOffersCount(offers)})` : ''}`,
+    },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
     { id: "profile", label: "Cont" },
@@ -424,9 +443,9 @@ export default function ClientDashboard() {
                   } relative`}
                 >
                   {item.label}
-                  {item.id === "offers" && newOffersCount > 0 && activeTab !== "offers" && (
+                  {item.id === "offers" && getNewOffersCount(offers) > 0 && activeTab !== "offers" && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {newOffersCount}
+                      {getNewOffersCount(offers)}
                     </span>
                   )}
                 </Button>
@@ -460,9 +479,9 @@ export default function ClientDashboard() {
                         }`}
                       >
                         {item.label}
-                        {item.id === "offers" && newOffersCount > 0 && activeTab !== "offers" && (
+                        {item.id === "offers" && getNewOffersCount(offers) > 0 && activeTab !== "offers" && (
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {newOffersCount}
+                            {getNewOffersCount(offers)}
                           </span>
                         )}
                       </Button>
@@ -500,7 +519,7 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "offers" && (
-              <OffersTab 
+              <OffersTab
                 offers={offers}
                 onMessageService={(serviceId, requestId) => {
                   toast({
@@ -511,6 +530,9 @@ export default function ClientDashboard() {
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
+                viewedOffers={viewedOffers}
+                setViewedOffers={setViewedOffers}
+
               />
             )}
 
