@@ -162,16 +162,16 @@ export default function SentOffersTab() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Calculare număr de oferte pe categorii */}
           {(() => {
-            const pendingCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
-            const rejectedCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
+            const pendingOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
+            const rejectedOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
 
             return (
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="pending" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-                  Oferte Trimise ({pendingCount})
+                  Oferte Trimise ({pendingOffersCount})
                 </TabsTrigger>
                 <TabsTrigger value="rejected" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-                  Oferte Respinse ({rejectedCount})
+                  Oferte Respinse ({rejectedOffersCount})
                 </TabsTrigger>
               </TabsList>
             );
@@ -179,55 +179,49 @@ export default function SentOffersTab() {
 
           {/* Conținutul tab-urilor - Lista ofertelor */}
           <TabsContent value={activeTab}>
-            {paginatedOffers.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {paginatedOffers.map((offer) => (
-                  <Card key={offer.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col md:flex-row justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-lg">
-                            Ofertă pentru "{offer.request?.title || `Cererea #${offer.requestId}`}"
-                          </h3>
-                          {offer.request && (
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                              Cerere client: {offer.request.description}
-                            </p>
-                          )}
+            <div className="grid grid-cols-1 gap-4">
+              {paginatedOffers.map((offer) => (
+                <Card key={offer.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-lg">
+                          Ofertă pentru "{offer.request?.title || `Cererea #${offer.requestId}`}"
+                        </h3>
+                        {offer.request && (
                           <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                            Răspunsul dvs.: {offer.details}
+                            Cerere client: {offer.request.description}
                           </p>
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className="text-sm text-gray-500">
-                              Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <span className="font-bold text-lg text-[#00aff5]">
-                            {offer.price} RON
+                        )}
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                          Răspunsul dvs.: {offer.details}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-sm text-gray-500">
+                            Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
                           </span>
-                          <Button 
-                            variant="outline" 
-                            className="mt-2"
-                            onClick={() => setSelectedOffer(offer)}
-                          >
-                            Vezi detalii complete
-                          </Button>
+                          <span className="text-sm text-gray-500">
+                            Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
+                          </span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 py-6">
-                Nu există oferte {activeTab === "pending" ? "trimise" : "respinse"} în acest moment.
-              </p>
-            )}
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="font-bold text-lg text-[#00aff5]">
+                          {offer.price} RON
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          className="mt-2"
+                          onClick={() => setSelectedOffer(offer)}
+                        >
+                          Vezi detalii complete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
             {/* Paginare dacă sunt mai multe oferte */}
             {totalPages > 1 && (
@@ -235,34 +229,23 @@ export default function SentOffersTab() {
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="icon"
+                      <PaginationPrevious
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                      >
-                        <PaginationPrevious />
-                      </Button>
+                      />
                     </PaginationItem>
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
+                        <PaginationLink onClick={() => setCurrentPage(index + 1)} isActive={currentPage === index + 1}>
                           {index + 1}
                         </PaginationLink>
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="icon"
+                      <PaginationNext
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                      >
-                        <PaginationNext />
-                      </Button>
+                      />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
