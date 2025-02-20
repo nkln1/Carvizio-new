@@ -80,8 +80,8 @@ export default function RequestsTab() {
       cleanup(); // Clean up existing connections before creating a new one
 
       try {
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        // Simplified URL construction using current host
+        const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 
         ws = new WebSocket(wsUrl);
 
@@ -398,7 +398,7 @@ export default function RequestsTab() {
         )}
 
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent aria-describedby="request-details"> {/* Added aria-describedby */}
+          <DialogContent aria-describedby="request-details">
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
             </DialogHeader>
