@@ -32,9 +32,10 @@ export default function SentOffersTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  const { data: offers = [], isLoading } = useQuery<OfferWithRequest[]>({
+  const { data: offers = [], isLoading, error } = useQuery<OfferWithRequest[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
+      console.log("Fetching offers...");
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -45,31 +46,53 @@ export default function SentOffersTab() {
       });
 
       if (!response.ok) {
+        console.error('Failed to fetch offers:', await response.text());
         throw new Error('Failed to fetch offers');
       }
 
       const offers = await response.json();
+      console.log("Received offers:", offers);
 
       // Fetch associated requests for each offer
       const offersWithRequests = await Promise.all(
         offers.map(async (offer: SentOffer) => {
-          const requestResponse = await fetch(`/api/requests/${offer.requestId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
+          try {
+            const requestResponse = await fetch(`/api/requests/${offer.requestId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
 
-          if (requestResponse.ok) {
-            const request = await requestResponse.json();
-            return { ...offer, request };
+            if (requestResponse.ok) {
+              const request = await requestResponse.json();
+              console.log(`Fetched request for offer ${offer.id}:`, request);
+              return { ...offer, request };
+            } else {
+              console.error(`Failed to fetch request ${offer.requestId} for offer ${offer.id}`);
+              return offer;
+            }
+          } catch (error) {
+            console.error(`Error fetching request for offer ${offer.id}:`, error);
+            return offer;
           }
-          return offer;
         })
       );
 
+      console.log("Processed offers with requests:", offersWithRequests);
       return offersWithRequests;
     }
   });
+
+  useEffect(() => {
+    if (error) {
+      console.error('Error in offers query:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare la încărcarea ofertelor",
+        description: "A apărut o eroare la încărcarea ofertelor. Vă rugăm să încercați din nou.",
+      });
+    }
+  }, [error, toast]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -83,7 +106,7 @@ export default function SentOffersTab() {
       offer.title.toLowerCase().includes(searchLower) ||
       offer.details.toLowerCase().includes(searchLower) ||
       offer.price.toString().includes(searchLower) ||
-      offer.request?.title.toLowerCase().includes(searchLower)
+      offer.request?.title?.toLowerCase().includes(searchLower)
     );
   };
 
@@ -91,6 +114,9 @@ export default function SentOffersTab() {
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  console.log("Filtered offers:", filteredOffers);
+  console.log("Paginated offers:", paginatedOffers);
 
   if (isLoading) {
     return (
@@ -105,8 +131,22 @@ export default function SentOffersTab() {
     );
   }
 
+  if (error) {
+    return (
+      <Card className="shadow-lg">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">A apărut o eroare la încărcarea ofertelor</p>
+            <Button onClick={() => window.location.reload()}>Reîncearcă</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-lg">
+      {/* Header - Titlul + Căutare */}
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <SendHorizontal className="h-5 w-5" />
@@ -120,6 +160,7 @@ export default function SentOffersTab() {
 
       <CardContent className="p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Calculare număr de oferte pe categorii */}
           {(() => {
             const pendingCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
             const rejectedCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
@@ -136,51 +177,59 @@ export default function SentOffersTab() {
             );
           })()}
 
+          {/* Conținutul tab-urilor - Lista ofertelor */}
           <TabsContent value={activeTab}>
-            <div className="grid grid-cols-1 gap-4">
-              {paginatedOffers.map((offer) => (
-                <Card key={offer.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-lg">
-                          Ofertă pentru "{offer.request?.title || `Cererea #${offer.requestId}`}"
-                        </h3>
-                        {offer.request && (
+            {paginatedOffers.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {paginatedOffers.map((offer) => (
+                  <Card key={offer.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col md:flex-row justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-lg">
+                            Ofertă pentru "{offer.request?.title || `Cererea #${offer.requestId}`}"
+                          </h3>
+                          {offer.request && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              Cerere client: {offer.request.description}
+                            </p>
+                          )}
                           <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                            Cerere client: {offer.request.description}
+                            Răspunsul dvs.: {offer.details}
                           </p>
-                        )}
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          Răspunsul dvs.: {offer.details}
-                        </p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="text-sm text-gray-500">
-                            Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="text-sm text-gray-500">
+                              Data disponibilă: {format(new Date(offer.availableDates[0]), "dd.MM.yyyy")}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="font-bold text-lg text-[#00aff5]">
+                            {offer.price} RON
                           </span>
-                          <span className="text-sm text-gray-500">
-                            Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
-                          </span>
+                          <Button 
+                            variant="outline" 
+                            className="mt-2"
+                            onClick={() => setSelectedOffer(offer)}
+                          >
+                            Vezi detalii complete
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className="font-bold text-lg text-[#00aff5]">
-                          {offer.price} RON
-                        </span>
-                        <Button 
-                          variant="outline" 
-                          className="mt-2"
-                          onClick={() => setSelectedOffer(offer)}
-                        >
-                          Vezi detalii complete
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-6">
+                Nu există oferte {activeTab === "pending" ? "trimise" : "respinse"} în acest moment.
+              </p>
+            )}
 
+            {/* Paginare dacă sunt mai multe oferte */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">
                 <Pagination>
@@ -223,6 +272,7 @@ export default function SentOffersTab() {
         </Tabs>
       </CardContent>
 
+      {/* Pop-up pentru detaliile ofertei */}
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
