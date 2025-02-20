@@ -630,8 +630,8 @@ export function registerRoutes(app: Express): Server {
       // Update offer status to Accepted
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
 
-      // Update request status to Rezolvat
-      const updatedRequest = await storage.updateRequest(offer.requestId, {
+      // Update request status to Rezolvat ONLY when accepting an offer
+      await storage.updateRequest(offer.requestId, {
         status: "Rezolvat"
       });
 
@@ -647,7 +647,7 @@ export function registerRoutes(app: Express): Server {
           // Notify about request status change
           client.send(JSON.stringify({
             type: 'REQUEST_STATUS_CHANGED',
-            payload: { ...updatedRequest, status: "Rezolvat" }
+            payload: { requestId: offer.requestId, status: "Rezolvat" }
           }));
         }
       });

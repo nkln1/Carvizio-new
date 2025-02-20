@@ -35,9 +35,10 @@ type OfferWithProvider = SentOffer & { serviceProviderName: string };
 
 interface OffersTabProps {
   onMessageService?: (serviceId: number, requestId: number) => void;
+  refreshRequests?: () => Promise<void>;  // Add this prop
 }
 
-export function OffersTab({ onMessageService }: OffersTabProps) {
+export function OffersTab({ onMessageService, refreshRequests }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState("pending");
@@ -96,6 +97,14 @@ export function OffersTab({ onMessageService }: OffersTabProps) {
 
       // Invalidate offers query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
+
+      // Switch to accepted tab after successful acceptance
+      setActiveTab("accepted");
+
+      // Refresh requests list to update the tabs
+      if (refreshRequests) {
+        await refreshRequests();
+      }
 
       toast({
         title: "Succes!",
