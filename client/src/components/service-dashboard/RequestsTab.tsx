@@ -32,6 +32,7 @@ import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import { SubmitOfferForm } from "./SubmitOfferForm";
+import websocketService from "@/lib/websocket";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -61,92 +62,27 @@ export default function RequestsTab() {
 
   // WebSocket connection management
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: NodeJS.Timeout | null = null;
-    let reconnectAttempt = 0;
-    const maxReconnectAttempts = 5;
-    const reconnectDelay = 3000; // Base delay in milliseconds
-
-    const cleanup = () => {
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'NEW_REQUEST') {
+        queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+      } else if (data.type === 'ERROR') {
+        toast({
+          variant: "destructive",
+          title: "Eroare de conexiune",
+          description: data.message || "A apărut o eroare de conexiune. Vă rugăm să reîncărcați pagina.",
+        });
       }
     };
 
-    const connect = () => {
-      cleanup(); // Clean up existing connections before creating a new one
+    // Add message handler for WebSocket events
+    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
 
-      try {
-        // Use a distinct path for our WebSocket to avoid conflicts with Vite's HMR
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const wsUrl = `${protocol}//${host}/ws`;
-
-        ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          console.log('WebSocket connection established');
-          reconnectAttempt = 0; // Reset reconnection attempts on successful connection
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'NEW_REQUEST') {
-              queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
-            }
-          } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
-        };
-
-        ws.onclose = (event) => {
-          console.log(`WebSocket connection closed with code: ${event.code}`);
-
-          // Only attempt to reconnect if we haven't reached max attempts
-          if (reconnectAttempt < maxReconnectAttempts) {
-            reconnectAttempt++;
-            const delay = reconnectDelay * Math.pow(2, reconnectAttempt - 1); // Exponential backoff
-            console.log(`Attempting to reconnect (${reconnectAttempt}/${maxReconnectAttempts}) in ${delay}ms...`);
-
-            reconnectTimeout = setTimeout(() => {
-              if (!ws || ws.readyState === WebSocket.CLOSED) {
-                connect();
-              }
-            }, delay);
-          } else {
-            console.log('Max reconnection attempts reached');
-            toast({
-              variant: "destructive",
-              title: "Eroare de conexiune",
-              description: "Nu s-a putut stabili conexiunea în timp real. Vă rugăm să reîncărcați pagina.",
-            });
-          }
-        };
-      } catch (error) {
-        console.error('Error creating WebSocket:', error);
-        if (reconnectAttempt < maxReconnectAttempts) {
-          reconnectAttempt++;
-          reconnectTimeout = setTimeout(connect, reconnectDelay * Math.pow(2, reconnectAttempt - 1));
-        }
-      }
-    };
-
-    // Initial connection
-    connect();
-
-    // Cleanup function
+    // Cleanup on component unmount
     return () => {
-      cleanup();
+      removeHandler();
     };
-  }, [queryClient, toast]); // Dependencies array
+  }, [queryClient, toast]);
+
 
   // Fetch requests that match the service's location
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
@@ -221,7 +157,7 @@ export default function RequestsTab() {
         throw new Error(errorData.message || "Failed to submit offer");
       }
 
-      const data = await response.json(); //Added this line
+      const data = await response.json(); 
       await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
       setShowOfferDialog(false);
       toast({
