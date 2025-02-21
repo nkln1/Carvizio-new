@@ -434,7 +434,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add the GET endpoint for service offers after the service/requests endpoint
+  // Update the GET /api/service/offers endpoint
   app.get("/api/service/offers", validateFirebaseToken, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
@@ -444,7 +444,28 @@ export function registerRoutes(app: Express): Server {
 
       // Fetch sent offers for this service provider
       const sentOffers = await storage.getSentOffersByServiceProvider(provider.id);
-      res.json(sentOffers);
+
+      // For accepted offers, fetch client information
+      const offersWithClientInfo = await Promise.all(
+        sentOffers.map(async (offer) => {
+          if (offer.status === "Accepted") {
+            const request = await storage.getRequest(offer.requestId);
+            if (request) {
+              const client = await storage.getClient(request.clientId);
+              if (client) {
+                return {
+                  ...offer,
+                  clientName: client.name,
+                  clientPhone: client.phone
+                };
+              }
+            }
+          }
+          return offer;
+        })
+      );
+
+      res.json(offersWithClientInfo);
     } catch (error) {
       console.error("Error getting service offers:", error);
       res.status(500).json({ error: "Failed to get offers" });

@@ -163,6 +163,12 @@ export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
   }),
 }));
 
+// Define a type for accepted offer with client details
+export type AcceptedOfferWithClient = SentOffer & {
+  clientName: string;
+  clientPhone: string;
+};
+
 // Schema for client registration
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,

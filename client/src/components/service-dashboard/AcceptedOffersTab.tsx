@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2, Eye, MessageSquare } from "lucide-react";
+import { SendHorizontal, Loader2, Eye, MessageSquare, Phone } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -11,7 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { SentOffer } from "@shared/schema";
+import type { AcceptedOfferWithClient } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { SearchBar } from "./offers/SearchBar";
@@ -24,12 +24,12 @@ interface AcceptedOffersTabProps {
 }
 
 export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTabProps) {
-  const [selectedOffer, setSelectedOffer] = useState<SentOffer | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<AcceptedOfferWithClient | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  const { data: offers = [], isLoading, error } = useQuery<SentOffer[]>({
+  const { data: offers = [], isLoading, error } = useQuery<AcceptedOfferWithClient[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -63,7 +63,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const filterOffers = (offers: SentOffer[]) => {
+  const filterOffers = (offers: AcceptedOfferWithClient[]) => {
     const acceptedOffers = offers.filter(o => o.status.toLowerCase() === "accepted");
     if (!searchTerm) return acceptedOffers;
 
@@ -73,7 +73,8 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
       offer.details.toLowerCase().includes(searchLower) ||
       offer.price.toString().includes(searchLower) ||
       offer.requestTitle?.toLowerCase().includes(searchLower) ||
-      offer.requestDescription?.toLowerCase().includes(searchLower)
+      offer.requestDescription?.toLowerCase().includes(searchLower) ||
+      offer.clientName?.toLowerCase().includes(searchLower)
     );
   };
 
@@ -137,7 +138,11 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                         </h3>
                         <div className="mt-2 bg-gray-50 p-3 rounded-lg">
                           <p className="font-medium text-gray-700">Detalii cerere client:</p>
-                          <p className="text-sm text-gray-600 mt-1">{offer.requestTitle}</p>
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm text-gray-600">Client: {offer.clientName}</p>
+                            <p className="text-sm text-gray-600">Telefon: {offer.clientPhone}</p>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-2">{offer.requestTitle}</p>
                           <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.requestDescription}</p>
                           <div className="mt-2 text-sm text-gray-500">
                             <p>Data preferată: {format(new Date(offer.requestPreferredDate), "dd.MM.yyyy")}</p>
@@ -167,6 +172,17 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                         <Button
                           variant="outline"
                           className="mt-2"
+                          onClick={() => {
+                            // Open phone dialer
+                            window.location.href = `tel:${offer.clientPhone}`;
+                          }}
+                        >
+                          <Phone className="w-4 h-4 mr-1" />
+                          Sună
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="mt-2"
                           onClick={() => onMessageClient?.(offer.clientId, offer.requestId)}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />
@@ -178,7 +194,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                           onClick={() => setSelectedOffer(offer)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
-                          Vezi detalii complete
+                          Vezi detalii
                         </Button>
                       </div>
                     </div>
@@ -239,6 +255,20 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
           </DialogHeader>
           {selectedOffer && (
             <div className="space-y-6">
+              <div>
+                <h3 className="font-medium text-lg mb-2">Informații Client</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm text-gray-600">Nume Client</p>
+                    <p className="font-medium">{selectedOffer.clientName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Telefon Client</p>
+                    <p className="font-medium">{selectedOffer.clientPhone}</p>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
                 <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
