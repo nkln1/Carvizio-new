@@ -24,14 +24,12 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { SentOffer } from "@shared/schema";
+import type { OfferWithProvider } from "@shared/schema";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
-
-type OfferWithProvider = SentOffer & { serviceProviderName: string };
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
@@ -72,15 +70,22 @@ export function OffersTab({
       const response = await fetch(`/api/client/offers/${offer.id}/accept`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          offerId: offer.id,
+          requestId: offer.requestId,
+          serviceProviderId: offer.serviceProviderId
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to accept offer');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to accept offer');
       }
 
-      queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
       setActiveTab("accepted");
 
       if (refreshRequests) {
@@ -95,7 +100,7 @@ export function OffersTab({
       console.error("Error accepting offer:", error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la acceptarea ofertei. Încercați din nou.",
+        description: error instanceof Error ? error.message : "A apărut o eroare la acceptarea ofertei. Încercați din nou.",
         variant: "destructive",
       });
     }
