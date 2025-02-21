@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2, Eye } from "lucide-react";
+import { SendHorizontal, Loader2, Eye, MessageSquare } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -19,7 +19,11 @@ import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 9;
 
-export default function AcceptedOffersTab() {
+interface AcceptedOffersTabProps {
+  onMessageClient?: (clientId: number, requestId: number) => void;
+}
+
+export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<SentOffer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,13 +163,24 @@ export default function AcceptedOffersTab() {
                       <span className="font-bold text-lg text-[#00aff5]">
                         {offer.price} RON
                       </span>
-                      <Button
-                        variant="outline"
-                        className="mt-2"
-                        onClick={() => setSelectedOffer(offer)}
-                      >
-                        Vezi detalii complete
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="mt-2"
+                          onClick={() => onMessageClient?.(offer.clientId, offer.requestId)}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-1" />
+                          Mesaj
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="mt-2"
+                          onClick={() => setSelectedOffer(offer)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Vezi detalii complete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
