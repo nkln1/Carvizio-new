@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { OfferWithProvider } from "@shared/schema";
+import type { AcceptedOfferWithClient } from "@shared/schema";
 
 export function useOfferManagement() {
   const [newOffersCount, setNewOffersCount] = useState(0);
   const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
 
-  const { data: offers = [] } = useQuery<OfferWithProvider[]>({
-    queryKey: ["/api/client/offers"],
+  const { data: offers = [] } = useQuery<AcceptedOfferWithClient[]>({
+    queryKey: ["/api/service/offers"],
   });
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function useOfferManagement() {
   };
 
   const getNewOffersCount = () => {
-    return offers.filter(offer => !viewedOffers.has(offer.id) && offer.status === "Pending").length;
+    return offers.filter(offer => !viewedOffers.has(offer.id) && offer.status === "Accepted").length;
   };
 
   return {

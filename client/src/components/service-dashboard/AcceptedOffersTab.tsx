@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format } from "date-fns";
 import { SearchBar } from "./offers/SearchBar";
 import { Button } from "@/components/ui/button";
+import { useOfferManagement } from "@/hooks/useOfferManagement";
 
 interface AcceptedOffersTabProps {
   onMessageClient?: (clientId: number, requestId: number) => void;
@@ -34,6 +35,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
+  const { viewedOffers, markOfferAsViewed, newOffersCount } = useOfferManagement();
 
   const { data: offers = [], isLoading, error } = useQuery<AcceptedOfferWithClient[]>({
     queryKey: ['/api/service/offers'],
@@ -84,6 +86,10 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
     );
   };
 
+  const handleAction = (offerId: number) => {
+    markOfferAsViewed(offerId);
+  };
+
   const filteredOffers = filterOffers(offers);
   const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -122,6 +128,11 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
           <CardTitle className="text-[#00aff5] flex items-center gap-2">
             <SendHorizontal className="h-5 w-5" />
             Oferte Acceptate
+            {newOffersCount > 0 && (
+              <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                {newOffersCount} noi
+              </span>
+            )}
           </CardTitle>
           <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
             <SelectTrigger className="w-[180px]">
@@ -150,7 +161,14 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                   <div className="flex flex-col md:flex-row gap-3">
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-[#00aff5]">{offer.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-[#00aff5]">{offer.title}</h3>
+                          {!viewedOffers.has(offer.id) && (
+                            <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                              Nou
+                            </span>
+                          )}
+                        </div>
                         <span className="font-bold text-[#00aff5]">{offer.price} RON</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -170,6 +188,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                           size="sm"
                           variant="outline"
                           onClick={() => {
+                            handleAction(offer.id);
                             window.location.href = `tel:${offer.clientPhone}`;
                           }}
                         >
@@ -179,7 +198,10 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onMessageClient?.(offer.clientId, offer.requestId)}
+                          onClick={() => {
+                            handleAction(offer.id);
+                            onMessageClient?.(offer.clientId, offer.requestId);
+                          }}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />
                           Mesaj
@@ -187,7 +209,10 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setSelectedOffer(offer)}
+                          onClick={() => {
+                            handleAction(offer.id);
+                            setSelectedOffer(offer);
+                          }}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Vezi detalii
@@ -246,7 +271,6 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
         )}
       </CardContent>
 
-      {/* Dialog for complete offer details */}
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
