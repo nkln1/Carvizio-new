@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Loader2, Eye, MessageSquare, Phone } from "lucide-react";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -17,8 +24,6 @@ import { format } from "date-fns";
 import { SearchBar } from "./offers/SearchBar";
 import { Button } from "@/components/ui/button";
 
-const ITEMS_PER_PAGE = 9;
-
 interface AcceptedOffersTabProps {
   onMessageClient?: (clientId: number, requestId: number) => void;
 }
@@ -27,6 +32,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
   const [selectedOffer, setSelectedOffer] = useState<AcceptedOfferWithClient | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
 
   const { data: offers = [], isLoading, error } = useQuery<AcceptedOfferWithClient[]>({
@@ -61,7 +67,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, itemsPerPage]);
 
   const filterOffers = (offers: AcceptedOfferWithClient[]) => {
     const acceptedOffers = offers.filter(o => o.status.toLowerCase() === "accepted");
@@ -79,9 +85,9 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
   };
 
   const filteredOffers = filterOffers(offers);
-  const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + itemsPerPage);
 
   if (isLoading) {
     return (
@@ -111,69 +117,59 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
 
   return (
     <Card className="shadow-lg">
-      <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <SendHorizontal className="h-5 w-5" />
-          Oferte Acceptate
-        </CardTitle>
-        <CardDescription>Urmărește ofertele acceptate de către clienți</CardDescription>
-        <div className="mt-4">
-          <SearchBar value={searchTerm} onChange={setSearchTerm} />
+      <CardHeader className="border-b bg-gray-50 space-y-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <SendHorizontal className="h-5 w-5" />
+            Oferte Acceptate
+          </CardTitle>
+          <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Selectează numărul de oferte" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 oferte pe pagină</SelectItem>
+              <SelectItem value="10">10 oferte pe pagină</SelectItem>
+              <SelectItem value="20">20 oferte pe pagină</SelectItem>
+              <SelectItem value="50">50 oferte pe pagină</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+        <CardDescription>Urmărește ofertele acceptate de către clienți</CardDescription>
+        <SearchBar value={searchTerm} onChange={setSearchTerm} />
       </CardHeader>
 
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 gap-4">
+      <CardContent className="p-2">
+        <div className="grid grid-cols-1 gap-2">
           {paginatedOffers.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">Nu există oferte acceptate</p>
           ) : (
             paginatedOffers.map((offer) => (
               <Card key={offer.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                <CardContent className="p-3">
+                  <div className="flex flex-col md:flex-row gap-3">
                     <div className="flex-1">
-                      <div className="mb-4">
-                        <h3 className="font-medium text-lg text-[#00aff5]">
-                          {offer.title}
-                        </h3>
-                        <div className="mt-2 bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium text-gray-700">Detalii cerere client:</p>
-                          <div className="flex flex-col gap-1">
-                            <p className="text-sm text-gray-600">Client: {offer.clientName}</p>
-                            <p className="text-sm text-gray-600">Telefon: {offer.clientPhone}</p>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-2">{offer.requestTitle}</p>
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.requestDescription}</p>
-                          <div className="mt-2 text-sm text-gray-500">
-                            <p>Data preferată: {format(new Date(offer.requestPreferredDate), "dd.MM.yyyy")}</p>
-                            <p>Locație: {offer.requestCities.join(", ")}, {offer.requestCounty}</p>
-                          </div>
-                        </div>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-[#00aff5]">{offer.title}</h3>
+                        <span className="font-bold text-[#00aff5]">{offer.price} RON</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-2">
-                        <span className="font-medium">Răspunsul dvs.:</span> {offer.details}
-                      </p>
-                      <div className="flex items-center gap-4 mt-3">
-                        <span className="text-sm text-gray-500">
-                          Data disponibilă: {offer.availableDates.map(date =>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">Client:</span> {offer.clientName}<br />
+                          <span className="text-gray-600">Telefon:</span> {offer.clientPhone}
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Dată disponibilă:</span><br />
+                          {offer.availableDates.map(date =>
                             format(new Date(date), "dd.MM.yyyy")
                           ).join(", ")}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          Trimisă: {format(new Date(offer.createdAt), "dd.MM.yyyy")}
-                        </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="font-bold text-lg text-[#00aff5]">
-                        {offer.price} RON
-                      </span>
-                      <div className="flex gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         <Button
+                          size="sm"
                           variant="outline"
-                          className="mt-2"
                           onClick={() => {
-                            // Open phone dialer
                             window.location.href = `tel:${offer.clientPhone}`;
                           }}
                         >
@@ -181,16 +177,16 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                           Sună
                         </Button>
                         <Button
+                          size="sm"
                           variant="outline"
-                          className="mt-2"
                           onClick={() => onMessageClient?.(offer.clientId, offer.requestId)}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />
                           Mesaj
                         </Button>
                         <Button
+                          size="sm"
                           variant="outline"
-                          className="mt-2"
                           onClick={() => setSelectedOffer(offer)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -206,7 +202,10 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
         </div>
 
         {totalPages > 1 && (
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-between items-center mt-4 px-2">
+            <div className="text-sm text-gray-500">
+              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredOffers.length)} din {filteredOffers.length} oferte
+            </div>
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
