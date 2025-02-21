@@ -76,7 +76,7 @@ export default function SentOffersTab() {
     );
   };
 
-  const filteredOffers = filterOffers(offers).filter(o => o.status.toLowerCase() === activeTab);
+  const filteredOffers = filterOffers(offers).filter(o => o.status.toLowerCase() === activeTab && o.status.toLowerCase() !== "accepted");
   const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
