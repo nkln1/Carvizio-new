@@ -2,15 +2,13 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
-import { doc, updateDoc } from "firebase/firestore"; // Added import
-
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -451,7 +449,10 @@ export function registerRoutes(app: Express): Server {
           if (offer.status === "Accepted") {
             const request = await storage.getRequest(offer.requestId);
             if (request) {
-              const client = await storage.getClient(request.clientId);
+              // Use query to get client directly from the database
+              const client = await db.query.clients.findFirst({
+                where: eq(clients.id, request.clientId)
+              });
               if (client) {
                 return {
                   ...offer,
