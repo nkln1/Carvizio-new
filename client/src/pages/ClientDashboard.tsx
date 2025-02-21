@@ -29,6 +29,7 @@ export default function ClientDashboard() {
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [showCarDialog, setShowCarDialog] = useState(false);
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
@@ -50,18 +51,18 @@ export default function ClientDashboard() {
   } = useOfferManagement();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
-    queryKey: ["/api/auth/me"],
+    queryKey: ['/api/auth/me'],
     retry: 1,
     refetchOnWindowFocus: false,
   });
 
   const { data: userCars = [], isLoading: isLoadingCars } = useQuery({
-    queryKey: ["/api/cars"],
+    queryKey: ['/api/cars'],
     enabled: !!userProfile,
   });
 
   const { data: userRequests = [], isLoading: isLoadingRequests } = useQuery<RequestType[]>({
-    queryKey: ["/api/requests"],
+    queryKey: ['/api/requests'],
     enabled: !!userProfile,
     refetchOnWindowFocus: true,
   });

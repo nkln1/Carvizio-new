@@ -11,6 +11,12 @@ interface NavigationItemsProps {
   newOffersCount: number;
 }
 
+interface NavigationItem {
+  id: string;
+  label: string;
+  count?: number;
+}
+
 export function NavigationItems({
   activeTab,
   setActiveTab,
@@ -24,7 +30,7 @@ export function NavigationItems({
     setIsMenuOpen(false);
   };
 
-  const navigationItems = [
+  const navigationItems: NavigationItem[] = [
     { id: "requests", label: "Cereri" },
     {
       id: "offers",
@@ -59,7 +65,7 @@ export function NavigationItems({
                 } relative`}
               >
                 {item.label}
-                {item.id === "offers" && item.count > 0 && (
+                {item.id === "offers" && item.count && item.count > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {item.count}
                   </span>
@@ -95,7 +101,7 @@ export function NavigationItems({
                       }`}
                     >
                       {item.label}
-                      {item.id === "offers" && item.count > 0 && (
+                      {item.id === "offers" && item.count && item.count > 0 && (
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                           {item.count}
                         </span>
