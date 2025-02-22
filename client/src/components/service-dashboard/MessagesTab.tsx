@@ -24,15 +24,17 @@ interface Message {
   createdAt: string;
   senderName: string;
   senderRole: 'client' | 'service';
+  requestId: number;
 }
 
 interface ActiveConversation {
   userId: number;
   userName: string;
+  requestId: number;
 }
 
 interface MessagesTabProps {
-  initialConversation?: { userId: number; userName: string } | null;
+  initialConversation?: { userId: number; userName: string; requestId: number } | null;
   onConversationClear?: () => void;
 }
 
@@ -98,8 +100,10 @@ export default function MessagesTab({
     };
 
     const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-    return () => removeHandler();
-  }, [activeConversation, queryClient]);
+    return () => {
+      removeHandler();
+    };
+  }, [activeConversation?.userId, queryClient]);
 
   useEffect(() => {
     if (initialConversation) {
@@ -131,6 +135,8 @@ export default function MessagesTab({
         body: JSON.stringify({
           receiverId: activeConversation.userId,
           content: newMessage,
+          requestId: activeConversation.requestId,
+          receiverRole: 'client',
         }),
       });
 
@@ -194,7 +200,7 @@ export default function MessagesTab({
     ));
   };
 
-  const handleConversationSelect = (conv: { userId: number; userName: string }) => {
+  const handleConversationSelect = (conv: { userId: number; userName: string; requestId: number }) => {
     setActiveConversation(conv);
     if (initialConversation) {
       onConversationClear?.();
@@ -218,7 +224,8 @@ export default function MessagesTab({
         }`}
         onClick={() => handleConversationSelect({
           userId: conv.userId,
-          userName: conv.userName
+          userName: conv.userName,
+          requestId: conv.requestId
         })}
       >
         <Avatar className="h-10 w-10">

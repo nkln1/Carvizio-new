@@ -37,7 +37,7 @@ import websocketService from "@/lib/websocket";
 const ITEMS_PER_PAGE = 5;
 
 interface RequestsTabProps {
-  onMessageClick?: (userId: number, userName: string) => void;
+  onMessageClick?: (userId: number, userName: string, requestId: number) => void;
 }
 
 export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
@@ -170,7 +170,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const handleMessageClick = (request: RequestType) => {
     if (onMessageClick) {
-      onMessageClick(request.clientId, `Client ${request.clientId}`); 
+      onMessageClick(request.clientId, request.requestTitle, request.id); 
     } else {
       toast({
         title: "În curând",
