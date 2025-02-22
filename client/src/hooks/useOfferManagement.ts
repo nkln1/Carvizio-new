@@ -70,8 +70,9 @@ export function useOfferManagement() {
     }
   });
 
-  const markOfferAsViewed = (offerId: number) => {
-    return markOfferAsViewedMutation.mutateAsync(offerId);
+  // Return a Promise that resolves when the mutation is complete
+  const markOfferAsViewed = async (offerId: number): Promise<void> => {
+    await markOfferAsViewedMutation.mutateAsync(offerId);
   };
 
   const getNewOffersCount = () => {

@@ -36,7 +36,7 @@ interface OffersTabProps {
   onMessageClick?: (userId: number, userName: string) => void;
   refreshRequests?: () => Promise<void>;
   viewedOffers: Set<number>;
-  markOfferAsViewed: (offerId: number) => void;
+  markOfferAsViewed: (offerId: number) => Promise<void>;
 }
 
 export function OffersTab({
