@@ -248,46 +248,63 @@ export default function MessagesTab({
 
     return (
       <AnimatePresence>
-        {messages.map((message: Message) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`flex gap-3 mb-4 ${
-              message.senderRole === 'service' ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            {message.senderRole !== 'service' && (
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>
-                  {message.senderName?.substring(0, 2).toUpperCase() || 'CL'}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <div
-              className={`max-w-[70%] relative ${
-                message.senderRole === 'service'
-                  ? 'bg-[#00aff5] text-white rounded-t-2xl rounded-l-2xl'
-                  : 'bg-gray-100 rounded-t-2xl rounded-r-2xl'
-              } p-3`}
-            >
-              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-              <div className={`flex items-center gap-1 mt-1 text-xs ${
-                message.senderRole === 'service' ? 'text-blue-100' : 'text-gray-500'
-              }`}>
-                {format(new Date(message.createdAt), "dd.MM.yyyy")} {format(new Date(message.createdAt), "HH:mm")}
-              </div>
-            </div>
-            {message.senderRole === 'service' && (
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>
-                  {message.senderName?.substring(0, 2).toUpperCase() || 'SP'}
-                </AvatarFallback>
-              </Avatar>
-            )}
-          </motion.div>
-        ))}
+        {messages.map((message: Message, index: number) => {
+          const currentDate = new Date(message.createdAt).toDateString();
+          const previousDate = index > 0
+            ? new Date(messages[index - 1].createdAt).toDateString()
+            : null;
+          const showDateSeparator = currentDate !== previousDate;
+
+          return (
+            <>
+              {showDateSeparator && (
+                <div className="flex items-center justify-center my-4">
+                  <div className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">
+                    {format(new Date(message.createdAt), "d MMMM yyyy")}
+                  </div>
+                </div>
+              )}
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex gap-3 mb-4 ${
+                  message.senderRole === 'service' ? 'justify-end' : 'justify-start'
+                }`}
+              >
+                {message.senderRole !== 'service' && (
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {message.senderName?.substring(0, 2).toUpperCase() || 'CL'}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div
+                  className={`max-w-[70%] relative ${
+                    message.senderRole === 'service'
+                      ? 'bg-[#00aff5] text-white rounded-t-2xl rounded-l-2xl'
+                      : 'bg-gray-100 rounded-t-2xl rounded-r-2xl'
+                  } p-3`}
+                >
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  <div className={`flex items-center gap-1 mt-1 text-xs ${
+                    message.senderRole === 'service' ? 'text-blue-100' : 'text-gray-500'
+                  }`}>
+                    {format(new Date(message.createdAt), "dd.MM.yyyy")} {format(new Date(message.createdAt), "HH:mm")}
+                  </div>
+                </div>
+                {message.senderRole === 'service' && (
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {message.senderName?.substring(0, 2).toUpperCase() || 'SP'}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </motion.div>
+            </>
+          );
+        })}
       </AnimatePresence>
     );
   };
