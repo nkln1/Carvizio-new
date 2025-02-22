@@ -51,7 +51,7 @@ export function OffersTab({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleAction = async (action: () => void, offerId: number) => {
+  const handleAction = async (offerId: number, action: () => void) => {
     try {
       await markOfferAsViewed(offerId);
       action();
@@ -268,7 +268,7 @@ export function OffersTab({
                 variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs"
-                onClick={() => handleAction(() => setSelectedOffer(offer), offer.id)}
+                onClick={() => handleAction(offer.id, () => setSelectedOffer(offer))}
               >
                 <Eye className="w-3 h-3 mr-1" />
                 Vezi detalii
@@ -280,9 +280,8 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs"
-                    onClick={() => handleAction(() =>
-                      onMessageClick?.(offer.serviceProviderId, offer.serviceProviderName),
-                      offer.id
+                    onClick={() => handleAction(offer.id, () =>
+                      onMessageClick?.(offer.serviceProviderId, offer.serviceProviderName)
                     )}
                   >
                     <MessageSquare className="w-3 h-3 mr-1" />
@@ -293,7 +292,7 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs text-green-500 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleAction(() => handleAcceptOffer(offer), offer.id)}
+                    onClick={() => handleAction(offer.id, () => handleAcceptOffer(offer))}
                   >
                     <Check className="w-3 h-3 mr-1" />
                     Acceptă
@@ -303,7 +302,7 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleAction(() => handleRejectOffer(offer), offer.id)}
+                    onClick={() => handleAction(offer.id, () => handleRejectOffer(offer))}
                   >
                     <XCircle className="w-3 h-3 mr-1" />
                     Respinge
@@ -316,7 +315,7 @@ export function OffersTab({
                   variant="outline"
                   size="sm"
                   className="h-7 px-2 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50"
-                  onClick={() => handleAction(() => handleCancelOffer(offer), offer.id)}
+                  onClick={() => handleAction(offer.id, () => handleCancelOffer(offer))}
                 >
                   <RotateCcw className="w-3 h-3 mr-1" />
                   Anulează
