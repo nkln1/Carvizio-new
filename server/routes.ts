@@ -9,6 +9,7 @@ import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
+import { isClientUser, isServiceProviderUser } from "@shared/schema";
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -33,6 +34,12 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount)
   });
 }
+
+// Update the user type helper functions
+const getUserWithRole = (user: any, role: "client" | "service") => {
+  const { password, ...userWithoutPassword } = user;
+  return { ...userWithoutPassword, role };
+};
 
 export function registerRoutes(app: Express): Server {
   // Configure session middleware
@@ -132,7 +139,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // User login endpoint
+  // Update the login route to handle user types correctly
   app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
     try {
       // Try to find user in both tables
@@ -141,7 +148,9 @@ export function registerRoutes(app: Express): Server {
 
       if (!user) {
         user = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-        userType = "service";
+        if (user) {
+          userType = "service";
+        }
       }
 
       if (!user) {
@@ -158,16 +167,14 @@ export function registerRoutes(app: Express): Server {
         });
       });
 
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user;
-      res.json({ ...userWithoutPassword, role: userType });
+      res.json(getUserWithRole(user, userType));
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
     }
   });
 
-  // Get current user endpoint with improved error handling
+  // Update the get current user endpoint with improved type handling
   app.get("/api/auth/me", validateFirebaseToken, async (req, res) => {
     try {
       console.log('Fetching user data for Firebase UID:', req.firebaseUser!.uid);
@@ -178,7 +185,9 @@ export function registerRoutes(app: Express): Server {
 
       if (!user) {
         user = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-        userType = "service";
+        if (user) {
+          userType = "service";
+        }
       }
 
       if (!user) {
@@ -186,10 +195,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user;
       console.log('Successfully retrieved user data:', { id: user.id, email: user.email, role: userType });
-      res.json({ ...userWithoutPassword, role: userType });
+      res.json(getUserWithRole(user, userType));
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ error: "Failed to get user data" });
@@ -294,6 +301,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Fix error handling in car deletion endpoint
   app.delete("/api/cars/:id", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
@@ -312,12 +320,16 @@ export function registerRoutes(app: Express): Server {
 
       await storage.deleteCar(parseInt(req.params.id));
       res.status(204).send();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error deleting car:", error);
-      res.status(500).json({
-        error: "Failed to delete car",
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      if (error instanceof Error) {
+        res.status(500).json({
+          error: "Failed to delete car",
+          message: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+      } else {
+        res.status(500).json({ error: "Failed to delete car" });
+      }
     }
   });
 
@@ -473,12 +485,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add service offers endpoints
+  // Fix create offer endpoint to include required fields
   app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
       if (!provider) {
         return res.status(403).json({ error: "Access denied. Only service providers can send offers." });
+      }
+
+      // Get request details to include user information
+      const request = await storage.getRequest(req.body.requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      const requestUser = await storage.getClient(request.clientId);
+      if (!requestUser) {
+        return res.status(404).json({ error: "Request user not found" });
       }
 
       // Convert ISO date strings back to Date objects
@@ -491,7 +514,9 @@ export function registerRoutes(app: Express): Server {
         details: req.body.details,
         availableDates,
         price: req.body.price,
-        notes: req.body.notes || null
+        notes: req.body.notes || null,
+        requestUserId: requestUser.id,
+        requestUserName: requestUser.name
       });
 
       // Send notification through WebSocket
@@ -759,6 +784,126 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Add messaging routes
+  app.post("/api/messages", validateFirebaseToken, async (req, res) => {
+    try {
+      const { content, receiverId, receiverRole } = req.body;
+
+      // Get sender information
+      const sender = receiverRole === "client"
+        ? await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid)
+        : await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+
+      if (!sender) {
+        return res.status(401).json({ error: "Sender not found" });
+      }
+
+      // Validate receiver exists
+      const receiver = receiverRole === "client"
+        ? await storage.getClient(receiverId)
+        : await storage.getServiceProvider(receiverId);
+
+      if (!receiver) {
+        return res.status(404).json({ error: "Receiver not found" });
+      }
+
+      const message = await storage.createMessage({
+        senderId: sender.id,
+        senderRole: receiverRole === "client" ? "service" : "client",
+        receiverId,
+        receiverRole,
+        content
+      });
+
+      // Send real-time notification
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'NEW_MESSAGE',
+            payload: message
+          }));
+        }
+      });
+
+      res.status(201).json(message);
+    } catch (error: any) {
+      console.error("Error sending message:", error);
+      res.status(500).json({
+        error: "Failed to send message",
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
+  app.get("/api/messages", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      if (!client && !serviceProvider) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const userId = client ? client.id : serviceProvider!.id;
+      const userRole = client ? "client" : "service";
+
+      const messages = await storage.getUserMessages(userId, userRole);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  app.patch("/api/messages/:id/read", validateFirebaseToken, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const message = await storage.getMessage(messageId);
+
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      // Verify the user is the receiver of the message
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      const userId = client ? client.id : serviceProvider?.id;
+      const userRole = client ? "client" : "service";
+
+      if (!userId || message.receiverId !== userId || message.receiverRole !== userRole) {
+        return res.status(403).json({ error: "Not authorized to mark this message as read" });
+      }
+
+      const updatedMessage = await storage.markMessageAsRead(messageId);
+      res.json(updatedMessage);
+    } catch (error: any) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ error: "Failed to mark message as read" });
+    }
+  });
+
+  // Add endpoint to get unread messages count
+  app.get("/api/messages/unread", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      if (!client && !serviceProvider) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const userId = client ? client.id : serviceProvider!.id;
+      const userRole = client ? "client" : "service";
+
+      const count = await storage.getUnreadMessagesCount(userId, userRole);
+      res.json({ count });
+    } catch (error: any) {
+      console.error("Error fetching unread messages count:", error);
+      res.status(500).json({ error: "Failed to fetch unread messages count" });
+    }
+  });
 
   const httpServer = createServer(app);
 
