@@ -28,8 +28,7 @@ export function useOfferManagement() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch viewed offers' }));
-        throw new Error(errorData.message);
+        throw new Error('Failed to fetch viewed offers');
       }
 
       const data = await response.json();
@@ -93,7 +92,7 @@ export function useOfferManagement() {
   };
 
   const getNewOffersCount = () => {
-    return offers.filter(offer => !viewedOffers.has(offer.id) && offer.status === "Pending").length;
+    return offers.filter(offer => !viewedOffers.has(offer.id)).length;
   };
 
   // Update new offers count whenever offers or viewedOffers change

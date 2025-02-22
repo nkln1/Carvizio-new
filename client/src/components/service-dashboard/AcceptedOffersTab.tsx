@@ -86,8 +86,17 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
     );
   };
 
-  const handleAction = (offerId: number) => {
-    markOfferAsViewed(offerId);
+  const handleAction = async (offerId: number) => {
+    try {
+      await markOfferAsViewed(offerId);
+    } catch (error) {
+      console.error('Error marking offer as viewed:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to mark offer as viewed",
+      });
+    }
   };
 
   const filteredOffers = filterOffers(offers);
@@ -123,6 +132,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
 
   const handleMessageClick = (offer: AcceptedOfferWithClient) => {
     if (onMessageClick && offer.requestUserId && offer.requestUserName && offer.requestId) {
+      handleAction(offer.id);
       onMessageClick(offer.requestUserId, offer.requestUserName, offer.requestId);
     }
   };
@@ -193,8 +203,8 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            handleAction(offer.id);
+                          onClick={async () => {
+                            await handleAction(offer.id);
                             window.location.href = `tel:${offer.clientPhone}`;
                           }}
                         >
@@ -204,8 +214,8 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            handleAction(offer.id);
+                          onClick={async () => {
+                            await handleAction(offer.id);
                             handleMessageClick(offer);
                           }}
                         >
@@ -215,8 +225,8 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            handleAction(offer.id);
+                          onClick={async () => {
+                            await handleAction(offer.id);
                             setSelectedOffer(offer);
                           }}
                         >
