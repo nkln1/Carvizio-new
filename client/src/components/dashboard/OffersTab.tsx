@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { OfferWithProvider } from "@shared/schema";
@@ -51,10 +51,57 @@ export function OffersTab({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query to fetch viewed offers
+  const { data: viewedOfferIds = [] } = useQuery<number[]>({
+    queryKey: ['/api/client/viewed-offers'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/client/viewed-offers', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch viewed offers');
+      }
+
+      const viewedOffers = await response.json();
+      return viewedOffers.map((vo: any) => vo.offerId);
+    }
+  });
+
+  // Mutation for marking an offer as viewed
+  const markOfferAsViewedMutation = useMutation({
+    mutationFn: async (offerId: number) => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark offer as viewed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/client/viewed-offers'] });
+    },
+    onError: (error) => {
+      console.error('Error marking offer as viewed:', error);
+    }
+  });
+
   const markOfferAsViewed = (offerId: number) => {
-    const newViewedOffers = new Set(viewedOffers).add(offerId);
-    setViewedOffers(newViewedOffers);
-    localStorage.setItem('viewedOffers', JSON.stringify(Array.from(newViewedOffers)));
+    markOfferAsViewedMutation.mutate(offerId);
   };
 
   const handleActionClick = (action: () => void, offerId: number) => {
@@ -193,7 +240,7 @@ export function OffersTab({
   const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
 
   const renderOfferBox = (offer: OfferWithProvider) => {
-    const isNew = !viewedOffers.has(offer.id);
+    const isNew = !viewedOfferIds.includes(offer.id);
 
     return (
       <div

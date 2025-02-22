@@ -98,7 +98,8 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   cars: many(cars),
   requests: many(requests),
   clientSender: many(messages),
-  clientReceiver: many(messages)
+  clientReceiver: many(messages),
+  viewedOffers: many(viewedOffers)
 }));
 
 // Service Providers table definition
@@ -331,3 +332,45 @@ export const isServiceProviderUser = (user: User): user is ServiceProviderUser =
 };
 
 export type User = ClientUser | ServiceProviderUser;
+
+// Add viewed offers table definition
+export const viewedOffers = pgTable("viewed_offers", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  offerId: integer("offer_id").notNull().references(() => sentOffers.id),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull()
+}, (table) => {
+  return {
+    // Ensure unique combination of client and offer
+    uniqueClientOffer: unique().on(table.clientId, table.offerId)
+  };
+});
+
+// Add viewed offers relations
+export const viewedOffersRelations = relations(viewedOffers, ({ one }) => ({
+  client: one(clients, {
+    fields: [viewedOffers.clientId],
+    references: [clients.id],
+  }),
+  offer: one(sentOffers, {
+    fields: [viewedOffers.offerId],
+    references: [sentOffers.id],
+  }),
+}));
+
+
+// Add viewed offer schemas
+export const insertViewedOfferSchema = createInsertSchema(viewedOffers).omit({
+  id: true,
+  viewedAt: true
+});
+
+// Add to exports
+export type InsertViewedOffer = z.infer<typeof insertViewedOfferSchema>;
+export type ViewedOffer = typeof viewedOffers.$inferSelect;
+
+// Add OfferWithProvider type that was missing
+export type OfferWithProvider = SentOffer & {
+  serviceProviderName: string;
+  serviceProviderId: number;
+};

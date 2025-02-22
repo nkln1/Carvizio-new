@@ -241,8 +241,8 @@ export default function ClientDashboard() {
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
-                viewedOffers={viewedOffers}
-                setViewedOffers={setViewedOffers}
+                viewedOffers={new Set(viewedOffers)}
+                setViewedOffers={(newViewedOffers) => setViewedOffers(Array.from(newViewedOffers))}
               />
             )}
 
