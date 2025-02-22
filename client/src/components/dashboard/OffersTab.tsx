@@ -36,7 +36,7 @@ interface OffersTabProps {
   onMessageClick?: (userId: number, userName: string) => void;
   refreshRequests?: () => Promise<void>;
   viewedOffers: Set<number>;
-  markOfferAsViewed: (offerId: number) => Promise<void>;
+  markOfferAsViewed?: (offerId: number) => Promise<void>;
 }
 
 export function OffersTab({
@@ -53,11 +53,17 @@ export function OffersTab({
 
   const handleAction = async (offerId: number, action: () => void) => {
     try {
-      await markOfferAsViewed(offerId);
+      if (markOfferAsViewed) {
+        await markOfferAsViewed(offerId);
+      }
       action();
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
-      // Error is already handled in the mutation
+      toast({
+        title: "Eroare",
+        description: error instanceof Error ? error.message : "A apărut o eroare.",
+        variant: "destructive",
+      });
     }
   };
 
