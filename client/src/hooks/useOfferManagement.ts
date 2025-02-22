@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { OfferWithProvider } from "@shared/schema";
@@ -59,14 +60,15 @@ export function useOfferManagement() {
       return response.json();
     },
     onSuccess: (_, offerId) => {
-      // Update local state immediately
-      setNewOffersCount(prev => Math.max(0, prev - 1));
       // Update the viewedOffers Set
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
         newSet.add(offerId);
         return newSet;
       });
+      
+      // Update the new offers count
+      setNewOffersCount(prev => Math.max(0, prev - 1));
     },
     onError: (error: Error) => {
       toast({
