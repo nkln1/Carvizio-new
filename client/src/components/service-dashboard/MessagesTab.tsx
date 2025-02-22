@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   FileText,
   Calendar,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
@@ -170,8 +171,7 @@ export default function MessagesTab({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send message');
+        throw new Error('Failed to send message');
       }
 
       setNewMessage("");
@@ -187,10 +187,17 @@ export default function MessagesTab({
     }
   };
 
+  const handleBack = () => {
+    setActiveConversation(null);
+    if (initialConversation) {
+      onConversationClear?.();
+    }
+  };
+
   const renderMessages = () => {
     if (!messages.length) return (
       <div className="flex items-center justify-center h-full text-gray-500">
-        <p>No messages yet</p>
+        <p>Nu există mesaje încă</p>
       </div>
     );
 
@@ -250,7 +257,7 @@ export default function MessagesTab({
   const renderConversations = () => {
     if (!conversations.length) return (
       <div className="text-center py-4 text-gray-500">
-        No conversations yet
+        Nu există conversații încă
       </div>
     );
 
@@ -287,9 +294,19 @@ export default function MessagesTab({
     <Card className="h-[calc(100vh-12rem)] border-[#00aff5]/20">
       <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          {activeConversation && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBack}
+              className="mr-2 hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <MessageSquare className="h-5 w-5" />
           {activeConversation
-            ? `Chat with ${activeConversation.userName}`
+            ? `Chat cu ${activeConversation.userName}`
             : "Mesaje"}
         </CardTitle>
         <CardDescription>
@@ -299,7 +316,7 @@ export default function MessagesTab({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex h-[calc(100%-5rem)]">
-        <div className="w-1/3 border-r p-4">
+        <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r p-4`}>
           <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Conversații</h3>
           </div>
@@ -329,6 +346,9 @@ export default function MessagesTab({
                     <span className="text-gray-600">Data Preferată:</span>
                     {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
                   </p>
+                  <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
+                    <Eye className="h-4 w-4 mr-2" /> Vezi detalii complete
+                  </Button>
                 </div>
               )}
               <ScrollArea className="flex-1 px-4">
