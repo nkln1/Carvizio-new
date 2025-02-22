@@ -23,7 +23,9 @@ interface Message {
   content: string;
   createdAt: string;
   senderName: string;
+  receiverName: string;
   senderRole: 'client' | 'service';
+  receiverRole: 'client' | 'service';
   requestId: number;
 }
 
@@ -71,14 +73,14 @@ export default function MessagesTab({
 
   // Fetch messages for active conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['/api/service/messages', activeConversation?.userId, activeConversation?.requestId],
+    queryKey: ['/api/service/messages', activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation) return [];
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/messages/${activeConversation.userId}?requestId=${activeConversation.requestId}`, {
+      const response = await fetch(`/api/service/messages/${activeConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -95,9 +97,8 @@ export default function MessagesTab({
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
-      if (data.type === 'new_message') {
-        queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation?.userId, activeConversation?.requestId] });
-        queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+      if (data.type === 'NEW_MESSAGE') {
+        queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation?.requestId] });
       }
     };
 
@@ -105,7 +106,7 @@ export default function MessagesTab({
     return () => {
       removeHandler();
     };
-  }, [activeConversation?.userId, activeConversation?.requestId, queryClient]);
+  }, [activeConversation?.requestId, queryClient]);
 
   useEffect(() => {
     if (initialConversation) {
@@ -138,7 +139,7 @@ export default function MessagesTab({
           receiverId: activeConversation.userId,
           content: newMessage,
           requestId: activeConversation.requestId,
-          receiverRole: 'client',
+          receiverRole: 'client'
         }),
       });
 
@@ -148,8 +149,7 @@ export default function MessagesTab({
       }
 
       setNewMessage("");
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId, activeConversation.requestId] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -316,7 +316,7 @@ export default function MessagesTab({
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="text-center">
                 <User className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>Select a conversation to start messaging</p>
+                <p>Start a conversation from an accepted offer</p>
               </div>
             </div>
           )}

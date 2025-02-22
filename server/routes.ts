@@ -71,6 +71,7 @@ interface IStorage {
     getMessage: any;
     markMessageAsRead: any;
     getUnreadMessagesCount: any;
+    getMessagesByRequest: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -877,7 +878,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Validate receiver exists
-      const receiver = receiverRole === "client"
+      const receiver = receiverRole=== "client"
         ? await storage.getClient(receiverId)
         : await storage.getServiceProvider(receiverId);
 
@@ -977,6 +978,105 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error("Error fetching unread messages count:", error);
       res.status(500).json({ error: "Failed to fetch unread messages count" });
+    }
+  });
+
+  // Add this endpoint after the existing /api/messages GET endpoint
+  app.post("/api/service/messages/send", validateFirebaseToken, async (req, res) => {
+    try {
+      const { content, receiverId, receiverRole, requestId } = req.body;
+
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId is required" });
+      }
+
+      // Get sender information
+      const sender = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!sender) {
+        return res.status(401).json({ error: "Sender not found" });
+      }
+
+      // Get receiver information (client)
+      const receiver = await storage.getClient(receiverId);
+      if (!receiver) {
+        return res.status(404).json({ error: "Receiver not found" });
+      }
+
+      // Get request to verify the connection
+      const request = await storage.getRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Create the message
+      const message = await storage.createMessage({
+        requestId,
+        senderId: sender.id,
+        senderRole: "service",
+        receiverId,
+        receiverRole: "client",
+        content,
+        senderName: sender.companyName, // Use company name for service providers
+        receiverName: receiver.name // Use name for clients
+      });
+
+      // Send notification through WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'NEW_MESSAGE',
+            payload: message
+          }));
+        }
+      });
+
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Update the GET messages endpoint
+  app.get("/api/service/messages/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Service provider not found" });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const request = await storage.getRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Get messages for this specific request
+      const messages = await storage.getMessagesByRequest(requestId);
+
+      // Enrich messages with sender and receiver names
+      const enrichedMessages = await Promise.all(
+        messages.map(async (message) => {
+          const sender = message.senderRole === "service"
+            ? await storage.getServiceProvider(message.senderId)
+            : await storage.getClient(message.senderId);
+
+          const receiver = message.receiverRole === "service"
+            ? await storage.getServiceProvider(message.receiverId)
+            : await storage.getClient(message.receiverId);
+
+          return {
+            ...message,
+            senderName: message.senderRole === "service" ? sender?.companyName : sender?.name,
+            receiverName: message.receiverRole === "service" ? receiver?.companyName : receiver?.name
+          };
+        })
+      );
+
+      res.json(enrichedMessages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
     }
   });
 
