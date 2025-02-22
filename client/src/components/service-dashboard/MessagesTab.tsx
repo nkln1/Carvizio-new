@@ -127,7 +127,7 @@ export default function MessagesTab({
 
       const data = await response.json();
       // Sort messages by date, oldest first
-      return data.sort((a: Message, b: Message) => 
+      return data.sort((a: Message, b: Message) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
     },
@@ -175,6 +175,13 @@ export default function MessagesTab({
     }
   }, [initialConversation]);
 
+  // Add scroll to bottom when messages change or conversation is selected
+  useEffect(() => {
+    if (messages?.length && activeConversation) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, activeConversation]);
+
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
@@ -203,8 +210,10 @@ export default function MessagesTab({
       await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
       await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
 
-      // Manual scroll to bottom after sending a message
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      // Scroll to bottom after sending a message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -312,8 +321,10 @@ export default function MessagesTab({
           <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
           <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
           {conv.requestTitle && (
-            <p className="text-xs mt-1 opacity-60 truncate">
-              {conv.requestTitle}
+            <p className={`text-xs mt-1 truncate ${
+              activeConversation?.userId === conv.userId ? 'opacity-90' : 'opacity-60'
+            }`}>
+              Cerere: {conv.requestTitle}
             </p>
           )}
         </div>
