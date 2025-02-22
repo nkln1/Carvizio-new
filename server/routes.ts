@@ -696,8 +696,8 @@ export function registerRoutes(app: Express): Server {
       // If user is a service provider, return 403
       if (serviceProvider) {
         console.log("Service provider attempted to access client offers:", req.firebaseUser!.uid);
-        return res.status(403).json({ 
-          error: "Access denied. This endpoint is only for clients." 
+        return res.status(403).json({
+          error: "Access denied. This endpoint is only for clients."
         });
       }
 
@@ -882,7 +882,7 @@ export function registerRoutes(app: Express): Server {
         : await storage.getServiceProvider(receiverId);
 
       if (!receiver) {
-        return res.status(44).json({ error: "Receiver not found" });
+        return res.status(404).json({ error: "Receiver not found" });
       }
 
       // Validate request exists
@@ -951,6 +951,7 @@ export function registerRoutes(app: Express): Server {
         }))
       );
 
+      console.log('Sending enriched messages:', enrichedMessages.length);
       res.json(enrichedMessages);
     } catch (error: any) {
       console.error("Error fetching messages:", error);

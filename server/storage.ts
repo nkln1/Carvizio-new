@@ -78,7 +78,7 @@ export interface IStorage {
   // Add message-related methods
   createMessage(message: InsertMessage): Promise<Message>;
   getMessage(id: number): Promise<Message | undefined>;
-  getUserMessages(userId: number, userRole: "client" | "service"): Promise<Message[]>;
+  getUserMessages(userId: number, userRole: "client" | "service", requestId?: number): Promise<Message[]>;
   markMessageAsRead(id: number): Promise<Message>;
   getUnreadMessagesCount(userId: number, userRole: "client" | "service"): Promise<number>;
   getClient(id: number): Promise<Client | undefined>;
@@ -516,24 +516,35 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserMessages(userId: number, userRole: "client" | "service"): Promise<Message[]> {
+  async getUserMessages(userId: number, userRole: "client" | "service", requestId?: number): Promise<Message[]> {
     try {
-      return await db
-        .select()
-        .from(messages)
-        .where(
-          or(
-            and(
-              eq(messages.senderId, userId),
-              eq(messages.senderRole, userRole)
-            ),
-            and(
-              eq(messages.receiverId, userId),
-              eq(messages.receiverRole, userRole)
-            )
+      // Base query conditions
+      const conditions = [
+        or(
+          and(
+            eq(messages.senderId, userId),
+            eq(messages.senderRole, userRole)
+          ),
+          and(
+            eq(messages.receiverId, userId),
+            eq(messages.receiverRole, userRole)
           )
         )
+      ];
+
+      // Add requestId filter if provided
+      if (requestId) {
+        conditions.push(eq(messages.requestId, requestId));
+      }
+
+      const messageResults = await db
+        .select()
+        .from(messages)
+        .where(and(...conditions))
         .orderBy(desc(messages.createdAt));
+
+      console.log('Retrieved messages:', messageResults.length);
+      return messageResults;
     } catch (error) {
       console.error('Error getting user messages:', error);
       return [];
