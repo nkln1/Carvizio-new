@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Menu } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
