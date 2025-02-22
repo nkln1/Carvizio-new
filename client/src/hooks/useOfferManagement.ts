@@ -58,8 +58,15 @@ export function useOfferManagement() {
 
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+    onSuccess: (_, offerId) => {
+      // Update local state immediately
+      setNewOffersCount(prev => Math.max(0, prev - 1));
+      // Update the viewedOffers Set
+      queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
+        const newSet = new Set(old);
+        newSet.add(offerId);
+        return newSet;
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -70,7 +77,6 @@ export function useOfferManagement() {
     }
   });
 
-  // Return a Promise that resolves when the mutation is complete
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
     await markOfferAsViewedMutation.mutateAsync(offerId);
   };

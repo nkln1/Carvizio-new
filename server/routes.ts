@@ -854,6 +854,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add endpoint to mark offer as viewed
+  app.post("/api/client/mark-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can mark offers as viewed." });
+      }
+
+      const offerId = parseInt(req.params.offerId);
+      const viewedOffer = await storage.markOfferAsViewed(client.id, offerId);
+
+      res.json(viewedOffer);
+    } catch (error) {
+      console.error("Error marking offer as viewed:", error);
+      res.status(500).json({ error: "Failed to mark offer as viewed" });
+    }
+  });
+
   app.post("/api/client/offers/:id/cancel", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
