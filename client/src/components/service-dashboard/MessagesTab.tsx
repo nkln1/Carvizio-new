@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,11 +11,13 @@ import {
   MessageSquare,
   Send,
   Loader2,
+  User,
   ArrowLeft,
   FileText,
   Calendar,
   Eye,
   Info,
+  CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
@@ -83,32 +84,6 @@ export default function MessagesTab({
     }
   });
 
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['/api/service/messages', activeConversation?.requestId],
-    queryFn: async () => {
-      if (!activeConversation?.requestId) return [];
-
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/service/messages/${activeConversation.requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
-
-      const data = await response.json();
-      return data.sort((a: Message, b: Message) => 
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-    },
-    enabled: !!activeConversation?.requestId
-  });
-
   const { data: activeRequest } = useQuery({
     queryKey: ['/api/service/requests', activeConversation?.requestId],
     queryFn: async () => {
@@ -132,11 +107,33 @@ export default function MessagesTab({
     enabled: !!activeConversation?.requestId
   });
 
-  const { data: offerDetails } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ['/api/service/messages', activeConversation?.requestId],
+    queryFn: async () => {
+      if (!activeConversation) return [];
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/messages/${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+
+      return response.json();
+    },
+    enabled: !!activeConversation
+  });
+
+  const { data: offerDetails, isLoading: offerLoading } = useQuery({
     queryKey: ['/api/service/offers', activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation?.requestId) return null;
-
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -182,25 +179,23 @@ export default function MessagesTab({
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
 
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/service/messages', {
+      const response = await fetch('/api/service/messages/send', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           content: newMessage,
-          receiverId: activeConversation.userId,
           requestId: activeConversation.requestId
-        })
+        }),
       });
 
       if (!response.ok) {
@@ -208,12 +203,14 @@ export default function MessagesTab({
       }
 
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
-    } catch (error) {
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+    } catch (error: any) {
+      console.error('Error sending message:', error);
       toast({
         variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-a putut trimite mesajul"
+        title: "Error",
+        description: error.message || "Failed to send message. Please try again.",
       });
     }
   };
@@ -226,6 +223,12 @@ export default function MessagesTab({
   };
 
   const renderMessages = () => {
+    if (!messages.length) return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        <p>Nu există mesaje încă</p>
+      </div>
+    );
+
     return (
       <AnimatePresence>
         {messages.map((message: Message) => (
@@ -272,6 +275,13 @@ export default function MessagesTab({
     );
   };
 
+  const handleConversationSelect = (conv: { userId: number; userName: string; requestId: number }) => {
+    setActiveConversation(conv);
+    if (initialConversation) {
+      onConversationClear?.();
+    }
+  };
+
   const renderConversations = () => {
     if (!conversations.length) return (
       <div className="text-center py-4 text-gray-500">
@@ -308,16 +318,9 @@ export default function MessagesTab({
     ));
   };
 
-  const handleConversationSelect = (conv: { userId: number; userName: string; requestId: number }) => {
-    setActiveConversation(conv);
-    if (initialConversation) {
-      onConversationClear?.();
-    }
-  };
-
   return (
-    <Card className="h-[calc(100vh-12rem)] flex flex-col border-[#00aff5]/20">
-      <CardHeader className="flex-shrink-0">
+    <Card className="h-[calc(100vh-12rem)] border-[#00aff5]/20">
+      <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           {activeConversation && (
             <Button
@@ -351,81 +354,87 @@ export default function MessagesTab({
           </div>
         )}
       </CardHeader>
-
-      <CardContent className="flex-1 flex p-0 min-h-0">
-        <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r h-full flex flex-col`}>
-          <div className="p-4">
+      <CardContent className="p-0 flex h-[calc(100%-5rem)]">
+        <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r p-4`}>
+          <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Conversații</h3>
           </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2">
-              {conversationsLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
-                </div>
-              ) : (
-                renderConversations()
-              )}
-            </div>
+          <ScrollArea className="h-full">
+            {conversationsLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
+              </div>
+            ) : (
+              renderConversations()
+            )}
           </ScrollArea>
         </div>
 
-        {activeConversation ? (
-          <div className="flex-1 flex flex-col h-full">
-            {activeRequest && (
-              <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm">
-                <h4 className="font-medium flex items-center gap-2 text-gray-700">
-                  <FileText className="h-4 w-4" /> Cererea Clientului
-                </h4>
-                <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
-                <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
-                <p className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-600">Data Preferată:</span>
-                  {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
-                </p>
-              </div>
-            )}
-
-            <ScrollArea className="flex-1 px-4">
-              <div className="space-y-4 py-4">
+        <div className="flex-1 flex flex-col">
+          {activeConversation ? (
+            <>
+              {activeRequest && (
+                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm">
+                  <h4 className="font-medium flex items-center gap-2 text-gray-700">
+                    <FileText className="h-4 w-4" /> Cererea Clientului
+                  </h4>
+                  <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
+                  <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
+                  <p className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-600">Data Preferată:</span>
+                    {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                  </p>
+                </div>
+              )}
+              <ScrollArea className="flex-1 px-4">
                 {messagesLoading ? (
                   <div className="flex justify-center items-center h-32">
                     <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
                   </div>
                 ) : (
-                  renderMessages()
+                  <div className="space-y-4 py-4">
+                    {renderMessages()}
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
+              </ScrollArea>
+              <div className="p-4 border-t">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }}
+                  className="flex gap-2"
+                >
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Scrie un mesaj..."
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="icon">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
               </div>
-            </ScrollArea>
-
-            <div className="p-4 border-t mt-auto">
-              <form onSubmit={handleSendMessage} className="flex gap-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Scrie un mesaj..."
-                  className="flex-1"
-                />
-                <Button type="submit" className="bg-[#00aff5] text-white hover:bg-[#00aff5]/90">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <User className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                <p>Începe o conversație dintr-o ofertă acceptată</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Selectează o conversație pentru a începe
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
-
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
           </DialogHeader>
+
           {offerDetails && (
             <ScrollArea className="h-full max-h-[60vh] pr-4">
               <div className="space-y-6 p-2">
@@ -444,7 +453,7 @@ export default function MessagesTab({
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-lg mb-2">Detalii Cerere</h3>
+                  <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
                   <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-sm text-gray-600">Titlu Cerere</p>
@@ -454,12 +463,24 @@ export default function MessagesTab({
                       <p className="text-sm text-gray-600">Descriere Cerere</p>
                       <p className="font-medium">{offerDetails.requestDescription}</p>
                     </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data Preferată Client</p>
+                      <p className="font-medium">
+                        {format(new Date(offerDetails.requestPreferredDate), "dd.MM.yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Locație</p>
+                      <p className="font-medium">
+                        {offerDetails.requestCities.join(", ")}, {offerDetails.requestCounty}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
-                  <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-sm text-gray-600">Titlu</p>
                       <p className="font-medium">{offerDetails.title}</p>
@@ -469,8 +490,39 @@ export default function MessagesTab({
                       <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Detalii</p>
-                      <p className="font-medium whitespace-pre-wrap">{offerDetails.details}</p>
+                      <p className="text-sm text-gray-600">Date disponibile</p>
+                      <p className="font-medium">
+                        {offerDetails.availableDates.map(date =>
+                          format(new Date(date), "dd.MM.yyyy")
+                        ).join(", ")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <p className={`font-medium ${
+                        offerDetails.status === 'Accepted' ? 'text-green-600' :
+                          offerDetails.status === 'Rejected' ? 'text-red-600' :
+                            'text-yellow-600'
+                      }`}>
+                        {offerDetails.status}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
+                  <p className="whitespace-pre-line bg-gray-50 p-4 rounded-lg">
+                    {offerDetails.details}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Istoric</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="w-32">Creat:</span>
+                      <span>{format(new Date(offerDetails.createdAt), "dd.MM.yyyy HH:mm")}</span>
                     </div>
                   </div>
                 </div>
