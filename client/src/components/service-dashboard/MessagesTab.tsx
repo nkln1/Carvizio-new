@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { format } from "date-fns";
+import websocketService from "@/lib/websocket";
 
 interface Message {
   id: number;
@@ -40,48 +41,33 @@ export default function MessagesTab({
   onConversationClear
 }: MessagesTabProps) {
   const [newMessage, setNewMessage] = useState("");
-  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(initialConversation || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: conversations, isLoading: conversationsLoading } = useQuery({
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
     queryKey: ['/api/messages/conversations'],
+    select: (data: any) => data || []
   });
 
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['/api/messages', activeConversation?.userId],
     enabled: !!activeConversation,
+    select: (data: any) => data || []
   });
 
   useEffect(() => {
-    // Connect to WebSocket
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const newSocket = new WebSocket(wsUrl);
-
-    newSocket.onopen = () => {
-      console.log("WebSocket Connected");
-    };
-
-    newSocket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === 'new_message') {
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'new_message') {
         queryClient.invalidateQueries({ queryKey: ['/api/messages', activeConversation?.userId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/messages/conversations'] });
       }
     };
 
-    newSocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.close();
-    };
-  }, []);
+    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+    return () => removeHandler();
+  }, [activeConversation, queryClient]);
 
   useEffect(() => {
     if (initialConversation) {
@@ -119,7 +105,8 @@ export default function MessagesTab({
       }
 
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ['/api/messages', activeConversation.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages', activeConversation?.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/conversations'] });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -130,7 +117,11 @@ export default function MessagesTab({
   };
 
   const renderMessages = () => {
-    if (!messages) return null;
+    if (!messages.length) return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        <p>No messages yet</p>
+      </div>
+    );
 
     return messages.map((message: Message) => (
       <div
@@ -177,7 +168,11 @@ export default function MessagesTab({
   };
 
   const renderConversations = () => {
-    if (!conversations) return null;
+    if (!conversations.length) return (
+      <div className="text-center py-4 text-gray-500">
+        No conversations yet
+      </div>
+    );
 
     return conversations.map((conv: any) => (
       <div
@@ -210,18 +205,18 @@ export default function MessagesTab({
       <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          {activeConversation ? activeConversation.userName : "Mesaje"}
+          {activeConversation ? activeConversation.userName : "Messages"}
         </CardTitle>
         <CardDescription>
           {activeConversation 
-            ? "Conversație activă"
-            : "Selectează o conversație pentru a începe"}
+            ? "Active conversation"
+            : "Select a conversation to start"}
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex h-[calc(100%-5rem)]">
         <div className="w-1/3 border-r p-4">
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Conversații</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Conversations</h3>
           </div>
           <ScrollArea className="h-full">
             {conversationsLoading ? (
@@ -258,7 +253,7 @@ export default function MessagesTab({
                   <Input
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Scrie un mesaj..."
+                    placeholder="Type a message..."
                     className="flex-1"
                   />
                   <Button type="submit" size="icon">
@@ -271,7 +266,7 @@ export default function MessagesTab({
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="text-center">
                 <User className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>Selectează o conversație pentru a începe</p>
+                <p>Select a conversation to start</p>
               </div>
             </div>
           )}
