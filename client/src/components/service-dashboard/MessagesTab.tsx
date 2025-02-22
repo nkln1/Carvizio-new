@@ -17,6 +17,7 @@ import {
   Calendar,
   Eye,
   Info,
+  Clock,
   CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -60,7 +61,7 @@ export default function MessagesTab({
   const [newMessage, setNewMessage] = useState("");
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(initialConversation || null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -175,10 +176,12 @@ export default function MessagesTab({
     }
   }, [initialConversation]);
 
-  // Add scroll to bottom when messages change or conversation is selected
   useEffect(() => {
-    if (messages?.length && activeConversation) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages?.length && scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   }, [messages, activeConversation]);
 
@@ -212,7 +215,12 @@ export default function MessagesTab({
 
       // Scroll to bottom after sending a message
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (scrollAreaRef.current) {
+          const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+          if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+          }
+        }
       }, 100);
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -318,14 +326,22 @@ export default function MessagesTab({
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
+          <div className="flex justify-between items-start">
+            <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
+            <span className="text-xs opacity-70">
+              {format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm")}
+            </span>
+          </div>
           <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
           {conv.requestTitle && (
-            <p className={`text-xs mt-1 truncate ${
-              activeConversation?.userId === conv.userId ? 'opacity-90' : 'opacity-60'
-            }`}>
-              Cerere: {conv.requestTitle}
-            </p>
+            <div className="flex items-center gap-1 mt-1">
+              <FileText className="h-3 w-3 opacity-60" />
+              <p className={`text-xs truncate ${
+                activeConversation?.userId === conv.userId ? 'opacity-90' : 'opacity-60'
+              }`}>
+                {conv.requestTitle}
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -404,7 +420,7 @@ export default function MessagesTab({
                   </p>
                 </div>
               )}
-              <ScrollArea className="flex-1 px-4">
+              <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
                 <div className="py-4">
                   {messagesLoading ? (
                     <div className="flex justify-center items-center h-32">
@@ -413,7 +429,6 @@ export default function MessagesTab({
                   ) : (
                     <div className="space-y-4">
                       {renderMessages()}
-                      <div ref={messagesEndRef} />
                     </div>
                   )}
                 </div>
