@@ -104,7 +104,14 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
         throw new Error('Failed to mark offer as viewed');
       }
 
-      queryClient.invalidateQueries(['/api/client/viewed-offers']);
+      // Update local viewedOffers set
+      viewedOffers.add(offerId);
+      
+      // Force a refresh of both queries
+      await Promise.all([
+        queryClient.invalidateQueries(['/api/client/viewed-offers']),
+        queryClient.invalidateQueries(['/api/service/offers'])
+      ]);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
       toast({
