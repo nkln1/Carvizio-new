@@ -875,7 +875,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add endpoint to get viewed offers
-  app.get("/apiclient/viewed-offers", validateFirebaseToken, async (req, res) => {
+  app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -883,6 +883,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       const viewedOffers = await storage.getViewedOffersByClient(client.id);
+      console.log('Retrieved viewed offers for client:', client.id, viewedOffers);
       res.json(viewedOffers);
     } catch (error) {
       console.error("Error getting viewed offers:", error);
@@ -1217,7 +1218,7 @@ export function registerRoutes(app: Express): Server {
   // Initialize WebSocket server with the correct path to match client
   const wss = new WebSocketServer({
     server: httpServer,
-    path: '/api/ws'  // Update path to match client configuration
+    path: '/api/client/ws'  // Update path to match client configuration
   });
 
   // WebSocket connection handler with improved error handling
