@@ -26,7 +26,7 @@ import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { OfferWithProvider } from "@shared/schema";
 import { format } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
@@ -458,6 +458,9 @@ export function OffersTab({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalii Complete Ofertă</DialogTitle>
+            <DialogDescription>
+              Informații detaliate despre oferta selectată
+            </DialogDescription>
           </DialogHeader>
           {selectedOffer && (
             <ScrollArea className="h-full max-h-[60vh] pr-4">

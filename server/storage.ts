@@ -19,7 +19,9 @@ import {
   type Message,
   type InsertMessage,
   type ViewedRequest,
-  type InsertViewedRequest
+  type InsertViewedRequest,
+  type ViewedOffer, // Added
+  viewedOffers, // Added
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, inArray, or, and } from "drizzle-orm";
@@ -91,6 +93,10 @@ export interface IStorage {
   markRequestAsViewed(serviceProviderId: number, requestId: number): Promise<ViewedRequest>;
   getViewedRequestsByServiceProvider(serviceProviderId: number): Promise<ViewedRequest[]>;
   isRequestViewedByProvider(serviceProviderId: number, requestId: number): Promise<boolean>;
+
+  // Add viewed offers methods
+  getViewedOffersByClient(clientId: number): Promise<ViewedOffer[]>; // Added
+  markOfferAsViewed(clientId: number, offerId: number): Promise<ViewedOffer>; // Added
 }
 
 export class DatabaseStorage implements IStorage {
@@ -653,6 +659,52 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error checking if request is viewed:', error);
       return false;
+    }
+  }
+
+  async getViewedOffersByClient(clientId: number): Promise<ViewedOffer[]> {
+    try {
+      return await db
+        .select()
+        .from(viewedOffers)
+        .where(eq(viewedOffers.clientId, clientId))
+        .orderBy(desc(viewedOffers.viewedAt));
+    } catch (error) {
+      console.error('Error getting viewed offers:', error);
+      return [];
+    }
+  }
+
+  async markOfferAsViewed(clientId: number, offerId: number): Promise<ViewedOffer> {
+    try {
+      const [viewedOffer] = await db
+        .insert(viewedOffers)
+        .values({
+          clientId,
+          offerId,
+          viewedAt: new Date()
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      if (!viewedOffer) {
+        // If there was a conflict, return the existing record
+        const [existing] = await db
+          .select()
+          .from(viewedOffers)
+          .where(
+            and(
+              eq(viewedOffers.clientId, clientId),
+              eq(viewedOffers.offerId, offerId)
+            )
+          );
+        return existing;
+      }
+
+      return viewedOffer;
+    } catch (error) {
+      console.error('Error marking offer as viewed:', error);
+      throw error;
     }
   }
 }
