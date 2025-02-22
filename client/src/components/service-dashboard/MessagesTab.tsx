@@ -435,89 +435,99 @@ export default function MessagesTab({
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
           </DialogHeader>
 
-          {activeRequest && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-medium text-lg mb-2">Detalii Client și Cerere</h3>
-                <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-sm text-gray-600">Titlu Cerere</p>
-                    <p className="font-medium">{activeRequest.title}</p>
+          {offerDetails && (
+            <ScrollArea className="h-full max-h-[60vh] pr-4">
+              <div className="space-y-6 p-2">
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Informații Client</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm text-gray-600">Nume Client</p>
+                      <p className="font-medium">{offerDetails.clientName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Telefon Client</p>
+                      <p className="font-medium">{offerDetails.clientPhone}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Descriere Cerere</p>
-                    <p className="font-medium">{activeRequest.description}</p>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
+                  <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm text-gray-600">Titlu Cerere</p>
+                      <p className="font-medium">{offerDetails.requestTitle}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Descriere Cerere</p>
+                      <p className="font-medium">{offerDetails.requestDescription}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data Preferată Client</p>
+                      <p className="font-medium">
+                        {format(new Date(offerDetails.requestPreferredDate), "dd.MM.yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Locație</p>
+                      <p className="font-medium">
+                        {offerDetails.requestCities.join(", ")}, {offerDetails.requestCounty}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Data Preferată</p>
-                    <p className="font-medium">
-                      {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
-                    </p>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm text-gray-600">Titlu</p>
+                      <p className="font-medium">{offerDetails.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Preț</p>
+                      <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Date disponibile</p>
+                      <p className="font-medium">
+                        {offerDetails.availableDates.map(date =>
+                          format(new Date(date), "dd.MM.yyyy")
+                        ).join(", ")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <p className={`font-medium ${
+                        offerDetails.status === 'Accepted' ? 'text-green-600' :
+                          offerDetails.status === 'Rejected' ? 'text-red-600' :
+                            'text-yellow-600'
+                      }`}>
+                        {offerDetails.status}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Locație</p>
-                    <p className="font-medium">
-                      {activeRequest.cities?.join(", ")}, {activeRequest.county}
-                    </p>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
+                  <p className="whitespace-pre-line bg-gray-50 p-4 rounded-lg">
+                    {offerDetails.details}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-medium text-lg mb-2">Istoric</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="w-32">Creat:</span>
+                      <span>{format(new Date(offerDetails.createdAt), "dd.MM.yyyy HH:mm")}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {offerDetails && (
-                <>
-                  <div>
-                    <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm text-gray-600">Preț</p>
-                        <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Status</p>
-                        <p className={`font-medium ${
-                          offerDetails.status === 'Accepted' ? 'text-green-600' :
-                            offerDetails.status === 'Rejected' ? 'text-red-600' :
-                              'text-yellow-600'
-                        }`}>
-                          {offerDetails.status}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="whitespace-pre-line">
-                        {offerDetails.details}
-                      </p>
-                      {offerDetails.notes && (
-                        <div className="mt-4">
-                          <p className="text-sm text-gray-600">Note adiționale:</p>
-                          <p className="whitespace-pre-line">{offerDetails.notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-lg mb-2">Istoric</h3>
-                    <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="w-32">Ofertă creată:</span>
-                        <span>{format(new Date(offerDetails.createdAt), "dd.MM.yyyy HH:mm")}</span>
-                      </div>
-                      {offerDetails.status === 'Accepted' && offerDetails.acceptedAt && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span className="w-32">Ofertă acceptată:</span>
-                          <span>{format(new Date(offerDetails.acceptedAt), "dd.MM.yyyy HH:mm")}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
