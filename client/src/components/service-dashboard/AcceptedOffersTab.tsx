@@ -26,10 +26,10 @@ import { Button } from "@/components/ui/button";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 
 interface AcceptedOffersTabProps {
-  onMessageClient?: (clientId: number, requestId: number) => void;
+  onMessageClick?: (userId: number, userName: string) => void;
 }
 
-export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTabProps) {
+export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<AcceptedOfferWithClient | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -200,7 +200,7 @@ export default function AcceptedOffersTab({ onMessageClient }: AcceptedOffersTab
                           variant="outline"
                           onClick={() => {
                             handleAction(offer.id);
-                            onMessageClient?.(offer.clientId, offer.requestId);
+                            onMessageClick?.(offer.clientId, offer.clientName);
                           }}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />

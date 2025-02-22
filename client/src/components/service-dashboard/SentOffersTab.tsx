@@ -19,16 +19,17 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SearchBar } from "./offers/SearchBar";
 import { Button } from "@/components/ui/button";
 
-const ITEMS_PER_PAGE = 9;
+interface SentOffersTabProps {
+  onMessageClick?: (userId: number, userName: string) => void;
+}
 
-export default function SentOffersTab() {
+export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<SentOffer | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  // Update the query to use the embedded request details
   const { data: offers = [], isLoading, error } = useQuery<SentOffer[]>({
     queryKey: ['/api/service/offers'],
     queryFn: async () => {
@@ -177,13 +178,26 @@ export default function SentOffersTab() {
                         <span className="font-bold text-lg text-[#00aff5]">
                           {offer.price} RON
                         </span>
-                        <Button
-                          variant="outline"
-                          className="mt-2"
-                          onClick={() => setSelectedOffer(offer)}
-                        >
-                          Vezi detalii complete
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            className="mt-2"
+                            onClick={() => setSelectedOffer(offer)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Vezi detalii
+                          </Button>
+                          {onMessageClick && (
+                            <Button
+                              variant="outline"
+                              className="mt-2"
+                              onClick={() => onMessageClick(offer.requestUserId, offer.requestUserName)}
+                            >
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              Mesaj Client
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -235,7 +249,6 @@ export default function SentOffersTab() {
         </Tabs>
       </CardContent>
 
-      {/* Dialog for complete offer details */}
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
