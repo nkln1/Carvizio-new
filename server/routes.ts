@@ -876,8 +876,7 @@ export function registerRoutes(app: Express): Server {
 
   // Add endpoint to get viewed offers
   app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
-    try {
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+    try {      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(403).json({ error: "Access denied. Only clients can view their viewed offers." });
       }
@@ -1218,12 +1217,12 @@ export function registerRoutes(app: Express): Server {
   // Initialize WebSocket server with the correct path to match client
   const wss = new WebSocketServer({
     server: httpServer,
-    path: '/api/client/ws'  // Update path to match client configuration
+    path: '/api/ws'  // Match the client's WebSocket path
   });
 
   // WebSocket connection handler with improved error handling
   wss.on('connection', (ws) => {
-    console.log('Client connected to WebSocket');
+    console.log('New WebSocket connection established');
 
     ws.on('message', (message) => {
       try {
@@ -1255,7 +1254,7 @@ export function registerRoutes(app: Express): Server {
     });
 
     ws.on('close', () => {
-      console.log('Client disconnected from WebSocket');
+      console.log('Client disconnected');
     });
   });
 

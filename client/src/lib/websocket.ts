@@ -1,3 +1,5 @@
+import { WebSocket } from 'ws';
+
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempt = 0;
@@ -17,7 +19,7 @@ class WebSocketService {
       // Get the base URL from the current window location
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsHost = window.location.host;
-      const wsPath = '/api/ws'; // Use a more specific path to avoid conflicts
+      const wsPath = '/api/ws'; // Keep this path consistent with server
       const wsUrl = `${wsProtocol}//${wsHost}${wsPath}`;
 
       console.log('Attempting to connect to WebSocket:', wsUrl);
