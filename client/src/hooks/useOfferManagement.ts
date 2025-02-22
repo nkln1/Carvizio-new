@@ -15,7 +15,7 @@ export function useOfferManagement() {
   });
 
   // Fetch viewed offers
-  const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
+  const { data: viewedOffers = new Set(), refetch: refetchViewedOffers } = useQuery<Set<number>>({
     queryKey: ["/api/client/viewed-offers"],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -39,6 +39,7 @@ export function useOfferManagement() {
   // Mutation for marking an offer as viewed
   const markOfferAsViewedMutation = useMutation({
     mutationFn: async (offerId: number) => {
+      console.log('Marking offer as viewed:', offerId); // Debug log
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -58,6 +59,8 @@ export function useOfferManagement() {
       return response.json();
     },
     onSuccess: (_, offerId) => {
+      console.log('Successfully marked offer as viewed:', offerId); // Debug log
+
       // Update the viewedOffers Set in the cache
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
@@ -68,11 +71,15 @@ export function useOfferManagement() {
       // Update the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
 
-      // Invalidate both queries to ensure fresh data
+      // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+
+      // Force a refetch of viewed offers
+      refetchViewedOffers();
     },
     onError: (error: Error) => {
+      console.error('Error in markOfferAsViewedMutation:', error); // Debug log
       toast({
         title: "Error",
         description: error.message || "An error occurred while marking the offer as viewed.",
@@ -83,6 +90,7 @@ export function useOfferManagement() {
 
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
     try {
+      console.log('Attempting to mark offer as viewed:', offerId); // Debug log
       await markOfferAsViewedMutation.mutateAsync(offerId);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);

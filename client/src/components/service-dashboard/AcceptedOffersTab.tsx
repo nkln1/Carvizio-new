@@ -87,8 +87,10 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
   };
 
   const handleAction = async (offerId: number) => {
+    console.log('handleAction called with offerId:', offerId); // Debug log
     try {
       await markOfferAsViewed(offerId);
+      console.log('Successfully marked offer as viewed:', offerId); // Debug log
     } catch (error) {
       console.error('Error marking offer as viewed:', error);
       toast({
@@ -204,6 +206,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                           size="sm"
                           variant="outline"
                           onClick={async () => {
+                            console.log('Phone button clicked for offer:', offer.id); // Debug log
                             await handleAction(offer.id);
                             window.location.href = `tel:${offer.clientPhone}`;
                           }}
@@ -215,6 +218,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                           size="sm"
                           variant="outline"
                           onClick={async () => {
+                            console.log('Message button clicked for offer:', offer.id); // Debug log
                             await handleAction(offer.id);
                             handleMessageClick(offer);
                           }}
@@ -226,6 +230,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                           size="sm"
                           variant="outline"
                           onClick={async () => {
+                            console.log('View details button clicked for offer:', offer.id); // Debug log
                             await handleAction(offer.id);
                             setSelectedOffer(offer);
                           }}
