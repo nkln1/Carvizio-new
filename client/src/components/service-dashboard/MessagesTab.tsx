@@ -25,7 +25,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -434,9 +433,6 @@ export default function MessagesTab({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
-            <DialogDescription>
-              Informații despre cererea clientului și oferta asociată
-            </DialogDescription>
           </DialogHeader>
 
           {activeRequest && (
