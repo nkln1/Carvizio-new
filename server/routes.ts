@@ -858,10 +858,14 @@ export function registerRoutes(app: Express): Server {
   });
 
 
-  // Update the POST /api/messages endpoint
+  // Updated message routes
   app.post("/api/messages", validateFirebaseToken, async (req, res) => {
     try {
-      const { content, receiverId, receiverRole } = req.body;
+      const { content, receiverId, receiverRole, requestId } = req.body;
+
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId is required" });
+      }
 
       // Get sender information
       const sender = receiverRole === "client"
@@ -878,10 +882,17 @@ export function registerRoutes(app: Express): Server {
         : await storage.getServiceProvider(receiverId);
 
       if (!receiver) {
-        return res.status(404).json({ error: "Receiver not found" });
+        return res.status(44).json({ error: "Receiver not found" });
+      }
+
+      // Validate request exists
+      const request = await storage.getRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
       }
 
       const message = await storage.createMessage({
+        requestId,
         senderId: sender.id,
         senderRole: receiverRole === "client" ? "service" : "client",
         receiverId,
@@ -916,7 +927,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/messages", validateFirebaseToken, async (req, res) => {
+  app.get("/api/messages/:requestId", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
@@ -927,8 +938,9 @@ export function registerRoutes(app: Express): Server {
 
       const userId = client ? client.id : serviceProvider!.id;
       const userRole = client ? "client" : "service";
+      const requestId = parseInt(req.params.requestId);
 
-      const messages = await storage.getUserMessages(userId, userRole);
+      const messages = await storage.getUserMessages(userId, userRole, requestId);
 
       // Enrich messages with display names
       const enrichedMessages = await Promise.all(
@@ -943,34 +955,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ error: "Failed to fetch messages" });
-    }
-  });
-
-  app.patch("/api/messages/:id/read", validateFirebaseToken, async (req, res) => {
-    try {
-      const messageId = parseInt(req.params.id);
-      const message = await storage.getMessage(messageId);
-
-      if (!message) {
-        return res.status(404).json({ error: "Message not found" });
-      }
-
-      // Verify the user is the receiver of the message
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-
-      const userId = client ? client.id : serviceProvider?.id;
-      const userRole = client ? "client" : "service";
-
-      if (!userId || message.receiverId !== userId || message.receiverRole !== userRole) {
-        return res.status(403).json({ error: "Not authorized to mark this message as read" });
-      }
-
-      const updatedMessage = await storage.markMessageAsRead(messageId);
-      res.json(updatedMessage);
-    } catch (error: any) {
-      console.error("Error marking message as read:", error);
-      res.status(500).json({ error: "Failed to mark message as read" });
     }
   });
 

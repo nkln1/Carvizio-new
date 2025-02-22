@@ -39,8 +39,46 @@ export interface ServiceProviderUser extends BaseUser {
   address: string;
 }
 
-// Union type for any kind of user
-export type User = ClientUser | ServiceProviderUser;
+// Messages table definition
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => requests.id),
+  senderId: integer("sender_id").notNull(),
+  senderRole: text("sender_role", { enum: ["client", "service"] }).notNull(),
+  receiverId: integer("receiver_id").notNull(),
+  receiverRole: text("receiver_role", { enum: ["client", "service"] }).notNull(),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Add message relations
+export const messagesRelations = relations(messages, ({ one }) => ({
+  request: one(requests, {
+    fields: [messages.requestId],
+    references: [requests.id],
+  }),
+  clientSender: one(clients, {
+    fields: [messages.senderId],
+    references: [clients.id],
+    relationName: "clientSender"
+  }),
+  serviceSender: one(serviceProviders, {
+    fields: [messages.senderId],
+    references: [serviceProviders.id],
+    relationName: "serviceSender"
+  }),
+  clientReceiver: one(clients, {
+    fields: [messages.receiverId],
+    references: [clients.id],
+    relationName: "clientReceiver"
+  }),
+  serviceReceiver: one(serviceProviders, {
+    fields: [messages.receiverId],
+    references: [serviceProviders.id],
+    relationName: "serviceReceiver"
+  })
+}));
 
 // Clients table definition
 export const clients = pgTable("clients", {
@@ -171,41 +209,6 @@ export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
   }),
 }));
 
-// Messages table definition
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull(),
-  senderRole: text("sender_role", { enum: ["client", "service"] }).notNull(),
-  receiverId: integer("receiver_id").notNull(),
-  receiverRole: text("receiver_role", { enum: ["client", "service"] }).notNull(),
-  content: text("content").notNull(),
-  isRead: boolean("is_read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-});
-
-// Add message relations
-export const messagesRelations = relations(messages, ({ one }) => ({
-  clientSender: one(clients, {
-    fields: [messages.senderId],
-    references: [clients.id],
-    relationName: "clientSender"
-  }),
-  serviceSender: one(serviceProviders, {
-    fields: [messages.senderId],
-    references: [serviceProviders.id],
-    relationName: "serviceSender"
-  }),
-  clientReceiver: one(clients, {
-    fields: [messages.receiverId],
-    references: [clients.id],
-    relationName: "clientReceiver"
-  }),
-  serviceReceiver: one(serviceProviders, {
-    fields: [messages.receiverId],
-    references: [serviceProviders.id],
-    relationName: "serviceReceiver"
-  })
-}));
 
 // Define a type for accepted offer with client details
 export type AcceptedOfferWithClient = SentOffer & {
@@ -284,3 +287,5 @@ export const isClientUser = (user: User): user is ClientUser => {
 export const isServiceProviderUser = (user: User): user is ServiceProviderUser => {
   return user.role === "service";
 };
+
+export type User = ClientUser | ServiceProviderUser;
