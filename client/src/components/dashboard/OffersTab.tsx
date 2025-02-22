@@ -33,7 +33,7 @@ import { useState, useEffect } from "react";
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
-  onMessageService?: (serviceId: number, requestId: number) => void;
+  onMessageClick?: (userId: number, userName: string) => void;
   refreshRequests?: () => Promise<void>;
   viewedOffers: Set<number>;
   setViewedOffers: (offers: Set<number>) => void;
@@ -41,7 +41,7 @@ interface OffersTabProps {
 
 export function OffersTab({
   offers,
-  onMessageService,
+  onMessageClick,
   refreshRequests,
   viewedOffers,
   setViewedOffers
@@ -281,7 +281,10 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs"
-                    onClick={() => handleActionClick(() => onMessageService?.(offer.serviceProviderId, offer.requestId), offer.id)}
+                    onClick={() => handleActionClick(() =>
+                      onMessageClick?.(offer.serviceProviderId, offer.serviceProviderName),
+                      offer.id
+                    )}
                   >
                     <MessageSquare className="w-3 h-3 mr-1" />
                     Mesaj

@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { TabWrapper } from "@/components/common/TabWrapper";
 import { useAuth } from "@/context/AuthContext";
-
-// Import the tab components
 import RequestsTab from "@/components/service-dashboard/RequestsTab";
 import SentOffersTab from "@/components/service-dashboard/SentOffersTab";
 import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab";
@@ -21,7 +19,7 @@ import AccountTab from "@/components/service-dashboard/AccountTab";
 
 type TabId = "cereri" | "oferte-trimise" | "oferte-acceptate" | "mesaje" | "cont";
 
-const TAB_COMPONENTS: Record<TabId, React.ComponentType> = {
+const TAB_COMPONENTS: Record<TabId, React.ComponentType<any>> = {
   "cereri": RequestsTab,
   "oferte-trimise": SentOffersTab,
   "oferte-acceptate": AcceptedOffersTab,
@@ -42,6 +40,7 @@ export default function ServiceDashboard() {
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeConversation, setActiveConversation] = useState<{ userId: number; userName: string } | null>(null);
   const { toast } = useToast();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
@@ -62,6 +61,11 @@ export default function ServiceDashboard() {
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
     setIsMenuOpen(false);
+  };
+
+  const handleMessageClick = (userId: number, userName: string) => {
+    setActiveConversation({ userId, userName });
+    handleTabChange("mesaje");
   };
 
   const handleTabError = () => {
@@ -128,7 +132,6 @@ export default function ServiceDashboard() {
               <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               {navigationItems.map((item) => (
                 <Button
@@ -142,7 +145,6 @@ export default function ServiceDashboard() {
               ))}
             </div>
 
-            {/* Mobile Navigation */}
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
@@ -174,7 +176,16 @@ export default function ServiceDashboard() {
 
       <div className="container mx-auto p-4 sm:p-6 flex-grow">
         <TabWrapper name={TAB_NAMES[activeTab]} onError={handleTabError}>
-          <ActiveTabComponent />
+          {activeTab === "mesaje" ? (
+            <MessagesTab
+              initialConversation={activeConversation}
+              onConversationClear={() => setActiveConversation(null)}
+            />
+          ) : (
+            <ActiveTabComponent
+              onMessageClick={handleMessageClick}
+            />
+          )}
         </TabWrapper>
       </div>
 

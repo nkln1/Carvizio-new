@@ -30,10 +30,18 @@ interface ActiveConversation {
   userName: string;
 }
 
-export default function MessagesTab() {
+interface MessagesTabProps {
+  initialConversation?: { userId: number; userName: string } | null;
+  onConversationClear?: () => void;
+}
+
+export default function MessagesTab({ 
+  initialConversation,
+  onConversationClear
+}: MessagesTabProps) {
   const [newMessage, setNewMessage] = useState("");
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(null);
+  const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(initialConversation || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -74,6 +82,12 @@ export default function MessagesTab() {
       newSocket.close();
     };
   }, []);
+
+  useEffect(() => {
+    if (initialConversation) {
+      setActiveConversation(initialConversation);
+    }
+  }, [initialConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -155,6 +169,13 @@ export default function MessagesTab() {
     ));
   };
 
+  const handleConversationSelect = (conv: { userId: number; userName: string }) => {
+    setActiveConversation(conv);
+    if (initialConversation) {
+      onConversationClear?.();
+    }
+  };
+
   const renderConversations = () => {
     if (!conversations) return null;
 
@@ -166,7 +187,7 @@ export default function MessagesTab() {
             ? 'bg-[#00aff5] text-white'
             : 'hover:bg-gray-100'
         }`}
-        onClick={() => setActiveConversation({
+        onClick={() => handleConversationSelect({
           userId: conv.userId,
           userName: conv.userName
         })}
