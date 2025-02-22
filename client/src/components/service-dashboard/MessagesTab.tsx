@@ -141,13 +141,15 @@ export default function MessagesTab({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send message');
       }
 
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
     } catch (error) {
+      console.error('Error sending message:', error);
       toast({
         variant: "destructive",
         title: "Error",
