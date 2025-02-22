@@ -48,6 +48,7 @@ export default function MessagesTab({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch conversations
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
     queryKey: ['/api/service/conversations'],
     queryFn: async () => {
@@ -68,6 +69,7 @@ export default function MessagesTab({
     }
   });
 
+  // Fetch messages for active conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['/api/service/messages', activeConversation?.userId],
     queryFn: async () => {
@@ -130,7 +132,7 @@ export default function MessagesTab({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           receiverId: activeConversation.userId,
@@ -148,12 +150,12 @@ export default function MessagesTab({
       setNewMessage("");
       await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId] });
       await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: error.message || "Failed to send message. Please try again.",
       });
     }
   };
@@ -175,7 +177,7 @@ export default function MessagesTab({
         {message.senderRole !== 'service' && (
           <Avatar className="h-8 w-8">
             <AvatarFallback>
-              {message.senderName.substring(0, 2).toUpperCase()}
+              {message.senderName?.substring(0, 2).toUpperCase() || 'CL'}
             </AvatarFallback>
           </Avatar>
         )}
@@ -194,7 +196,7 @@ export default function MessagesTab({
         {message.senderRole === 'service' && (
           <Avatar className="h-8 w-8">
             <AvatarFallback>
-              {message.senderName.substring(0, 2).toUpperCase()}
+              {message.senderName?.substring(0, 2).toUpperCase() || 'SP'}
             </AvatarFallback>
           </Avatar>
         )}
@@ -226,15 +228,17 @@ export default function MessagesTab({
         }`}
         onClick={() => handleConversationSelect({
           userId: conv.userId,
-          userName: conv.userName,
+          userName: conv.userName || `Client ${conv.userId}`,
           requestId: conv.requestId
         })}
       >
         <Avatar className="h-10 w-10">
-          <AvatarFallback>{conv.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+          <AvatarFallback>
+            {(conv.userName || `C${conv.userId}`).substring(0, 2).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-medium">{conv.userName}</p>
+          <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
           {conv.lastMessage && (
             <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
           )}
@@ -253,7 +257,7 @@ export default function MessagesTab({
         <CardDescription>
           {activeConversation
             ? "Active conversation"
-            : "Select a conversation to start"}
+            : "Select a conversation to start messaging"}
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex h-[calc(100%-5rem)]">
@@ -311,7 +315,7 @@ export default function MessagesTab({
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="text-center">
                 <User className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>Select a conversation to start</p>
+                <p>Select a conversation to start messaging</p>
               </div>
             </div>
           )}

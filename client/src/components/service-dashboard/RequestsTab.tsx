@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Clock,
@@ -44,8 +45,8 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -151,7 +152,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         throw new Error(errorData.message || "Failed to submit offer");
       }
 
-      const data = await response.json(); 
+      const data = await response.json();
       await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
       setShowOfferDialog(false);
       toast({
@@ -168,13 +169,39 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
-  const handleMessageClick = (request: RequestType) => {
-    if (onMessageClick) {
-      onMessageClick(request.clientId, request.requestTitle, request.id); 
-    } else {
+  const handleMessageClick = async (request: RequestType) => {
+    try {
+      // Get client details first
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/client/${request.clientId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch client details');
+      }
+
+      const clientData = await response.json();
+      const clientName = clientData.name || `Client ${request.clientId}`;
+
+      if (onMessageClick) {
+        onMessageClick(request.clientId, clientName, request.id);
+      } else {
+        toast({
+          title: "În curând",
+          description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching client details:', error);
       toast({
-        title: "În curând",
-        description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
       });
     }
   };
@@ -338,6 +365,9 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
           <DialogContent aria-describedby="request-details" className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
+              <DialogDescription>
+                Informații despre cererea selectată
+              </DialogDescription>
             </DialogHeader>
             {selectedRequest && (
               <div className="space-y-3">
