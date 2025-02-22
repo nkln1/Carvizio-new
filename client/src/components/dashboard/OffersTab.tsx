@@ -51,17 +51,13 @@ export function OffersTab({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleAction = (action: () => void, offerId: number) => {
+  const handleAction = async (action: () => void, offerId: number) => {
     try {
-      markOfferAsViewed(offerId);
+      await markOfferAsViewed(offerId);
       action();
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
-      toast({
-        title: "Eroare",
-        description: "A apărut o eroare la marcarea ofertei ca văzută.",
-        variant: "destructive",
-      });
+      // Error is already handled in the mutation
     }
   };
 

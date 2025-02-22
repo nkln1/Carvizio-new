@@ -20,8 +20,8 @@ import {
   type InsertMessage,
   type ViewedRequest,
   type InsertViewedRequest,
-  type ViewedOffer, // Added
-  viewedOffers, // Added
+  type ViewedOffer,
+  viewedOffers,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, inArray, or, and } from "drizzle-orm";
@@ -355,14 +355,16 @@ export class DatabaseStorage implements IStorage {
       const matchingRequests = await db
         .select()
         .from(requests)
-        .where(eq(requests.county, county))
-        .where(eq(requests.status, "Active"))
+        .where(and(
+          eq(requests.county, county),
+          eq(requests.status, "Active")
+        ))
         .orderBy(desc(requests.createdAt));
 
       if (cities.length > 0) {
-        return matchingRequests.filter(request => {
+        return matchingRequests.filter((request: Request) => {
           const requestCities = request.cities || [];
-          return requestCities.some(requestCity =>
+          return requestCities.some((requestCity: string) =>
             cities.includes(requestCity)
           );
         });
@@ -477,7 +479,23 @@ export class DatabaseStorage implements IStorage {
       // Get all offers for these requests with service provider details
       const offers = await db
         .select({
-          ...sentOffers,
+          id: sentOffers.id,
+          serviceProviderId: sentOffers.serviceProviderId,
+          requestId: sentOffers.requestId,
+          title: sentOffers.title,
+          details: sentOffers.details,
+          availableDates: sentOffers.availableDates,
+          price: sentOffers.price,
+          notes: sentOffers.notes,
+          requestTitle: sentOffers.requestTitle,
+          requestDescription: sentOffers.requestDescription,
+          requestPreferredDate: sentOffers.requestPreferredDate,
+          requestCounty: sentOffers.requestCounty,
+          requestCities: sentOffers.requestCities,
+          requestUserId: sentOffers.requestUserId,
+          requestUserName: sentOffers.requestUserName,
+          status: sentOffers.status,
+          createdAt: sentOffers.createdAt,
           serviceProviderName: serviceProviders.companyName
         })
         .from(sentOffers)
@@ -485,7 +503,7 @@ export class DatabaseStorage implements IStorage {
         .where(inArray(sentOffers.requestId, requestIds))
         .orderBy(desc(sentOffers.createdAt));
 
-      return offers;
+      return offers as (SentOffer & { serviceProviderName: string })[];
     } catch (error) {
       console.error('Error getting offers for client:', error);
       return [];

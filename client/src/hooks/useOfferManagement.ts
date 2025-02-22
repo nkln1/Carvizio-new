@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { OfferWithProvider } from "@shared/schema";
 import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export function useOfferManagement() {
   const queryClient = useQueryClient();
   const [newOffersCount, setNewOffersCount] = useState(0);
+  const { toast } = useToast();
 
   // Fetch offers
   const { data: offers = [] } = useQuery<OfferWithProvider[]>({
@@ -26,11 +28,12 @@ export function useOfferManagement() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch viewed offers');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch viewed offers' }));
+        throw new Error(errorData.message);
       }
 
       const data = await response.json();
-      return new Set(data.map((offer: any) => offer.offerId));
+      return new Set(data.map((offer: { offerId: number }) => offer.offerId));
     }
   });
 
@@ -49,19 +52,26 @@ export function useOfferManagement() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to mark offer as viewed');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to mark offer as viewed' }));
+        throw new Error(errorData.message);
       }
 
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Eroare",
+        description: error.message || "A apărut o eroare la marcarea ofertei ca văzută.",
+        variant: "destructive",
+      });
     }
   });
 
   const markOfferAsViewed = (offerId: number) => {
-    markOfferAsViewedMutation.mutate(offerId);
+    return markOfferAsViewedMutation.mutateAsync(offerId);
   };
 
   const getNewOffersCount = () => {
