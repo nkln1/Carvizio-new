@@ -35,7 +35,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
-  const { viewedOffers, markOfferAsViewed, newOffersCount } = useOfferManagement();
+  const { viewedOffers, markOfferAsViewed } = useOfferManagement(); // Removed newOffersCount
   const queryClient = useQueryClient();
 
   const { data: offers = [], isLoading, error } = useQuery<AcceptedOfferWithClient[]>({
@@ -114,6 +114,9 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
       });
     }
   };
+
+  const viewedOfferIds = Array.from(viewedOffers.keys()); // Get viewed offer IDs
+  const newOffersCount = offers.filter(offer => !viewedOfferIds.includes(offer.id)).length; // Calculate new offers count
 
   const filteredOffers = filterOffers(offers);
   const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);

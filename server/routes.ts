@@ -855,6 +855,21 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add endpoint to mark offer as viewed
+  app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can view their viewed offers." });
+      }
+
+      const viewedOffers = await storage.getViewedOffersByClient(client.id);
+      res.json(viewedOffers);
+    } catch (error) {
+      console.error("Error getting viewed offers:", error);
+      res.status(500).json({ error: "Failed to get viewed offers" });
+    }
+  });
+
   app.post("/api/client/mark-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
@@ -865,6 +880,7 @@ export function registerRoutes(app: Express): Server {
       const offerId = parseInt(req.params.offerId);
       const viewedOffer = await storage.markOfferAsViewed(client.id, offerId);
 
+      await queryClient.invalidateQueries(['/api/client/viewed-offers']);
       res.json(viewedOffer);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
