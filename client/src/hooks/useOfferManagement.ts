@@ -14,7 +14,7 @@ export function useOfferManagement() {
     queryKey: ["/api/client/offers"],
   });
 
-  // Fetch viewed offers
+  // Fetch viewed offers with proper error handling
   const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
     queryKey: ["/api/client/viewed-offers"],
     queryFn: async () => {
@@ -36,7 +36,7 @@ export function useOfferManagement() {
     }
   });
 
-  // Mutation for marking an offer as viewed
+  // Enhanced mutation for marking an offer as viewed
   const markOfferAsViewedMutation = useMutation({
     mutationFn: async (offerId: number) => {
       const token = await auth.currentUser?.getIdToken();
@@ -52,13 +52,14 @@ export function useOfferManagement() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to mark offer as viewed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to mark offer as viewed');
       }
 
       return response.json();
     },
     onSuccess: (_, offerId) => {
-      // Update the viewedOffers Set in the cache
+      // Update the viewedOffers Set in the cache immediately
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
         newSet.add(offerId);
@@ -68,9 +69,8 @@ export function useOfferManagement() {
       // Update the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
 
-      // Invalidate both queries to ensure fresh data
+      // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
     },
     onError: (error: Error) => {
       toast({
