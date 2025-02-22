@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 
 interface AcceptedOffersTabProps {
-  onMessageClick?: (userId: number, userName: string) => void;
+  onMessageClick?: (userId: number, userName: string, requestId: number) => void;
 }
 
 export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabProps) {
@@ -122,8 +122,8 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
   }
 
   const handleMessageClick = (offer: AcceptedOfferWithClient) => {
-    if (onMessageClick && offer.requestUserId && offer.requestUserName) {
-      onMessageClick(offer.requestUserId, offer.requestUserName);
+    if (onMessageClick && offer.requestUserId && offer.requestUserName && offer.requestId) {
+      onMessageClick(offer.requestUserId, offer.requestUserName, offer.requestId);
     }
   };
 

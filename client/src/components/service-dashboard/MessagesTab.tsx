@@ -71,14 +71,14 @@ export default function MessagesTab({
 
   // Fetch messages for active conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['/api/service/messages', activeConversation?.userId],
+    queryKey: ['/api/service/messages', activeConversation?.userId, activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation) return [];
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/messages/${activeConversation.userId}`, {
+      const response = await fetch(`/api/service/messages/${activeConversation.userId}?requestId=${activeConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -96,7 +96,7 @@ export default function MessagesTab({
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'new_message') {
-        queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation?.userId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation?.userId, activeConversation?.requestId] });
         queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
       }
     };
@@ -105,7 +105,7 @@ export default function MessagesTab({
     return () => {
       removeHandler();
     };
-  }, [activeConversation?.userId, queryClient]);
+  }, [activeConversation?.userId, activeConversation?.requestId, queryClient]);
 
   useEffect(() => {
     if (initialConversation) {
@@ -148,7 +148,7 @@ export default function MessagesTab({
       }
 
       setNewMessage("");
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId, activeConversation.requestId] });
       await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -220,9 +220,9 @@ export default function MessagesTab({
 
     return conversations.map((conv: any) => (
       <div
-        key={conv.userId}
+        key={`${conv.userId}-${conv.requestId}`}
         className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-          activeConversation?.userId === conv.userId
+          activeConversation?.userId === conv.userId && activeConversation?.requestId === conv.requestId
             ? 'bg-[#00aff5] text-white'
             : 'hover:bg-gray-100'
         }`}
@@ -242,6 +242,7 @@ export default function MessagesTab({
           {conv.lastMessage && (
             <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
           )}
+          <p className="text-xs opacity-60">Request #{conv.requestId}</p>
         </div>
       </div>
     ));
@@ -252,7 +253,7 @@ export default function MessagesTab({
       <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          {activeConversation ? activeConversation.userName : "Messages"}
+          {activeConversation ? `${activeConversation.userName} - Request #${activeConversation.requestId}` : "Messages"}
         </CardTitle>
         <CardDescription>
           {activeConversation

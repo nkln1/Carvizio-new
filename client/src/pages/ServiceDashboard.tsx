@@ -32,7 +32,11 @@ export default function ServiceDashboard() {
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeConversation, setActiveConversation] = useState<{ userId: number; userName: string } | null>(null);
+  const [activeConversation, setActiveConversation] = useState<{
+    userId: number;
+    userName: string;
+    requestId: number;
+  } | null>(null);
   const { toast } = useToast();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
@@ -55,8 +59,8 @@ export default function ServiceDashboard() {
     setIsMenuOpen(false);
   };
 
-  const handleMessageClick = (userId: number, userName: string) => {
-    setActiveConversation({ userId, userName });
+  const handleMessageClick = (userId: number, userName: string, requestId: number) => {
+    setActiveConversation({ userId, userName, requestId });
     handleTabChange("mesaje");
   };
 
