@@ -1,5 +1,3 @@
-import { WebSocket } from 'ws';
-
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempt = 0;
