@@ -295,9 +295,9 @@ export default function MessagesTab({
       <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           {activeConversation && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleBack}
               className="mr-2 hover:bg-gray-100"
             >
@@ -335,10 +335,26 @@ export default function MessagesTab({
           {activeConversation ? (
             <>
               {activeRequest && (
-                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm">
-                  <h4 className="font-medium flex items-center gap-2 text-gray-700">
-                    <FileText className="h-4 w-4" /> Cererea Clientului
-                  </h4>
+                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm relative">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-medium flex items-center gap-2 text-gray-700">
+                      <FileText className="h-4 w-4" /> Cererea Clientului
+                    </h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => {
+                        // Navigate to request details (to be implemented)
+                        toast({
+                          title: "Coming soon",
+                          description: "This feature will be available soon.",
+                        });
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" /> Vezi detalii complete
+                    </Button>
+                  </div>
                   <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
                   <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
                   <p className="flex items-center gap-2">
@@ -346,9 +362,6 @@ export default function MessagesTab({
                     <span className="text-gray-600">Data Preferată:</span>
                     {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
                   </p>
-                  <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
-                    <Eye className="h-4 w-4 mr-2" /> Vezi detalii complete
-                  </Button>
                 </div>
               )}
               <ScrollArea className="flex-1 px-4">
