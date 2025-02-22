@@ -36,7 +36,7 @@ interface OffersTabProps {
   onMessageClick?: (userId: number, userName: string) => void;
   refreshRequests?: () => Promise<void>;
   viewedOffers: Set<number>;
-  setViewedOffers: (offers: Set<number>) => void;
+  markOfferAsViewed: (offerId: number) => void;
 }
 
 export function OffersTab({
@@ -44,69 +44,25 @@ export function OffersTab({
   onMessageClick,
   refreshRequests,
   viewedOffers,
-  setViewedOffers
+  markOfferAsViewed
 }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query to fetch viewed offers
-  const { data: viewedOfferIds = [] } = useQuery<number[]>({
-    queryKey: ['/api/client/viewed-offers'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/client/viewed-offers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+  const handleAction = (action: () => void, offerId: number) => {
+    try {
+      markOfferAsViewed(offerId);
+      action();
+    } catch (error) {
+      console.error("Error marking offer as viewed:", error);
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la marcarea ofertei ca văzută.",
+        variant: "destructive",
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch viewed offers');
-      }
-
-      const viewedOffers = await response.json();
-      return viewedOffers.map((vo: any) => vo.offerId);
     }
-  });
-
-  // Mutation for marking an offer as viewed
-  const markOfferAsViewedMutation = useMutation({
-    mutationFn: async (offerId: number) => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark offer as viewed');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/client/viewed-offers'] });
-    },
-    onError: (error) => {
-      console.error('Error marking offer as viewed:', error);
-    }
-  });
-
-  const markOfferAsViewed = (offerId: number) => {
-    markOfferAsViewedMutation.mutate(offerId);
-  };
-
-  const handleActionClick = (action: () => void, offerId: number) => {
-    markOfferAsViewed(offerId);
-    action();
   };
 
   const handleAcceptOffer = async (offer: OfferWithProvider) => {
@@ -240,7 +196,7 @@ export function OffersTab({
   const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
 
   const renderOfferBox = (offer: OfferWithProvider) => {
-    const isNew = !viewedOfferIds.includes(offer.id);
+    const isNew = !viewedOffers.has(offer.id);
 
     return (
       <div
@@ -316,7 +272,7 @@ export function OffersTab({
                 variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs"
-                onClick={() => handleActionClick(() => setSelectedOffer(offer), offer.id)}
+                onClick={() => handleAction(() => setSelectedOffer(offer), offer.id)}
               >
                 <Eye className="w-3 h-3 mr-1" />
                 Vezi detalii
@@ -328,7 +284,7 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs"
-                    onClick={() => handleActionClick(() =>
+                    onClick={() => handleAction(() =>
                       onMessageClick?.(offer.serviceProviderId, offer.serviceProviderName),
                       offer.id
                     )}
@@ -341,7 +297,7 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs text-green-500 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleActionClick(() => handleAcceptOffer(offer), offer.id)}
+                    onClick={() => handleAction(() => handleAcceptOffer(offer), offer.id)}
                   >
                     <Check className="w-3 h-3 mr-1" />
                     Acceptă
@@ -351,7 +307,7 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleActionClick(() => handleRejectOffer(offer), offer.id)}
+                    onClick={() => handleAction(() => handleRejectOffer(offer), offer.id)}
                   >
                     <XCircle className="w-3 h-3 mr-1" />
                     Respinge
@@ -364,7 +320,7 @@ export function OffersTab({
                   variant="outline"
                   size="sm"
                   className="h-7 px-2 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50"
-                  onClick={() => handleActionClick(() => handleCancelOffer(offer), offer.id)}
+                  onClick={() => handleAction(() => handleCancelOffer(offer), offer.id)}
                 >
                   <RotateCcw className="w-3 h-3 mr-1" />
                   Anulează

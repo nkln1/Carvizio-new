@@ -1,48 +1,82 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { OfferWithProvider } from "@shared/schema";
+import { auth } from "@/lib/firebase";
 
 export function useOfferManagement() {
+  const queryClient = useQueryClient();
   const [newOffersCount, setNewOffersCount] = useState(0);
-  const [viewedOffers, setViewedOffers] = useState<Set<number>>(new Set());
 
+  // Fetch offers
   const { data: offers = [] } = useQuery<OfferWithProvider[]>({
     queryKey: ["/api/client/offers"],
   });
 
-  useEffect(() => {
-    const savedViewedOffers = localStorage.getItem('viewedOffers');
-    if (savedViewedOffers) {
-      try {
-        const parsed = JSON.parse(savedViewedOffers);
-        if (Array.isArray(parsed)) {
-          setViewedOffers(new Set(parsed));
+  // Fetch viewed offers
+  const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
+    queryKey: ["/api/client/viewed-offers"],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/client/viewed-offers', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (e) {
-        console.error('Error parsing viewedOffers from localStorage:', e);
-        setViewedOffers(new Set());
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch viewed offers');
       }
+
+      const data = await response.json();
+      return new Set(data.map((offer: any) => offer.offerId));
     }
-  }, []);
+  });
+
+  // Mutation for marking an offer as viewed
+  const markOfferAsViewedMutation = useMutation({
+    mutationFn: async (offerId: number) => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to mark offer as viewed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+    }
+  });
 
   const markOfferAsViewed = (offerId: number) => {
-    setViewedOffers(prev => {
-      const newSet = new Set(prev).add(offerId);
-      localStorage.setItem('viewedOffers', JSON.stringify(Array.from(newSet)));
-      return newSet;
-    });
+    markOfferAsViewedMutation.mutate(offerId);
   };
 
   const getNewOffersCount = () => {
     return offers.filter(offer => !viewedOffers.has(offer.id) && offer.status === "Pending").length;
   };
 
+  useEffect(() => {
+    setNewOffersCount(getNewOffersCount());
+  }, [offers, viewedOffers]);
+
   return {
     offers,
     viewedOffers,
-    setViewedOffers,
     markOfferAsViewed,
-    newOffersCount: getNewOffersCount(),
+    newOffersCount,
     setNewOffersCount,
   };
 }
