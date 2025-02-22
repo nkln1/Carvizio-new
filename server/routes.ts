@@ -75,6 +75,8 @@ interface IStorage {
     markRequestAsViewed: any;
     getViewedRequestsByServiceProvider: any;
     isRequestViewedByProvider: any;
+    markOfferAsViewed: any;
+    getViewedOffersByClient: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -872,55 +874,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/client/offers/:id/cancel", validateFirebaseToken, async (req, res) => {
+  // Add endpoint to get viewed offers
+  app.get("/apiclient/viewed-offers", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
-        return res.status(403).json({ error: "Access denied. Only clients can cancel offers." });
+        return res.status(403).json({ error: "Access denied. Only clients can view their viewed offers." });
       }
 
-      const offerId = parseInt(req.params.id);
-
-      // Get all offers for this client to verify ownership
-      const allOffers = await storage.getOffersForClient(client.id);
-      const offer = allOffers.find(o => o.id === offerId);
-
-      if (!offer) {
-        return res.status(404).json({ error: "Offer not found" });
-      }
-
-      // Update offer status to Pending
-      const updatedOffer = await storage.updateSentOfferStatus(offerId, "Pending");
-
-      // Update request status back to Active
-      await storage.updateRequest(offer.requestId, {
-        status: "Active"
-      });
-
-      // Send notification through WebSocket for both changes
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          // Notify about offer status change
-          client.send(JSON.stringify({
-            type: 'OFFER_STATUS_CHANGED',
-            payload: { ...updatedOffer, status: "Pending" }
-          }));
-
-          // Notify about request status change
-          client.send(JSON.stringify({
-            type: 'REQUEST_STATUS_CHANGED',
-            payload: { requestId: offer.requestId, status: "Active" }
-          }));
-        }
-      });
-
-      res.json(updatedOffer);
+      const viewedOffers = await storage.getViewedOffersByClient(client.id);
+      res.json(viewedOffers);
     } catch (error) {
-      console.error("Error canceling offer:", error);
-      res.status(500).json({ error: "Failed to cancel offer" });
+      console.error("Error getting viewed offers:", error);
+      res.status(500).json({ error: "Failed to get viewed offers" });
     }
   });
-
 
   // Updated message routes
   app.post("/api/messages", validateFirebaseToken, async (req, res) => {

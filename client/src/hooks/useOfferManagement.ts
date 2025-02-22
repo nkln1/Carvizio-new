@@ -18,21 +18,31 @@ export function useOfferManagement() {
   const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
     queryKey: ["/api/client/viewed-offers"],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/client/viewed-offers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+        const response = await fetch('/api/client/viewed-offers', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch viewed offers');
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch viewed offers');
+        const data = await response.json();
+        return new Set(data.map((offer: { offerId: number }) => offer.offerId));
+      } catch (error) {
+        console.error('Error fetching viewed offers:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch viewed offers status",
+          variant: "destructive",
+        });
+        return new Set();
       }
-
-      const data = await response.json();
-      return new Set(data.map((offer: { offerId: number }) => offer.offerId));
     }
   });
 
@@ -42,13 +52,12 @@ export function useOfferManagement() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/client/mark-offer-viewed', {
+      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ offerId })
+        }
       });
 
       if (!response.ok) {

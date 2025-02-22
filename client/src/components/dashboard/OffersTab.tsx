@@ -56,13 +56,11 @@ export function OffersTab({
       // First mark the offer as viewed
       if (markOfferAsViewed) {
         await markOfferAsViewed(offerId);
-        // Invalidate the viewed offers query to refresh the UI
-        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
       }
       // Then execute the actual action
       await action();
     } catch (error) {
-      console.error("Error marking offer as viewed:", error);
+      console.error("Error in handleAction:", error);
       toast({
         title: "Eroare",
         description: error instanceof Error ? error.message : "A apărut o eroare.",
