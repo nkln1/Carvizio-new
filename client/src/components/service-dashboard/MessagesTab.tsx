@@ -125,7 +125,11 @@ export default function MessagesTab({
         throw new Error('Failed to fetch messages');
       }
 
-      return response.json();
+      const data = await response.json();
+      // Sort messages by date, oldest first
+      return data.sort((a: Message, b: Message) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
     },
     enabled: !!activeConversation
   });
@@ -171,13 +175,6 @@ export default function MessagesTab({
     }
   }, [initialConversation]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
@@ -205,6 +202,9 @@ export default function MessagesTab({
       setNewMessage("");
       await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
       await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+
+      // Manual scroll to bottom after sending a message
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -292,7 +292,7 @@ export default function MessagesTab({
     return conversations.map((conv: any) => (
       <div
         key={`${conv.userId}-${conv.requestId}`}
-        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+        className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
           activeConversation?.userId === conv.userId && activeConversation?.requestId === conv.requestId
             ? 'bg-[#00aff5] text-white'
             : 'hover:bg-gray-100'
@@ -308,10 +308,13 @@ export default function MessagesTab({
             {(conv.userName || `C${conv.userId}`).substring(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
-          {conv.lastMessage && (
-            <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
+          <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
+          {conv.requestTitle && (
+            <p className="text-xs mt-1 opacity-60 truncate">
+              {conv.requestTitle}
+            </p>
           )}
         </div>
       </div>
@@ -319,17 +322,18 @@ export default function MessagesTab({
   };
 
   return (
-    <Card className="h-[calc(100vh-12rem)] border-[#00aff5]/20">
-      <CardHeader>
+    <Card className="h-[calc(100vh-12rem)] flex flex-col border-[#00aff5]/20">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           {activeConversation && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleBack}
-              className="mr-2 hover:bg-gray-100"
+              className="mr-2 hover:bg-gray-100 gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
+              Înapoi
             </Button>
           )}
           <MessageSquare className="h-5 w-5" />
@@ -354,23 +358,25 @@ export default function MessagesTab({
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-0 flex h-[calc(100%-5rem)]">
-        <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r p-4`}>
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Conversații</h3>
+      <CardContent className="p-0 flex flex-1 min-h-0">
+        <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r flex flex-col`}>
+          <div className="p-4 border-b">
+            <h3 className="text-sm font-medium text-gray-500">Conversații</h3>
           </div>
-          <ScrollArea className="h-full">
-            {conversationsLoading ? (
-              <div className="flex justify-center items-center h-32">
-                <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
-              </div>
-            ) : (
-              renderConversations()
-            )}
+          <ScrollArea className="flex-1">
+            <div className="p-4">
+              {conversationsLoading ? (
+                <div className="flex justify-center items-center h-32">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
+                </div>
+              ) : (
+                renderConversations()
+              )}
+            </div>
           </ScrollArea>
         </div>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {activeConversation ? (
             <>
               {activeRequest && (
@@ -388,18 +394,20 @@ export default function MessagesTab({
                 </div>
               )}
               <ScrollArea className="flex-1 px-4">
-                {messagesLoading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
-                  </div>
-                ) : (
-                  <div className="space-y-4 py-4">
-                    {renderMessages()}
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+                <div className="py-4">
+                  {messagesLoading ? (
+                    <div className="flex justify-center items-center h-32">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {renderMessages()}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                </div>
               </ScrollArea>
-              <div className="p-4 border-t">
+              <div className="p-4 border-t mt-auto">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -429,6 +437,7 @@ export default function MessagesTab({
           )}
         </div>
       </CardContent>
+
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -492,7 +501,7 @@ export default function MessagesTab({
                     <div>
                       <p className="text-sm text-gray-600">Date disponibile</p>
                       <p className="font-medium">
-                        {offerDetails.availableDates.map(date =>
+                        {offerDetails.availableDates.map((date: string) =>
                           format(new Date(date), "dd.MM.yyyy")
                         ).join(", ")}
                       </p>
