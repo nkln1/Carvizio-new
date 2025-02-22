@@ -15,7 +15,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { AcceptedOfferWithClient } from "@shared/schema";
@@ -35,8 +35,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
-  const { viewedOffers, markOfferAsViewed } = useOfferManagement(); // Removed newOffersCount
-  const queryClient = useQueryClient();
+  const { viewedOffers, markOfferAsViewed, newOffersCount } = useOfferManagement();
 
   const { data: offers = [], isLoading, error } = useQuery<AcceptedOfferWithClient[]>({
     queryKey: ['/api/service/offers'],
@@ -89,41 +88,16 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
 
   const handleAction = async (offerId: number) => {
     try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark offer as viewed');
-      }
-
-      // Update local viewedOffers set
-      viewedOffers.add(offerId);
-      
-      // Force a refresh of both queries
-      await Promise.all([
-        queryClient.invalidateQueries(['/api/client/viewed-offers']),
-        queryClient.invalidateQueries(['/api/service/offers'])
-      ]);
+      await markOfferAsViewed(offerId);
     } catch (error) {
-      console.error("Error marking offer as viewed:", error);
+      console.error('Error marking offer as viewed:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "A apărut o eroare.",
+        description: "Failed to mark offer as viewed",
       });
     }
   };
-
-  const viewedOfferIds = Array.from(viewedOffers.keys()); // Get viewed offer IDs
-  const newOffersCount = offers.filter(offer => !viewedOfferIds.includes(offer.id)).length; // Calculate new offers count
 
   const filteredOffers = filterOffers(offers);
   const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
