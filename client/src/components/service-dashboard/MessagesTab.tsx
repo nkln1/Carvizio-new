@@ -12,9 +12,13 @@ import {
   Send,
   Loader2,
   User,
+  ArrowLeft,
+  FileText,
+  Calendar,
 } from "lucide-react";
 import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   id: number;
@@ -69,6 +73,30 @@ export default function MessagesTab({
 
       return response.json();
     }
+  });
+
+  // Fetch the request details for the active conversation
+  const { data: activeRequest } = useQuery({
+    queryKey: ['/api/service/requests', activeConversation?.requestId],
+    queryFn: async () => {
+      if (!activeConversation?.requestId) return null;
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch request details');
+      }
+
+      return response.json();
+    },
+    enabled: !!activeConversation?.requestId
   });
 
   // Fetch messages for active conversation
@@ -166,41 +194,50 @@ export default function MessagesTab({
       </div>
     );
 
-    return messages.map((message: Message) => (
-      <div
-        key={message.id}
-        className={`flex gap-3 mb-4 ${
-          message.senderRole === 'service' ? 'justify-end' : 'justify-start'
-        }`}
-      >
-        {message.senderRole !== 'service' && (
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>
-              {message.senderName?.substring(0, 2).toUpperCase() || 'CL'}
-            </AvatarFallback>
-          </Avatar>
-        )}
-        <div
-          className={`max-w-[70%] rounded-lg p-3 ${
-            message.senderRole === 'service'
-              ? 'bg-[#00aff5] text-white'
-              : 'bg-gray-100'
-          }`}
-        >
-          <p className="text-sm break-words">{message.content}</p>
-          <span className="text-xs opacity-70 mt-1 block">
-            {format(new Date(message.createdAt), "HH:mm")}
-          </span>
-        </div>
-        {message.senderRole === 'service' && (
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>
-              {message.senderName?.substring(0, 2).toUpperCase() || 'SP'}
-            </AvatarFallback>
-          </Avatar>
-        )}
-      </div>
-    ));
+    return (
+      <AnimatePresence>
+        {messages.map((message: Message) => (
+          <motion.div
+            key={message.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`flex gap-3 mb-4 ${
+              message.senderRole === 'service' ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            {message.senderRole !== 'service' && (
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>
+                  {message.senderName?.substring(0, 2).toUpperCase() || 'CL'}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div
+              className={`max-w-[70%] relative ${
+                message.senderRole === 'service'
+                  ? 'bg-[#00aff5] text-white rounded-t-2xl rounded-l-2xl'
+                  : 'bg-gray-100 rounded-t-2xl rounded-r-2xl'
+              } p-3`}
+            >
+              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+              <div className={`flex items-center gap-1 mt-1 text-xs ${
+                message.senderRole === 'service' ? 'text-blue-100' : 'text-gray-500'
+              }`}>
+                {format(new Date(message.createdAt), "HH:mm")}
+              </div>
+            </div>
+            {message.senderRole === 'service' && (
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>
+                  {message.senderName?.substring(0, 2).toUpperCase() || 'SP'}
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    );
   };
 
   const handleConversationSelect = (conv: { userId: number; userName: string; requestId: number }) => {
@@ -241,29 +278,30 @@ export default function MessagesTab({
           {conv.lastMessage && (
             <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
           )}
-          <p className="text-xs opacity-60">Request #{conv.requestId}</p>
         </div>
       </div>
     ));
   };
 
   return (
-    <Card className="h-[calc(100vh-12rem)]">
+    <Card className="h-[calc(100vh-12rem)] border-[#00aff5]/20">
       <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          {activeConversation ? `Chat with ${activeConversation.userName} - Request #${activeConversation.requestId}` : "Messages"}
+          {activeConversation
+            ? `Chat with ${activeConversation.userName}`
+            : "Mesaje"}
         </CardTitle>
         <CardDescription>
           {activeConversation
-            ? "Active conversation"
-            : "Select a conversation to start messaging"}
+            ? "Comunicare directă cu clienții"
+            : "Selectează o conversație pentru a începe"}
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex h-[calc(100%-5rem)]">
         <div className="w-1/3 border-r p-4">
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Conversations</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Conversații</h3>
           </div>
           <ScrollArea className="h-full">
             {conversationsLoading ? (
@@ -279,13 +317,27 @@ export default function MessagesTab({
         <div className="flex-1 flex flex-col">
           {activeConversation ? (
             <>
-              <ScrollArea className="flex-1 p-4">
+              {activeRequest && (
+                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm">
+                  <h4 className="font-medium flex items-center gap-2 text-gray-700">
+                    <FileText className="h-4 w-4" /> Cererea Clientului
+                  </h4>
+                  <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
+                  <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
+                  <p className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-600">Data Preferată:</span>
+                    {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                  </p>
+                </div>
+              )}
+              <ScrollArea className="flex-1 px-4">
                 {messagesLoading ? (
                   <div className="flex justify-center items-center h-32">
                     <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-4 py-4">
                     {renderMessages()}
                   </div>
                 )}
@@ -302,7 +354,7 @@ export default function MessagesTab({
                   <Input
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
+                    placeholder="Scrie un mesaj..."
                     className="flex-1"
                   />
                   <Button type="submit" size="icon">
@@ -315,7 +367,7 @@ export default function MessagesTab({
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="text-center">
                 <User className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>Start a conversation from an accepted offer</p>
+                <p>Începe o conversație dintr-o ofertă acceptată</p>
               </div>
             </div>
           )}
