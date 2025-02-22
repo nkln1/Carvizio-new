@@ -540,6 +540,48 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add endpoint to get specific offer by request ID
+  app.get("/api/service/offers/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view their offers." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const sentOffers = await storage.getSentOffersByServiceProvider(provider.id);
+
+      // Find the offer for this specific request
+      const offer = sentOffers.find(o => o.requestId === requestId);
+
+      if (!offer) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+
+      // Get client information if the offer is accepted
+      if (offer.status === "Accepted") {
+        const request = await storage.getRequest(offer.requestId);
+        if (request) {
+          const client = await db.query.clients.findFirst({
+            where: eq(clients.id, request.clientId)
+          });
+          if (client) {
+            return res.json({
+              ...offer,
+              clientName: client.name,
+              clientPhone: client.phone
+            });
+          }
+        }
+      }
+
+      res.json(offer);
+    } catch (error) {
+      console.error("Error getting service offer:", error);
+      res.status(500).json({ error: "Failed to get offer" });
+    }
+  });
+
   // Fix create offer endpoint to include required fields
   app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
     try {

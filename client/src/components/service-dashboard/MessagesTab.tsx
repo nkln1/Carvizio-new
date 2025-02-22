@@ -17,10 +17,18 @@ import {
   Calendar,
   Eye,
   Info,
+  CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Message {
   id: number;
@@ -52,11 +60,11 @@ export default function MessagesTab({
 }: MessagesTabProps) {
   const [newMessage, setNewMessage] = useState("");
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(initialConversation || null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch conversations
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
     queryKey: ['/api/service/conversations'],
     queryFn: async () => {
@@ -77,7 +85,6 @@ export default function MessagesTab({
     }
   });
 
-  // Fetch the request details for the active conversation
   const { data: activeRequest } = useQuery({
     queryKey: ['/api/service/requests', activeConversation?.requestId],
     queryFn: async () => {
@@ -101,7 +108,6 @@ export default function MessagesTab({
     enabled: !!activeConversation?.requestId
   });
 
-  // Fetch messages for active conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['/api/service/messages', activeConversation?.requestId],
     queryFn: async () => {
@@ -124,6 +130,29 @@ export default function MessagesTab({
     },
     enabled: !!activeConversation
   });
+
+  const { data: offerDetails, isLoading: offerLoading } = useQuery({
+    queryKey: ['/api/service/offers', activeConversation?.requestId],
+    queryFn: async () => {
+      if (!activeConversation?.requestId) return null;
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/offers/${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch offer details');
+      }
+
+      return response.json();
+    },
+    enabled: !!activeConversation?.requestId
+  });
+
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
@@ -319,12 +348,7 @@ export default function MessagesTab({
               variant="outline"
               size="sm"
               className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-              onClick={() => {
-                toast({
-                  title: "Detalii Cerere și Ofertă",
-                  description: "Această funcționalitate va fi disponibilă în curând.",
-                });
-              }}
+              onClick={() => setShowDetailsDialog(true)}
             >
               <Info className="h-4 w-4 mr-2" />
               Vezi Detalii Cerere și Ofertă
@@ -407,6 +431,68 @@ export default function MessagesTab({
           )}
         </div>
       </CardContent>
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalii Cerere și Ofertă</DialogTitle>
+            <DialogDescription>
+              Informații complete despre cererea clientului și oferta trimisă
+            </DialogDescription>
+          </DialogHeader>
+
+          {activeRequest && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Detalii Cerere
+                </h3>
+                <div className="grid gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">Titlu:</span> {activeRequest.title}
+                  </div>
+                  <div>
+                    <span className="font-medium">Descriere:</span> {activeRequest.description}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Data Preferată:</span>
+                    {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                  </div>
+                </div>
+              </div>
+
+              {offerDetails && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" /> Detalii Ofertă
+                  </h3>
+                  <div className="grid gap-2 text-sm">
+                    <div>
+                      <span className="font-medium">Preț Estimat:</span> {offerDetails.price} RON
+                    </div>
+                    <div>
+                      <span className="font-medium">Detalii:</span> {offerDetails.details}
+                    </div>
+                    <div>
+                      <span className="font-medium">Note:</span> {offerDetails.notes || 'N/A'}
+                    </div>
+                    <div>
+                      <span className="font-medium">Status:</span>{' '}
+                      <span className={
+                        offerDetails.status === 'Accepted' ? 'text-green-600' :
+                        offerDetails.status === 'Rejected' ? 'text-red-600' :
+                        'text-yellow-600'
+                      }>
+                        {offerDetails.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
