@@ -430,10 +430,13 @@ export default function MessagesTab({
         </div>
       </CardContent>
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl" aria-describedby="dialog-description">
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
           </DialogHeader>
+          <div id="dialog-description" className="sr-only">
+            Vizualizare detalii complete despre cerere și ofertă
+          </div>
 
           {activeRequest && (
             <div className="space-y-6">
@@ -476,8 +479,8 @@ export default function MessagesTab({
                         <p className="text-sm text-gray-600">Status</p>
                         <p className={`font-medium ${
                           offerDetails.status === 'Accepted' ? 'text-green-600' :
-                          offerDetails.status === 'Rejected' ? 'text-red-600' :
-                          'text-yellow-600'
+                            offerDetails.status === 'Rejected' ? 'text-red-600' :
+                              'text-yellow-600'
                         }`}>
                           {offerDetails.status}
                         </p>
