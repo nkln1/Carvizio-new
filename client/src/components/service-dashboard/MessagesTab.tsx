@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
@@ -47,21 +47,53 @@ export default function MessagesTab({
   const queryClient = useQueryClient();
 
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
-    queryKey: ['/api/messages/conversations'],
-    select: (data: any) => data || []
+    queryKey: ['/api/service/conversations'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversations');
+      }
+
+      return response.json();
+    }
   });
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['/api/messages', activeConversation?.userId],
-    enabled: !!activeConversation,
-    select: (data: any) => data || []
+    queryKey: ['/api/service/messages', activeConversation?.userId],
+    queryFn: async () => {
+      if (!activeConversation) return [];
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/messages/${activeConversation.userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+
+      return response.json();
+    },
+    enabled: !!activeConversation
   });
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'new_message') {
-        queryClient.invalidateQueries({ queryKey: ['/api/messages', activeConversation?.userId] });
-        queryClient.invalidateQueries({ queryKey: ['/api/messages/conversations'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation?.userId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
       }
     };
 
@@ -88,7 +120,9 @@ export default function MessagesTab({
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const response = await fetch('/api/messages/send', {
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/messages/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,8 +139,8 @@ export default function MessagesTab({
       }
 
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ['/api/messages', activeConversation?.userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/messages/conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
     } catch (error) {
       toast({
         variant: "destructive",
