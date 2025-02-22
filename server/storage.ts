@@ -4,6 +4,7 @@ import {
   cars,
   requests,
   sentOffers,
+  messages,
   type Client,
   type InsertClient,
   type ServiceProvider,
@@ -13,10 +14,12 @@ import {
   type Request,
   type InsertRequest,
   type SentOffer,
-  type InsertSentOffer
+  type InsertSentOffer,
+  type Message,
+  type InsertMessage
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, or, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -71,6 +74,15 @@ export interface IStorage {
   getSentOffersByRequest(requestId: number): Promise<SentOffer[]>;
   updateSentOfferStatus(id: number, status: "Pending" | "Accepted" | "Rejected"): Promise<SentOffer>;
   getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string })[]>;
+
+  // Add message-related methods
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessage(id: number): Promise<Message | undefined>;
+  getUserMessages(userId: number, userRole: "client" | "service"): Promise<Message[]>;
+  markMessageAsRead(id: number): Promise<Message>;
+  getUnreadMessagesCount(userId: number, userRole: "client" | "service"): Promise<number>;
+  getClient(id: number): Promise<Client | undefined>;
+  getServiceProvider(id: number): Promise<ServiceProvider | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -463,6 +475,101 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting offers for client:', error);
       return [];
+    }
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    return this.getClientById(id);
+  }
+
+  async getServiceProvider(id: number): Promise<ServiceProvider | undefined> {
+    return this.getServiceProviderById(id);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    try {
+      const [newMessage] = await db
+        .insert(messages)
+        .values({
+          ...message,
+          isRead: false,
+          createdAt: new Date()
+        })
+        .returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating message:', error);
+      throw error;
+    }
+  }
+
+  async getMessage(id: number): Promise<Message | undefined> {
+    try {
+      const [message] = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.id, id));
+      return message;
+    } catch (error) {
+      console.error('Error getting message:', error);
+      return undefined;
+    }
+  }
+
+  async getUserMessages(userId: number, userRole: "client" | "service"): Promise<Message[]> {
+    try {
+      return await db
+        .select()
+        .from(messages)
+        .where(
+          or(
+            and(
+              eq(messages.senderId, userId),
+              eq(messages.senderRole, userRole)
+            ),
+            and(
+              eq(messages.receiverId, userId),
+              eq(messages.receiverRole, userRole)
+            )
+          )
+        )
+        .orderBy(desc(messages.createdAt));
+    } catch (error) {
+      console.error('Error getting user messages:', error);
+      return [];
+    }
+  }
+
+  async markMessageAsRead(id: number): Promise<Message> {
+    try {
+      const [updatedMessage] = await db
+        .update(messages)
+        .set({ isRead: true })
+        .where(eq(messages.id, id))
+        .returning();
+      return updatedMessage;
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      throw error;
+    }
+  }
+
+  async getUnreadMessagesCount(userId: number, userRole: "client" | "service"): Promise<number> {
+    try {
+      const unreadMessages = await db
+        .select()
+        .from(messages)
+        .where(
+          and(
+            eq(messages.receiverId, userId),
+            eq(messages.receiverRole, userRole),
+            eq(messages.isRead, false)
+          )
+        );
+      return unreadMessages.length;
+    } catch (error) {
+      console.error('Error getting unread messages count:', error);
+      return 0;
     }
   }
 }

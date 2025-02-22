@@ -41,6 +41,49 @@ const getUserWithRole = (user: any, role: "client" | "service") => {
   return { ...userWithoutPassword, role };
 };
 
+// Add these helper functions at the top of the file after the imports
+interface IStorage {
+    createClient: any;
+    createServiceProvider: any;
+    getClientByFirebaseUid: any;
+    getServiceProviderByFirebaseUid: any;
+    getClient: any;
+    getServiceProvider: any;
+    getClientCars: any;
+    createCar: any;
+    getCar: any;
+    updateCar: any;
+    deleteCar: any;
+    createRequest: any;
+    getClientRequests: any;
+    getRequest: any;
+    updateRequest: any;
+    getRequestsByLocation: any;
+    getSentOffersByServiceProvider: any;
+    createSentOffer: any;
+    updateSentOfferStatus: any;
+    getOffersForClient: any;
+    getClientByPhone: any;
+    getServiceProviderByPhone: any;
+    updateClient: any;
+    updateServiceProvider: any;
+    createMessage: any;
+    getUserMessages: any;
+    getMessage: any;
+    markMessageAsRead: any;
+    getUnreadMessagesCount: any;
+}
+
+const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
+  if (userRole === "client") {
+    const client = await storage.getClient(userId);
+    return client?.name || "Unknown User";
+  } else {
+    const provider = await storage.getServiceProvider(userId);
+    return provider?.companyName || "Unknown User";
+  }
+};
+
 export function registerRoutes(app: Express): Server {
   // Configure session middleware
   app.use(
@@ -630,11 +673,12 @@ export function registerRoutes(app: Express): Server {
     res.status(200).json({ available: true });
   });
 
-  // Add client offers endpoint
+  // Fix the /api/client/offers endpoint authorization
   app.get("/api/client/offers", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
+        console.log("Client not found for Firebase UID:", req.firebaseUser!.uid);
         return res.status(403).json({ error: "Access denied. Only clients can view their offers." });
       }
 
@@ -785,7 +829,7 @@ export function registerRoutes(app: Express): Server {
   });
 
 
-  // Add messaging routes
+  // Update the POST /api/messages endpoint
   app.post("/api/messages", validateFirebaseToken, async (req, res) => {
     try {
       const { content, receiverId, receiverRole } = req.body;
@@ -816,17 +860,24 @@ export function registerRoutes(app: Express): Server {
         content
       });
 
+      // Add display names to the response
+      const enrichedMessage = {
+        ...message,
+        senderName: await getUserDisplayName(message.senderId, message.senderRole, storage),
+        receiverName: await getUserDisplayName(message.receiverId, message.receiverRole, storage)
+      };
+
       // Send real-time notification
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({
             type: 'NEW_MESSAGE',
-            payload: message
+            payload: enrichedMessage
           }));
         }
       });
 
-      res.status(201).json(message);
+      res.status(201).json(enrichedMessage);
     } catch (error: any) {
       console.error("Error sending message:", error);
       res.status(500).json({
@@ -849,7 +900,17 @@ export function registerRoutes(app: Express): Server {
       const userRole = client ? "client" : "service";
 
       const messages = await storage.getUserMessages(userId, userRole);
-      res.json(messages);
+
+      // Enrich messages with display names
+      const enrichedMessages = await Promise.all(
+        messages.map(async (message) => ({
+          ...message,
+          senderName: await getUserDisplayName(message.senderId, message.senderRole, storage),
+          receiverName: await getUserDisplayName(message.receiverId, message.receiverRole, storage)
+        }))
+      );
+
+      res.json(enrichedMessages);
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ error: "Failed to fetch messages" });
