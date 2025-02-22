@@ -431,62 +431,92 @@ export default function MessagesTab({
         </div>
       </CardContent>
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Detalii Cerere și Ofertă</DialogTitle>
-            <DialogDescription>
-              Informații complete despre cererea clientului și oferta trimisă
-            </DialogDescription>
+            <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
           </DialogHeader>
 
           {activeRequest && (
             <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Detalii Cerere
-                </h3>
-                <div className="grid gap-2 text-sm">
+              <div>
+                <h3 className="font-medium text-lg mb-2">Detalii Client și Cerere</h3>
+                <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
                   <div>
-                    <span className="font-medium">Titlu:</span> {activeRequest.title}
+                    <p className="text-sm text-gray-600">Titlu Cerere</p>
+                    <p className="font-medium">{activeRequest.title}</p>
                   </div>
                   <div>
-                    <span className="font-medium">Descriere:</span> {activeRequest.description}
+                    <p className="text-sm text-gray-600">Descriere Cerere</p>
+                    <p className="font-medium">{activeRequest.description}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">Data Preferată:</span>
-                    {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                  <div>
+                    <p className="text-sm text-gray-600">Data Preferată</p>
+                    <p className="font-medium">
+                      {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Locație</p>
+                    <p className="font-medium">
+                      {activeRequest.cities?.join(", ")}, {activeRequest.county}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {offerDetails && (
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" /> Detalii Ofertă
-                  </h3>
-                  <div className="grid gap-2 text-sm">
-                    <div>
-                      <span className="font-medium">Preț Estimat:</span> {offerDetails.price} RON
-                    </div>
-                    <div>
-                      <span className="font-medium">Detalii:</span> {offerDetails.details}
-                    </div>
-                    <div>
-                      <span className="font-medium">Note:</span> {offerDetails.notes || 'N/A'}
-                    </div>
-                    <div>
-                      <span className="font-medium">Status:</span>{' '}
-                      <span className={
-                        offerDetails.status === 'Accepted' ? 'text-green-600' :
-                        offerDetails.status === 'Rejected' ? 'text-red-600' :
-                        'text-yellow-600'
-                      }>
-                        {offerDetails.status}
-                      </span>
+                <>
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-600">Preț</p>
+                        <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Status</p>
+                        <p className={`font-medium ${
+                          offerDetails.status === 'Accepted' ? 'text-green-600' :
+                          offerDetails.status === 'Rejected' ? 'text-red-600' :
+                          'text-yellow-600'
+                        }`}>
+                          {offerDetails.status}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="whitespace-pre-line">
+                        {offerDetails.details}
+                      </p>
+                      {offerDetails.notes && (
+                        <div className="mt-4">
+                          <p className="text-sm text-gray-600">Note adiționale:</p>
+                          <p className="whitespace-pre-line">{offerDetails.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Istoric</h3>
+                    <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <span className="w-32">Ofertă creată:</span>
+                        <span>{format(new Date(offerDetails.createdAt), "dd.MM.yyyy HH:mm")}</span>
+                      </div>
+                      {offerDetails.status === 'Accepted' && offerDetails.acceptedAt && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <span className="w-32">Ofertă acceptată:</span>
+                          <span>{format(new Date(offerDetails.acceptedAt), "dd.MM.yyyy HH:mm")}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}
