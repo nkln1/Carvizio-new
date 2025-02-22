@@ -145,6 +145,9 @@ export const sentOffers = pgTable("sent_offers", {
   requestPreferredDate: timestamp("request_preferred_date").notNull(),
   requestCounty: text("request_county").notNull(),
   requestCities: text("request_cities").array().notNull(),
+  // Add client information for messaging
+  requestUserId: integer("request_user_id").notNull(),
+  requestUserName: text("request_user_name").notNull(),
   status: text("status", {
     enum: ["Pending", "Accepted", "Rejected"]
   }).default("Pending").notNull(),
