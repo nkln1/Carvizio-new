@@ -287,11 +287,14 @@ export default function MessagesTab({
                       : 'bg-gray-100 rounded-t-2xl rounded-r-2xl'
                   } p-3`}
                 >
+                  <div className="text-xs mb-1 font-medium">
+                    {message.senderName}
+                  </div>
                   <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                   <div className={`flex items-center gap-1 mt-1 text-xs ${
                     message.senderRole === 'service' ? 'text-blue-100' : 'text-gray-500'
                   }`}>
-                     {format(new Date(message.createdAt), "HH:mm")}
+                    {format(new Date(message.createdAt), "HH:mm")}
                   </div>
                 </div>
                 {message.senderRole === 'service' && (
@@ -324,44 +327,53 @@ export default function MessagesTab({
     );
 
     return conversations.map((conv: any) => (
-      <div
+      <motion.div
         key={`${conv.userId}-${conv.requestId}`}
-        className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-          activeConversation?.userId === conv.userId && activeConversation?.requestId === conv.requestId
-            ? 'bg-[#00aff5] text-white'
-            : 'hover:bg-gray-100'
-        }`}
-        onClick={() => handleConversationSelect({
-          userId: conv.userId,
-          userName: conv.userName || `Client ${conv.userId}`,
-          requestId: conv.requestId
-        })}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
-        <Avatar className="h-10 w-10">
-          <AvatarFallback>
-            {(conv.userName || `C${conv.userId}`).substring(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start">
-            <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
-            <span className="text-xs opacity-70">
-              {conv.lastMessageDate ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm") : ''}
-            </span>
-          </div>
-          <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
-          {conv.requestTitle && (
-            <div className="flex items-center gap-1 mt-1">
-              <FileText className="h-3 w-3 opacity-60" />
-              <p className={`text-xs truncate ${
-                activeConversation?.userId === conv.userId ? 'opacity-90' : 'opacity-60'
-              }`}>
-                {conv.requestTitle}
-              </p>
+        <Card
+          className="cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => handleConversationSelect({
+            userId: conv.userId,
+            userName: conv.userName || `Client ${conv.userId}`,
+            requestId: conv.requestId
+          })}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <Avatar>
+                <AvatarFallback className="bg-blue-100 text-blue-600">
+                  {(conv.userName || `C${conv.userId}`).substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{conv.userName || `Client ${conv.userId}`}</h4>
+                    <p className="text-sm text-muted-foreground">{conv.requestTitle}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                    {conv.lastMessageDate ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm") : ''}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground truncate mt-1">
+                  {conv.lastMessage}
+                </p>
+                {conv.requestTitle && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <FileText className="h-3 w-3 opacity-60" />
+                    <p className="text-xs truncate opacity-60">
+                      {conv.requestTitle}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     ));
   };
 
@@ -408,7 +420,7 @@ export default function MessagesTab({
             <h3 className="text-sm font-medium text-gray-500">Conversații</h3>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-4">
+            <div className="p-4 space-y-2">
               {conversationsLoading ? (
                 <div className="flex justify-center items-center h-32">
                   <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
@@ -423,20 +435,6 @@ export default function MessagesTab({
         <div className="flex-1 flex flex-col min-h-0">
           {activeConversation ? (
             <>
-              {activeRequest && (
-                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm">
-                  <h4 className="font-medium flex items-center gap-2 text-gray-700">
-                    <FileText className="h-4 w-4" /> Cererea Clientului
-                  </h4>
-                  <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
-                  <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
-                  <p className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Data Preferată:</span>
-                    {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
-                  </p>
-                </div>
-              )}
               <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
                 <div className="py-4">
                   {messagesLoading ? (
@@ -464,10 +462,13 @@ export default function MessagesTab({
                     placeholder="Scrie un mesaj..."
                     className="flex-1"
                   />
-                  <Button type="submit" size="icon">
+                  <Button type="submit" size="icon" className="bg-[#00aff5] hover:bg-[#0099d6]">
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Apasă Enter pentru a trimite mesajul
+                </p>
               </div>
             </>
           ) : (
