@@ -51,12 +51,16 @@ export function OffersTab({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleAction = async (offerId: number, action: () => void) => {
+  const handleAction = async (offerId: number, action: () => void | Promise<void>) => {
     try {
+      // First mark the offer as viewed
       if (markOfferAsViewed) {
         await markOfferAsViewed(offerId);
+        // Invalidate the viewed offers query to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
       }
-      action();
+      // Then execute the actual action
+      await action();
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
       toast({
@@ -205,11 +209,12 @@ export function OffersTab({
         key={offer.id}
         className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[300px] flex flex-col overflow-hidden"
       >
-        {isNew && (
+        {/*Removed New Badge*/}
+        {/* {isNew && (
           <Badge className="absolute -top-0 -right-0 bg-[#00aff5] text-white">
             Nou
           </Badge>
-        )}
+        )} */}
 
         <div className="p-2 border-b bg-gray-50">
           <div className="flex justify-between items-start mb-1">
