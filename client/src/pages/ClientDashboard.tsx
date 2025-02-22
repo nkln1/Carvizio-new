@@ -242,7 +242,10 @@ export default function ClientDashboard() {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
                 viewedOffers={new Set(viewedOffers)}
-                setViewedOffers={(newViewedOffers) => setViewedOffers(Array.from(newViewedOffers))}
+                setViewedOffers={(newViewedOffers) => {
+                  setViewedOffers(Array.from(newViewedOffers));
+                  queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+                }}
               />
             )}
 
