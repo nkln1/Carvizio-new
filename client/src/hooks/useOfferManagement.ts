@@ -52,8 +52,7 @@ export function useOfferManagement() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to mark offer as viewed' }));
-        throw new Error(errorData.message);
+        throw new Error('Failed to mark offer as viewed');
       }
 
       return response.json();
