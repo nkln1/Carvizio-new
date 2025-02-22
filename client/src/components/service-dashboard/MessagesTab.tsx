@@ -36,7 +36,7 @@ interface MessagesTabProps {
   onConversationClear?: () => void;
 }
 
-export default function MessagesTab({ 
+export default function MessagesTab({
   initialConversation,
   onConversationClear
 }: MessagesTabProps) {
@@ -242,7 +242,7 @@ export default function MessagesTab({
           {activeConversation ? activeConversation.userName : "Messages"}
         </CardTitle>
         <CardDescription>
-          {activeConversation 
+          {activeConversation
             ? "Active conversation"
             : "Select a conversation to start"}
         </CardDescription>
@@ -272,7 +272,9 @@ export default function MessagesTab({
                     <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
                   </div>
                 ) : (
-                  renderMessages()
+                  <div className="space-y-4">
+                    {renderMessages()}
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </ScrollArea>

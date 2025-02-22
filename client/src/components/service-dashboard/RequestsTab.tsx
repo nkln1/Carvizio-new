@@ -36,7 +36,11 @@ import websocketService from "@/lib/websocket";
 
 const ITEMS_PER_PAGE = 5;
 
-export default function RequestsTab() {
+interface RequestsTabProps {
+  onMessageClick?: (userId: number, userName: string) => void;
+}
+
+export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
@@ -46,7 +50,6 @@ export default function RequestsTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Load viewed requests from localStorage on component mount
   useEffect(() => {
     const loadViewedRequests = () => {
       const userId = auth.currentUser?.uid;
@@ -60,7 +63,6 @@ export default function RequestsTab() {
     loadViewedRequests();
   }, []);
 
-  // WebSocket connection management
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'NEW_REQUEST') {
@@ -74,16 +76,13 @@ export default function RequestsTab() {
       }
     };
 
-    // Add message handler for WebSocket events
     const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
 
-    // Cleanup on component unmount
     return () => {
       removeHandler();
     };
   }, [queryClient, toast]);
 
-  // Fetch requests that match the service's location
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
     queryKey: ['/api/service/requests'],
     queryFn: async () => {
@@ -105,34 +104,29 @@ export default function RequestsTab() {
     staleTime: 0
   });
 
-  // Handle request viewing
   const handleViewRequest = (request: RequestType) => {
     const userId = auth.currentUser?.uid;
     if (userId) {
       const newViewedRequests = new Set(viewedRequests);
       newViewedRequests.add(request.id);
       setViewedRequests(newViewedRequests);
-      // Convert Set to Array before storing
       localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify(Array.from(newViewedRequests)));
     }
     setSelectedRequest(request);
     setShowViewDialog(true);
   };
 
-  // Filter active and unviewed requests
   const filteredRequests = requests.filter(req => {
     if (req.status !== "Active") return false;
     if (showOnlyNew && viewedRequests.has(req.id)) return false;
     return true;
   });
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
-  // Calculate new requests count
   const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
 
   const handleSubmitOffer = async (values: any) => {
@@ -170,6 +164,17 @@ export default function RequestsTab() {
         variant: "destructive",
         title: "Eroare",
         description: "Nu s-a putut trimite oferta. Încercați din nou.",
+      });
+    }
+  };
+
+  const handleMessageClick = (request: RequestType) => {
+    if (onMessageClick) {
+      onMessageClick(request.clientId, `Client ${request.clientId}`); 
+    } else {
+      toast({
+        title: "În curând",
+        description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
       });
     }
   };
@@ -257,12 +262,7 @@ export default function RequestsTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "În curând",
-                                description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                              });
-                            }}
+                            onClick={() => handleMessageClick(request)}
                             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -304,7 +304,6 @@ export default function RequestsTab() {
               </Table>
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 mt-4">
                 <Button
