@@ -3,6 +3,9 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+const MessageRole = z.enum(["client", "service"]);
+export type MessageRole = z.infer<typeof MessageRole>;
+
 // Enums and custom types
 export const UserRole = z.enum(["client", "service"]);
 export type UserRole = z.infer<typeof UserRole>;
@@ -172,19 +175,15 @@ export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").notNull(),
-  senderRole: text("sender_role", {
-    enum: ["client", "service"]
-  }).notNull(),
+  senderRole: text("sender_role", { enum: ["client", "service"] }).notNull(),
   receiverId: integer("receiver_id").notNull(),
-  receiverRole: text("receiver_role", {
-    enum: ["client", "service"]
-  }).notNull(),
+  receiverRole: text("receiver_role", { enum: ["client", "service"] }).notNull(),
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Add messages relations
+// Add message relations
 export const messagesRelations = relations(messages, ({ one }) => ({
   clientSender: one(clients, {
     fields: [messages.senderId],

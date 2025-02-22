@@ -74,12 +74,17 @@ interface IStorage {
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
-  if (userRole === "client") {
-    const client = await storage.getClient(userId);
-    return client?.name || "Unknown User";
-  } else {
-    const provider = await storage.getServiceProvider(userId);
-    return provider?.companyName || "Unknown User";
+  try {
+    if (userRole === "client") {
+      const client = await storage.getClient(userId);
+      return client?.name || "Unknown Client";
+    } else {
+      const provider = await storage.getServiceProvider(userId);
+      return provider?.companyName || "Unknown Service Provider";
+    }
+  } catch (error) {
+    console.error("Error getting user display name:", error);
+    return userRole === "client" ? "Unknown Client" : "Unknown Service Provider";
   }
 };
 
@@ -679,21 +684,25 @@ export function registerRoutes(app: Express): Server {
     res.status(200).json({ available: true });
   });
 
-  // Fix the /api/client/offers endpoint authorization
+  // Update the client offers endpoint
   app.get("/api/client/offers", validateFirebaseToken, async (req, res) => {
     try {
       console.log("Fetching offers for Firebase UID:", req.firebaseUser!.uid);
 
-      // First verify if the user is a client
+      // Try both client and service provider
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      // If user is a service provider, return 403
+      if (serviceProvider) {
+        console.log("Service provider attempted to access client offers:", req.firebaseUser!.uid);
+        return res.status(403).json({ 
+          error: "Access denied. This endpoint is only for clients." 
+        });
+      }
+
+      // If no user found at all, return 401
       if (!client) {
-        const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-        if (serviceProvider) {
-          console.log("Service provider attempted to access client offers:", req.firebaseUser!.uid);
-          return res.status(403).json({ 
-            error: "Access denied. This endpoint is only for clients." 
-          });
-        }
         console.log("No user found for Firebase UID:", req.firebaseUser!.uid);
         return res.status(401).json({ error: "User not found" });
       }
