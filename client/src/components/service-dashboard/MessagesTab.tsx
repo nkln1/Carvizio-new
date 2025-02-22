@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,8 +44,8 @@ interface Message {
   createdAt: string;
   senderName: string;
   receiverName: string;
-  senderRole: 'client' | 'service';
-  receiverRole: 'client' | 'service';
+  senderRole: "client" | "service";
+  receiverRole: "client" | "service";
   requestId: number;
 }
 
@@ -50,121 +56,141 @@ interface ActiveConversation {
 }
 
 interface MessagesTabProps {
-  initialConversation?: { userId: number; userName: string; requestId: number } | null;
+  initialConversation?: {
+    userId: number;
+    userName: string;
+    requestId: number;
+  } | null;
   onConversationClear?: () => void;
 }
 
 export default function MessagesTab({
   initialConversation,
-  onConversationClear
+  onConversationClear,
 }: MessagesTabProps) {
   const [newMessage, setNewMessage] = useState("");
-  const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(initialConversation || null);
+  const [activeConversation, setActiveConversation] =
+    useState<ActiveConversation | null>(initialConversation || null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
-    queryKey: ['/api/service/conversations'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+  const { data: conversations = [], isLoading: conversationsLoading } =
+    useQuery({
+      queryKey: ["/api/service/conversations"],
+      queryFn: async () => {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch('/api/service/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+        const response = await fetch("/api/service/conversations", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch conversations");
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
-      }
-
-      return response.json();
-    }
-  });
+        return response.json();
+      },
+    });
 
   const { data: activeRequest } = useQuery({
-    queryKey: ['/api/service/requests', activeConversation?.requestId],
+    queryKey: ["/api/service/requests", activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation?.requestId) return null;
 
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(
+        `/api/service/requests/${activeConversation.requestId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch request details');
+        throw new Error("Failed to fetch request details");
       }
 
       return response.json();
     },
-    enabled: !!activeConversation?.requestId
+    enabled: !!activeConversation?.requestId,
   });
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['/api/service/messages', activeConversation?.requestId],
+    queryKey: ["/api/service/messages", activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation) return [];
 
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch(`/api/service/messages/${activeConversation.requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(
+        `/api/service/messages/${activeConversation.requestId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch messages');
+        throw new Error("Failed to fetch messages");
       }
 
       const data = await response.json();
       // Sort messages by date, oldest first
-      return data.sort((a: Message, b: Message) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return data.sort(
+        (a: Message, b: Message) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
     },
-    enabled: !!activeConversation
+    enabled: !!activeConversation,
   });
 
   const { data: offerDetails, isLoading: offerLoading } = useQuery({
-    queryKey: ['/api/service/offers', activeConversation?.requestId],
+    queryKey: ["/api/service/offers", activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation?.requestId) return null;
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch(`/api/service/offers/${activeConversation.requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(
+        `/api/service/offers/${activeConversation.requestId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch offer details');
+        throw new Error("Failed to fetch offer details");
       }
 
       return response.json();
     },
-    enabled: !!activeConversation?.requestId
+    enabled: !!activeConversation?.requestId,
   });
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
-      if (data.type === 'NEW_MESSAGE') {
-        queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation?.requestId] });
+      if (data.type === "NEW_MESSAGE") {
+        queryClient.invalidateQueries({
+          queryKey: ["/api/service/messages", activeConversation?.requestId],
+        });
       }
     };
 
-    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+    const removeHandler = websocketService.addMessageHandler(
+      handleWebSocketMessage,
+    );
     return () => {
       removeHandler();
     };
@@ -178,56 +204,64 @@ export default function MessagesTab({
 
   useEffect(() => {
     if (messages?.length && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      );
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
   }, [messages, activeConversation]);
 
-
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch('/api/service/messages/send', {
-        method: 'POST',
+      const response = await fetch("/api/service/messages/send", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           content: newMessage,
-          requestId: activeConversation.requestId
+          requestId: activeConversation.requestId,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error("Failed to send message");
       }
 
       setNewMessage("");
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/service/messages", activeConversation.requestId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/service/conversations"],
+      });
 
       // Scroll to bottom after sending a message
       setTimeout(() => {
         if (scrollAreaRef.current) {
-          const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+          const scrollContainer = scrollAreaRef.current.querySelector(
+            "[data-radix-scroll-area-viewport]",
+          );
           if (scrollContainer) {
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
           }
         }
       }, 100);
     } catch (error: any) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to send message. Please try again.",
+        description:
+          error.message || "Failed to send message. Please try again.",
       });
     }
   };
@@ -240,19 +274,21 @@ export default function MessagesTab({
   };
 
   const renderMessages = () => {
-    if (!messages.length) return (
-      <div className="flex items-center justify-center h-full text-gray-500">
-        <p>Nu există mesaje încă</p>
-      </div>
-    );
+    if (!messages.length)
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500">
+          <p>Nu există mesaje încă</p>
+        </div>
+      );
 
     return (
       <AnimatePresence>
         {messages.map((message: Message, index: number) => {
           const currentDate = new Date(message.createdAt).toDateString();
-          const previousDate = index > 0
-            ? new Date(messages[index - 1].createdAt).toDateString()
-            : null;
+          const previousDate =
+            index > 0
+              ? new Date(messages[index - 1].createdAt).toDateString()
+              : null;
           const showDateSeparator = currentDate !== previousDate;
 
           return (
@@ -270,34 +306,44 @@ export default function MessagesTab({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
                 className={`flex gap-3 mb-4 ${
-                  message.senderRole === 'service' ? 'justify-end' : 'justify-start'
+                  message.senderRole === "service"
+                    ? "justify-end"
+                    : "justify-start"
                 }`}
               >
-                {message.senderRole !== 'service' && (
+                {message.senderRole !== "service" && (
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      {message.senderName?.substring(0, 2).toUpperCase() || 'CL'}
+                      {message.senderName?.substring(0, 2).toUpperCase() ||
+                        "CL"}
                     </AvatarFallback>
                   </Avatar>
                 )}
                 <div
                   className={`max-w-[70%] relative ${
-                    message.senderRole === 'service'
-                      ? 'bg-[#00aff5] text-white rounded-t-2xl rounded-l-2xl'
-                      : 'bg-gray-100 rounded-t-2xl rounded-r-2xl'
+                    message.senderRole === "service"
+                      ? "bg-[#00aff5] text-white rounded-t-2xl rounded-l-2xl"
+                      : "bg-gray-100 rounded-t-2xl rounded-r-2xl"
                   } p-3`}
                 >
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                  <div className={`flex items-center gap-1 mt-1 text-xs ${
-                    message.senderRole === 'service' ? 'text-blue-100' : 'text-gray-500'
-                  }`}>
-                    {format(new Date(message.createdAt), "dd.MM.yyyy")} {format(new Date(message.createdAt), "HH:mm")}
+                  <p className="text-sm whitespace-pre-wrap break-words">
+                    {message.content}
+                  </p>
+                  <div
+                    className={`flex items-center gap-1 mt-1 text-xs ${
+                      message.senderRole === "service"
+                        ? "text-blue-100"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {format(new Date(message.createdAt), "HH:mm")}
                   </div>
                 </div>
-                {message.senderRole === 'service' && (
+                {message.senderRole === "service" && (
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      {message.senderName?.substring(0, 2).toUpperCase() || 'SP'}
+                      {message.senderName?.substring(0, 2).toUpperCase() ||
+                        "SP"}
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -309,7 +355,11 @@ export default function MessagesTab({
     );
   };
 
-  const handleConversationSelect = (conv: { userId: number; userName: string; requestId: number }) => {
+  const handleConversationSelect = (conv: {
+    userId: number;
+    userName: string;
+    requestId: number;
+  }) => {
     setActiveConversation(conv);
     if (initialConversation) {
       onConversationClear?.();
@@ -317,25 +367,29 @@ export default function MessagesTab({
   };
 
   const renderConversations = () => {
-    if (!conversations.length) return (
-      <div className="text-center py-4 text-gray-500">
-        Nu există conversații încă
-      </div>
-    );
+    if (!conversations.length)
+      return (
+        <div className="text-center py-4 text-gray-500">
+          Nu există conversații încă
+        </div>
+      );
 
     return conversations.map((conv: any) => (
       <div
         key={`${conv.userId}-${conv.requestId}`}
         className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-          activeConversation?.userId === conv.userId && activeConversation?.requestId === conv.requestId
-            ? 'bg-[#00aff5] text-white'
-            : 'hover:bg-gray-100'
+          activeConversation?.userId === conv.userId &&
+          activeConversation?.requestId === conv.requestId
+            ? "bg-[#00aff5] text-white"
+            : "hover:bg-gray-100"
         }`}
-        onClick={() => handleConversationSelect({
-          userId: conv.userId,
-          userName: conv.userName || `Client ${conv.userId}`,
-          requestId: conv.requestId
-        })}
+        onClick={() =>
+          handleConversationSelect({
+            userId: conv.userId,
+            userName: conv.userName || `Client ${conv.userId}`,
+            requestId: conv.requestId,
+          })
+        }
       >
         <Avatar className="h-10 w-10">
           <AvatarFallback>
@@ -344,18 +398,26 @@ export default function MessagesTab({
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
-            <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
+            <p className="font-medium">
+              {conv.userName || `Client ${conv.userId}`}
+            </p>
             <span className="text-xs opacity-70">
-              {conv.lastMessageDate ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm") : ''}
+              {conv.lastMessageDate
+                ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm")
+                : ""}
             </span>
           </div>
           <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
           {conv.requestTitle && (
             <div className="flex items-center gap-1 mt-1">
               <FileText className="h-3 w-3 opacity-60" />
-              <p className={`text-xs truncate ${
-                activeConversation?.userId === conv.userId ? 'opacity-90' : 'opacity-60'
-              }`}>
+              <p
+                className={`text-xs truncate ${
+                  activeConversation?.userId === conv.userId
+                    ? "opacity-90"
+                    : "opacity-60"
+                }`}
+              >
                 {conv.requestTitle}
               </p>
             </div>
@@ -387,9 +449,7 @@ export default function MessagesTab({
         </CardTitle>
         {activeConversation && (
           <div className="flex justify-between items-center">
-            <CardDescription>
-              Comunicare directă cu clienții
-            </CardDescription>
+            <CardDescription>Comunicare directă cu clienții</CardDescription>
             <Button
               variant="outline"
               size="sm"
@@ -403,7 +463,9 @@ export default function MessagesTab({
         )}
       </CardHeader>
       <CardContent className="p-0 flex flex-1 min-h-0">
-        <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r flex flex-col`}>
+        <div
+          className={`${activeConversation ? "hidden md:block" : ""} w-1/3 border-r flex flex-col`}
+        >
           <div className="p-4 border-b">
             <h3 className="text-sm font-medium text-gray-500">Conversații</h3>
           </div>
@@ -428,12 +490,21 @@ export default function MessagesTab({
                   <h4 className="font-medium flex items-center gap-2 text-gray-700">
                     <FileText className="h-4 w-4" /> Cererea Clientului
                   </h4>
-                  <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
-                  <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
+                  <p>
+                    <span className="text-gray-600">Titlu:</span>{" "}
+                    {activeRequest.title}
+                  </p>
+                  <p>
+                    <span className="text-gray-600">Descriere:</span>{" "}
+                    {activeRequest.description}
+                  </p>
                   <p className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <span className="text-gray-600">Data Preferată:</span>
-                    {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                    {format(
+                      new Date(activeRequest.preferredDate),
+                      "dd.MM.yyyy",
+                    )}
                   </p>
                 </div>
               )}
@@ -444,9 +515,7 @@ export default function MessagesTab({
                       <Loader2 className="h-6 w-6 animate-spin text-[#00aff5]" />
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {renderMessages()}
-                    </div>
+                    <div className="space-y-4">{renderMessages()}</div>
                   )}
                 </div>
               </ScrollArea>
@@ -491,7 +560,9 @@ export default function MessagesTab({
             <ScrollArea className="h-full max-h-[60vh] pr-4">
               <div className="space-y-6 p-2">
                 <div>
-                  <h3 className="font-medium text-lg mb-2">Informații Client</h3>
+                  <h3 className="font-medium text-lg mb-2">
+                    Informații Client
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-sm text-gray-600">Nume Client</p>
@@ -505,7 +576,9 @@ export default function MessagesTab({
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-lg mb-2">Detalii Cerere Client</h3>
+                  <h3 className="font-medium text-lg mb-2">
+                    Detalii Cerere Client
+                  </h3>
                   <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-sm text-gray-600">Titlu Cerere</p>
@@ -513,25 +586,35 @@ export default function MessagesTab({
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Descriere Cerere</p>
-                      <p className="font-medium">{offerDetails.requestDescription}</p>
+                      <p className="font-medium">
+                        {offerDetails.requestDescription}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Data Preferată Client</p>
+                      <p className="text-sm text-gray-600">
+                        Data Preferată Client
+                      </p>
                       <p className="font-medium">
-                        {format(new Date(offerDetails.requestPreferredDate), "dd.MM.yyyy")}
+                        {format(
+                          new Date(offerDetails.requestPreferredDate),
+                          "dd.MM.yyyy",
+                        )}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Locație</p>
                       <p className="font-medium">
-                        {offerDetails.requestCities.join(", ")}, {offerDetails.requestCounty}
+                        {offerDetails.requestCities.join(", ")},{" "}
+                        {offerDetails.requestCounty}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-lg mb-2">Informații Ofertă</h3>
+                  <h3 className="font-medium text-lg mb-2">
+                    Informații Ofertă
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-sm text-gray-600">Titlu</p>
@@ -539,23 +622,31 @@ export default function MessagesTab({
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Preț</p>
-                      <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
+                      <p className="font-medium text-[#00aff5]">
+                        {offerDetails.price} RON
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Date disponibile</p>
                       <p className="font-medium">
-                        {offerDetails.availableDates.map((date: string) =>
-                          format(new Date(date), "dd.MM.yyyy")
-                        ).join(", ")}
+                        {offerDetails.availableDates
+                          .map((date: string) =>
+                            format(new Date(date), "dd.MM.yyyy"),
+                          )
+                          .join(", ")}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Status</p>
-                      <p className={`font-medium ${
-                        offerDetails.status === 'Accepted' ? 'text-green-600' :
-                          offerDetails.status === 'Rejected' ? 'text-red-600' :
-                            'text-yellow-600'
-                      }`}>
+                      <p
+                        className={`font-medium ${
+                          offerDetails.status === "Accepted"
+                            ? "text-green-600"
+                            : offerDetails.status === "Rejected"
+                              ? "text-red-600"
+                              : "text-yellow-600"
+                        }`}
+                      >
                         {offerDetails.status}
                       </p>
                     </div>
@@ -574,7 +665,12 @@ export default function MessagesTab({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <span className="w-32">Creat:</span>
-                      <span>{format(new Date(offerDetails.createdAt), "dd.MM.yyyy HH:mm")}</span>
+                      <span>
+                        {format(
+                          new Date(offerDetails.createdAt),
+                          "dd.MM.yyyy HH:mm",
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
