@@ -329,7 +329,7 @@ export default function MessagesTab({
           <div className="flex justify-between items-start">
             <p className="font-medium">{conv.userName || `Client ${conv.userId}`}</p>
             <span className="text-xs opacity-70">
-              {format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm")}
+              {conv.lastMessageDate ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm") : ''}
             </span>
           </div>
           <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
