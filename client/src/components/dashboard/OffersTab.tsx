@@ -209,12 +209,11 @@ export function OffersTab({
         key={offer.id}
         className="bg-white border-2 border-gray-200 rounded-lg hover:border-[#00aff5]/30 transition-all duration-200 relative h-[300px] flex flex-col overflow-hidden"
       >
-        {/*Removed New Badge*/}
-        {/* {isNew && (
+        {isNew && (
           <Badge className="absolute -top-0 -right-0 bg-[#00aff5] text-white">
             Nou
           </Badge>
-        )} */}
+        )}
 
         <div className="p-2 border-b bg-gray-50">
           <div className="flex justify-between items-start mb-1">

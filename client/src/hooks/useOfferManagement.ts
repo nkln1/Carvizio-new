@@ -69,8 +69,9 @@ export function useOfferManagement() {
       // Update the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
 
-      // Invalidate queries to ensure fresh data
+      // Invalidate both queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
     },
     onError: (error: Error) => {
       toast({
