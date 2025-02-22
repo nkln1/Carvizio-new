@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, integer, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -208,6 +208,48 @@ export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
     references: [requests.id],
   }),
 }));
+
+
+// Add viewed requests table definition
+export const viewedRequests = pgTable("viewed_requests", {
+  id: serial("id").primaryKey(),
+  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
+  requestId: integer("request_id").notNull().references(() => requests.id),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull()
+}, (table) => {
+  return {
+    // Ensure unique combination of service provider and request
+    uniqueServiceRequest: unique().on(table.serviceProviderId, table.requestId)
+  };
+});
+
+// Add viewed requests relations
+export const viewedRequestsRelations = relations(viewedRequests, ({ one }) => ({
+  serviceProvider: one(serviceProviders, {
+    fields: [viewedRequests.serviceProviderId],
+    references: [serviceProviders.id],
+  }),
+  request: one(requests, {
+    fields: [viewedRequests.requestId],
+    references: [requests.id],
+  }),
+}));
+
+// Add to service providers relations
+export const serviceProvidersRelations = relations(serviceProviders, ({ many }) => ({
+  viewedRequests: many(viewedRequests),
+  sentOffers: many(sentOffers)
+}));
+
+// Add viewed request schemas
+export const insertViewedRequestSchema = createInsertSchema(viewedRequests).omit({
+  id: true,
+  viewedAt: true
+});
+
+// Add to exports
+export type InsertViewedRequest = z.infer<typeof insertViewedRequestSchema>;
+export type ViewedRequest = typeof viewedRequests.$inferSelect;
 
 
 // Define a type for accepted offer with client details

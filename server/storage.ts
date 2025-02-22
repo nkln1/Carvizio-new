@@ -5,6 +5,7 @@ import {
   requests,
   sentOffers,
   messages,
+  viewedRequests,
   type Client,
   type InsertClient,
   type ServiceProvider,
@@ -16,7 +17,9 @@ import {
   type SentOffer,
   type InsertSentOffer,
   type Message,
-  type InsertMessage
+  type InsertMessage,
+  type ViewedRequest,
+  type InsertViewedRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, inArray, or, and } from "drizzle-orm";
@@ -83,6 +86,11 @@ export interface IStorage {
   getUnreadMessagesCount(userId: number, userRole: "client" | "service"): Promise<number>;
   getClient(id: number): Promise<Client | undefined>;
   getServiceProvider(id: number): Promise<ServiceProvider | undefined>;
+
+  // Add viewed requests methods
+  markRequestAsViewed(serviceProviderId: number, requestId: number): Promise<ViewedRequest>;
+  getViewedRequestsByServiceProvider(serviceProviderId: number): Promise<ViewedRequest[]>;
+  isRequestViewedByProvider(serviceProviderId: number, requestId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -581,6 +589,70 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting unread messages count:', error);
       return 0;
+    }
+  }
+
+  async markRequestAsViewed(serviceProviderId: number, requestId: number): Promise<ViewedRequest> {
+    try {
+      const [viewedRequest] = await db
+        .insert(viewedRequests)
+        .values({
+          serviceProviderId,
+          requestId,
+          viewedAt: new Date()
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      if (!viewedRequest) {
+        // If there was a conflict, return the existing record
+        const [existing] = await db
+          .select()
+          .from(viewedRequests)
+          .where(
+            and(
+              eq(viewedRequests.serviceProviderId, serviceProviderId),
+              eq(viewedRequests.requestId, requestId)
+            )
+          );
+        return existing;
+      }
+
+      return viewedRequest;
+    } catch (error) {
+      console.error('Error marking request as viewed:', error);
+      throw error;
+    }
+  }
+
+  async getViewedRequestsByServiceProvider(serviceProviderId: number): Promise<ViewedRequest[]> {
+    try {
+      return await db
+        .select()
+        .from(viewedRequests)
+        .where(eq(viewedRequests.serviceProviderId, serviceProviderId))
+        .orderBy(desc(viewedRequests.viewedAt));
+    } catch (error) {
+      console.error('Error getting viewed requests:', error);
+      return [];
+    }
+  }
+
+  async isRequestViewedByProvider(serviceProviderId: number, requestId: number): Promise<boolean> {
+    try {
+      const [viewedRequest] = await db
+        .select()
+        .from(viewedRequests)
+        .where(
+          and(
+            eq(viewedRequests.serviceProviderId, serviceProviderId),
+            eq(viewedRequests.requestId, requestId)
+          )
+        );
+      return !!viewedRequest;
+    } catch (error) {
+      console.error('Error checking if request is viewed:', error);
+      return false;
     }
   }
 }

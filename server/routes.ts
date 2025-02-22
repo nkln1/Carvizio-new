@@ -72,6 +72,9 @@ interface IStorage {
     markMessageAsRead: any;
     getUnreadMessagesCount: any;
     getMessagesByRequest: any;
+    markRequestAsViewed: any;
+    getViewedRequestsByServiceProvider: any;
+    isRequestViewedByProvider: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -1168,6 +1171,58 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Add service viewed request endpoint
+  app.post("/api/service/mark-request-viewed/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can mark requests as viewed." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const viewedRequest = await storage.markRequestAsViewed(provider.id, requestId);
+
+      res.json(viewedRequest);
+    } catch (error) {
+      console.error("Error marking request as viewed:", error);
+      res.status(500).json({ error: "Failed to mark request as viewed" });
+    }
+  });
+
+  // Add endpoint to get viewed requests for a service provider
+  app.get("/api/service/viewed-requests", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view their viewed requests." });
+      }
+
+      const viewedRequests = await storage.getViewedRequestsByServiceProvider(provider.id);
+      res.json(viewedRequests);
+    } catch (error) {
+      console.error("Error getting viewed requests:", error);
+      res.status(500).json({ error: "Failed to get viewed requests" });
+    }
+  });
+
+  // Add endpoint to check if a request has been viewed
+  app.get("/api/service/is-request-viewed/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can check viewed requests." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const isViewed = await storage.isRequestViewedByProvider(provider.id, requestId);
+
+      res.json({ isViewed });
+    } catch (error) {
+      console.error("Error checking if request is viewed:", error);
+      res.status(500).json({ error: "Failed to check if request is viewed" });
     }
   });
 

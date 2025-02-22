@@ -45,45 +45,12 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadViewedRequests = () => {
-      const userId = auth.currentUser?.uid;
-      if (userId) {
-        const storedViewed = localStorage.getItem(`viewed_requests_${userId}`);
-        if (storedViewed) {
-          setViewedRequests(new Set(JSON.parse(storedViewed)));
-        }
-      }
-    };
-    loadViewedRequests();
-  }, []);
-
-  useEffect(() => {
-    const handleWebSocketMessage = (data: any) => {
-      if (data.type === 'NEW_REQUEST') {
-        queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
-      } else if (data.type === 'ERROR') {
-        toast({
-          variant: "destructive",
-          title: "Eroare de conexiune",
-          description: data.message || "A apărut o eroare de conexiune. Vă rugăm să reîncărcați pagina.",
-        });
-      }
-    };
-
-    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-
-    return () => {
-      removeHandler();
-    };
-  }, [queryClient, toast]);
-
+  // Query to fetch requests
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
     queryKey: ['/api/service/requests'],
     queryFn: async () => {
@@ -105,21 +72,76 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     staleTime: 0
   });
 
-  const handleViewRequest = (request: RequestType) => {
-    const userId = auth.currentUser?.uid;
-    if (userId) {
-      const newViewedRequests = new Set(viewedRequests);
-      newViewedRequests.add(request.id);
-      setViewedRequests(newViewedRequests);
-      localStorage.setItem(`viewed_requests_${userId}`, JSON.stringify(Array.from(newViewedRequests)));
+  // Query to fetch viewed requests
+  const { data: viewedRequestIds = [], isFetching: isFetchingViewedRequests } = useQuery<number[]>({
+    queryKey: ['/api/service/viewed-requests'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/viewed-requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch viewed requests');
+      }
+
+      const viewedRequests = await response.json();
+      return viewedRequests.map((vr: any) => vr.requestId);
     }
+  });
+
+  const markRequestAsViewed = async (requestId: number) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/mark-request-viewed/${requestId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark request as viewed');
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/viewed-requests'] });
+    } catch (error) {
+      console.error('Error marking request as viewed:', error);
+    }
+  };
+
+  useEffect(() => {
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'NEW_REQUEST') {
+        queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+      } else if (data.type === 'ERROR') {
+        toast({
+          variant: "destructive",
+          title: "Eroare de conexiune",
+          description: data.message || "A apărut o eroare de conexiune. Vă rugăm să reîncărcați pagina.",
+        });
+      }
+    };
+
+    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+    return () => removeHandler();
+  }, [queryClient, toast]);
+
+  const handleViewRequest = async (request: RequestType) => {
+    await markRequestAsViewed(request.id);
     setSelectedRequest(request);
     setShowViewDialog(true);
   };
 
   const filteredRequests = requests.filter(req => {
     if (req.status !== "Active") return false;
-    if (showOnlyNew && viewedRequests.has(req.id)) return false;
+    if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
     return true;
   });
 
@@ -128,7 +150,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
-  const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
+  const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
 
   const handleSubmitOffer = async (values: any) => {
     try {
@@ -232,7 +254,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isLoading || isFetchingViewedRequests ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
         ) : currentRequests.length > 0 ? (
           <>
@@ -240,42 +262,42 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Titlu</TableHead>
-                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data preferată</TableHead>
-                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Data trimiterii</TableHead>
-                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Locație</TableHead>
-                    <TableHead className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
-                    <TableHead className="h-10 px-2 text-center align-middle font-medium text-muted-foreground">Acțiuni</TableHead>
+                    <TableHead>Titlu</TableHead>
+                    <TableHead>Data preferată</TableHead>
+                    <TableHead>Data trimiterii</TableHead>
+                    <TableHead>Locație</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Acțiuni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentRequests.map((request) => (
                     <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
-                      <TableCell className="p-2">
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           {request.title}
-                          {!viewedRequests.has(request.id) && (
+                          {!viewedRequestIds.includes(request.id) && (
                             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                               NOU
                             </span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="p-2">
+                      <TableCell>
                         {format(new Date(request.preferredDate), "dd.MM.yyyy")}
                       </TableCell>
-                      <TableCell className="p-2">
+                      <TableCell>
                         {format(new Date(request.createdAt), "dd.MM.yyyy")}
                       </TableCell>
-                      <TableCell className="p-2">
+                      <TableCell>
                         {request.cities?.join(", ")}, {request.county}
                       </TableCell>
-                      <TableCell className="p-2">
+                      <TableCell>
                         <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
                           {request.status}
                         </span>
                       </TableCell>
-                      <TableCell className="p-2">
+                      <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
@@ -289,7 +311,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleMessageClick(request)}
+                            onClick={() => {
+                              markRequestAsViewed(request.id);
+                              handleMessageClick(request);
+                            }}
                             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -300,6 +325,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
+                                markRequestAsViewed(request.id);
                                 setSelectedRequest(request);
                                 setShowOfferDialog(true);
                               }}
@@ -362,7 +388,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         )}
 
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent aria-describedby="request-details" className="max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
               <DialogDescription>
@@ -392,7 +418,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-small text-sm text-muted-foreground">
+                  <h3 className="font-medium text-sm text-muted-foreground">
                     Data trimiterii
                   </h3>
                   <p>
@@ -409,6 +435,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
             )}
           </DialogContent>
         </Dialog>
+
         {selectedRequest && (
           <SubmitOfferForm
             isOpen={showOfferDialog}
