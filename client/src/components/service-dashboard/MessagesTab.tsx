@@ -153,7 +153,6 @@ export default function MessagesTab({
     enabled: !!activeConversation?.requestId
   });
 
-
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'NEW_MESSAGE') {
