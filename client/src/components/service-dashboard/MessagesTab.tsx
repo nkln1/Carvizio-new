@@ -434,6 +434,9 @@ export default function MessagesTab({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
+            <DialogDescription>
+              Informații despre cererea clientului și oferta asociată
+            </DialogDescription>
           </DialogHeader>
 
           {activeRequest && (
