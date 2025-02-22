@@ -41,7 +41,6 @@ const getUserWithRole = (user: any, role: "client" | "service") => {
   return { ...userWithoutPassword, role };
 };
 
-// Add these helper functions at the top of the file after the imports
 interface IStorage {
     createClient: any;
     createServiceProvider: any;
@@ -185,6 +184,8 @@ export function registerRoutes(app: Express): Server {
   // Update the login route to handle user types correctly
   app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
     try {
+      console.log("Login attempt with Firebase UID:", req.firebaseUser!.uid);
+
       // Try to find user in both tables
       let user = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       let userType = "client";
@@ -197,8 +198,11 @@ export function registerRoutes(app: Express): Server {
       }
 
       if (!user) {
+        console.log("No user found for Firebase UID:", req.firebaseUser!.uid);
         return res.status(401).json({ error: "User not found" });
       }
+
+      console.log("User found:", { id: user.id, email: user.email, type: userType });
 
       // Set user in session
       req.session.userId = user.id;
@@ -210,7 +214,9 @@ export function registerRoutes(app: Express): Server {
         });
       });
 
-      res.json(getUserWithRole(user, userType));
+      const userWithRole = getUserWithRole(user, userType as "client" | "service");
+      console.log("Sending user response:", userWithRole);
+      res.json(userWithRole);
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
@@ -676,14 +682,28 @@ export function registerRoutes(app: Express): Server {
   // Fix the /api/client/offers endpoint authorization
   app.get("/api/client/offers", validateFirebaseToken, async (req, res) => {
     try {
+      console.log("Fetching offers for Firebase UID:", req.firebaseUser!.uid);
+
+      // First verify if the user is a client
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
-        console.log("Client not found for Firebase UID:", req.firebaseUser!.uid);
-        return res.status(403).json({ error: "Access denied. Only clients can view their offers." });
+        const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+        if (serviceProvider) {
+          console.log("Service provider attempted to access client offers:", req.firebaseUser!.uid);
+          return res.status(403).json({ 
+            error: "Access denied. This endpoint is only for clients." 
+          });
+        }
+        console.log("No user found for Firebase UID:", req.firebaseUser!.uid);
+        return res.status(401).json({ error: "User not found" });
       }
+
+      console.log("Found client:", { id: client.id, email: client.email });
 
       // Fetch offers for this client's requests
       const offers = await storage.getOffersForClient(client.id);
+      console.log("Retrieved offers count:", offers.length);
+
       res.json(offers);
     } catch (error) {
       console.error("Error getting client offers:", error);
