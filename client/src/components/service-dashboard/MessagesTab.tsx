@@ -87,7 +87,8 @@ export default function MessagesTab({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch messages');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch messages');
       }
 
       return response.json();
@@ -138,8 +139,7 @@ export default function MessagesTab({
         body: JSON.stringify({
           receiverId: activeConversation.userId,
           content: newMessage,
-          requestId: activeConversation.requestId,
-          receiverRole: 'client'
+          requestId: activeConversation.requestId
         }),
       });
 

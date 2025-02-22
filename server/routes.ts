@@ -984,7 +984,7 @@ export function registerRoutes(app: Express): Server {
   // Add this endpoint after the existing /api/messages GET endpoint
   app.post("/api/service/messages/send", validateFirebaseToken, async (req, res) => {
     try {
-      const { content, receiverId, receiverRole, requestId } = req.body;
+      const { content, receiverId, requestId } = req.body;
 
       if (!requestId) {
         return res.status(400).json({ error: "requestId is required" });
@@ -996,16 +996,16 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Sender not found" });
       }
 
-      // Get receiver information (client)
-      const receiver = await storage.getClient(receiverId);
-      if (!receiver) {
-        return res.status(404).json({ error: "Receiver not found" });
-      }
-
       // Get request to verify the connection
       const request = await storage.getRequest(requestId);
       if (!request) {
         return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Get receiver (client) information
+      const receiver = await storage.getClient(request.clientId);
+      if (!receiver) {
+        return res.status(404).json({ error: "Client not found" });
       }
 
       // Create the message
@@ -1013,24 +1013,29 @@ export function registerRoutes(app: Express): Server {
         requestId,
         senderId: sender.id,
         senderRole: "service",
-        receiverId,
+        receiverId: receiver.id,
         receiverRole: "client",
-        content,
-        senderName: sender.companyName, // Use company name for service providers
-        receiverName: receiver.name // Use name for clients
+        content
       });
+
+      // Add names to the response
+      const enrichedMessage = {
+        ...message,
+        senderName: sender.companyName,
+        receiverName: receiver.name
+      };
 
       // Send notification through WebSocket
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({
             type: 'NEW_MESSAGE',
-            payload: message
+            payload: enrichedMessage
           }));
         }
       });
 
-      res.json(message);
+      res.json(enrichedMessage);
     } catch (error) {
       console.error("Error sending message:", error);
       res.status(500).json({ error: "Failed to send message" });
@@ -1051,28 +1056,23 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Request not found" });
       }
 
+      // Get the client information
+      const client = await storage.getClient(request.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
       // Get messages for this specific request
-      const messages = await storage.getMessagesByRequest(requestId);
+      const messages = await storage.getUserMessages(serviceProvider.id, "service", requestId);
 
       // Enrich messages with sender and receiver names
-      const enrichedMessages = await Promise.all(
-        messages.map(async (message) => {
-          const sender = message.senderRole === "service"
-            ? await storage.getServiceProvider(message.senderId)
-            : await storage.getClient(message.senderId);
+      const enrichedMessages = messages.map(message => ({
+        ...message,
+        senderName: message.senderRole === "service" ? serviceProvider.companyName : client.name,
+        receiverName: message.receiverRole === "service" ? serviceProvider.companyName : client.name
+      }));
 
-          const receiver = message.receiverRole === "service"
-            ? await storage.getServiceProvider(message.receiverId)
-            : await storage.getClient(message.receiverId);
-
-          return {
-            ...message,
-            senderName: message.senderRole === "service" ? sender?.companyName : sender?.name,
-            receiverName: message.receiverRole === "service" ? receiver?.companyName : receiver?.name
-          };
-        })
-      );
-
+      console.log('Sending enriched messages:', enrichedMessages);
       res.json(enrichedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
