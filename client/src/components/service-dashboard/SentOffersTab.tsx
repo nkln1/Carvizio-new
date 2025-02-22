@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { SendHorizontal, Loader2, MessageSquare, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
@@ -15,7 +21,6 @@ import { useToast } from "@/hooks/use-toast";
 import type { SentOffer } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SearchBar } from "./offers/SearchBar";
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +33,7 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
 
   const { data: offers = [], isLoading, error } = useQuery<SentOffer[]>({
@@ -62,13 +68,14 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, activeTab]);
+  }, [searchTerm, itemsPerPage, activeTab]);
 
   const filterOffers = (offers: SentOffer[]) => {
-    if (!searchTerm) return offers;
+    const pendingOffers = offers.filter(o => o.status.toLowerCase() === activeTab && o.status.toLowerCase() !== "accepted");
+    if (!searchTerm) return pendingOffers;
 
     const searchLower = searchTerm.toLowerCase();
-    return offers.filter(offer =>
+    return pendingOffers.filter(offer =>
       offer.title.toLowerCase().includes(searchLower) ||
       offer.details.toLowerCase().includes(searchLower) ||
       offer.price.toString().includes(searchLower) ||
@@ -77,10 +84,10 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
     );
   };
 
-  const filteredOffers = filterOffers(offers).filter(o => o.status.toLowerCase() === activeTab && o.status.toLowerCase() !== "accepted");
-  const totalPages = Math.ceil(filteredOffers.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const filteredOffers = filterOffers(offers);
+  const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + itemsPerPage);
 
   if (isLoading) {
     return (
@@ -111,10 +118,23 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <SendHorizontal className="h-5 w-5" />
-          Oferte Trimise
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <SendHorizontal className="h-5 w-5" />
+            Oferte Trimise
+          </CardTitle>
+          <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Selectează numărul de oferte" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 oferte pe pagină</SelectItem>
+              <SelectItem value="10">10 oferte pe pagină</SelectItem>
+              <SelectItem value="20">20 oferte pe pagină</SelectItem>
+              <SelectItem value="50">50 oferte pe pagină</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <CardDescription>Urmărește și gestionează ofertele trimise către clienți</CardDescription>
         <div className="mt-4">
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
@@ -187,7 +207,7 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
                             <Eye className="w-4 h-4 mr-2" />
                             Vezi detalii
                           </Button>
-                          {onMessageClick && (
+                          {onMessageClick && offer.requestUserId && offer.requestUserName && (
                             <Button
                               variant="outline"
                               className="mt-2"
@@ -203,48 +223,51 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
                   </CardContent>
                 </Card>
               ))}
-            </div>
 
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                      <PaginationItem key={index}>
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4">
+                  <div className="text-sm text-gray-500">
+                    Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredOffers.length)} din {filteredOffers.length} oferte
+                  </div>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCurrentPage(index + 1)}
-                          className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
                         >
-                          {index + 1}
+                          Anterior
                         </Button>
                       </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
+                      {Array.from({ length: totalPages }).map((_, index) => (
+                        <PaginationItem key={index}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(index + 1)}
+                            className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
+                          >
+                            {index + 1}
+                          </Button>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                        >
+                          Următor
+                        </Button>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
