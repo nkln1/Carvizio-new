@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { OfferWithProvider } from "@shared/schema";
@@ -60,33 +59,42 @@ export function useOfferManagement() {
       return response.json();
     },
     onSuccess: (_, offerId) => {
-      // Update the viewedOffers Set
+      // Update the viewedOffers Set in the cache
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
         newSet.add(offerId);
         return newSet;
       });
-      
+
       // Update the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
+
+      // Invalidate the offers query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Eroare",
-        description: error.message || "A apărut o eroare la marcarea ofertei ca văzută.",
+        title: "Error",
+        description: error.message || "An error occurred while marking the offer as viewed.",
         variant: "destructive",
       });
     }
   });
 
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
-    await markOfferAsViewedMutation.mutateAsync(offerId);
+    try {
+      await markOfferAsViewedMutation.mutateAsync(offerId);
+    } catch (error) {
+      console.error("Error marking offer as viewed:", error);
+      throw error;
+    }
   };
 
   const getNewOffersCount = () => {
     return offers.filter(offer => !viewedOffers.has(offer.id) && offer.status === "Pending").length;
   };
 
+  // Update new offers count whenever offers or viewedOffers change
   useEffect(() => {
     setNewOffersCount(getNewOffersCount());
   }, [offers, viewedOffers]);
