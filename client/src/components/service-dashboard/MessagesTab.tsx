@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -476,8 +476,8 @@ export default function MessagesTab({
                         <p className="text-sm text-gray-600">Status</p>
                         <p className={`font-medium ${
                           offerDetails.status === 'Accepted' ? 'text-green-600' :
-                          offerDetails.status === 'Rejected' ? 'text-red-600' :
-                          'text-yellow-600'
+                            offerDetails.status === 'Rejected' ? 'text-red-600' :
+                              'text-yellow-600'
                         }`}>
                           {offerDetails.status}
                         </p>
