@@ -121,6 +121,12 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
     );
   }
 
+  const handleMessageClick = (offer: AcceptedOfferWithClient) => {
+    if (onMessageClick && offer.requestUserId && offer.requestUserName) {
+      onMessageClick(offer.requestUserId, offer.requestUserName);
+    }
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50 space-y-2">
@@ -200,7 +206,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                           variant="outline"
                           onClick={() => {
                             handleAction(offer.id);
-                            onMessageClick?.(offer.clientId, offer.clientName);
+                            handleMessageClick(offer);
                           }}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />

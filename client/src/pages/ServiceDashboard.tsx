@@ -19,14 +19,6 @@ import AccountTab from "@/components/service-dashboard/AccountTab";
 
 type TabId = "cereri" | "oferte-trimise" | "oferte-acceptate" | "mesaje" | "cont";
 
-const TAB_COMPONENTS: Record<TabId, React.ComponentType<any>> = {
-  "cereri": RequestsTab,
-  "oferte-trimise": SentOffersTab,
-  "oferte-acceptate": AcceptedOffersTab,
-  "mesaje": MessagesTab,
-  "cont": AccountTab,
-};
-
 const TAB_NAMES: Record<TabId, string> = {
   "cereri": "Cereri",
   "oferte-trimise": "Oferte Trimise",
@@ -121,8 +113,6 @@ export default function ServiceDashboard() {
     label
   }));
 
-  const ActiveTabComponent = TAB_COMPONENTS[activeTab];
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <nav className="bg-white border-b sticky top-0 z-50">
@@ -176,16 +166,27 @@ export default function ServiceDashboard() {
 
       <div className="container mx-auto p-4 sm:p-6 flex-grow">
         <TabWrapper name={TAB_NAMES[activeTab]} onError={handleTabError}>
-          {activeTab === "mesaje" ? (
-            <MessagesTab
-              initialConversation={activeConversation}
-              onConversationClear={() => setActiveConversation(null)}
-            />
-          ) : (
-            <ActiveTabComponent
-              onMessageClick={handleMessageClick}
-            />
-          )}
+          {(() => {
+            switch (activeTab) {
+              case "mesaje":
+                return (
+                  <MessagesTab
+                    initialConversation={activeConversation}
+                    onConversationClear={() => setActiveConversation(null)}
+                  />
+                );
+              case "oferte-trimise":
+                return <SentOffersTab onMessageClick={handleMessageClick} />;
+              case "oferte-acceptate":
+                return <AcceptedOffersTab onMessageClick={handleMessageClick} />;
+              case "cereri":
+                return <RequestsTab onMessageClick={handleMessageClick} />;
+              case "cont":
+                return <AccountTab />;
+              default:
+                return null;
+            }
+          })()}
         </TabWrapper>
       </div>
 
