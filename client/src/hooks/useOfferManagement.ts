@@ -43,12 +43,13 @@ export function useOfferManagement() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
+      const response = await fetch('/api/client/mark-offer-viewed', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ offerId })
       });
 
       if (!response.ok) {
@@ -69,7 +70,8 @@ export function useOfferManagement() {
       // Update the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
 
-      // Invalidate the offers query to trigger a refetch
+      // Invalidate both queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
     },
     onError: (error: Error) => {
