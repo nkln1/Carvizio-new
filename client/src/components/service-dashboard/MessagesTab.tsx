@@ -16,6 +16,7 @@ import {
   FileText,
   Calendar,
   Eye,
+  Info,
 } from "lucide-react";
 import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
@@ -309,11 +310,27 @@ export default function MessagesTab({
             ? `Chat cu ${activeConversation.userName}`
             : "Mesaje"}
         </CardTitle>
-        <CardDescription>
-          {activeConversation
-            ? "Comunicare directă cu clienții"
-            : "Selectează o conversație pentru a începe"}
-        </CardDescription>
+        {activeConversation && (
+          <div className="flex justify-between items-center">
+            <CardDescription>
+              Comunicare directă cu clienții
+            </CardDescription>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+              onClick={() => {
+                toast({
+                  title: "Detalii Cerere și Ofertă",
+                  description: "Această funcționalitate va fi disponibilă în curând.",
+                });
+              }}
+            >
+              <Info className="h-4 w-4 mr-2" />
+              Vezi Detalii Cerere și Ofertă
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-0 flex h-[calc(100%-5rem)]">
         <div className={`${activeConversation ? 'hidden md:block' : ''} w-1/3 border-r p-4`}>
@@ -335,26 +352,10 @@ export default function MessagesTab({
           {activeConversation ? (
             <>
               {activeRequest && (
-                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm relative">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium flex items-center gap-2 text-gray-700">
-                      <FileText className="h-4 w-4" /> Cererea Clientului
-                    </h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                      onClick={() => {
-                        // Navigate to request details (to be implemented)
-                        toast({
-                          title: "Coming soon",
-                          description: "This feature will be available soon.",
-                        });
-                      }}
-                    >
-                      <Eye className="h-4 w-4 mr-2" /> Vezi detalii complete
-                    </Button>
-                  </div>
+                <div className="bg-gray-50 m-4 rounded-lg p-4 space-y-4 text-sm">
+                  <h4 className="font-medium flex items-center gap-2 text-gray-700">
+                    <FileText className="h-4 w-4" /> Cererea Clientului
+                  </h4>
                   <p><span className="text-gray-600">Titlu:</span> {activeRequest.title}</p>
                   <p><span className="text-gray-600">Descriere:</span> {activeRequest.description}</p>
                   <p className="flex items-center gap-2">
