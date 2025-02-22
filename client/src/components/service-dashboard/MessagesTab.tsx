@@ -291,7 +291,7 @@ export default function MessagesTab({
                   <div className={`flex items-center gap-1 mt-1 text-xs ${
                     message.senderRole === 'service' ? 'text-blue-100' : 'text-gray-500'
                   }`}>
-                    {format(new Date(message.createdAt), "dd.MM.yyyy")} {format(new Date(message.createdAt), "HH:mm")}
+                     {format(new Date(message.createdAt), "HH:mm")}
                   </div>
                 </div>
                 {message.senderRole === 'service' && (
