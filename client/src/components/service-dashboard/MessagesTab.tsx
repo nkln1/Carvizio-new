@@ -87,8 +87,7 @@ export default function MessagesTab({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch messages');
+        throw new Error('Failed to fetch messages');
       }
 
       return response.json();
@@ -137,7 +136,6 @@ export default function MessagesTab({
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          receiverId: activeConversation.userId,
           content: newMessage,
           requestId: activeConversation.requestId
         }),
@@ -150,6 +148,7 @@ export default function MessagesTab({
 
       setNewMessage("");
       await queryClient.invalidateQueries({ queryKey: ['/api/service/messages', activeConversation.requestId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -253,7 +252,7 @@ export default function MessagesTab({
       <CardHeader>
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          {activeConversation ? `${activeConversation.userName} - Request #${activeConversation.requestId}` : "Messages"}
+          {activeConversation ? `Chat with ${activeConversation.userName} - Request #${activeConversation.requestId}` : "Messages"}
         </CardTitle>
         <CardDescription>
           {activeConversation

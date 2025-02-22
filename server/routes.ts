@@ -1080,6 +1080,55 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this endpoint to get service conversations
+  app.get("/api/service/conversations", validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Service provider not found" });
+      }
+
+      // Get all messages for this service provider
+      const messages = await storage.getUserMessages(serviceProvider.id, "service", null);
+
+      // Group messages by requestId
+      const conversationsByRequest = messages.reduce((acc: any, message: any) => {
+        if (!acc[message.requestId]) {
+          acc[message.requestId] = message;
+        }
+        return acc;
+      }, {});
+
+      // Get client information for each conversation
+      const conversations = await Promise.all(
+        Object.values(conversationsByRequest).map(async (message: any) => {
+          const request = await storage.getRequest(message.requestId);
+          if (!request) return null;
+
+          const client = await storage.getClient(request.clientId);
+          if (!client) return null;
+
+          return {
+            userId: client.id,
+            userName: client.name,
+            requestId: message.requestId,
+            lastMessage: message.content
+          };
+        })
+      );
+
+      // Filter out null values and sort by requestId
+      const validConversations = conversations
+        .filter(conv => conv !== null)
+        .sort((a: any, b: any) => b.requestId - a.requestId);
+
+      res.json(validConversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket server with the correct path to match client
