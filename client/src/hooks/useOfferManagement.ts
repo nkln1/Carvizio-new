@@ -68,8 +68,15 @@ export function useOfferManagement() {
 
       console.log('Successfully marked offer as viewed:', offerId);
 
-      // Then update the local cache and UI
-      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+      // Then update the local cache
+      await queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+
+      // Force immediate refetch to update UI
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["/api/client/viewed-offers"] }),
+        queryClient.refetchQueries({ queryKey: ["/api/client/offers"] })
+      ]);
 
       // Reduce the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));

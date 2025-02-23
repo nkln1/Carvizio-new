@@ -682,6 +682,7 @@ export class DatabaseStorage implements IStorage {
 
   async getViewedOffersByClient(clientId: number): Promise<ViewedOffer[]> {
     try {
+      console.log('Fetching viewed offers for client:', clientId);
       const result = await db
         .select()
         .from(viewedOffers)
@@ -698,6 +699,7 @@ export class DatabaseStorage implements IStorage {
 
   async markOfferAsViewed(clientId: number, offerId: number): Promise<ViewedOffer> {
     try {
+      console.log('Attempting to mark offer as viewed:', { clientId, offerId });
       const [viewedOffer] = await db
         .insert(viewedOffers)
         .values({
@@ -707,24 +709,13 @@ export class DatabaseStorage implements IStorage {
         })
         .onConflictDoUpdate({
           target: [viewedOffers.clientId, viewedOffers.offerId],
-          set: { viewedAt: new Date() }
+          set: {
+            viewedAt: new Date()
+          }
         })
         .returning();
 
-      if (!viewedOffer) {
-        // If there was a conflict, return the existing record
-        const [existing] = await db
-          .select()
-          .from(viewedOffers)
-          .where(
-            and(
-              eq(viewedOffers.clientId, clientId),
-              eq(viewedOffers.offerId, offerId)
-            )
-          );
-        return existing;
-      }
-
+      console.log('Successfully marked offer as viewed:', viewedOffer);
       return viewedOffer;
     } catch (error) {
       console.error('Error marking offer as viewed:', error);
