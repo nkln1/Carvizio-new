@@ -103,6 +103,13 @@ export function useOfferManagement() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
       
+      // Update local state optimistically
+      queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
+        const newSet = new Set(old);
+        newSet.add(offerId);
+        return newSet;
+      });
+      
       const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
         method: 'POST',
         headers: {
@@ -112,6 +119,12 @@ export function useOfferManagement() {
       });
 
       if (!response.ok) {
+        // Revert optimistic update on error
+        queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
+          const newSet = new Set(old);
+          newSet.delete(offerId);
+          return newSet;
+        });
         throw new Error('Failed to mark offer as viewed');
       }
 

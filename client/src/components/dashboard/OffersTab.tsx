@@ -61,14 +61,16 @@ export function OffersTab({
     try {
       if (markOfferAsViewed && !localViewedOffers.has(offerId)) {
         console.log('Marking offer as viewed:', offerId);
-        await markOfferAsViewed(offerId);
-
-        // Update local state immediately
+        
+        // Update local state immediately before the API call
         setLocalViewedOffers(prev => {
           const newSet = new Set(prev);
           newSet.add(offerId);
           return newSet;
         });
+
+        // Make the API call
+        await markOfferAsViewed(offerId);
 
         // Force refresh both queries
         await Promise.all([
