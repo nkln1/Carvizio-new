@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -29,7 +30,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useEffect } from "react";
+
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
@@ -48,16 +49,20 @@ export function OffersTab({
 }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
+  const [localViewedOffers, setLocalViewedOffers] = useState<Set<number>>(viewedOffers);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    setLocalViewedOffers(viewedOffers);
+  }, [viewedOffers]);
+
   const handleAction = async (offerId: number, action: () => void | Promise<void>) => {
     try {
-      // First mark the offer as viewed
-      if (markOfferAsViewed) {
+      if (markOfferAsViewed && !localViewedOffers.has(offerId)) {
         await markOfferAsViewed(offerId);
+        setLocalViewedOffers(prev => new Set([...prev, offerId]));
       }
-      // Then execute the actual action
       await action();
     } catch (error) {
       console.error("Error in handleAction:", error);
@@ -208,7 +213,7 @@ export function OffersTab({
   const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
 
   const renderOfferBox = (offer: OfferWithProvider) => {
-    const isNew = !viewedOffers.has(offer.id);
+    const isNew = !localViewedOffers.has(offer.id);
 
     return (
       <div
