@@ -1,0 +1,52 @@
+ServiceDashboard.tsx:27 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ui/sheet.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+ServiceDashboard.tsx:28 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/common/TabWrapper.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+ServiceDashboard.tsx:32 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/service-dashboard/AcceptedOffersTab.tsx?t=1740306882389 net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+ServiceDashboard.tsx:30 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/service-dashboard/RequestsTab.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+ServiceDashboard.tsx:33 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/service-dashboard/MessagesTab.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+ServiceDashboard.tsx:31 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/service-dashboard/SentOffersTab.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+ServiceDashboard.tsx:34 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/service-dashboard/AccountTab.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+firebase.ts:1 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_app.js?v=6c365447 net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+toast.tsx:18 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=6c365447 net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+favicon.ico:1 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/favicon.ico 502 (Bad Gateway)Understand this errorAI
+toast.tsx:21 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/lib/utils.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+parallax-wrapper.tsx:19 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=6c365447 net::ERR_ABORTED 502 (Bad Gateway)Understand this errorAI
+toast.tsx:19 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/class-variance-authority.js?v=6c365447 net::ERR_ABORTED 502 (Bad Gateway)
