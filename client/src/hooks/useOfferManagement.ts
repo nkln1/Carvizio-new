@@ -70,25 +70,19 @@ export function useOfferManagement() {
         throw new Error(`Failed to mark offer as viewed: ${errorText}`);
       }
 
-      const result = await response.json();
-      console.log('Server response for marking offer:', result);
+      const newViewedOffer: ViewedOffer = await response.json();
+      console.log('Server response for marking offer:', newViewedOffer);
 
-      // Immediately add the new viewed offer to the local cache to avoid waiting for refetch
+      // Update the cache with the new viewed offer from the server response
       queryClient.setQueryData<ViewedOffer[]>(["/api/client/viewed-offers"], (old = []) => {
-        const newViewedOffer = { offerId, clientId: result.clientId, viewedAt: result.viewedAt };
+        // Remove any existing entry for this offer and add the new one
         return [...old.filter(vo => vo.offerId !== offerId), newViewedOffer];
       });
 
-      // Then invalidate the queries to ensure data consistency
+      // Invalidate and refetch to ensure data consistency
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] })
-      ]);
-
-      // Force immediate refetch
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ["/api/client/viewed-offers"] }),
-        queryClient.refetchQueries({ queryKey: ["/api/client/offers"] })
       ]);
 
       // Update the new offers count
