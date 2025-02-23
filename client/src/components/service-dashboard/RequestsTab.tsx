@@ -34,6 +34,7 @@ import type { Request as RequestType } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import { SubmitOfferForm } from "./SubmitOfferForm";
 import websocketService from "@/lib/websocket";
+import { useViewedRequests } from "@/hooks/useViewedRequests";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -49,6 +50,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { viewedRequests, markRequestAsViewed } = useViewedRequests();
 
   // Query to fetch requests
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
@@ -71,50 +73,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     },
     staleTime: 0
   });
-
-  // Query to fetch viewed requests
-  const { data: viewedRequestIds = [], isFetching: isFetchingViewedRequests } = useQuery<number[]>({
-    queryKey: ['/api/service/viewed-requests'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/viewed-requests', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch viewed requests');
-      }
-
-      const viewedRequests = await response.json();
-      return viewedRequests.map((vr: any) => vr.requestId);
-    }
-  });
-
-  const markRequestAsViewed = async (requestId: number) => {
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/service/mark-request-viewed/${requestId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark request as viewed');
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/viewed-requests'] });
-    } catch (error) {
-      console.error('Error marking request as viewed:', error);
-    }
-  };
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
@@ -141,7 +99,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const filteredRequests = requests.filter(req => {
     if (req.status !== "Active") return false;
-    if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
+    if (showOnlyNew && viewedRequests.has(req.id)) return false;
     return true;
   });
 
@@ -150,7 +108,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
-  const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
+  const newRequestsCount = filteredRequests.filter(req => !viewedRequests.has(req.id)).length;
 
   const handleSubmitOffer = async (values: any) => {
     try {
@@ -193,6 +151,8 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const handleMessageClick = async (request: RequestType) => {
     try {
+      await markRequestAsViewed(request.id);
+
       // Get client details first
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
@@ -254,7 +214,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading || isFetchingViewedRequests ? (
+        {isLoading ? (
           <div className="text-center py-4 text-gray-500">Se încarcă...</div>
         ) : currentRequests.length > 0 ? (
           <>
@@ -276,7 +236,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {request.title}
-                          {!viewedRequestIds.includes(request.id) && (
+                          {!viewedRequests.has(request.id) && (
                             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                               NOU
                             </span>
@@ -311,10 +271,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              markRequestAsViewed(request.id);
-                              handleMessageClick(request);
-                            }}
+                            onClick={() => handleMessageClick(request)}
                             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -339,6 +296,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              markRequestAsViewed(request.id);
                               toast({
                                 title: "În curând",
                                 description: "Funcționalitatea de respingere va fi disponibilă în curând.",
