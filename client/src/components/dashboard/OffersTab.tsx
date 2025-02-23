@@ -69,6 +69,14 @@ export function OffersTab({
     }
   };
 
+  const handleMessageClick = (offer: OfferWithProvider) => {
+    if (onMessageClick && offer.serviceProviderId && offer.serviceProviderName) {
+      handleAction(offer.id, () =>
+        onMessageClick(offer.serviceProviderId, offer.serviceProviderName)
+      );
+    }
+  };
+
   const handleAcceptOffer = async (offer: OfferWithProvider) => {
     try {
       const token = await auth.currentUser?.getIdToken();
@@ -288,9 +296,7 @@ export function OffersTab({
                     variant="outline"
                     size="sm"
                     className="h-7 px-2 text-xs"
-                    onClick={() => handleAction(offer.id, () =>
-                      onMessageClick?.(offer.serviceProviderId, offer.serviceProviderName)
-                    )}
+                    onClick={() => handleAction(offer.id, () => handleMessageClick(offer))}
                   >
                     <MessageSquare className="w-3 h-3 mr-1" />
                     Mesaj
