@@ -14,41 +14,10 @@ export function useOfferManagement() {
     queryKey: ["/api/client/offers"],
   });
 
-  // Fetch viewed offers with proper error handling
-  const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
-    queryKey: ["/api/client/viewed-offers"],
-    queryFn: async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error('No authentication token available');
-
-        const response = await fetch('/api/client/viewed-offers', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch viewed offers');
-        }
-
-        const data = await response.json();
-        return new Set(data.map((offer: { offerId: number }) => offer.offerId));
-      } catch (error) {
-        console.error('Error fetching viewed offers:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch viewed offers status",
-          variant: "destructive",
-        });
-        return new Set();
-      }
-    }
-  });
-
   // Enhanced mutation for marking an offer as viewed
   const markOfferAsViewedMutation = useMutation({
     mutationFn: async (offerId: number) => {
+      console.log('Marking offer as viewed:', offerId); // Debug log
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -68,10 +37,13 @@ export function useOfferManagement() {
       return response.json();
     },
     onSuccess: (_, offerId) => {
+      console.log('Successfully marked offer as viewed:', offerId); // Debug log
       // Update the viewedOffers Set in the cache immediately
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
+        console.log('Previous viewed offers:', Array.from(old)); // Debug log
         const newSet = new Set(old);
         newSet.add(offerId);
+        console.log('Updated viewed offers:', Array.from(newSet)); // Debug log
         return newSet;
       });
 
@@ -83,6 +55,7 @@ export function useOfferManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
     },
     onError: (error: Error) => {
+      console.error('Error marking offer as viewed:', error); // Debug log
       toast({
         title: "Error",
         description: error.message || "An error occurred while marking the offer as viewed.",
@@ -91,8 +64,42 @@ export function useOfferManagement() {
     }
   });
 
+  // Fetch viewed offers with proper error handling
+  const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
+    queryKey: ["/api/client/viewed-offers"],
+    queryFn: async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
+
+        const response = await fetch('/api/client/viewed-offers', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch viewed offers');
+        }
+
+        const data = await response.json();
+        console.log('Fetched viewed offers:', data); // Debug log
+        return new Set(data.map((offer: { offerId: number }) => offer.offerId));
+      } catch (error) {
+        console.error('Error fetching viewed offers:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch viewed offers status",
+          variant: "destructive",
+        });
+        return new Set();
+      }
+    }
+  });
+
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
     try {
+      console.log('Attempting to mark offer as viewed:', offerId); // Debug log
       await markOfferAsViewedMutation.mutateAsync(offerId);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
