@@ -66,6 +66,14 @@ export function useOfferManagement() {
         throw new Error('Failed to mark offer as viewed');
       }
 
+      const result = await response.json();
+      console.log('Server response:', result);
+
+      // Verify the server actually updated the record
+      if (!result || !result.id) {
+        throw new Error('Invalid server response');
+      }
+
       console.log('Successfully marked offer as viewed:', offerId);
 
       // Then update the local cache
