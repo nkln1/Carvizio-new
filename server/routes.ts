@@ -859,13 +859,29 @@ export function registerRoutes(app: Express): Server {
   // Add endpoint to mark offer as viewed
   app.post("/api/client/mark-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
     try {
+      console.log('Marking offer as viewed - Request params:', req.params);
+
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
+        console.log('Client not found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(403).json({ error: "Access denied. Only clients can mark offers as viewed." });
       }
+      console.log('Client found:', { id: client.id, email: client.email });
 
       const offerId = parseInt(req.params.offerId);
+      console.log('Attempting to mark offer as viewed:', { clientId: client.id, offerId });
+
+      // Verify the offer exists
+      const offers = await storage.getOffersForClient(client.id);
+      const offerExists = offers.some(offer => offer.id === offerId);
+
+      if (!offerExists) {
+        console.log('Offer not found or not accessible to client:', offerId);
+        return res.status(404).json({ error: "Offer not found or not accessible" });
+      }
+
       const viewedOffer = await storage.markOfferAsViewed(client.id, offerId);
+      console.log('Successfully marked offer as viewed:', viewedOffer);
 
       res.json(viewedOffer);
     } catch (error) {

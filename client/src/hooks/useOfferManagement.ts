@@ -11,12 +11,14 @@ export function useOfferManagement() {
 
   // Fetch offers
   const { data: offers = [] } = useQuery<OfferWithProvider[]>({
-    queryKey: ["/api/client/offers"]
+    queryKey: ["/api/client/offers"],
+    refetchInterval: 30000 // Refetch every 30 seconds
   });
 
   // Fetch viewed offers
   const { data: viewedOffers = [] } = useQuery<ViewedOffer[]>({
     queryKey: ["/api/client/viewed-offers"],
+    refetchInterval: 30000, // Refetch every 30 seconds
     queryFn: async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
@@ -33,7 +35,6 @@ export function useOfferManagement() {
         }
 
         const data = await response.json();
-        console.log('Fetched viewed offers:', data);
         return data;
       } catch (error) {
         console.error('Error fetching viewed offers:', error);
@@ -53,7 +54,6 @@ export function useOfferManagement() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // First update the database
       const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
         method: 'POST',
         headers: {
@@ -62,32 +62,42 @@ export function useOfferManagement() {
         }
       });
 
+      console.log('Mark offer response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to mark offer as viewed');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to mark offer as viewed: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('Server response:', result);
+      console.log('Server response for marking offer:', result);
 
-      // Verify the server actually updated the record
-      if (!result || !result.id) {
-        throw new Error('Invalid server response');
-      }
+      // Immediately add the new viewed offer to the local cache to avoid waiting for refetch
+      queryClient.setQueryData<ViewedOffer[]>(["/api/client/viewed-offers"], (old = []) => {
+        const newViewedOffer = { offerId, clientId: result.clientId, viewedAt: result.viewedAt };
+        return [...old.filter(vo => vo.offerId !== offerId), newViewedOffer];
+      });
 
-      console.log('Successfully marked offer as viewed:', offerId);
+      // Then invalidate the queries to ensure data consistency
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] })
+      ]);
 
-      // Then update the local cache
-      await queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-
-      // Force immediate refetch to update UI
+      // Force immediate refetch
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ["/api/client/viewed-offers"] }),
         queryClient.refetchQueries({ queryKey: ["/api/client/offers"] })
       ]);
 
-      // Reduce the new offers count
+      // Update the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
+
+      toast({
+        title: "Success",
+        description: "Offer marked as viewed",
+      });
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
       toast({
@@ -100,11 +110,17 @@ export function useOfferManagement() {
   };
 
   const getNewOffersCount = () => {
-    return offers.filter(offer => !viewedOffers.some(vo => vo.offerId === offer.id)).length;
+    const newOffers = offers.filter(offer => 
+      !viewedOffers.some(vo => vo.offerId === offer.id)
+    );
+    console.log('New offers count:', newOffers.length, 'Total offers:', offers.length, 'Viewed offers:', viewedOffers.length);
+    return newOffers.length;
   };
 
   useEffect(() => {
-    setNewOffersCount(getNewOffersCount());
+    const count = getNewOffersCount();
+    console.log('Updating new offers count:', count);
+    setNewOffersCount(count);
   }, [offers, viewedOffers]);
 
   return {
