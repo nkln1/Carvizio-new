@@ -69,18 +69,18 @@ export function useOfferManagement() {
 
       console.log('Successfully marked offer as viewed:', offerId);
 
-      // Update local cache immediately after successful API call
+      // Invalidate queries first to ensure fresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] })
+      ]);
+
+      // Update local cache after successful API call and invalidation
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
         newSet.add(offerId);
         return newSet;
       });
-
-      // Invalidate queries to ensure fresh data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] })
-      ]);
 
       setNewOffersCount(prev => Math.max(0, prev - 1));
     } catch (error) {
