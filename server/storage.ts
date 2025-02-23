@@ -689,7 +689,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(viewedOffers.clientId, clientId))
         .orderBy(desc(viewedOffers.viewedAt));
 
-      console.log('Fetched viewed offers from DB:', result);
+      console.log('Fetched viewed offers:', result);
       return result;
     } catch (error) {
       console.error('Error getting viewed offers:', error);
@@ -700,6 +700,27 @@ export class DatabaseStorage implements IStorage {
   async markOfferAsViewed(clientId: number, offerId: number): Promise<ViewedOffer> {
     try {
       console.log('Attempting to mark offer as viewed:', { clientId, offerId });
+
+      // First check if the client and offer exist
+      const [offer] = await db
+        .select()
+        .from(sentOffers)
+        .where(eq(sentOffers.id, offerId));
+
+      if (!offer) {
+        throw new Error(`Offer with ID ${offerId} not found`);
+      }
+
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, clientId));
+
+      if (!client) {
+        throw new Error(`Client with ID ${clientId} not found`);
+      }
+
+      // Then try to insert/update the viewed offer
       const [viewedOffer] = await db
         .insert(viewedOffers)
         .values({

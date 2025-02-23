@@ -242,7 +242,7 @@ export const serviceProvidersRelations = relations(serviceProviders, ({ many }) 
   sentOffers: many(sentOffers)
 }));
 
-// Add viewed request schemas
+// Add viewed requests schemas
 export const insertViewedRequestSchema = createInsertSchema(viewedRequests).omit({
   id: true,
   viewedAt: true
@@ -357,7 +357,6 @@ export const viewedOffersRelations = relations(viewedOffers, ({ one }) => ({
     references: [sentOffers.id],
   }),
 }));
-
 
 // Add viewed offer schemas
 export const insertViewedOfferSchema = createInsertSchema(viewedOffers).omit({
