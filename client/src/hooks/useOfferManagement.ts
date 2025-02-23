@@ -55,6 +55,7 @@ export function useOfferManagement() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      // First update the database
       const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
         method: 'POST',
         headers: {
@@ -69,20 +70,18 @@ export function useOfferManagement() {
 
       console.log('Successfully marked offer as viewed:', offerId);
 
-      // Update local cache immediately for UI feedback
+      // Then update the local cache and UI
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
         newSet.add(offerId);
         return newSet;
       });
 
-      // Invalidate queries to ensure fresh data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] })
-      ]);
-
+      // Reduce the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
+
+      // Finally, refetch to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
       toast({
