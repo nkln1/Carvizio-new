@@ -680,7 +680,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getViewedOffersByClient(clientId: number): Promise<{offerId: number}[]> {
+  async getViewedOffersByClient(clientId: number): Promise<Set<number>> {
     try {
       const result = await db
         .select({ offerId: viewedOffers.offerId })
@@ -688,10 +688,10 @@ export class DatabaseStorage implements IStorage {
         .where(eq(viewedOffers.clientId, clientId))
         .orderBy(desc(viewedOffers.viewedAt));
       console.log('Fetched viewed offers from DB:', result);
-      return result;
+      return new Set(result.map(r => r.offerId));
     } catch (error) {
       console.error('Error getting viewed offers:', error);
-      return [];
+      return new Set();
     }
   }
 

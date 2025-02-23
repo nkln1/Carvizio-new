@@ -34,9 +34,7 @@ export function useOfferManagement() {
 
         const data = await response.json();
         console.log('Fetched viewed offers:', data);
-        const offerIds = data.map((offer: { offerId: number }) => offer.offerId);
-        console.log('Mapped to offer IDs:', offerIds);
-        return new Set(offerIds);
+        return new Set(data.map((offer: { offerId: number }) => offer.offerId));
       } catch (error) {
         console.error('Error fetching viewed offers:', error);
         toast({
@@ -46,7 +44,9 @@ export function useOfferManagement() {
         });
         return new Set();
       }
-    }
+    },
+    staleTime: 0,
+    cacheTime: 0
   });
 
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
