@@ -18,34 +18,7 @@ export function useOfferManagement() {
   // Fetch viewed offers
   const { data: viewedOffers = [] } = useQuery<ViewedOffer[]>({
     queryKey: ["/api/client/viewed-offers"],
-    refetchInterval: 30000, // Refetch every 30 seconds
-    queryFn: async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error('No authentication token available');
-
-        const response = await fetch('/api/client/viewed-offers', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch viewed offers');
-        }
-
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching viewed offers:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch viewed offers status",
-          variant: "destructive",
-        });
-        return [];
-      }
-    }
+    refetchInterval: 30000 // Refetch every 30 seconds
   });
 
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
@@ -62,31 +35,26 @@ export function useOfferManagement() {
         }
       });
 
-      console.log('Mark offer response status:', response.status);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to mark offer as viewed: ${errorText}`);
+        throw new Error(`Failed to mark offer as viewed: ${await response.text()}`);
       }
 
-      const newViewedOffer: ViewedOffer = await response.json();
-      console.log('Server response for marking offer:', newViewedOffer);
+      // Get the new viewed offer from the response
+      const newViewedOffer = await response.json();
+      console.log('Successfully marked offer as viewed:', newViewedOffer);
 
-      // Update the cache with the new viewed offer from the server response
+      // Optimistically update viewed offers cache
       queryClient.setQueryData<ViewedOffer[]>(["/api/client/viewed-offers"], (old = []) => {
-        // Remove any existing entry for this offer and add the new one
-        return [...old.filter(vo => vo.offerId !== offerId), newViewedOffer];
+        const filtered = old.filter(vo => vo.offerId !== offerId);
+        return [...filtered, newViewedOffer];
       });
 
-      // Invalidate and refetch to ensure data consistency
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] })
-      ]);
-
-      // Update the new offers count
+      // Update the offers count immediately
       setNewOffersCount(prev => Math.max(0, prev - 1));
+
+      // Invalidate both queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
 
       toast({
         title: "Success",
@@ -99,29 +67,26 @@ export function useOfferManagement() {
         description: "Failed to mark offer as viewed",
         variant: "destructive",
       });
-      throw error;
     }
   };
 
-  const getNewOffersCount = () => {
+  // Calculate new offers count whenever offers or viewedOffers change
+  useEffect(() => {
     const newOffers = offers.filter(offer => 
       !viewedOffers.some(vo => vo.offerId === offer.id)
     );
-    console.log('New offers count:', newOffers.length, 'Total offers:', offers.length, 'Viewed offers:', viewedOffers.length);
-    return newOffers.length;
-  };
-
-  useEffect(() => {
-    const count = getNewOffersCount();
-    console.log('Updating new offers count:', count);
-    setNewOffersCount(count);
+    console.log('New offers calculation:', {
+      totalOffers: offers.length,
+      viewedOffers: viewedOffers.length,
+      newOffersCount: newOffers.length
+    });
+    setNewOffersCount(newOffers.length);
   }, [offers, viewedOffers]);
 
   return {
     offers,
     viewedOffers,
     markOfferAsViewed,
-    newOffersCount,
-    setNewOffersCount,
+    newOffersCount
   };
 }
