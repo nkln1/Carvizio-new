@@ -704,7 +704,10 @@ export class DatabaseStorage implements IStorage {
           offerId,
           viewedAt: new Date()
         })
-        .onConflictDoNothing()
+        .onConflictDoUpdate({
+          target: [viewedOffers.clientId, viewedOffers.offerId],
+          set: { viewedAt: new Date() }
+        })
         .returning();
 
       if (!viewedOffer) {

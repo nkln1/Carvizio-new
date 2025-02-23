@@ -71,17 +71,21 @@ export function useOfferManagement() {
       console.log('Successfully marked offer as viewed:', offerId);
 
       // Then update the local cache and UI
-      queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
-        const newSet = new Set(old);
-        newSet.add(offerId);
-        return newSet;
+      queryClient.setQueryData(["/api/client/viewed-offers"], (old: any[] = []) => {
+        if (!old.some(o => o.offerId === offerId)) {
+          return [...old, { offerId }];
+        }
+        return old;
       });
 
       // Reduce the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
 
       // Finally, refetch to ensure data consistency
-      await queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] })
+      ]);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
       toast({
