@@ -79,6 +79,16 @@ app.use((req, res, next) => {
           server.listen(port, '0.0.0.0')
             .once('listening', () => {
               console.log(`Server running on port ${port}`);
+              // Ensure proper CORS headers for Vite HMR
+              app.use((req, res, next) => {
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+                if (req.method === 'OPTIONS') {
+                  return res.sendStatus(200);
+                }
+                next();
+              });
               resolve(true);
             })
             .once('error', (err: any) => {
