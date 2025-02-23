@@ -103,7 +103,21 @@ export function useOfferManagement() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
       
-      // Update both caches optimistically
+      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark offer as viewed');
+      }
+
+      console.log('Successfully marked offer as viewed:', offerId);
+
+      // Update caches only after successful API response
       queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
         const newSet = new Set(old);
         newSet.add(offerId);
@@ -115,30 +129,6 @@ export function useOfferManagement() {
           offer.id === offerId ? { ...offer, isViewed: true } : offer
         )
       );
-      
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        // Revert both optimistic updates on error
-        queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
-          const newSet = new Set(old);
-          newSet.delete(offerId);
-          return newSet;
-        });
-
-        queryClient.setQueryData(["/api/client/offers"], (oldOffers: OfferWithProvider[] = []) =>
-          oldOffers.map(offer => 
-            offer.id === offerId ? { ...offer, isViewed: false } : offer
-          )
-        );
-        throw new Error('Failed to mark offer as viewed');
-      }
 
       // Force refresh queries to ensure consistency
       await Promise.all([
