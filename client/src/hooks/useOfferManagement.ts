@@ -83,8 +83,8 @@ export function useOfferManagement() {
         }
 
         const data = await response.json();
-        console.log('Fetched viewed offers data structure:', data); // Debug log
-        return new Set(data?.map(offer => offer.offerId) || []);
+        console.log('Fetched viewed offers:', data); // Debug log
+        return new Set(data.map((offer: { offerId: number }) => offer.offerId));
       } catch (error) {
         console.error('Error fetching viewed offers:', error);
         toast({
