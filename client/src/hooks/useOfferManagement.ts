@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OfferWithProvider } from "@shared/schema";
+import type { OfferWithProvider, ViewedOffer } from "@shared/schema";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +15,7 @@ export function useOfferManagement() {
   });
 
   // Fetch viewed offers
-  const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
+  const { data: viewedOffers = [] } = useQuery<ViewedOffer[]>({
     queryKey: ["/api/client/viewed-offers"],
     queryFn: async () => {
       try {
@@ -34,7 +34,7 @@ export function useOfferManagement() {
 
         const data = await response.json();
         console.log('Fetched viewed offers:', data);
-        return new Set(Array.from(data));
+        return data;
       } catch (error) {
         console.error('Error fetching viewed offers:', error);
         toast({
@@ -42,11 +42,9 @@ export function useOfferManagement() {
           description: "Failed to fetch viewed offers status",
           variant: "destructive",
         });
-        return new Set();
+        return [];
       }
-    },
-    staleTime: 0,
-    cacheTime: 0
+    }
   });
 
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
@@ -71,21 +69,10 @@ export function useOfferManagement() {
       console.log('Successfully marked offer as viewed:', offerId);
 
       // Then update the local cache and UI
-      queryClient.setQueryData(["/api/client/viewed-offers"], (old: any[] = []) => {
-        if (!old.some(o => o.offerId === offerId)) {
-          return [...old, { offerId }];
-        }
-        return old;
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
 
       // Reduce the new offers count
       setNewOffersCount(prev => Math.max(0, prev - 1));
-
-      // Finally, refetch to ensure data consistency
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] })
-      ]);
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
       toast({
@@ -98,7 +85,7 @@ export function useOfferManagement() {
   };
 
   const getNewOffersCount = () => {
-    return offers.filter(offer => !viewedOffers.has(offer.id)).length;
+    return offers.filter(offer => !viewedOffers.some(vo => vo.offerId === offer.id)).length;
   };
 
   useEffect(() => {
