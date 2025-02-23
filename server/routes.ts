@@ -874,29 +874,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Test endpoint for manual viewed offers insertion
-  app.post("/api/test/viewed-offers", validateFirebaseToken, async (req, res) => {
-    try {
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
-      // Manual insert into viewed_offers
-      const result = await db.insert(viewedOffers).values({
-        clientId: client.id,
-        offerId: 6, // Test with a specific offer ID
-        viewedAt: new Date()
-      }).returning();
-
-      console.log('Manual insert result:', result);
-      res.json(result);
-    } catch (error) {
-      console.error('Manual insert error:', error);
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
   // Add endpoint to get viewed offers
   app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
     try {      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
