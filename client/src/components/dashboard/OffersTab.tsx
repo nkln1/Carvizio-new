@@ -57,18 +57,24 @@ export function OffersTab({
     setLocalViewedOffers(viewedOffers);
   }, [viewedOffers]);
 
-  const handleAction = async (offerId: number, action: () => void | Promise<void>) => {
+  const handleAction = async (offerId: number, action: () => Promise<void>) => {
     try {
       if (markOfferAsViewed && !localViewedOffers.has(offerId)) {
+        console.log('Marking offer as viewed:', offerId);
         await markOfferAsViewed(offerId);
+
+        // Update local state immediately
         setLocalViewedOffers(prev => {
           const newSet = new Set(prev);
           newSet.add(offerId);
           return newSet;
         });
-        // Invalidate the offers query to refresh the UI
-        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+
+        // Force refresh both queries
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
+          queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] })
+        ]);
       }
       await action();
     } catch (error) {
