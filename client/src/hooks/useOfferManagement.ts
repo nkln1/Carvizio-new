@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { OfferWithProvider } from "@shared/schema";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -11,60 +11,10 @@ export function useOfferManagement() {
 
   // Fetch offers
   const { data: offers = [] } = useQuery<OfferWithProvider[]>({
-    queryKey: ["/api/client/offers"],
+    queryKey: ["/api/client/offers"]
   });
 
-  // Enhanced mutation for marking an offer as viewed
-  const markOfferAsViewedMutation = useMutation({
-    mutationFn: async (offerId: number) => {
-      console.log('Marking offer as viewed:', offerId); // Debug log
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to mark offer as viewed');
-      }
-
-      return response.json();
-    },
-    onSuccess: (_, offerId) => {
-      console.log('Successfully marked offer as viewed:', offerId); // Debug log
-      // Update the viewedOffers Set in the cache immediately
-      queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
-        console.log('Previous viewed offers:', Array.from(old)); // Debug log
-        const newSet = new Set(old);
-        newSet.add(offerId);
-        console.log('Updated viewed offers:', Array.from(newSet)); // Debug log
-        return newSet;
-      });
-
-      // Update the new offers count
-      setNewOffersCount(prev => Math.max(0, prev - 1));
-
-      // Invalidate both queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-    },
-    onError: (error: Error) => {
-      console.error('Error marking offer as viewed:', error); // Debug log
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while marking the offer as viewed.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Fetch viewed offers with proper error handling
+  // Fetch viewed offers
   const { data: viewedOffers = new Set() } = useQuery<Set<number>>({
     queryKey: ["/api/client/viewed-offers"],
     queryFn: async () => {
@@ -83,7 +33,7 @@ export function useOfferManagement() {
         }
 
         const data = await response.json();
-        console.log('Fetched viewed offers:', data); // Debug log
+        console.log('Fetched viewed offers:', data);
         return new Set(data.map((offer: { offerId: number }) => offer.offerId));
       } catch (error) {
         console.error('Error fetching viewed offers:', error);
@@ -99,10 +49,10 @@ export function useOfferManagement() {
 
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
     try {
-      console.log('Attempting to mark offer as viewed:', offerId);
+      console.log('Marking offer as viewed:', offerId);
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
-      
+
       const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
         method: 'POST',
         headers: {
@@ -117,16 +67,27 @@ export function useOfferManagement() {
 
       console.log('Successfully marked offer as viewed:', offerId);
 
-      // After successful API call, force refresh both queries
+      // Update local cache immediately after successful API call
+      queryClient.setQueryData(["/api/client/viewed-offers"], (old: Set<number> = new Set()) => {
+        const newSet = new Set(old);
+        newSet.add(offerId);
+        return newSet;
+      });
+
+      // Invalidate queries to ensure fresh data
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] })
       ]);
 
-      // Update local state
       setNewOffersCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error marking offer as viewed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark offer as viewed",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -135,7 +96,6 @@ export function useOfferManagement() {
     return offers.filter(offer => !viewedOffers.has(offer.id)).length;
   };
 
-  // Update new offers count whenever offers or viewedOffers change
   useEffect(() => {
     setNewOffersCount(getNewOffersCount());
   }, [offers, viewedOffers]);
