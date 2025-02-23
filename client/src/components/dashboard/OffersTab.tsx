@@ -61,7 +61,14 @@ export function OffersTab({
     try {
       if (markOfferAsViewed && !localViewedOffers.has(offerId)) {
         await markOfferAsViewed(offerId);
-        setLocalViewedOffers(prev => new Set([...prev, offerId]));
+        setLocalViewedOffers(prev => {
+          const newSet = new Set(prev);
+          newSet.add(offerId);
+          return newSet;
+        });
+        // Invalidate the offers query to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
       }
       await action();
     } catch (error) {
