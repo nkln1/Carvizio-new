@@ -45,9 +45,8 @@ export default function ClientDashboard() {
   const {
     offers,
     viewedOffers,
-    setViewedOffers,
-    newOffersCount,
-    setNewOffersCount,
+    markOfferAsViewed,
+    newOffersCount
   } = useOfferManagement();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
@@ -79,7 +78,6 @@ export default function ClientDashboard() {
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'NEW_OFFER') {
-        setNewOffersCount(prev => prev + 1);
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
       } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
         queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
@@ -93,7 +91,7 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     if (activeTab === "offers") {
-      setNewOffersCount(0);
+      queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
     }
   }, [activeTab]);
 
@@ -232,7 +230,7 @@ export default function ClientDashboard() {
             {activeTab === "offers" && (
               <OffersTab
                 offers={offers}
-                onMessageService={(serviceId, requestId) => {
+                onMessageClick={(userId: number, userName: string) => {
                   toast({
                     title: "În curând",
                     description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
@@ -241,11 +239,8 @@ export default function ClientDashboard() {
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
-                viewedOffers={new Set(viewedOffers)}
-                setViewedOffers={(newViewedOffers) => {
-                  setViewedOffers(Array.from(newViewedOffers));
-                  queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
-                }}
+                viewedOffers={new Set(viewedOffers.map(vo => vo.offerId))}
+                markOfferAsViewed={markOfferAsViewed}
               />
             )}
 

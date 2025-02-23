@@ -49,34 +49,14 @@ export function OffersTab({
 }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
-  const [localViewedOffers, setLocalViewedOffers] = useState<Set<number>>(viewedOffers);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setLocalViewedOffers(viewedOffers);
-  }, [viewedOffers]);
-
   const handleAction = async (offerId: number, action: () => Promise<void>) => {
     try {
-      if (markOfferAsViewed && !localViewedOffers.has(offerId)) {
+      if (markOfferAsViewed && !viewedOffers.has(offerId)) {
         console.log('Marking offer as viewed:', offerId);
-        
-        // Make the API call first
         await markOfferAsViewed(offerId);
-        
-        // Update local state after successful API call
-        setLocalViewedOffers(prev => {
-          const newSet = new Set(prev);
-          newSet.add(offerId);
-          return newSet;
-        });
-
-        // Force refresh both queries
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
-          queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] })
-        ]);
       }
       await action();
     } catch (error) {
@@ -91,10 +71,11 @@ export function OffersTab({
 
   const handleMessageClick = (offer: OfferWithProvider) => {
     if (onMessageClick && offer.serviceProviderId && offer.serviceProviderName) {
-      handleAction(offer.id, () =>
-        onMessageClick(offer.serviceProviderId, offer.serviceProviderName)
-      );
+      return handleAction(offer.id, async () => {
+        onMessageClick(offer.serviceProviderId, offer.serviceProviderName);
+      });
     }
+    return Promise.resolve();
   };
 
   const handleAcceptOffer = async (offer: OfferWithProvider) => {
@@ -228,7 +209,7 @@ export function OffersTab({
   const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
 
   const renderOfferBox = (offer: OfferWithProvider) => {
-    const isNew = !localViewedOffers.has(offer.id);
+    const isNew = !viewedOffers.has(offer.id);
 
     return (
       <div
