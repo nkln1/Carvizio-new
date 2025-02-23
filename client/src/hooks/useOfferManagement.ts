@@ -76,22 +76,6 @@ export function useOfferManagement() {
         return newSet;
       });
 
-      // Update the database
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark offer as viewed');
-      }
-
       // Invalidate queries to ensure fresh data
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] }),
