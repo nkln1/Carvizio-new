@@ -69,8 +69,36 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
-  });
+  const startServer = async (initialPort: number) => {
+    let port = initialPort;
+    const maxRetries = 10;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        await new Promise((resolve, reject) => {
+          server.listen(port, '0.0.0.0')
+            .once('listening', () => {
+              console.log(`Server running on port ${port}`);
+              resolve(true);
+            })
+            .once('error', (err: any) => {
+              if (err.code === 'EADDRINUSE') {
+                port++;
+                server.close();
+                resolve(false);
+              } else {
+                reject(err);
+              }
+            });
+        });
+        break;
+      } catch (error) {
+        console.error(`Failed to start server on port ${port}:`, error);
+        if (i === maxRetries - 1) throw error;
+      }
+    }
+  };
+
+  const initialPort = parseInt(process.env.PORT || '5000');
+  startServer(initialPort);
 })();
