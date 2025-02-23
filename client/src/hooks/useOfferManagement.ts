@@ -34,7 +34,9 @@ export function useOfferManagement() {
 
         const data = await response.json();
         console.log('Fetched viewed offers:', data);
-        return new Set(data.map((offer: { offerId: number }) => offer.offerId));
+        const offerIds = data.map((offer: { offerId: number }) => offer.offerId);
+        console.log('Mapped to offer IDs:', offerIds);
+        return new Set(offerIds);
       } catch (error) {
         console.error('Error fetching viewed offers:', error);
         toast({
