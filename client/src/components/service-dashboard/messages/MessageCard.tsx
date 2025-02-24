@@ -14,7 +14,7 @@ export function MessageCard({ message, isCurrentUser }: MessageCardProps) {
     <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[80%]`}>
         <Avatar className="h-8 w-8">
-          <span>{message.senderName?.[0]?.toUpperCase()}</span>
+          <span>{isCurrentUser ? 'S' : 'C'}</span>
         </Avatar>
         <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
           <Card className={`p-3 ${
