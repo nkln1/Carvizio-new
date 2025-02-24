@@ -193,7 +193,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const handleMessageClick = async (request: RequestType) => {
     try {
-      // Get client details first
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -212,11 +211,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
       if (onMessageClick) {
         onMessageClick(request.clientId, clientName, request.id);
-      } else {
-        toast({
-          title: "În curând",
-          description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-        });
       }
     } catch (error) {
       console.error('Error fetching client details:', error);

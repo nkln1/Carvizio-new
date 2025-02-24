@@ -21,7 +21,7 @@ interface MessagesTabProps {
 }
 
 export default function MessagesTab({
-  initialConversation,
+  initialConversation = null,
   onConversationClear,
 }: MessagesTabProps) {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);

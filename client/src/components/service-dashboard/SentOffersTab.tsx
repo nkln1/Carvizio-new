@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SentOffersTabProps {
-  onMessageClick?: (userId: number, userName: string) => void;
+  onMessageClick?: (userId: number, userName: string, requestId: number) => void;
 }
 
 export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
@@ -212,7 +212,7 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
                             <Button
                               variant="outline"
                               className="mt-2"
-                              onClick={() => onMessageClick(offer.requestUserId, offer.requestUserName)}
+                              onClick={() => onMessageClick(offer.requestUserId, offer.requestUserName, offer.requestId)}
                             >
                               <MessageSquare className="w-4 h-4 mr-2" />
                               Mesaj Client
