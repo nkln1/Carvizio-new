@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,14 @@ export default function MessagesTab({
   const [activeRequest, setActiveRequest] = useState<any>(null);
   const [offerDetails, setOfferDetails] = useState<any>(null);
 
+  useEffect(() => {
+    console.log('MessagesTab - Conversations:', conversations);
+    console.log('MessagesTab - Active conversation:', activeConversation);
+    console.log('MessagesTab - Messages:', messages);
+  }, [conversations, activeConversation, messages]);
+
   const handleBack = () => {
+    console.log('Handling back button click');
     setActiveConversation(null);
     if (initialConversation) {
       onConversationClear?.();
@@ -53,16 +60,19 @@ export default function MessagesTab({
     userName: string;
     requestId: number;
   }) => {
+    console.log('Selecting conversation:', conv);
     setActiveConversation(conv);
     if (initialConversation) {
       onConversationClear?.();
     }
 
-    // Fetch request and offer details when conversation is selected
     if (conv.requestId) {
       const request = await loadRequestDetails(conv.requestId);
+      console.log('Loaded request details:', request);
       setActiveRequest(request);
+
       const offer = await loadOfferDetails(conv.requestId);
+      console.log('Loaded offer details:', offer);
       setOfferDetails(offer);
     }
   };

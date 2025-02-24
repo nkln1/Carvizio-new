@@ -3,6 +3,17 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Add Conversation type definition
+export interface Conversation {
+  userId: number;
+  userName: string;
+  requestId: number;
+  requestTitle?: string;
+  lastMessage?: string;
+  lastMessageDate?: string;
+  unreadCount: number;
+}
+
 const MessageRole = z.enum(["client", "service"]);
 export type MessageRole = z.infer<typeof MessageRole>;
 
@@ -239,7 +250,7 @@ export const viewedRequestsRelations = relations(viewedRequests, ({ one }) => ({
 // Add to service providers relations
 export const serviceProvidersRelations = relations(serviceProviders, ({ many }) => ({
   viewedRequests: many(viewedRequests),
-  sentOffers: many(sentOffers)
+  sentOffers: many(sentOffers),
 }));
 
 // Add viewed requests schemas
