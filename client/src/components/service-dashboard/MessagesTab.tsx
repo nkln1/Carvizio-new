@@ -9,6 +9,7 @@ import { ConversationList } from "./messages/ConversationList";
 import { ConversationView } from "./messages/ConversationView";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
+import { useAuth } from "@/context/AuthContext";
 
 interface MessagesTabProps {
   initialConversation?: {
@@ -24,6 +25,7 @@ export default function MessagesTab({
   onConversationClear,
 }: MessagesTabProps) {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const { user } = useAuth();
   const {
     activeConversation,
     setActiveConversation,
@@ -32,8 +34,8 @@ export default function MessagesTab({
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
-    getRequestDetails,
-    getOfferDetails
+    loadRequestDetails,
+    loadOfferDetails
   } = useMessagesManagement(initialConversation);
 
   const [activeRequest, setActiveRequest] = useState<any>(null);
@@ -58,9 +60,9 @@ export default function MessagesTab({
 
     // Fetch request and offer details when conversation is selected
     if (conv.requestId) {
-      const request = await getRequestDetails(conv.requestId);
+      const request = await loadRequestDetails(conv.requestId);
       setActiveRequest(request);
-      const offer = await getOfferDetails(conv.requestId);
+      const offer = await loadOfferDetails(conv.requestId);
       setOfferDetails(offer);
     }
   };
@@ -122,7 +124,8 @@ export default function MessagesTab({
             <ConversationView
               messages={messages}
               userName={activeConversation.userName}
-              currentUserId={1} // This should come from auth context
+              currentUserId={user?.id || 0}
+              isLoading={isLoadingMessages}
               onBack={handleBack}
               onSendMessage={sendMessage}
             />

@@ -39,13 +39,21 @@ export function ConversationView({
   onSendMessage
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
 
-    await onSendMessage(newMessage);
-    setNewMessage("");
+    try {
+      setIsSending(true);
+      await onSendMessage(newMessage);
+      setNewMessage("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -87,9 +95,10 @@ export function ConversationView({
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Scrie un mesaj..."
           className="flex-1"
+          disabled={isSending}
         />
-        <Button type="submit" disabled={!newMessage.trim()}>
-          <Send className="h-4 w-4" />
+        <Button type="submit" disabled={!newMessage.trim() || isSending}>
+          <Send className={`h-4 w-4 ${isSending ? 'animate-pulse' : ''}`} />
         </Button>
       </form>
     </Card>
