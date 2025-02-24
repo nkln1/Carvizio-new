@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationList } from "./messages/ConversationList";
 import { ConversationView } from "./messages/ConversationView";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
 
 interface MessagesTabProps {
   initialConversation?: {
@@ -30,9 +32,12 @@ export default function MessagesTab({
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
-    activeRequest,
-    offerDetails
+    getRequestDetails,
+    getOfferDetails
   } = useMessagesManagement(initialConversation);
+
+  const [activeRequest, setActiveRequest] = useState<any>(null);
+  const [offerDetails, setOfferDetails] = useState<any>(null);
 
   const handleBack = () => {
     setActiveConversation(null);
@@ -41,7 +46,7 @@ export default function MessagesTab({
     }
   };
 
-  const handleConversationSelect = (conv: {
+  const handleConversationSelect = async (conv: {
     userId: number;
     userName: string;
     requestId: number;
@@ -49,6 +54,14 @@ export default function MessagesTab({
     setActiveConversation(conv);
     if (initialConversation) {
       onConversationClear?.();
+    }
+
+    // Fetch request and offer details when conversation is selected
+    if (conv.requestId) {
+      const request = await getRequestDetails(conv.requestId);
+      setActiveRequest(request);
+      const offer = await getOfferDetails(conv.requestId);
+      setOfferDetails(offer);
     }
   };
 
@@ -105,15 +118,19 @@ export default function MessagesTab({
         </div>
 
         <div className="flex-1 flex flex-col min-h-0">
-          <ConversationView
-            messages={messages}
-            userName={activeConversation?.userName || ""}
-            currentUserId={1} // This should come from auth context
-            isLoading={isLoadingMessages}
-            activeRequest={activeRequest}
-            onBack={handleBack}
-            onSendMessage={sendMessage}
-          />
+          {activeConversation ? (
+            <ConversationView
+              messages={messages}
+              userName={activeConversation.userName}
+              currentUserId={1} // This should come from auth context
+              onBack={handleBack}
+              onSendMessage={sendMessage}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              Selectează o conversație pentru a începe
+            </div>
+          )}
         </div>
       </CardContent>
 
@@ -164,6 +181,7 @@ export default function MessagesTab({
                         {format(
                           new Date(offerDetails.requestPreferredDate),
                           "dd.MM.yyyy",
+                          { locale: ro }
                         )}
                       </p>
                     </div>
@@ -197,7 +215,7 @@ export default function MessagesTab({
                       <p className="font-medium">
                         {offerDetails.availableDates
                           .map((date: string) =>
-                            format(new Date(date), "dd.MM.yyyy"),
+                            format(new Date(date), "dd.MM.yyyy", { locale: ro })
                           )
                           .join(", ")}
                       </p>
@@ -235,6 +253,7 @@ export default function MessagesTab({
                         {format(
                           new Date(offerDetails.createdAt),
                           "dd.MM.yyyy HH:mm",
+                          { locale: ro }
                         )}
                       </span>
                     </div>
