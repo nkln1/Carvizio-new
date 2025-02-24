@@ -856,6 +856,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this after the reject offer endpoint (around line 857)
+  app.post("/api/client/offers/:id/cancel", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can cancel offers." });
+      }
+
+      const offerId = parseInt(req.params.id);
+      const updatedOffer = await storage.updateSentOfferStatus(offerId, "Canceled");
+
+      // Send notification through WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'OFFER_STATUS_CHANGED',
+            payload: { ...updatedOffer, status: "Canceled" }
+          }));
+        }
+      });
+
+      res.json(updatedOffer);    } catch (error) {
+      console.error("Error canceling offer:", error);
+      res.status(500).json({ error: "Failed to cancel offer" });
+    }
+  });
+
   // Add endpoint to mark offer as viewed
   app.post("/api/client/mark-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
     try {

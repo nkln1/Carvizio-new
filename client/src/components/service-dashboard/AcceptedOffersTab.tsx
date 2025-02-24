@@ -15,7 +15,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { AcceptedOfferWithClient } from "@shared/schema";
@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { SearchBar } from "./offers/SearchBar";
 import { Button } from "@/components/ui/button";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AcceptedOffersTabProps {
   onMessageClick?: (userId: number, userName: string, requestId: number) => void;
@@ -36,6 +37,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
   const { viewedOffers, markOfferAsViewed, newOffersCount } = useOfferManagement();
+  const queryClient = useQueryClient();
 
   const { data: offers = [], isLoading, error } = useQuery<AcceptedOfferWithClient[]>({
     queryKey: ['/api/service/offers'],
@@ -56,6 +58,34 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
       return response.json();
     }
   });
+
+  const handleCancelOffer = async (offerId: number) => {
+    try {
+      await apiRequest(`/api/client/offers/${offerId}/cancel`, {
+        method: 'POST'
+      });
+
+      // Invalidate the offers query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ['/api/service/offers'] });
+
+      toast({
+        title: "Ofertă anulată",
+        description: "Oferta a fost anulată cu succes.",
+      });
+
+      // Close the dialog if it's open
+      if (selectedOffer) {
+        setSelectedOffer(null);
+      }
+    } catch (error) {
+      console.error('Error canceling offer:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "A apărut o eroare la anularea ofertei. Vă rugăm să încercați din nou.",
+      });
+    }
+  };
 
   useEffect(() => {
     if (error) {
@@ -179,7 +209,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium text-[#00aff5]">{offer.title}</h3>
-                          {!viewedOffers.has(offer.id) && (
+                          {!viewedOffers.includes(offer.id) && (
                             <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
                               Nou
                             </span>
@@ -232,6 +262,13 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Vezi detalii
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleCancelOffer(offer.id)}
+                        >
+                          Anulează
                         </Button>
                       </div>
                     </div>
@@ -375,6 +412,15 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
                     <span>{format(new Date(selectedOffer.createdAt), "dd.MM.yyyy HH:mm")}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  variant="destructive"
+                  onClick={() => handleCancelOffer(selectedOffer.id)}
+                >
+                  Anulează Oferta
+                </Button>
               </div>
             </div>
           )}
