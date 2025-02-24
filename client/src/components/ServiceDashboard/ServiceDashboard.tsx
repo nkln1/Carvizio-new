@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface Message {
   id: string;
-  senderId: string;
   content: string;
   timestamp: string;
   isRead: boolean;
@@ -36,21 +35,17 @@ const MessageCard = ({ conversation }: { conversation: Conversation }) => {
     <Card className="mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200">
       <div className="p-4 flex items-start gap-4">
         <Avatar className="h-10 w-10 bg-blue-100 text-blue-700">
-          <span>{getInitials(conversation.clientName || "Client Necunoscut")}</span>
+          <span>{getInitials(conversation.clientName)}</span>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <h3 className="font-medium text-sm">
-                {conversation.clientName || "Client Necunoscut"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {conversation.requestTitle}
-              </p>
+          <div className="flex justify-between items-start mb-1">
+            <div>
+              <h3 className="font-medium">{conversation.clientName}</h3>
+              <p className="text-sm text-muted-foreground">{conversation.requestTitle}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className="text-xs text-muted-foreground">
-                {format(new Date(conversation.lastMessage.timestamp), "HH:mm", {
+                {format(new Date(conversation.lastMessage.timestamp), "dd.MM.yyyy HH:mm", {
                   locale: ro,
                 })}
               </span>
@@ -61,9 +56,7 @@ const MessageCard = ({ conversation }: { conversation: Conversation }) => {
               )}
             </div>
           </div>
-          <p className="text-sm text-muted-foreground truncate mt-1">
-            {conversation.lastMessage.content}
-          </p>
+          <p className="text-sm text-muted-foreground">{conversation.lastMessage.content}</p>
         </div>
       </div>
     </Card>
@@ -100,7 +93,7 @@ export const MessagesTab = () => {
         <MessagesSkeleton />
       ) : (
         <div className="space-y-4">
-          {conversations?.map((conversation: Conversation) => (
+          {conversations?.map((conversation) => (
             <MessageCard key={conversation.id} conversation={conversation} />
           ))}
         </div>
