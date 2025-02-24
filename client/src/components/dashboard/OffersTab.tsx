@@ -163,15 +163,32 @@ export function OffersTab({
       const response = await fetch(`/api/client/offers/${offer.id}/cancel`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to cancel offer');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to cancel offer');
       }
 
-      queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] });
+      // Update the local cache immediately
+      queryClient.setQueryData<OfferWithProvider[]>(['/api/client/offers'], (oldOffers = []) => {
+        return oldOffers.map(oldOffer =>
+          oldOffer.id === offer.id
+            ? { ...oldOffer, status: "Pending" }
+            : oldOffer
+        );
+      });
+
+      // Invalidate queries to refresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/client/offers'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/requests'] })
+      ]);
+
+      // Set active tab back to pending since the offer is now pending
       setActiveTab("pending");
 
       if (refreshRequests) {
@@ -186,7 +203,7 @@ export function OffersTab({
       console.error("Error canceling offer:", error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la anularea ofertei. Încercați din nou.",
+        description: error instanceof Error ? error.message : "A apărut o eroare la anularea ofertei. Încercați din nou.",
         variant: "destructive",
       });
     }
