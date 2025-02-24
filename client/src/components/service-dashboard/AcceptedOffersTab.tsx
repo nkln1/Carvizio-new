@@ -65,12 +65,13 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
         method: 'POST'
       });
 
-      // Invalidate the offers query to refetch the data
+      // Invalidate both the accepted offers and sent offers queries to update both tabs
       queryClient.invalidateQueries({ queryKey: ['/api/service/offers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/service/sent-offers'] });
 
       toast({
-        title: "Ofertă anulată",
-        description: "Oferta a fost anulată cu succes.",
+        title: "Ofertă mutată în așteptare",
+        description: "Oferta a fost anulată și mutată în tab-ul 'Oferte în așteptare'.",
       });
 
       // Close the dialog if it's open
