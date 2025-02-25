@@ -28,12 +28,14 @@ export function useMessagesManagement(initialConversation: {
 
       const response = await fetch(`/api/service/messages/${activeConversation?.userId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' // Added content-type header
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch messages');
+        const errorData = await response.text().catch(() => null); // Try to get error text
+        throw new Error(`Failed to fetch messages: ${response.status} - ${errorData}`);
       }
 
       return response.json();
@@ -58,7 +60,8 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
+        const errorData = await response.text().catch(() => null); // Try to get error text
+        throw new Error(`Failed to fetch conversations: ${response.status} - ${errorData}`);
       }
 
       return response.json();
@@ -68,7 +71,7 @@ export function useMessagesManagement(initialConversation: {
     refetchOnWindowFocus: false
   });
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (message: string) => {
     if (!activeConversation) return;
 
     try {
@@ -83,7 +86,8 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!userResponse.ok) {
-        throw new Error('Failed to get user details');
+        const errorData = await userResponse.text().catch(() => null);
+        throw new Error(`Failed to get user details: ${userResponse.status} - ${errorData}`);
       }
 
       const userData = await userResponse.json();
@@ -97,7 +101,7 @@ export function useMessagesManagement(initialConversation: {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          content,
+          content: message,
           senderId: serviceProviderId,
           receiverId: activeConversation.userId,
           requestId: activeConversation.requestId,
@@ -107,8 +111,8 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const errorMessage = errorData?.message || 'Failed to send message';
+        const errorData = await response.text().catch(() => null); // Try to get error text
+        const errorMessage = errorData || `Failed to send message: ${response.status}`;
         throw new Error(errorMessage);
       }
 
