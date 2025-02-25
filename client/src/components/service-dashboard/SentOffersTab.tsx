@@ -274,7 +274,7 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
       </CardContent>
 
       <Dialog open={!!selectedOffer} onOpenChange={(open) => !open && setSelectedOffer(null)}>
-        <DialogContent className="max-h-[60vh] overflow-y-auto pr-4"> {/* Added max-height and overflow-y-auto */}
+        <DialogContent className="max-h-[95vh] overflow-y-auto pr-4"> {/* Added max-height and overflow-y-auto */}
           <DialogHeader>
             <DialogTitle>Detalii Complete Ofertă</DialogTitle>
           </DialogHeader>
