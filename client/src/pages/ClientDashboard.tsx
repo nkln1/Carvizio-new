@@ -8,21 +8,21 @@ import { queryClient } from "@/lib/queryClient";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Request as RequestType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { NavigationItems } from "@/components/dashboard/NavigationItems";
 import { RequestForm } from "@/components/request/RequestForm";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
 import { useCarManagement } from "@/hooks/useCarManagement";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 import { CarDialog } from "@/components/car/CarDialog";
-import { NavigationItems } from "@/components/dashboard/NavigationItems";
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
@@ -203,6 +203,15 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <NavigationItems
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+        onCreateRequest={() => setShowRequestDialog(true)}
+        newOffersCount={newOffersCount}
+      />
+
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetContent side="left">
           <div className="mb-8">
@@ -213,14 +222,12 @@ export default function ClientDashboard() {
           </div>
           <NavigationItems
             activeTab={activeTab}
-            setActiveTab={(tab) => {
-              setActiveTab(tab);
-              setIsMenuOpen(false);
-            }}
+            setActiveTab={setActiveTab}
             isMenuOpen={isMenuOpen}
             setIsMenuOpen={setIsMenuOpen}
             onCreateRequest={() => setShowRequestDialog(true)}
             newOffersCount={newOffersCount}
+            isMobile={true}
           />
         </SheetContent>
       </Sheet>
