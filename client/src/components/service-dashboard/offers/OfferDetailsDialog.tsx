@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { AcceptedOfferWithClient } from "@shared/schema";
@@ -26,9 +27,15 @@ export function OfferDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent 
+        className="max-w-3xl"
+        aria-describedby="offer-details-description"
+      >
         <DialogHeader>
           <DialogTitle>Detalii Complete Ofertă</DialogTitle>
+          <DialogDescription id="offer-details-description">
+            Informații detaliate despre oferta acceptată
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[60vh]">
           <div className="space-y-6 p-2">

@@ -148,10 +148,13 @@ export default function MessagesTab({
       </CardContent>
 
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent 
+          className="max-w-3xl" 
+          aria-describedby="conversation-details-description"
+        >
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="conversation-details-description">
               Vizualizați toate detaliile cererii și ofertei asociate acestei conversații
             </DialogDescription>
           </DialogHeader>
