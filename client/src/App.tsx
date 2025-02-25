@@ -9,6 +9,7 @@ import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function Router() {
   return (
@@ -24,13 +25,15 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Navigation />
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Navigation />
+          <Router />
+          <Toaster />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
