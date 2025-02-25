@@ -37,8 +37,7 @@ export function NavigationItems({
     { id: "requests", label: "Cereri" },
     {
       id: "offers",
-      label: "Oferte primite",
-      count: newOffersCount
+      label: `Oferte primite${newOffersCount > 0 ? ` (${newOffersCount})` : ''}`,
     },
     { id: "car", label: "Mașini" },
     { id: "messages", label: "Mesaje" },
