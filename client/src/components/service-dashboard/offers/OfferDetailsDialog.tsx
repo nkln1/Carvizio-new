@@ -25,7 +25,7 @@ export function OfferDetailsDialog({
 }: OfferDetailsDialogProps) {
   if (!offer) return null;
 
-  const dialogDescriptionId = `offer-details-dialog-description-${offer.id}`;
+  const dialogDescriptionId = `offer-details-description-${offer.id}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,7 +36,7 @@ export function OfferDetailsDialog({
         <DialogHeader>
           <DialogTitle>Detalii Complete Ofertă</DialogTitle>
           <DialogDescription id={dialogDescriptionId}>
-            Informații detaliate despre oferta acceptată de la {offer.clientName}
+            Vizualizați detaliile complete ale ofertei acceptate de {offer.clientName}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[60vh]">
