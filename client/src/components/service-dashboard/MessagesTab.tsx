@@ -41,18 +41,32 @@ export default function MessagesTab({
 
   const [activeRequest, setActiveRequest] = useState<any>(null);
   const [offerDetails, setOfferDetails] = useState<any>(null);
+  const [wsInitialized, setWsInitialized] = useState(false);
 
   useEffect(() => {
-    const setupWebSocket = async () => {
+    let mounted = true;
+
+    const initializeWebSocket = async () => {
       try {
-        await websocketService.ensureConnection();
+        if (!wsInitialized && mounted) {
+          await websocketService.ensureConnection();
+          setWsInitialized(true);
+        }
       } catch (error) {
-        console.error('Failed to setup WebSocket connection:', error);
+        console.error('Failed to initialize WebSocket:', error);
+        // Retry after a delay if initialization fails
+        if (mounted) {
+          setTimeout(initializeWebSocket, 2000);
+        }
       }
     };
 
-    setupWebSocket();
-  }, []);
+    initializeWebSocket();
+
+    return () => {
+      mounted = false;
+    };
+  }, [wsInitialized]);
 
   const handleBack = () => {
     setActiveConversation(null);

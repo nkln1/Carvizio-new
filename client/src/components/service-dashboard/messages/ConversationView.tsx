@@ -43,6 +43,7 @@ export function ConversationView({
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [wsInitialized, setWsInitialized] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,16 +54,29 @@ export function ConversationView({
   }, [messages]);
 
   useEffect(() => {
-    const setupWebSocket = async () => {
+    let mounted = true;
+
+    const initializeWebSocket = async () => {
       try {
-        await websocketService.ensureConnection();
+        if (!wsInitialized && mounted) {
+          await websocketService.ensureConnection();
+          setWsInitialized(true);
+        }
       } catch (error) {
-        console.error('Failed to setup WebSocket connection:', error);
+        console.error('Failed to initialize WebSocket:', error);
+        // Retry after a delay if initialization fails
+        if (mounted) {
+          setTimeout(initializeWebSocket, 2000);
+        }
       }
     };
 
-    setupWebSocket();
-  }, []);
+    initializeWebSocket();
+
+    return () => {
+      mounted = false;
+    };
+  }, [wsInitialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
