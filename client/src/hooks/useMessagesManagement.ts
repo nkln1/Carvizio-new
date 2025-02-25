@@ -26,7 +26,6 @@ export function useMessagesManagement(initialConversation: {
         const token = await auth.currentUser?.getIdToken();
         if (!token) throw new Error('No authentication token available');
 
-        console.log('Fetching messages for user:', activeConversation?.userId);
         const response = await fetch(`/api/messages/service/conversation/${activeConversation?.userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -39,9 +38,7 @@ export function useMessagesManagement(initialConversation: {
           throw new Error('Failed to fetch messages');
         }
 
-        const data = await response.json();
-        console.log('Fetched messages:', data);
-        return data;
+        return response.json();
       } catch (error) {
         console.error('Error fetching messages:', error);
         return [];
@@ -61,7 +58,6 @@ export function useMessagesManagement(initialConversation: {
         const token = await auth.currentUser?.getIdToken();
         if (!token) throw new Error('No authentication token available');
 
-        console.log('Fetching conversations');
         const response = await fetch('/api/messages/service/conversations', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -75,7 +71,6 @@ export function useMessagesManagement(initialConversation: {
         }
 
         const data = await response.json();
-        console.log('Fetched conversations:', data);
         return data;
       } catch (error) {
         console.error('Error fetching conversations:', error);
@@ -107,7 +102,6 @@ export function useMessagesManagement(initialConversation: {
 
       const meData = await meResponse.json();
 
-      console.log('Sending message to user:', activeConversation.userId);
       const response = await fetch('/api/messages/service/send', {
         method: 'POST',
         headers: {
@@ -124,32 +118,30 @@ export function useMessagesManagement(initialConversation: {
         })
       });
 
-      let responseData;
+      const responseText = await response.text();
       try {
-        responseData = await response.json();
-      } catch (error) {
-        console.error('Invalid JSON response:', await response.text());
+        const responseData = JSON.parse(responseText);
+
+        if (!response.ok) {
+          throw new Error(responseData.message || 'Failed to send message');
+        }
+
+        // Update messages cache with new message
+        queryClient.setQueryData(
+          ['/api/messages/service/conversation', activeConversation.userId],
+          (old: Message[] | undefined) => [...(old || []), responseData]
+        );
+
+        // Invalidate conversations to update last message
+        await queryClient.invalidateQueries({
+          queryKey: ['/api/messages/service/conversations']
+        });
+
+        return responseData;
+      } catch (e) {
+        console.error('Server response:', responseText);
         throw new Error('Server returned invalid response format');
       }
-
-      if (!response.ok) {
-        throw new Error(responseData.message || 'Failed to send message');
-      }
-
-      console.log('Message sent successfully:', responseData);
-
-      // Update messages cache with new message
-      queryClient.setQueryData(
-        ['/api/messages/service/conversation', activeConversation.userId],
-        (old: Message[] | undefined) => [...(old || []), responseData]
-      );
-
-      // Invalidate conversations to update last message
-      await queryClient.invalidateQueries({
-        queryKey: ['/api/messages/service/conversations']
-      });
-
-      return responseData;
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
