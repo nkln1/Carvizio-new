@@ -939,6 +939,7 @@ export function registerRoutes(app: Express): Server {
   // Updated message routes
   app.post("/api/messages", validateFirebaseToken, async (req, res) => {
     try {
+      console.log("Message request body:", req.body);
       const { content, receiverId, receiverRole, requestId } = req.body;
 
       if (!requestId) {
@@ -951,6 +952,7 @@ export function registerRoutes(app: Express): Server {
         : await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
 
       if (!sender) {
+        console.log("Sender not found for Firebase UID:", req.firebaseUser!.uid);
         return res.status(401).json({ error: "Sender not found" });
       }
 
@@ -998,9 +1000,10 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(enrichedMessage);
     } catch (error: any) {
       console.error("Error sending message:", error);
+      // Ensure we're always sending JSON response
       res.status(500).json({
         error: "Failed to send message",
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: error.message || "Unknown error occurred"
       });
     }
   });
