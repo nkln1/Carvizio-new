@@ -22,6 +22,8 @@ import {
   type InsertViewedRequest,
   type ViewedOffer,
   viewedOffers,
+  type ViewedAcceptedOffer,
+  viewedAcceptedOffers,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, inArray, or, and } from "drizzle-orm";
@@ -97,6 +99,10 @@ export interface IStorage {
   // Add viewed offers methods
   getViewedOffersByClient(clientId: number): Promise<ViewedOffer[]>; // Added
   markOfferAsViewed(clientId: number, offerId: number): Promise<ViewedOffer>; // Added
+
+  // Add methods for viewed accepted offers
+  markAcceptedOfferAsViewed(serviceProviderId: number, offerId: number): Promise<ViewedAcceptedOffer>;
+  getViewedAcceptedOffersByServiceProvider(serviceProviderId: number): Promise<ViewedAcceptedOffer[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -741,6 +747,43 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error marking offer as viewed:', error);
       throw error;
+    }
+  }
+
+  async markAcceptedOfferAsViewed(serviceProviderId: number, offerId: number): Promise<ViewedAcceptedOffer> {
+    try {
+      const [viewedOffer] = await db
+        .insert(viewedAcceptedOffers)
+        .values({
+          serviceProviderId,
+          offerId,
+          viewedAt: new Date()
+        })
+        .onConflictDoUpdate({
+          target: [viewedAcceptedOffers.serviceProviderId, viewedAcceptedOffers.offerId],
+          set: {
+            viewedAt: new Date()
+          }
+        })
+        .returning();
+
+      return viewedOffer;
+    } catch (error) {
+      console.error('Error marking accepted offer as viewed:', error);
+      throw error;
+    }
+  }
+
+  async getViewedAcceptedOffersByServiceProvider(serviceProviderId: number): Promise<ViewedAcceptedOffer[]> {
+    try {
+      return await db
+        .select()
+        .from(viewedAcceptedOffers)
+        .where(eq(viewedAcceptedOffers.serviceProviderId, serviceProviderId))
+        .orderBy(desc(viewedAcceptedOffers.viewedAt));
+    } catch (error) {
+      console.error('Error getting viewed accepted offers:', error);
+      return [];
     }
   }
 }
