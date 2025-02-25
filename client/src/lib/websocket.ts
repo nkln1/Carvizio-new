@@ -11,12 +11,14 @@ class WebSocketService {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      // Wait for the document to be fully loaded
-      if (document.readyState === 'complete') {
-        this.initialize();
-      } else {
-        window.addEventListener('load', () => this.initialize());
-      }
+      // Add a small delay to ensure Vite's HMR WebSocket is initialized first
+      setTimeout(() => {
+        if (document.readyState === 'complete') {
+          this.initialize();
+        } else {
+          window.addEventListener('load', () => this.initialize());
+        }
+      }, 1000);
     }
   }
 
