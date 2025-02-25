@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationList } from "./messages/ConversationList";
 import { ConversationView } from "./messages/ConversationView";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
 
@@ -86,23 +88,52 @@ export default function MessagesTab({
     <Card className="h-[calc(100vh-12rem)] flex flex-col border-[#00aff5]/20">
       <CardHeader className="flex-shrink-0">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          {activeConversation ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="mr-2 hover:bg-gray-100 gap-2"
+            >
+              Înapoi
+            </Button>
+          ) : null}
           <MessageSquare className="h-5 w-5" />
           {activeConversation ? `Chat cu ${activeConversation.userName}` : "Mesaje"}
         </CardTitle>
-        <CardDescription>Comunicare directă cu clienții și gestionarea conversațiilor</CardDescription>
+        {activeConversation && (
+          <div className="flex justify-between items-center">
+            <CardDescription>Comunicare directă cu clienții</CardDescription>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+              onClick={() => setShowDetailsDialog(true)}
+            >
+              <Info className="h-4 w-4 mr-2" />
+              Vezi Detalii Cerere și Ofertă
+            </Button>
+          </div>
+        )}
       </CardHeader>
 
-      <CardContent className="p-0 flex-1 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="p-4">
-            <ConversationList
-              conversations={conversations}
-              isLoading={isLoadingConversations}
-              activeConversationId={activeConversation?.userId}
-              onSelectConversation={handleConversationSelect}
-            />
+      <CardContent className="p-0 flex flex-1 min-h-0">
+        <div className={`${activeConversation ? "hidden md:block" : ""} w-1/3 border-r flex flex-col`}>
+          <div className="p-4 border-b">
+            <h3 className="text-sm font-medium text-gray-500">Conversații</h3>
           </div>
-        </ScrollArea>
+          <ScrollArea className="flex-1">
+            <div className="p-4">
+              <ConversationList
+                conversations={conversations}
+                isLoading={isLoadingConversations}
+                activeConversationId={activeConversation?.userId}
+                onSelectConversation={handleConversationSelect}
+              />
+            </div>
+          </ScrollArea>
+        </div>
+
         <div className="flex-1 flex flex-col min-h-0">
           {activeConversation ? (
             <ConversationView
