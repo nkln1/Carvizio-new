@@ -47,7 +47,10 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
 
   const handleAction = async (offerId: number) => {
     try {
-      await markAcceptedOfferAsViewed(offerId);
+      // Only mark as viewed if it hasn't been viewed yet
+      if (!viewedAcceptedOffers.some(vo => vo.offerId === offerId)) {
+        await markAcceptedOfferAsViewed(offerId);
+      }
     } catch (error) {
       console.error('Error marking accepted offer as viewed:', error);
     }
