@@ -32,23 +32,37 @@ class WebSocketService {
     }
   }
 
-  private connect() {
-    this.cleanup();
-
+  private getWebSocketUrl(): string | null {
     try {
-      // Wait for window.location to be properly initialized
       if (!window.location.host) {
-        setTimeout(() => this.connect(), 100);
-        return;
+        console.log('Host not available yet, will retry');
+        return null;
       }
 
-      // Use the provided WebSocket URL
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       const wsUrl = `${protocol}//${host}/api/ws`;
 
-      console.log('Connecting to WebSocket:', wsUrl);
+      console.log('Constructed WebSocket URL:', wsUrl);
+      return wsUrl;
+    } catch (error) {
+      console.error('Error constructing WebSocket URL:', error);
+      return null;
+    }
+  }
 
+  private connect() {
+    this.cleanup();
+
+    try {
+      const wsUrl = this.getWebSocketUrl();
+      if (!wsUrl) {
+        console.log('WebSocket URL not ready, retrying in 1 second...');
+        setTimeout(() => this.connect(), 1000);
+        return;
+      }
+
+      console.log('Connecting to WebSocket:', wsUrl);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
