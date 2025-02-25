@@ -18,7 +18,7 @@ export function useMessagesManagement(initialConversation: {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Optimized messages query
+  // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ['/api/service/messages', activeConversation?.userId],
     enabled: !!activeConversation,
@@ -44,7 +44,7 @@ export function useMessagesManagement(initialConversation: {
     retry: 2
   });
 
-  // Optimized conversations query
+  // Conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/service/conversations'],
     queryFn: async () => {
@@ -72,17 +72,34 @@ export function useMessagesManagement(initialConversation: {
     if (!activeConversation) return;
 
     try {
-      // Use apiRequest utility instead of fetch directly
-      const responseData = await apiRequest('POST', '/api/service/messages', {
-        recipientId: activeConversation.userId,
-        content,
-        requestId: activeConversation.requestId
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content,
+          recipientId: activeConversation.userId,
+          requestId: activeConversation.requestId
+        })
       });
 
-      // Update messages cache with new message
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+      }
+
+      const newMessage = await response.json();
+
+      // Update messages cache
       queryClient.setQueryData(
         ['/api/service/messages', activeConversation.userId],
-        (old: Message[] | undefined) => [...(old || []), responseData]
+        (old: Message[] | undefined) => [...(old || []), newMessage]
       );
 
       // Invalidate conversations to update last message
@@ -90,6 +107,7 @@ export function useMessagesManagement(initialConversation: {
         queryKey: ['/api/service/conversations']
       });
 
+      return newMessage;
     } catch (error) {
       console.error('Error sending message:', error);
       toast({

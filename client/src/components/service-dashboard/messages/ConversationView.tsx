@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,15 @@ export function ConversationView({
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [scrollToBottom, setScrollToBottom] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     const setupWebSocket = async () => {
@@ -56,24 +64,15 @@ export function ConversationView({
     setupWebSocket();
   }, []);
 
-  useEffect(() => {
-    if (scrollToBottom) {
-      const messageContainer = document.querySelector('.messages-container');
-      if (messageContainer) {
-        messageContainer.scrollTop = messageContainer.scrollHeight;
-      }
-    }
-  }, [messages, scrollToBottom]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || isSending) return;
 
     try {
       setIsSending(true);
-      await onSendMessage(newMessage);
+      await onSendMessage(newMessage.trim());
       setNewMessage("");
-      setScrollToBottom(true);
+      scrollToBottom();
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -96,8 +95,9 @@ export function ConversationView({
           <CardTitle>{userName}</CardTitle>
         </div>
       </CardHeader>
+
       <CardContent className="flex-1 overflow-hidden p-0">
-        <ScrollArea className="h-full messages-container">
+        <ScrollArea className="h-full">
           {isLoading ? (
             <MessagesLoading />
           ) : (
@@ -109,10 +109,12 @@ export function ConversationView({
                   isCurrentUser={message.senderId === currentUserId}
                 />
               ))}
+              <div ref={messagesEndRef} />
             </div>
           )}
         </ScrollArea>
       </CardContent>
+
       <form
         onSubmit={handleSubmit}
         className="border-t p-4 flex gap-2"
@@ -124,7 +126,11 @@ export function ConversationView({
           className="flex-1"
           disabled={isSending}
         />
-        <Button type="submit" disabled={!newMessage.trim() || isSending}>
+        <Button 
+          type="submit" 
+          disabled={!newMessage.trim() || isSending}
+          className="bg-[#00aff5] hover:bg-[#0099d6]"
+        >
           <Send className={`h-4 w-4 ${isSending ? 'animate-pulse' : ''}`} />
         </Button>
       </form>
