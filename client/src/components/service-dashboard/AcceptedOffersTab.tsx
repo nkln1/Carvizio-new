@@ -89,8 +89,6 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
     );
   }
 
-  const dialogDescriptionId = "accepted-offers-dialog-description";
-
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50 space-y-2">
@@ -198,7 +196,6 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
         open={!!selectedOffer}
         onOpenChange={(open) => !open && setSelectedOffer(null)}
         onCancel={handleCancelOffer}
-        descriptionId={dialogDescriptionId}
       />
     </Card>
   );

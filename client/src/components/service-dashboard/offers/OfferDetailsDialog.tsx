@@ -25,18 +25,16 @@ export function OfferDetailsDialog({
 }: OfferDetailsDialogProps) {
   if (!offer) return null;
 
-  const dialogId = `offer-details-dialog-${offer.id}`;
-  const dialogDescriptionId = `${dialogId}-description`;
+  const dialogDescriptionId = `offer-details-description-${offer.id}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="max-w-3xl"
-        aria-labelledby={dialogId}
         aria-describedby={dialogDescriptionId}
       >
         <DialogHeader>
-          <DialogTitle id={dialogId}>Detalii Complete Ofertă</DialogTitle>
+          <DialogTitle>Detalii Complete Ofertă</DialogTitle>
           <DialogDescription id={dialogDescriptionId}>
             Vizualizați detaliile complete ale ofertei acceptate de {offer.clientName}
           </DialogDescription>
