@@ -2,67 +2,66 @@ class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempt = 0;
   private readonly maxReconnectAttempts = 5;
-  private readonly reconnectDelay = 3000;
+  private readonly reconnectDelay = 3000; // 3 seconds
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private messageHandlers: Set<(data: any) => void> = new Set();
   private isInitialized = false;
   private connectionPromise: Promise<void> | null = null;
   private connectionResolve: (() => void) | null = null;
+  private connectionReject: ((error: Error) => void) | null = null;
+  private initializing = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
-      // Add a small delay to ensure Vite's HMR WebSocket is initialized first
-      setTimeout(() => {
-        if (document.readyState === 'complete') {
-          this.initialize();
-        } else {
-          window.addEventListener('load', () => this.initialize());
-        }
-      }, 1000);
-    }
-  }
-
-  private initialize() {
-    if (!this.isInitialized) {
-      this.isInitialized = true;
-      this.connectionPromise = new Promise((resolve) => {
-        this.connectionResolve = resolve;
-        this.connect();
+      window.addEventListener('load', () => {
+        // Delay initialization to ensure window.location is available
+        setTimeout(() => this.initialize(), 1000);
       });
     }
   }
 
-  private getWebSocketUrl(): string | null {
-    try {
-      if (!window.location.host) {
-        console.log('Host not available yet, will retry');
-        return null;
-      }
+  private initialize() {
+    if (this.initializing || this.isInitialized) return;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      const wsUrl = `${protocol}//${host}/api/ws`;
+    this.initializing = true;
+    console.log('Initializing WebSocket service...');
 
-      console.log('Constructed WebSocket URL:', wsUrl);
-      return wsUrl;
-    } catch (error) {
-      console.error('Error constructing WebSocket URL:', error);
-      return null;
+    this.connectionPromise = new Promise((resolve, reject) => {
+      this.connectionResolve = resolve;
+      this.connectionReject = reject;
+      this.connect();
+    });
+
+    this.isInitialized = true;
+    this.initializing = false;
+  }
+
+  private getWebSocketUrl(): string {
+    if (!window.location.host) {
+      throw new Error('Host not available');
     }
+
+    const isSecure = window.location.protocol === 'https:';
+    const protocol = isSecure ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+
+    console.log('Constructed WebSocket URL:', wsUrl);
+    return wsUrl;
   }
 
   private connect() {
+    if (!window.location.host) {
+      console.log('Host not available, delaying connection...');
+      setTimeout(() => this.connect(), 1000);
+      return;
+    }
+
     this.cleanup();
 
     try {
       const wsUrl = this.getWebSocketUrl();
-      if (!wsUrl) {
-        console.log('WebSocket URL not ready, retrying in 1 second...');
-        setTimeout(() => this.connect(), 1000);
-        return;
-      }
+      console.log('Attempting WebSocket connection to:', wsUrl);
 
-      console.log('Connecting to WebSocket:', wsUrl);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
@@ -70,7 +69,6 @@ class WebSocketService {
         this.reconnectAttempt = 0;
         if (this.connectionResolve) {
           this.connectionResolve();
-          this.connectionResolve = null;
         }
       };
 
@@ -85,6 +83,9 @@ class WebSocketService {
 
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        if (this.connectionReject) {
+          this.connectionReject(new Error('WebSocket connection failed'));
+        }
       };
 
       this.ws.onclose = (event) => {
@@ -96,6 +97,9 @@ class WebSocketService {
       };
     } catch (error) {
       console.error('Error creating WebSocket:', error);
+      if (this.connectionReject) {
+        this.connectionReject(error as Error);
+      }
       this.scheduleReconnect();
     }
   }
@@ -104,9 +108,14 @@ class WebSocketService {
     if (this.reconnectAttempt < this.maxReconnectAttempts) {
       this.reconnectAttempt++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempt - 1);
-      console.log(`Attempting to reconnect (${this.reconnectAttempt}/${this.maxReconnectAttempts}) in ${delay}ms...`);
+      console.log(`Scheduling reconnect attempt ${this.reconnectAttempt}/${this.maxReconnectAttempts} in ${delay}ms`);
+
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+      }
 
       this.reconnectTimeout = setTimeout(() => {
+        console.log(`Attempting reconnect ${this.reconnectAttempt}/${this.maxReconnectAttempts}`);
         if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
           this.connect();
         }
@@ -134,7 +143,7 @@ class WebSocketService {
   }
 
   public async ensureConnection(): Promise<void> {
-    if (!this.connectionPromise) {
+    if (!this.isInitialized) {
       this.initialize();
     }
     return this.connectionPromise || Promise.resolve();
@@ -146,11 +155,13 @@ class WebSocketService {
   }
 
   public disconnect() {
+    console.log('Disconnecting WebSocket service...');
     this.cleanup();
     this.messageHandlers.clear();
     this.isInitialized = false;
     this.connectionPromise = null;
     this.connectionResolve = null;
+    this.connectionReject = null;
   }
 }
 
