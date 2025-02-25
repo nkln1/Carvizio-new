@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationList } from "./messages/ConversationList";
@@ -151,6 +151,9 @@ export default function MessagesTab({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
+            <DialogDescription>
+              Vizualizați toate detaliile cererii și ofertei asociate acestei conversații
+            </DialogDescription>
           </DialogHeader>
           {offerDetails && (
             <ScrollArea className="h-full max-h-[60vh] pr-4">
