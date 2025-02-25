@@ -42,6 +42,7 @@ class WebSocketService {
         return;
       }
 
+      // Use the provided WebSocket URL
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       const wsUrl = `${protocol}//${host}/api/ws`;
@@ -119,6 +120,9 @@ class WebSocketService {
   }
 
   public async ensureConnection(): Promise<void> {
+    if (!this.connectionPromise) {
+      this.initialize();
+    }
     return this.connectionPromise || Promise.resolve();
   }
 

@@ -7,28 +7,65 @@ import http from 'http';
 const app = express();
 const server = http.createServer(app);
 
-// Initialize WebSocket server first
+// Initialize WebSocket server with proper configuration
 const wss = new WebSocketServer({ 
   server,
   path: '/api/ws',
+  clientTracking: true,
   // Add WebSocket server options
   verifyClient: (info, cb) => {
-    // Allow all origins in development
-    const origin = info.origin;
-    cb(true); // Accept the connection
+    try {
+      // Allow all origins in development
+      // You can add more validation here if needed
+      const origin = info.origin;
+      cb(true); // Accept the connection
+    } catch (error) {
+      console.error('WebSocket verification error:', error);
+      cb(false, 500, 'WebSocket verification failed');
+    }
   }
 });
 
-wss.on('connection', (ws) => {
-  console.log('New WebSocket connection established');
+// Improved WebSocket connection handling
+wss.on('connection', (ws, req) => {
+  console.log('New WebSocket connection established:', req.url);
 
-  ws.on('close', () => {
-    console.log('Client disconnected');
+  // Send a welcome message
+  ws.send(JSON.stringify({
+    type: 'CONNECTED',
+    message: 'WebSocket connection established successfully'
+  }));
+
+  // Handle incoming messages
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      console.log('Received WebSocket message:', data);
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  });
+
+  ws.on('close', (code, reason) => {
+    console.log(`Client disconnected. Code: ${code}, Reason: ${reason}`);
   });
 
   ws.on('error', (error) => {
     console.error(`WebSocket error occurred: ${error.message}`);
   });
+});
+
+// Heartbeat to keep connections alive
+const interval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.readyState === ws.OPEN) {
+      ws.ping();
+    }
+  });
+}, 30000);
+
+wss.on('close', () => {
+  clearInterval(interval);
 });
 
 app.use(express.json());
@@ -141,3 +178,6 @@ app.use((req, res, next) => {
   const initialPort = parseInt(process.env.PORT || '5000');
   startServer(initialPort);
 })();
+
+// Export wss for use in routes.ts
+export { wss };
