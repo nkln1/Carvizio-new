@@ -213,10 +213,12 @@ export default function ClientDashboard() {
       />
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="right">
+        <SheetContent side="left">
           <div className="mb-8">
-            <DialogTitle>Meniu</DialogTitle>
-            
+            <DialogTitle>Meniu Navigare</DialogTitle>
+            <DialogDescription>
+              Selectați secțiunea dorită din meniul de navigare
+            </DialogDescription>
           </div>
           <NavigationItems
             activeTab={activeTab}

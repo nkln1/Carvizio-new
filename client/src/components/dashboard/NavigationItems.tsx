@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface NavigationItemsProps {
   activeTab: string;
@@ -87,11 +85,9 @@ export function NavigationItems({
             </div>
 
             <div className="md:hidden">
-              <SheetTrigger>
-                <Button variant="ghost" size="icon" >
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
+              <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(true)}>
+                <Menu className="h-6 w-6" />
+              </Button>
             </div>
           </div>
         </div>
@@ -101,45 +97,35 @@ export function NavigationItems({
 
   // Mobile menu items
   return (
-    <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-      <SheetContent side="right">
-        <div className="mb-8">
-          <DialogTitle>Meniu</DialogTitle>
-          <DialogDescription>
-            Navigați prin secțiunile aplicației
-          </DialogDescription>
-        </div>
-        <div className="flex flex-col gap-4">
-          {navigationItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={activeTab === item.id ? "default" : "ghost"}
-              onClick={() => handleTabChange(item.id)}
-              className={`w-full justify-start text-left relative ${
-                activeTab === item.id
-                  ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                  : ""
-              }`}
-            >
-              {item.label}
-              {item.id === "offers" && item.count && item.count > 0 && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {item.count}
-                </span>
-              )}
-            </Button>
-          ))}
-          <Button
-            onClick={() => {
-              onCreateRequest();
-              setIsMenuOpen(false);
-            }}
-            className="w-full bg-[#00aff5] hover:bg-[#0099d6]"
-          >
-            Adaugă cerere
-          </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+    <div className="flex flex-col gap-4">
+      {navigationItems.map((item) => (
+        <Button
+          key={item.id}
+          variant={activeTab === item.id ? "default" : "ghost"}
+          onClick={() => handleTabChange(item.id)}
+          className={`w-full justify-start text-left relative ${
+            activeTab === item.id
+              ? "bg-[#00aff5] hover:bg-[#0099d6]"
+              : ""
+          }`}
+        >
+          {item.label}
+          {item.id === "offers" && item.count && item.count > 0 && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {item.count}
+            </span>
+          )}
+        </Button>
+      ))}
+      <Button
+        onClick={() => {
+          onCreateRequest();
+          setIsMenuOpen(false);
+        }}
+        className="w-full bg-[#00aff5] hover:bg-[#0099d6]"
+      >
+        Adaugă cerere
+      </Button>
+    </div>
   );
 }
