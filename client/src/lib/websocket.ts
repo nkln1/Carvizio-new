@@ -11,7 +11,6 @@ class WebSocketService {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      // Wait for the document to be fully loaded
       if (document.readyState === 'complete') {
         this.initialize();
       } else {
@@ -34,16 +33,7 @@ class WebSocketService {
     this.cleanup();
 
     try {
-      // Wait for window.location to be properly initialized
-      if (!window.location.host) {
-        setTimeout(() => this.connect(), 100);
-        return;
-      }
-
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      const wsUrl = `${protocol}//${host}/api/ws`;
-
+      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/ws`;
       console.log('Connecting to WebSocket:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
@@ -53,7 +43,7 @@ class WebSocketService {
         this.reconnectAttempt = 0;
         if (this.connectionResolve) {
           this.connectionResolve();
-          this.connectionResolve = null;
+          this.connectionResolve = null; //Removed this line from original code as connectionResolve is no longer needed here.
         }
       };
 
@@ -66,34 +56,38 @@ class WebSocketService {
         }
       };
 
+      this.ws.onclose = (event) => {
+        console.log(`WebSocket connection closed (code: ${event.code})`);
+        this.attemptReconnect();
+      };
+
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
       };
 
-      this.ws.onclose = (event) => {
-        console.log(`WebSocket connection closed (code: ${event.code})`);
-        if (this.ws) {
-          this.ws = null;
-          this.scheduleReconnect();
-        }
-      };
     } catch (error) {
-      console.error('Error creating WebSocket:', error);
-      this.scheduleReconnect();
+      console.error('Error creating WebSocket connection:', error);
+      this.attemptReconnect();
     }
   }
 
-  private scheduleReconnect() {
+  private cleanup() {
+    if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.close();
+      this.ws = null;
+    }
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+  }
+
+  private attemptReconnect() {
     if (this.reconnectAttempt < this.maxReconnectAttempts) {
       this.reconnectAttempt++;
-      const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempt - 1);
-      console.log(`Attempting to reconnect (${this.reconnectAttempt}/${this.maxReconnectAttempts}) in ${delay}ms...`);
-
-      this.reconnectTimeout = setTimeout(() => {
-        if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
-          this.connect();
-        }
-      }, delay);
+      console.log(`Attempting to reconnect (${this.reconnectAttempt}/${this.maxReconnectAttempts}) in ${this.reconnectDelay}ms...`);
+      this.reconnectTimeout = setTimeout(() => this.connect(), this.reconnectDelay);
     } else {
       console.log('Max reconnection attempts reached');
       this.messageHandlers.forEach(handler =>
@@ -102,29 +96,14 @@ class WebSocketService {
     }
   }
 
-  private cleanup() {
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
-
-    if (this.ws) {
-      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-        this.ws.close();
-      }
-      this.ws = null;
-    }
-  }
-
-  public async ensureConnection(): Promise<void> {
-    return this.connectionPromise || Promise.resolve();
-  }
-
-  public addMessageHandler(handler: (data: any) => void) {
+  public addMessageHandler(handler: (data: any) => void): () => void {
     this.messageHandlers.add(handler);
     return () => this.messageHandlers.delete(handler);
   }
 
+  public async waitForConnection(): Promise<void> {
+    return this.connectionPromise || Promise.resolve();
+  }
   public disconnect() {
     this.cleanup();
     this.messageHandlers.clear();
