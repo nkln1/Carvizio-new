@@ -5,16 +5,41 @@ class WebSocketService {
   private readonly reconnectDelay = 3000;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private messageHandlers: Set<(data: any) => void> = new Set();
+  private isInitialized = false;
+  private connectionPromise: Promise<void> | null = null;
+  private connectionResolve: (() => void) | null = null;
 
   constructor() {
-    this.connect();
+    if (typeof window !== 'undefined') {
+      // Wait for the document to be fully loaded
+      if (document.readyState === 'complete') {
+        this.initialize();
+      } else {
+        window.addEventListener('load', () => this.initialize());
+      }
+    }
+  }
+
+  private initialize() {
+    if (!this.isInitialized) {
+      this.isInitialized = true;
+      this.connectionPromise = new Promise((resolve) => {
+        this.connectionResolve = resolve;
+        this.connect();
+      });
+    }
   }
 
   private connect() {
     this.cleanup();
 
     try {
-      // Get the base URL from the current window location
+      // Wait for window.location to be properly initialized
+      if (!window.location.host) {
+        setTimeout(() => this.connect(), 100);
+        return;
+      }
+
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       const wsUrl = `${protocol}//${host}/api/ws`;
@@ -26,6 +51,10 @@ class WebSocketService {
       this.ws.onopen = () => {
         console.log('WebSocket connection established');
         this.reconnectAttempt = 0;
+        if (this.connectionResolve) {
+          this.connectionResolve();
+          this.connectionResolve = null;
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -43,7 +72,10 @@ class WebSocketService {
 
       this.ws.onclose = (event) => {
         console.log(`WebSocket connection closed (code: ${event.code})`);
-        this.scheduleReconnect();
+        if (this.ws) {
+          this.ws = null;
+          this.scheduleReconnect();
+        }
       };
     } catch (error) {
       console.error('Error creating WebSocket:', error);
@@ -64,7 +96,7 @@ class WebSocketService {
       }, delay);
     } else {
       console.log('Max reconnection attempts reached');
-      this.messageHandlers.forEach(handler => 
+      this.messageHandlers.forEach(handler =>
         handler({ type: 'ERROR', message: 'Connection lost. Please refresh the page.' })
       );
     }
@@ -76,9 +108,16 @@ class WebSocketService {
       this.reconnectTimeout = null;
     }
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.close();
+    if (this.ws) {
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        this.ws.close();
+      }
+      this.ws = null;
     }
+  }
+
+  public async ensureConnection(): Promise<void> {
+    return this.connectionPromise || Promise.resolve();
   }
 
   public addMessageHandler(handler: (data: any) => void) {
@@ -89,6 +128,9 @@ class WebSocketService {
   public disconnect() {
     this.cleanup();
     this.messageHandlers.clear();
+    this.isInitialized = false;
+    this.connectionPromise = null;
+    this.connectionResolve = null;
   }
 }
 

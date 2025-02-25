@@ -1,21 +1,43 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
+import { WebSocketServer } from 'ws';
+import http from 'http';
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize WebSocket server first
+const wss = new WebSocketServer({ 
+  server,
+  path: '/api/ws'
+});
+
+wss.on('connection', (ws) => {
+  console.log('New WebSocket connection established');
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
+
+  ws.on('error', (error) => {
+    console.error(`WebSocket error occurred: ${error.message}`);
+  });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CSP headers
+// Add CSP headers with WebSocket connection permissions
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " + // Allow script evaluation for necessary functionality
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https: blob:; " +
-    "connect-src 'self' https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com; " +
+    "connect-src 'self' wss: ws: https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com; " +
     "frame-src 'self' https://*.firebaseauth.com"
   );
   next();
@@ -45,7 +67,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(logLine);
     }
   });
 
@@ -53,7 +75,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = registerRoutes(app);
+  registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -79,16 +101,6 @@ app.use((req, res, next) => {
           server.listen(port, '0.0.0.0')
             .once('listening', () => {
               console.log(`Server running on port ${port}`);
-              // Ensure proper CORS headers for Vite HMR
-              app.use((req, res, next) => {
-                res.setHeader('Access-Control-Allow-Origin', '*');
-                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-                res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-                if (req.method === 'OPTIONS') {
-                  return res.sendStatus(200);
-                }
-                next();
-              });
               resolve(true);
             })
             .once('error', (err: any) => {

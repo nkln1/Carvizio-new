@@ -117,20 +117,42 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   };
 
   useEffect(() => {
-    const handleWebSocketMessage = (data: any) => {
-      if (data.type === 'NEW_REQUEST') {
-        queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
-      } else if (data.type === 'ERROR') {
+    let removeHandler: (() => void) | undefined;
+
+    const setupWebSocket = async () => {
+      try {
+        await websocketService.ensureConnection();
+
+        const handleWebSocketMessage = (data: any) => {
+          if (data.type === 'NEW_REQUEST') {
+            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+          } else if (data.type === 'ERROR') {
+            toast({
+              variant: "destructive",
+              title: "Eroare de conexiune",
+              description: data.message || "A apărut o eroare de conexiune. Vă rugăm să reîncărcați pagina.",
+            });
+          }
+        };
+
+        removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
+      } catch (error) {
+        console.error('Failed to setup WebSocket connection:', error);
         toast({
           variant: "destructive",
           title: "Eroare de conexiune",
-          description: data.message || "A apărut o eroare de conexiune. Vă rugăm să reîncărcați pagina.",
+          description: "Nu s-a putut stabili conexiunea cu serverul. Vă rugăm să reîncărcați pagina.",
         });
       }
     };
 
-    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-    return () => removeHandler();
+    setupWebSocket();
+
+    return () => {
+      if (removeHandler) {
+        removeHandler();
+      }
+    };
   }, [queryClient, toast]);
 
   const handleViewRequest = async (request: RequestType) => {
