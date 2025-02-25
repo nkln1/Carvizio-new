@@ -75,25 +75,6 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const user = auth.currentUser;
-      if (!user?.uid) throw new Error('No user ID available');
-
-      // Optimistic update for messages
-      const optimisticMessage: Message = {
-        id: Date.now(),
-        content,
-        senderId: Number(user.uid), // Use the current user's ID as sender
-        receiverId: activeConversation.userId,
-        requestId: activeConversation.requestId,
-        createdAt: new Date(),
-        senderRole: "service",
-        receiverRole: "client",
-        isRead: false
-      };
-
-      queryClient.setQueryData(['/api/service/messages', activeConversation.userId], 
-        (old: Message[] | undefined) => [...(old || []), optimisticMessage]);
-
       const response = await fetch('/api/service/messages', {
         method: 'POST',
         headers: {
@@ -111,21 +92,21 @@ export function useMessagesManagement(initialConversation: {
         throw new Error('Failed to send message');
       }
 
-      // Invalidate queries after successful send
-      await queryClient.invalidateQueries({ 
-        queryKey: ['/api/service/messages', activeConversation.userId]
-      });
-      await queryClient.invalidateQueries({ 
+      const newMessage = await response.json();
+
+      // Update the messages cache with the new message
+      queryClient.setQueryData(
+        ['/api/service/messages', activeConversation.userId],
+        (old: Message[] | undefined) => [...(old || []), newMessage]
+      );
+
+      // Invalidate conversations to update last message
+      await queryClient.invalidateQueries({
         queryKey: ['/api/service/conversations']
       });
 
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove optimistic update on error
-      queryClient.setQueryData(['/api/service/messages', activeConversation.userId], 
-        (old: Message[] | undefined) => 
-          old?.filter(msg => msg.id !== optimisticMessage.id) || []);
-
       toast({
         variant: "destructive",
         title: "Eroare",
