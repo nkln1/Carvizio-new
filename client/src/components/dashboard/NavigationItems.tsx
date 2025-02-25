@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface NavigationItemsProps {
   activeTab: string;
@@ -88,7 +89,13 @@ export function NavigationItems({
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[80%] sm:w-[385px]">
-                <div className="flex flex-col gap-4 mt-6">
+                <div className="mb-6">
+                  <DialogTitle>Meniu Navigare</DialogTitle>
+                  <DialogDescription>
+                    Selectați secțiunea dorită din meniul de navigare
+                  </DialogDescription>
+                </div>
+                <div className="flex flex-col gap-4">
                   {navigationItems.map((item) => (
                     <Button
                       key={item.id}

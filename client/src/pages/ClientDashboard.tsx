@@ -203,14 +203,27 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <NavigationItems
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isMenuOpen={isMenuOpen}
-        setIsMenuOpen={setIsMenuOpen}
-        onCreateRequest={() => setShowRequestDialog(true)}
-        newOffersCount={newOffersCount}
-      />
+      <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <SheetContent side="left">
+          <div className="mb-8">
+            <DialogTitle>Meniu Navigare</DialogTitle>
+            <DialogDescription>
+              Selectați secțiunea dorită din meniul de navigare
+            </DialogDescription>
+          </div>
+          <NavigationItems
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab);
+              setIsMenuOpen(false);
+            }}
+            isMenuOpen={isMenuOpen}
+            setIsMenuOpen={setIsMenuOpen}
+            onCreateRequest={() => setShowRequestDialog(true)}
+            newOffersCount={newOffersCount}
+          />
+        </SheetContent>
+      </Sheet>
 
       <div className="container mx-auto p-4 sm:p-6 flex-grow">
         {isLoading ? (
