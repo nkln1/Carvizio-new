@@ -15,56 +15,39 @@ class WebSocketService {
 
     try {
       // Get the base URL from the current window location
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsHost = window.location.host;
-      const wsPath = '/api/ws'; // Keep this path consistent with server
-      const wsUrl = `${wsProtocol}//${wsHost}${wsPath}`;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/api/ws`;
 
-      console.log('Attempting to connect to WebSocket:', wsUrl);
+      console.log('Connecting to WebSocket:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
-      this.ws.onopen = this.handleOpen.bind(this);
-      this.ws.onmessage = this.handleMessage.bind(this);
-      this.ws.onerror = this.handleError.bind(this);
-      this.ws.onclose = this.handleClose.bind(this);
+      this.ws.onopen = () => {
+        console.log('WebSocket connection established');
+        this.reconnectAttempt = 0;
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.messageHandlers.forEach(handler => handler(data));
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      this.ws.onclose = (event) => {
+        console.log(`WebSocket connection closed (code: ${event.code})`);
+        this.scheduleReconnect();
+      };
     } catch (error) {
       console.error('Error creating WebSocket:', error);
       this.scheduleReconnect();
-    }
-  }
-
-  private handleOpen() {
-    console.log('WebSocket connection established');
-    this.reconnectAttempt = 0;
-  }
-
-  private handleMessage(event: MessageEvent) {
-    try {
-      const data = JSON.parse(event.data);
-      this.messageHandlers.forEach(handler => handler(data));
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  }
-
-  private handleError(error: Event) {
-    console.error('WebSocket error:', error);
-  }
-
-  private handleClose(event: CloseEvent) {
-    console.log(`WebSocket connection closed ${event.code}`);
-    this.scheduleReconnect();
-  }
-
-  private cleanup() {
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
-
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.close();
     }
   }
 
@@ -72,7 +55,7 @@ class WebSocketService {
     if (this.reconnectAttempt < this.maxReconnectAttempts) {
       this.reconnectAttempt++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempt - 1);
-      console.log(`Attempting to reconnect (${this.reconnectAttempt}/${this.maxReconnectAttempts})...`);
+      console.log(`Attempting to reconnect (${this.reconnectAttempt}/${this.maxReconnectAttempts}) in ${delay}ms...`);
 
       this.reconnectTimeout = setTimeout(() => {
         if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
@@ -87,6 +70,17 @@ class WebSocketService {
     }
   }
 
+  private cleanup() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.close();
+    }
+  }
+
   public addMessageHandler(handler: (data: any) => void) {
     this.messageHandlers.add(handler);
     return () => this.messageHandlers.delete(handler);
@@ -98,6 +92,5 @@ class WebSocketService {
   }
 }
 
-// Create a singleton instance
 const websocketService = new WebSocketService();
 export default websocketService;
