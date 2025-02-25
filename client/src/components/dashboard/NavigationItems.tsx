@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger, DialogTitle, DialogDescription } from '@radix-ui/react-dialog' // Assuming Radix UI
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface NavigationItemsProps {
   activeTab: string;
