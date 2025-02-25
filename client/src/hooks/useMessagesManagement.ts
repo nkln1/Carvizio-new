@@ -20,13 +20,13 @@ export function useMessagesManagement(initialConversation: {
 
   // Optimized messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ['/api/messages', activeConversation?.userId],
+    queryKey: ['/api/service/messages', activeConversation?.userId],
     enabled: !!activeConversation,
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/messages/${activeConversation?.userId}`, {
+      const response = await fetch(`/api/service/messages/${activeConversation?.userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -46,12 +46,12 @@ export function useMessagesManagement(initialConversation: {
 
   // Optimized conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
-    queryKey: ['/api/conversations'],
+    queryKey: ['/api/service/conversations'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/conversations', {
+      const response = await fetch('/api/service/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -91,10 +91,10 @@ export function useMessagesManagement(initialConversation: {
         isRead: false
       };
 
-      queryClient.setQueryData(['/api/messages', activeConversation.userId], 
+      queryClient.setQueryData(['/api/service/messages', activeConversation.userId], 
         (old: Message[] | undefined) => [...(old || []), optimisticMessage]);
 
-      const response = await fetch('/api/messages', {
+      const response = await fetch('/api/service/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,20 +111,20 @@ export function useMessagesManagement(initialConversation: {
         throw new Error('Failed to send message');
       }
 
-      // Only invalidate if the optimistic update wasn't sufficient
+      // Invalidate queries after successful send
       await queryClient.invalidateQueries({ 
-        queryKey: ['/api/messages', activeConversation.userId]
+        queryKey: ['/api/service/messages', activeConversation.userId]
       });
       await queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations']
+        queryKey: ['/api/service/conversations']
       });
 
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove optimistic update on error
-      queryClient.setQueryData(['/api/messages', activeConversation.userId], 
+      queryClient.setQueryData(['/api/service/messages', activeConversation.userId], 
         (old: Message[] | undefined) => 
-          old?.filter(msg => !(msg as any).isOptimistic) || []);
+          old?.filter(msg => msg.id !== optimisticMessage.id) || []);
 
       toast({
         variant: "destructive",
@@ -137,7 +137,7 @@ export function useMessagesManagement(initialConversation: {
 
   const loadRequestDetails = async (requestId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/requests/${requestId}`);
+      const response = await apiRequest('GET', `/api/service/requests/${requestId}`);
       return response;
     } catch (error) {
       console.error('Error loading request details:', error);
@@ -147,7 +147,7 @@ export function useMessagesManagement(initialConversation: {
 
   const loadOfferDetails = async (requestId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/offers/request/${requestId}`);
+      const response = await apiRequest('GET', `/api/service/offers/request/${requestId}`);
       return response;
     } catch (error) {
       console.error('Error loading offer details:', error);

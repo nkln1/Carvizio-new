@@ -10,6 +10,7 @@ import { ConversationView } from "./messages/ConversationView";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { useAuth } from "@/context/AuthContext";
+import websocketService from "@/lib/websocket";
 
 interface MessagesTabProps {
   initialConversation?: {
@@ -24,8 +25,8 @@ export default function MessagesTab({
   initialConversation = null,
   onConversationClear,
 }: MessagesTabProps) {
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const { user } = useAuth();
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const {
     activeConversation,
     setActiveConversation,
@@ -40,6 +41,18 @@ export default function MessagesTab({
 
   const [activeRequest, setActiveRequest] = useState<any>(null);
   const [offerDetails, setOfferDetails] = useState<any>(null);
+
+  useEffect(() => {
+    const setupWebSocket = async () => {
+      try {
+        await websocketService.ensureConnection();
+      } catch (error) {
+        console.error('Failed to setup WebSocket connection:', error);
+      }
+    };
+
+    setupWebSocket();
+  }, []);
 
   const handleBack = () => {
     setActiveConversation(null);
@@ -75,7 +88,7 @@ export default function MessagesTab({
     <Card className="h-[calc(100vh-12rem)] flex flex-col border-[#00aff5]/20">
       <CardHeader className="flex-shrink-0">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          {activeConversation && (
+          {activeConversation ? (
             <Button
               variant="ghost"
               size="sm"
@@ -84,7 +97,7 @@ export default function MessagesTab({
             >
               Înapoi
             </Button>
-          )}
+          ) : null}
           <MessageSquare className="h-5 w-5" />
           {activeConversation ? `Chat cu ${activeConversation.userName}` : "Mesaje"}
         </CardTitle>
@@ -105,9 +118,7 @@ export default function MessagesTab({
       </CardHeader>
 
       <CardContent className="p-0 flex flex-1 min-h-0">
-        <div
-          className={`${activeConversation ? "hidden md:block" : ""} w-1/3 border-r flex flex-col`}
-        >
+        <div className={`${activeConversation ? "hidden md:block" : ""} w-1/3 border-r flex flex-col`}>
           <div className="p-4 border-b">
             <h3 className="text-sm font-medium text-gray-500">Conversații</h3>
           </div>
@@ -141,6 +152,7 @@ export default function MessagesTab({
         </div>
       </CardContent>
 
+      {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -152,122 +164,41 @@ export default function MessagesTab({
           {offerDetails && (
             <ScrollArea className="h-full max-h-[60vh] pr-4">
               <div className="space-y-6 p-2">
-                <div>
-                  <h3 className="font-medium text-lg mb-2">
-                    Informații Client
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Nume Client</p>
-                      <p className="font-medium">{offerDetails.clientName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Telefon Client</p>
-                      <p className="font-medium">{offerDetails.clientPhone}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-lg mb-2">
-                    Detalii Cerere Client
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Titlu Cerere</p>
-                      <p className="font-medium">{offerDetails.requestTitle}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Descriere Cerere</p>
-                      <p className="font-medium">
-                        {offerDetails.requestDescription}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        Data Preferată Client
-                      </p>
-                      <p className="font-medium">
-                        {format(
-                          new Date(offerDetails.requestPreferredDate),
-                          "dd.MM.yyyy",
-                          { locale: ro }
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Locație</p>
-                      <p className="font-medium">
-                        {offerDetails.requestCities.join(", ")},{" "}
-                        {offerDetails.requestCounty}
-                      </p>
+                {/* Offer Details Content */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-600">Titlu</p>
+                        <p className="font-medium">{offerDetails.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Preț</p>
+                        <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Status</p>
+                        <p className="font-medium">{offerDetails.status}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="font-medium text-lg mb-2">
-                    Informații Ofertă
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  {activeRequest && (
                     <div>
-                      <p className="text-sm text-gray-600">Titlu</p>
-                      <p className="font-medium">{offerDetails.title}</p>
+                      <h3 className="font-medium text-lg mb-2">Detalii Cerere</h3>
+                      <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="text-sm text-gray-600">Titlu Cerere</p>
+                          <p className="font-medium">{activeRequest.title}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Descriere</p>
+                          <p className="font-medium">{activeRequest.description}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Preț</p>
-                      <p className="font-medium text-[#00aff5]">
-                        {offerDetails.price} RON
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Date disponibile</p>
-                      <p className="font-medium">
-                        {offerDetails.availableDates
-                          .map((date: string) =>
-                            format(new Date(date), "dd.MM.yyyy", { locale: ro })
-                          )
-                          .join(", ")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Status</p>
-                      <p
-                        className={`font-medium ${
-                          offerDetails.status === "Accepted"
-                            ? "text-green-600"
-                            : offerDetails.status === "Rejected"
-                              ? "text-red-600"
-                              : "text-yellow-600"
-                        }`}
-                      >
-                        {offerDetails.status}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
-                  <p className="whitespace-pre-line bg-gray-50 p-4 rounded-lg">
-                    {offerDetails.details}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-lg mb-2">Istoric</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className="w-32">Creat:</span>
-                      <span>
-                        {format(
-                          new Date(offerDetails.createdAt),
-                          "dd.MM.yyyy HH:mm",
-                          { locale: ro }
-                        )}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </ScrollArea>
