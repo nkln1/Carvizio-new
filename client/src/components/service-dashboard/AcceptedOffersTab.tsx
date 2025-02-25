@@ -20,6 +20,7 @@ import { OfferCard } from "./offers/OfferCard";
 import { OfferDetailsDialog } from "./offers/OfferDetailsDialog";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 import { useAcceptedOffers } from "@/hooks/useAcceptedOffers";
+import { Dialog, DialogContent, DialogDescription } from "@/components/ui/dialog";
 
 interface AcceptedOffersTabProps {
   onMessageClick?: (userId: number, userName: string, requestId: number) => void;
@@ -88,6 +89,8 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
       </Card>
     );
   }
+
+  const dialogDescriptionId = "accepted-offers-dialog-description";
 
   return (
     <Card className="shadow-lg">
@@ -196,6 +199,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
         open={!!selectedOffer}
         onOpenChange={(open) => !open && setSelectedOffer(null)}
         onCancel={handleCancelOffer}
+        descriptionId={dialogDescriptionId} // Added accessibility attribute
       />
     </Card>
   );
