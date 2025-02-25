@@ -27,7 +27,7 @@ interface AcceptedOffersTabProps {
 
 export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<AcceptedOfferWithClient | null>(null);
-  const { viewedOffers, markOfferAsViewed, newOffersCount } = useOfferManagement();
+  const { viewedAcceptedOffers, markAcceptedOfferAsViewed, newOffersCount } = useOfferManagement();
 
   const {
     offers,
@@ -47,9 +47,9 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
 
   const handleAction = async (offerId: number) => {
     try {
-      await markOfferAsViewed(offerId);
+      await markAcceptedOfferAsViewed(offerId);
     } catch (error) {
-      console.error('Error marking offer as viewed:', error);
+      console.error('Error marking accepted offer as viewed:', error);
     }
   };
 
@@ -127,7 +127,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
               <OfferCard
                 key={offer.id}
                 offer={offer}
-                isNew={!viewedOffers.includes(offer.id)}
+                isNew={!viewedAcceptedOffers.some(vo => vo.offerId === offer.id)}
                 onView={async (offer) => {
                   await handleAction(offer.id);
                   setSelectedOffer(offer);

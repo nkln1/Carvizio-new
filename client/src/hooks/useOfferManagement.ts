@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OfferWithProvider, ViewedOffer } from "@shared/schema";
+import type { OfferWithProvider, ViewedOffer, ViewedAcceptedOffer } from "@shared/schema";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +18,12 @@ export function useOfferManagement() {
   // Fetch viewed offers
   const { data: viewedOffers = [] } = useQuery<ViewedOffer[]>({
     queryKey: ["/api/client/viewed-offers"],
+    refetchInterval: 30000 // Refetch every 30 seconds
+  });
+
+  // Fetch viewed accepted offers for service providers
+  const { data: viewedAcceptedOffers = [] } = useQuery<ViewedAcceptedOffer[]>({
+    queryKey: ["/api/service/viewed-accepted-offers"],
     refetchInterval: 30000 // Refetch every 30 seconds
   });
 
@@ -70,6 +76,49 @@ export function useOfferManagement() {
     }
   };
 
+  const markAcceptedOfferAsViewed = async (offerId: number): Promise<void> => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/mark-accepted-offer-viewed/${offerId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to mark accepted offer as viewed: ${await response.text()}`);
+      }
+
+      // Get the new viewed accepted offer from the response
+      const newViewedAcceptedOffer = await response.json();
+
+      // Optimistically update viewed accepted offers cache
+      queryClient.setQueryData<ViewedAcceptedOffer[]>(["/api/service/viewed-accepted-offers"], (old = []) => {
+        const filtered = old.filter(vo => vo.offerId !== offerId);
+        return [...filtered, newViewedAcceptedOffer];
+      });
+
+      // Invalidate the query to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ["/api/service/viewed-accepted-offers"] });
+
+      toast({
+        title: "Success",
+        description: "Accepted offer marked as viewed",
+      });
+    } catch (error) {
+      console.error("Error marking accepted offer as viewed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark accepted offer as viewed",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Calculate new offers count whenever offers or viewedOffers change
   useEffect(() => {
     const newOffers = offers.filter(offer => 
@@ -86,7 +135,9 @@ export function useOfferManagement() {
   return {
     offers,
     viewedOffers,
+    viewedAcceptedOffers,
     markOfferAsViewed,
+    markAcceptedOfferAsViewed,
     newOffersCount
   };
 }

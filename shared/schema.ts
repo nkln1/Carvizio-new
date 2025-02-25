@@ -247,11 +247,74 @@ export const viewedRequestsRelations = relations(viewedRequests, ({ one }) => ({
   }),
 }));
 
-// Add to service providers relations
+// Add viewed offers table definition
+export const viewedOffers = pgTable("viewed_offers", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  offerId: integer("offer_id").notNull().references(() => sentOffers.id),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull()
+}, (table) => {
+  return {
+    // Ensure unique combination of client and offer
+    uniqueClientOffer: unique().on(table.clientId, table.offerId)
+  };
+});
+
+// Add viewed offers relations
+export const viewedOffersRelations = relations(viewedOffers, ({ one }) => ({
+  client: one(clients, {
+    fields: [viewedOffers.clientId],
+    references: [clients.id],
+  }),
+  offer: one(sentOffers, {
+    fields: [viewedOffers.offerId],
+    references: [sentOffers.id],
+  }),
+}));
+
+// Add after the viewedOffers table definition
+
+// Add viewed accepted offers table definition
+export const viewedAcceptedOffers = pgTable("viewed_accepted_offers", {
+  id: serial("id").primaryKey(),
+  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
+  offerId: integer("offer_id").notNull().references(() => sentOffers.id),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull()
+}, (table) => {
+  return {
+    // Ensure unique combination of service provider and offer
+    uniqueServiceOffer: unique().on(table.serviceProviderId, table.offerId)
+  };
+});
+
+// Add viewed accepted offers relations
+export const viewedAcceptedOffersRelations = relations(viewedAcceptedOffers, ({ one }) => ({
+  serviceProvider: one(serviceProviders, {
+    fields: [viewedAcceptedOffers.serviceProviderId],
+    references: [serviceProviders.id],
+  }),
+  offer: one(sentOffers, {
+    fields: [viewedAcceptedOffers.offerId],
+    references: [sentOffers.id],
+  }),
+}));
+
+// Update service providers relations to include viewed accepted offers
 export const serviceProvidersRelations = relations(serviceProviders, ({ many }) => ({
   viewedRequests: many(viewedRequests),
   sentOffers: many(sentOffers),
+  viewedAcceptedOffers: many(viewedAcceptedOffers)
 }));
+
+// Add viewed accepted offers schemas
+export const insertViewedAcceptedOfferSchema = createInsertSchema(viewedAcceptedOffers).omit({
+  id: true,
+  viewedAt: true
+});
+
+// Add to exports
+export type InsertViewedAcceptedOffer = z.infer<typeof insertViewedAcceptedOfferSchema>;
+export type ViewedAcceptedOffer = typeof viewedAcceptedOffers.$inferSelect;
 
 // Add viewed requests schemas
 export const insertViewedRequestSchema = createInsertSchema(viewedRequests).omit({
@@ -343,31 +406,6 @@ export const isServiceProviderUser = (user: User): user is ServiceProviderUser =
 };
 
 export type User = ClientUser | ServiceProviderUser;
-
-// Add viewed offers table definition
-export const viewedOffers = pgTable("viewed_offers", {
-  id: serial("id").primaryKey(),
-  clientId: integer("client_id").notNull().references(() => clients.id),
-  offerId: integer("offer_id").notNull().references(() => sentOffers.id),
-  viewedAt: timestamp("viewed_at").defaultNow().notNull()
-}, (table) => {
-  return {
-    // Ensure unique combination of client and offer
-    uniqueClientOffer: unique().on(table.clientId, table.offerId)
-  };
-});
-
-// Add viewed offers relations
-export const viewedOffersRelations = relations(viewedOffers, ({ one }) => ({
-  client: one(clients, {
-    fields: [viewedOffers.clientId],
-    references: [clients.id],
-  }),
-  offer: one(sentOffers, {
-    fields: [viewedOffers.offerId],
-    references: [sentOffers.id],
-  }),
-}));
 
 // Add viewed offer schemas
 export const insertViewedOfferSchema = createInsertSchema(viewedOffers).omit({
