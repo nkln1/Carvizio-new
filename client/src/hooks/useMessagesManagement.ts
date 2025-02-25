@@ -23,20 +23,8 @@ export function useMessagesManagement(initialConversation: {
     queryKey: ['/api/service/messages', activeConversation?.userId],
     enabled: !!activeConversation,
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/service/messages/${activeConversation?.userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
-
-      return response.json();
+      const response = await apiRequest('GET', `/api/service/messages/${activeConversation?.userId}`);
+      return response;
     },
     staleTime: MESSAGES_STALE_TIME,
     gcTime: 1000 * 60 * 5, // 5 minutes
@@ -48,20 +36,8 @@ export function useMessagesManagement(initialConversation: {
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/service/conversations'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
-      }
-
-      return response.json();
+      const response = await apiRequest('GET', '/api/service/conversations');
+      return response;
     },
     staleTime: CONVERSATIONS_STALE_TIME,
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -72,29 +48,11 @@ export function useMessagesManagement(initialConversation: {
     if (!activeConversation) return;
 
     try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          content,
-          recipientId: activeConversation.userId,
-          requestId: activeConversation.requestId
-        })
+      const newMessage = await apiRequest('POST', '/api/service/messages', {
+        content,
+        recipientId: activeConversation.userId,
+        requestId: activeConversation.requestId
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', errorText);
-        throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
-      }
-
-      const newMessage = await response.json();
 
       // Update messages cache
       queryClient.setQueryData(
