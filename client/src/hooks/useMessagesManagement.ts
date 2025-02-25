@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
 
 // Cache time constants
 const MESSAGES_STALE_TIME = 1000 * 15; // 15 seconds
@@ -20,13 +19,13 @@ export function useMessagesManagement(initialConversation: {
 
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ['/api/service/messages', activeConversation?.userId],
+    queryKey: ['/api/messages/service/conversation', activeConversation?.userId],
     enabled: !!activeConversation,
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/messages/${activeConversation?.userId}`, {
+      const response = await fetch(`/api/messages/service/conversation/${activeConversation?.userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -46,12 +45,12 @@ export function useMessagesManagement(initialConversation: {
 
   // Conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
-    queryKey: ['/api/service/conversations'],
+    queryKey: ['/api/messages/service/conversations'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/service/conversations', {
+      const response = await fetch('/api/messages/service/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -75,57 +74,60 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // First try to get the current user's service provider ID
-      const userResponse = await fetch('/api/service/me', {
+      // Get service provider ID
+      const meResponse = await fetch('/api/service/me', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!userResponse.ok) {
-        throw new Error('Failed to get user details');
+      if (!meResponse.ok) {
+        throw new Error('Failed to get service provider details');
       }
 
-      const userData = await userResponse.json();
-      const serviceProviderId = userData.id;
+      const meData = await meResponse.json();
 
-      // Now send the message
-      const response = await fetch('/api/service/messages', {
+      // Send message with updated endpoint
+      const response = await fetch('/api/messages/service/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          content,
-          senderId: serviceProviderId,
+          senderId: meData.id,
           receiverId: activeConversation.userId,
+          content: content,
           requestId: activeConversation.requestId,
-          senderRole: 'service',
+          senderRole: 'service_provider',
           receiverRole: 'client'
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const errorMessage = errorData?.message || 'Failed to send message';
-        throw new Error(errorMessage);
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (error) {
+        console.error('Invalid JSON response:', await response.text());
+        throw new Error('Server returned invalid response format');
       }
 
-      const newMessage = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to send message');
+      }
 
-      // Update messages cache
+      // Update messages cache with new message
       queryClient.setQueryData(
-        ['/api/service/messages', activeConversation.userId],
-        (old: Message[] | undefined) => [...(old || []), newMessage]
+        ['/api/messages/service/conversation', activeConversation.userId],
+        (old: Message[] | undefined) => [...(old || []), responseData]
       );
 
       // Invalidate conversations to update last message
       await queryClient.invalidateQueries({
-        queryKey: ['/api/service/conversations']
+        queryKey: ['/api/messages/service/conversations']
       });
 
-      return newMessage;
+      return responseData;
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -139,8 +141,20 @@ export function useMessagesManagement(initialConversation: {
 
   const loadRequestDetails = async (requestId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/service/requests/${requestId}`);
-      return response;
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/requests/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load request details');
+      }
+
+      return response.json();
     } catch (error) {
       console.error('Error loading request details:', error);
       return null;
@@ -149,8 +163,20 @@ export function useMessagesManagement(initialConversation: {
 
   const loadOfferDetails = async (requestId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/service/offers/request/${requestId}`);
-      return response;
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/offers/request/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load offer details');
+      }
+
+      return response.json();
     } catch (error) {
       console.error('Error loading offer details:', error);
       return null;
