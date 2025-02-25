@@ -77,6 +77,8 @@ interface IStorage {
     isRequestViewedByProvider: any;
     markOfferAsViewed: any;
     getViewedOffersByClient: any;
+    getViewedAcceptedOffersByServiceProvider: any;
+    markAcceptedOfferAsViewed: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -1253,6 +1255,56 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error checking if request is viewed:", error);
       res.status(500).json({ error: "Failed to check if request is viewed" });
+    }
+  });
+
+  // Add endpoint to get viewed accepted offers
+  app.get("/api/service/viewed-accepted-offers", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view their viewed offers." });
+      }
+
+      const viewedOffers = await storage.getViewedAcceptedOffersByServiceProvider(provider.id);
+      res.json(viewedOffers);
+    } catch (error) {
+      console.error("Error getting viewed accepted offers:", error);
+      res.status(500).json({ error: "Failed to get viewed accepted offers" });
+    }
+  });
+
+  // Add endpoint to mark accepted offer as viewed
+  app.post("/api/service/mark-accepted-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log('Marking accepted offer as viewed - Request params:', req.params);
+
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        console.log('Service provider not found for Firebase UID:', req.firebaseUser!.uid);
+        return res.status(403).json({ error: "Access denied. Only service providers can mark offers as viewed." });
+      }
+      console.log('Service provider found:', { id: provider.id, email: provider.email });
+
+      const offerId = parseInt(req.params.offerId);
+      console.log('Attempting to mark accepted offer as viewed:', { providerId: provider.id, offerId });
+
+      // Verify the offer exists and belongs to this provider
+      const offers = await storage.getSentOffersByServiceProvider(provider.id);
+      const offerExists = offers.some(offer => offer.id === offerId && offer.status === "Accepted");
+
+      if (!offerExists) {
+        console.log('Accepted offer not found or not accessible to provider:', offerId);
+        return res.status(404).json({ error: "Accepted offer not found or not accessible" });
+      }
+
+      const viewedOffer = await storage.markAcceptedOfferAsViewed(provider.id, offerId);
+      console.log('Successfully marked accepted offer as viewed:', viewedOffer);
+
+      res.json(viewedOffer);
+    } catch (error) {
+      console.error("Error marking accepted offer as viewed:", error);
+      res.status(500).json({ error: "Failed to mark accepted offer as viewed" });
     }
   });
 
