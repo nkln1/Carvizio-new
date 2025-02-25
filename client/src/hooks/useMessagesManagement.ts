@@ -20,21 +20,26 @@ export function useMessagesManagement(initialConversation: {
 
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ['/api/service/messages', activeConversation?.userId],
+    queryKey: ['/api/service/messages', activeConversation?.requestId],
     enabled: !!activeConversation,
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/messages/${activeConversation?.userId}`, {
+      const response = await fetch(`/api/service/messages/${activeConversation?.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json' // Added content-type header
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        const errorData = await response.text().catch(() => null); // Try to get error text
+        const errorData = await response.text();
+        console.error("Error response from messages endpoint:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
         throw new Error(`Failed to fetch messages: ${response.status} - ${errorData}`);
       }
 
@@ -60,7 +65,12 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        const errorData = await response.text().catch(() => null); // Try to get error text
+        const errorData = await response.text();
+        console.error("Error response from conversations endpoint:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
         throw new Error(`Failed to fetch conversations: ${response.status} - ${errorData}`);
       }
 
@@ -78,23 +88,8 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // First try to get the current user's service provider ID
-      const userResponse = await fetch('/api/service/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        const errorData = await userResponse.text().catch(() => null);
-        throw new Error(`Failed to get user details: ${userResponse.status} - ${errorData}`);
-      }
-
-      const userData = await userResponse.json();
-      const serviceProviderId = userData.id;
-
-      // Now send the message
-      const response = await fetch('/api/service/messages', {
+      // Now send the message with improved error handling
+      const messageResponse = await fetch('/api/service/messages/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,26 +97,30 @@ export function useMessagesManagement(initialConversation: {
         },
         body: JSON.stringify({
           content: message,
-          senderId: serviceProviderId,
           receiverId: activeConversation.userId,
-          requestId: activeConversation.requestId,
-          senderRole: 'service',
-          receiverRole: 'client'
+          requestId: activeConversation.requestId
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.text().catch(() => 'Unknown error'); // Try to get error text
-        console.error("Error sending message:", response.status, errorData); //More detailed logging
-        const errorMessage = `Failed to send message: ${response.status} - ${errorData}`;
-        throw new Error(errorMessage);
+      if (!messageResponse.ok) {
+        const errorData = await messageResponse.text();
+        console.error("Error response from send message endpoint:", {
+          status: messageResponse.status,
+          statusText: messageResponse.statusText,
+          errorData,
+          requestData: {
+            receiverId: activeConversation.userId,
+            requestId: activeConversation.requestId
+          }
+        });
+        throw new Error(`Failed to send message: ${messageResponse.status} - ${errorData}`);
       }
 
-      const newMessage = await response.json();
+      const newMessage = await messageResponse.json();
 
       // Update messages cache
       queryClient.setQueryData(
-        ['/api/service/messages', activeConversation.userId],
+        ['/api/service/messages', activeConversation.requestId],
         (old: Message[] | undefined) => [...(old || []), newMessage]
       );
 
@@ -132,7 +131,7 @@ export function useMessagesManagement(initialConversation: {
 
       return newMessage;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in sendMessage:', error);
       toast({
         variant: "destructive",
         title: "Eroare",
