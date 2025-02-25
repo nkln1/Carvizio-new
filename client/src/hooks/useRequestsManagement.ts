@@ -5,6 +5,10 @@ import { auth } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import type { Request } from "@/types/dashboard";
 
+// Cache time constants
+const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
+const STALE_TIME = 1000 * 30; // 30 seconds
+
 export function useRequestsManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -12,6 +16,7 @@ export function useRequestsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Optimized requests query with proper caching
   const { data: requests = [], isLoading, error } = useQuery<Request[]>({
     queryKey: ['/api/service/requests'],
     queryFn: async () => {
@@ -29,17 +34,29 @@ export function useRequestsManagement() {
       }
 
       return response.json();
-    }
+    },
+    staleTime: STALE_TIME,
+    cacheTime: CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
+  // Optimized handler for request cancellation
   const handleCancelRequest = async (requestId: number) => {
     try {
-      await apiRequest(`/api/requests/${requestId}`, {
-        method: 'PATCH',
+      await apiRequest('PATCH', `/api/requests/${requestId}`, {
         body: { status: "Anulat" }
       });
 
-      queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+      // Optimistic update
+      queryClient.setQueryData(['/api/service/requests'], (oldData: Request[] | undefined) => {
+        if (!oldData) return [];
+        return oldData.map(request => 
+          request.id === requestId 
+            ? { ...request, status: "Anulat" }
+            : request
+        );
+      });
 
       toast({
         title: "Success",
@@ -49,6 +66,10 @@ export function useRequestsManagement() {
       return true;
     } catch (error) {
       console.error('Error canceling request:', error);
+
+      // Invalidate cache on error to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
+
       toast({
         variant: "destructive",
         title: "Error",

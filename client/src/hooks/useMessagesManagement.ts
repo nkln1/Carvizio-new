@@ -5,6 +5,12 @@ import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
+// Cache time constants
+const MESSAGES_CACHE_TIME = 1000 * 60 * 5; // 5 minutes
+const MESSAGES_STALE_TIME = 1000 * 15; // 15 seconds
+const CONVERSATIONS_CACHE_TIME = 1000 * 60 * 10; // 10 minutes
+const CONVERSATIONS_STALE_TIME = 1000 * 30; // 30 seconds
+
 export function useMessagesManagement(initialConversation: {
   userId: number;
   userName: string;
@@ -14,6 +20,7 @@ export function useMessagesManagement(initialConversation: {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Optimized messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ['/api/messages', activeConversation?.userId],
     enabled: !!activeConversation,
@@ -21,7 +28,6 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      console.log('Fetching messages for user:', activeConversation?.userId);
       const response = await fetch(`/api/messages/${activeConversation?.userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -29,23 +35,24 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        console.error('Error fetching messages:', response.status, response.statusText);
         throw new Error('Failed to fetch messages');
       }
 
-      const data = await response.json();
-      console.log('Received messages:', data);
-      return data;
-    }
+      return response.json();
+    },
+    staleTime: MESSAGES_STALE_TIME,
+    cacheTime: MESSAGES_CACHE_TIME,
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
+  // Optimized conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/conversations'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      console.log('Fetching conversations');
       const response = await fetch('/api/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -53,14 +60,14 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        console.error('Error fetching conversations:', response.status, response.statusText);
         throw new Error('Failed to fetch conversations');
       }
 
-      const data = await response.json();
-      console.log('Received conversations:', data);
-      return data;
-    }
+      return response.json();
+    },
+    staleTime: CONVERSATIONS_STALE_TIME,
+    cacheTime: CONVERSATIONS_CACHE_TIME,
+    refetchOnWindowFocus: false
   });
 
   const sendMessage = async (content: string) => {
@@ -70,7 +77,20 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      console.log('Sending message:', { content, recipientId: activeConversation.userId });
+      // Optimistic update for messages
+      const optimisticMessage = {
+        id: Date.now(),
+        content,
+        senderId: activeConversation.userId,
+        recipientId: activeConversation.userId,
+        createdAt: new Date().toISOString(),
+        requestId: activeConversation.requestId,
+        isOptimistic: true
+      };
+
+      queryClient.setQueryData(['/api/messages', activeConversation.userId], 
+        (old: Message[] | undefined) => [...(old || []), optimisticMessage]);
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
@@ -85,16 +105,24 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        console.error('Error sending message:', response.status, response.statusText);
         throw new Error('Failed to send message');
       }
 
-      console.log('Message sent successfully');
-      await queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      // Only invalidate if the optimistic update wasn't sufficient
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/messages', activeConversation.userId]
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/conversations']
+      });
 
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove optimistic update on error
+      queryClient.setQueryData(['/api/messages', activeConversation.userId], 
+        (old: Message[] | undefined) => 
+          old?.filter(msg => !(msg as any).isOptimistic) || []);
+
       toast({
         variant: "destructive",
         title: "Eroare",
@@ -106,9 +134,7 @@ export function useMessagesManagement(initialConversation: {
 
   const loadRequestDetails = async (requestId: number) => {
     try {
-      console.log('Loading request details for:', requestId);
       const response = await apiRequest('GET', `/api/requests/${requestId}`);
-      console.log('Request details:', response);
       return response;
     } catch (error) {
       console.error('Error loading request details:', error);
@@ -118,19 +144,13 @@ export function useMessagesManagement(initialConversation: {
 
   const loadOfferDetails = async (requestId: number) => {
     try {
-      console.log('Loading offer details for request:', requestId);
       const response = await apiRequest('GET', `/api/offers/request/${requestId}`);
-      console.log('Offer details:', response);
       return response;
     } catch (error) {
       console.error('Error loading offer details:', error);
       return null;
     }
   };
-
-  useEffect(() => {
-    console.log('Active conversation changed:', activeConversation);
-  }, [activeConversation]);
 
   return {
     activeConversation,
