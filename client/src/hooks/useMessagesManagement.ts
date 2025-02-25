@@ -6,9 +6,7 @@ import type { Message, Conversation } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
 // Cache time constants
-const MESSAGES_CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 const MESSAGES_STALE_TIME = 1000 * 15; // 15 seconds
-const CONVERSATIONS_CACHE_TIME = 1000 * 60 * 10; // 10 minutes
 const CONVERSATIONS_STALE_TIME = 1000 * 30; // 30 seconds
 
 export function useMessagesManagement(initialConversation: {
@@ -41,7 +39,7 @@ export function useMessagesManagement(initialConversation: {
       return response.json();
     },
     staleTime: MESSAGES_STALE_TIME,
-    cacheTime: MESSAGES_CACHE_TIME,
+    gcTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
     retry: 2
   });
@@ -66,7 +64,7 @@ export function useMessagesManagement(initialConversation: {
       return response.json();
     },
     staleTime: CONVERSATIONS_STALE_TIME,
-    cacheTime: CONVERSATIONS_CACHE_TIME,
+    gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: false
   });
 
@@ -77,15 +75,20 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      const user = auth.currentUser;
+      if (!user?.uid) throw new Error('No user ID available');
+
       // Optimistic update for messages
-      const optimisticMessage = {
+      const optimisticMessage: Message = {
         id: Date.now(),
         content,
-        senderId: activeConversation.userId,
-        recipientId: activeConversation.userId,
-        createdAt: new Date().toISOString(),
+        senderId: Number(user.uid), // Use the current user's ID as sender
+        receiverId: activeConversation.userId,
         requestId: activeConversation.requestId,
-        isOptimistic: true
+        createdAt: new Date(),
+        senderRole: "service",
+        receiverRole: "client",
+        isRead: false
       };
 
       queryClient.setQueryData(['/api/messages', activeConversation.userId], 

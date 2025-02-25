@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,8 @@ import { Send, ArrowLeft } from "lucide-react";
 import { MessageCard } from "./MessageCard";
 import type { Message } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import websocketService from "@/lib/websocket";
 
 interface ConversationViewProps {
   messages: Message[];
@@ -40,6 +42,28 @@ export function ConversationView({
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [scrollToBottom, setScrollToBottom] = useState(true);
+
+  useEffect(() => {
+    const setupWebSocket = async () => {
+      try {
+        await websocketService.ensureConnection();
+      } catch (error) {
+        console.error('Failed to setup WebSocket connection:', error);
+      }
+    };
+
+    setupWebSocket();
+  }, []);
+
+  useEffect(() => {
+    if (scrollToBottom) {
+      const messageContainer = document.querySelector('.messages-container');
+      if (messageContainer) {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      }
+    }
+  }, [messages, scrollToBottom]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +73,7 @@ export function ConversationView({
       setIsSending(true);
       await onSendMessage(newMessage);
       setNewMessage("");
+      setScrollToBottom(true);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -71,20 +96,22 @@ export function ConversationView({
           <CardTitle>{userName}</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-4">
-        {isLoading ? (
-          <MessagesLoading />
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <MessageCard
-                key={message.id}
-                message={message}
-                isCurrentUser={message.senderId === currentUserId}
-              />
-            ))}
-          </div>
-        )}
+      <CardContent className="flex-1 overflow-hidden p-0">
+        <ScrollArea className="h-full messages-container">
+          {isLoading ? (
+            <MessagesLoading />
+          ) : (
+            <div className="space-y-4 p-4">
+              {messages.map((message) => (
+                <MessageCard
+                  key={message.id}
+                  message={message}
+                  isCurrentUser={message.senderId === currentUserId}
+                />
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
       <form
         onSubmit={handleSubmit}

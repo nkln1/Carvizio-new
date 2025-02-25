@@ -41,17 +41,10 @@ export default function MessagesTab({
   const [activeRequest, setActiveRequest] = useState<any>(null);
   const [offerDetails, setOfferDetails] = useState<any>(null);
 
-  useEffect(() => {
-    console.log('MessagesTab - Conversations:', conversations);
-    console.log('MessagesTab - Active conversation:', activeConversation);
-    console.log('MessagesTab - Messages:', messages);
-  }, [conversations, activeConversation, messages]);
-
   const handleBack = () => {
-    console.log('Handling back button click');
     setActiveConversation(null);
-    if (initialConversation) {
-      onConversationClear?.();
+    if (initialConversation && onConversationClear) {
+      onConversationClear();
     }
   };
 
@@ -60,22 +53,23 @@ export default function MessagesTab({
     userName: string;
     requestId: number;
   }) => {
-    console.log('Selecting conversation:', conv);
     setActiveConversation(conv);
-    if (initialConversation) {
-      onConversationClear?.();
+    if (initialConversation && onConversationClear) {
+      onConversationClear();
     }
 
     if (conv.requestId) {
       const request = await loadRequestDetails(conv.requestId);
-      console.log('Loaded request details:', request);
       setActiveRequest(request);
 
       const offer = await loadOfferDetails(conv.requestId);
-      console.log('Loaded offer details:', offer);
       setOfferDetails(offer);
     }
   };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Card className="h-[calc(100vh-12rem)] flex flex-col border-[#00aff5]/20">
@@ -134,7 +128,7 @@ export default function MessagesTab({
             <ConversationView
               messages={messages}
               userName={activeConversation.userName}
-              currentUserId={user?.id || 0}
+              currentUserId={user.id}
               isLoading={isLoadingMessages}
               onBack={handleBack}
               onSendMessage={sendMessage}
@@ -148,13 +142,10 @@ export default function MessagesTab({
       </CardContent>
 
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent 
-          className="max-w-3xl" 
-          aria-describedby="conversation-details-description"
-        >
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
-            <DialogDescription id="conversation-details-description">
+            <DialogDescription>
               Vizualizați toate detaliile cererii și ofertei asociate acestei conversații
             </DialogDescription>
           </DialogHeader>
