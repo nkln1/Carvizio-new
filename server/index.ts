@@ -10,7 +10,13 @@ const server = http.createServer(app);
 // Initialize WebSocket server first
 const wss = new WebSocketServer({ 
   server,
-  path: '/api/ws'
+  path: '/api/ws',
+  // Add WebSocket server options
+  verifyClient: (info, cb) => {
+    // Allow all origins in development
+    const origin = info.origin;
+    cb(true); // Accept the connection
+  }
 });
 
 wss.on('connection', (ws) => {
@@ -28,8 +34,19 @@ wss.on('connection', (ws) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CSP headers with WebSocket connection permissions
+// Configure CORS for both HTTP and WebSocket
 app.use((req, res, next) => {
+  // Allow requests from any origin in development
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  // Set CSP headers with WebSocket permissions
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
