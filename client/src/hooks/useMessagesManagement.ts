@@ -75,6 +75,21 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      // First try to get the current user's service provider ID
+      const userResponse = await fetch('/api/service/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to get user details');
+      }
+
+      const userData = await userResponse.json();
+      const serviceProviderId = userData.id;
+
+      // Now send the message
       const response = await fetch('/api/service/messages', {
         method: 'POST',
         headers: {
@@ -83,15 +98,18 @@ export function useMessagesManagement(initialConversation: {
         },
         body: JSON.stringify({
           content,
-          recipientId: activeConversation.userId,
-          requestId: activeConversation.requestId
+          senderId: serviceProviderId,
+          receiverId: activeConversation.userId,
+          requestId: activeConversation.requestId,
+          senderRole: 'service',
+          receiverRole: 'client'
         })
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', errorText);
-        throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || 'Failed to send message';
+        throw new Error(errorMessage);
       }
 
       const newMessage = await response.json();
@@ -113,7 +131,7 @@ export function useMessagesManagement(initialConversation: {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu s-a putut trimite mesajul. Încercați din nou.",
+        description: error instanceof Error ? error.message : "Nu s-a putut trimite mesajul. Încercați din nou.",
       });
       throw error;
     }
