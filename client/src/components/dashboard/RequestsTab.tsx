@@ -27,6 +27,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -276,6 +277,9 @@ export function RequestsTab({
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalii Cerere</DialogTitle>
+            <DialogDescription>
+              Vizualizați toate detaliile cererii selectate
+            </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
