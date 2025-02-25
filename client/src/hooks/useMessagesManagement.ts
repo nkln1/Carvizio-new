@@ -111,8 +111,9 @@ export function useMessagesManagement(initialConversation: {
       });
 
       if (!response.ok) {
-        const errorData = await response.text().catch(() => null); // Try to get error text
-        const errorMessage = errorData || `Failed to send message: ${response.status}`;
+        const errorData = await response.text().catch(() => 'Unknown error'); // Try to get error text
+        console.error("Error sending message:", response.status, errorData); //More detailed logging
+        const errorMessage = `Failed to send message: ${response.status} - ${errorData}`;
         throw new Error(errorMessage);
       }
 
