@@ -72,32 +72,17 @@ export function useMessagesManagement(initialConversation: {
     if (!activeConversation) return;
 
     try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          recipientId: activeConversation.userId,
-          content,
-          requestId: activeConversation.requestId
-        })
+      // Use apiRequest utility instead of fetch directly
+      const responseData = await apiRequest('POST', '/api/service/messages', {
+        recipientId: activeConversation.userId,
+        content,
+        requestId: activeConversation.requestId
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-
-      const newMessage = await response.json();
-
-      // Update the messages cache with the new message
+      // Update messages cache with new message
       queryClient.setQueryData(
         ['/api/service/messages', activeConversation.userId],
-        (old: Message[] | undefined) => [...(old || []), newMessage]
+        (old: Message[] | undefined) => [...(old || []), responseData]
       );
 
       // Invalidate conversations to update last message
