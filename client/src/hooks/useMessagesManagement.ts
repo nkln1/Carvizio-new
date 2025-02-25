@@ -20,22 +20,32 @@ export function useMessagesManagement(initialConversation: {
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ['/api/messages/service/conversation', activeConversation?.userId],
-    enabled: !!activeConversation,
+    enabled: !!activeConversation?.userId,
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/messages/service/conversation/${activeConversation?.userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+        console.log('Fetching messages for user:', activeConversation?.userId);
+        const response = await fetch(`/api/messages/service/conversation/${activeConversation?.userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Messages response error:', errorText);
+          throw new Error('Failed to fetch messages');
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
+        const data = await response.json();
+        console.log('Fetched messages:', data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        return [];
       }
-
-      return response.json();
     },
     staleTime: MESSAGES_STALE_TIME,
     gcTime: 1000 * 60 * 5, // 5 minutes
@@ -47,20 +57,30 @@ export function useMessagesManagement(initialConversation: {
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/messages/service/conversations'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/messages/service/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+        console.log('Fetching conversations');
+        const response = await fetch('/api/messages/service/conversations', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Conversations response error:', errorText);
+          throw new Error('Failed to fetch conversations');
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
+        const data = await response.json();
+        console.log('Fetched conversations:', data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        return [];
       }
-
-      return response.json();
     },
     staleTime: CONVERSATIONS_STALE_TIME,
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -87,7 +107,7 @@ export function useMessagesManagement(initialConversation: {
 
       const meData = await meResponse.json();
 
-      // Send message with updated endpoint
+      console.log('Sending message to user:', activeConversation.userId);
       const response = await fetch('/api/messages/service/send', {
         method: 'POST',
         headers: {
@@ -115,6 +135,8 @@ export function useMessagesManagement(initialConversation: {
       if (!response.ok) {
         throw new Error(responseData.message || 'Failed to send message');
       }
+
+      console.log('Message sent successfully:', responseData);
 
       // Update messages cache with new message
       queryClient.setQueryData(
