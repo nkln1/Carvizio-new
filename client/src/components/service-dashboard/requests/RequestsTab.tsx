@@ -27,6 +27,7 @@ interface RequestsTabProps {
 
 export function RequestsTab({ onCreateRequest }: RequestsTabProps) {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
   const {
     requests,
     totalRequests,
@@ -41,12 +42,21 @@ export function RequestsTab({ onCreateRequest }: RequestsTabProps) {
     totalPages,
     startIndex,
     handleCancelRequest,
+    markRequestViewed
   } = useRequestsManagement();
 
   // Calculate request counts
-  const activeCount = requests.filter(req => req.status === "Active").length;
-  const solvedCount = requests.filter(req => req.status === "Rezolvat").length;
-  const canceledCount = requests.filter(req => req.status === "Anulat").length;
+  const activeCount = requests.filter((req: Request) => req.status === "Active").length;
+  const solvedCount = requests.filter((req: Request) => req.status === "Rezolvat").length;
+  const canceledCount = requests.filter((req: Request) => req.status === "Anulat").length;
+
+  // Function to handle marking a request as viewed
+  const handleRequestView = async (request: Request) => {
+    if (!viewedRequests.has(request.id)) {
+      await markRequestViewed(request.id);
+      setViewedRequests(prev => new Set([...prev, request.id]));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -127,22 +137,26 @@ export function RequestsTab({ onCreateRequest }: RequestsTabProps) {
             <TabsContent key={tab} value={tab}>
               <div className="grid grid-cols-1 gap-4">
                 {requests
-                  .filter((req) => {
+                  .filter((req: Request) => {
                     if (tab === "active") return req.status === "Active";
                     if (tab === "solved") return req.status === "Rezolvat";
                     if (tab === "canceled") return req.status === "Anulat";
                     return false;
                   })
-                  .map((request) => (
+                  .map((request: Request) => (
                     <RequestCard
                       key={request.id}
                       request={request}
-                      onView={(request) => setSelectedRequest(request)}
+                      onView={(request) => {
+                        handleRequestView(request);
+                        setSelectedRequest(request);
+                      }}
                       onCancel={handleCancelRequest}
+                      isViewed={viewedRequests.has(request.id)}
                     />
                   ))}
 
-                {requests.filter((req) => {
+                {requests.filter((req: Request) => {
                   if (tab === "active") return req.status === "Active";
                   if (tab === "solved") return req.status === "Rezolvat";
                   if (tab === "canceled") return req.status === "Anulat";
