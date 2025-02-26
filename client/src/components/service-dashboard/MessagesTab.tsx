@@ -29,6 +29,8 @@ export default function MessagesTab({
   const { user } = useAuth();
   const { toast } = useToast();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+const [showViewDialog, setShowViewDialog] = useState(false);
+const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const {
     activeConversation,
     setActiveConversation,
