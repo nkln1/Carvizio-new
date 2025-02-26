@@ -1333,12 +1333,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const httpServer = createServer(app);
+  const server = createServer(app);
 
-  // Initialize WebSocket server with the correct path to match client
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path: '/api/ws'  // Match the client's WebSocket path
+  // Initialize WebSocket server with new path
+  const wss = new WebSocketServer({ 
+    server,
+    path: '/ws'  // Changed from '/api/ws' to '/ws'
   });
 
   // WebSocket connection handler with improved error handling
@@ -1375,10 +1375,10 @@ export function registerRoutes(app: Express): Server {
       console.error('WebSocket error:', error);
     });
 
-    ws.on('close', () => {
-      console.log('Client disconnected');
+    ws.on('close', (code, reason) => {
+      console.log(`Client disconnected. Code: ${code}, Reason: ${reason}`);
     });
   });
 
-  return httpServer;
+  return server;
 }
