@@ -156,7 +156,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   }, [queryClient, toast]);
 
   const handleViewRequest = async (request: RequestType) => {
-    await markRequestAsViewed(request.id);
+    const isNew = !viewedRequestIds.includes(request.id);
+    if (isNew) {
+      await markRequestAsViewed(request.id);
+    }
     setSelectedRequest(request);
     setShowViewDialog(true);
   };
@@ -232,6 +235,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       const clientName = clientData.name || `Client ${request.clientId}`;
 
       if (onMessageClick) {
+        const isNew = !viewedRequestIds.includes(request.id);
+        if (isNew) {
+          await markRequestAsViewed(request.id);
+        }
         onMessageClick(request.clientId, clientName, request.id);
       }
     } catch (error) {
@@ -242,6 +249,15 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         description: "Failed to start conversation. Please try again.",
       });
     }
+  };
+
+  const handleSubmitOfferClick = async (request: RequestType) => {
+    const isNew = !viewedRequestIds.includes(request.id);
+    if (isNew) {
+      await markRequestAsViewed(request.id);
+    }
+    setSelectedRequest(request);
+    setShowOfferDialog(true);
   };
 
   return (
@@ -327,10 +343,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              markRequestAsViewed(request.id);
-                              handleMessageClick(request);
-                            }}
+                            onClick={() => handleMessageClick(request)}
                             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -340,11 +353,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {
-                                markRequestAsViewed(request.id);
-                                setSelectedRequest(request);
-                                setShowOfferDialog(true);
-                              }}
+                              onClick={() => handleSubmitOfferClick(request)}
                               className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                             >
                               <SendHorizontal className="h-4 w-4" />
