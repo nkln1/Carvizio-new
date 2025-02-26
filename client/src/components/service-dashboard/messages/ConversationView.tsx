@@ -116,7 +116,9 @@ export function ConversationView({
             <MessagesLoading />
           ) : (
             <div className="space-y-4 p-4">
-              {messages.map((message) => (
+              {[...messages].sort((a, b) => 
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              ).map((message) => (
                 <MessageCard
                   key={message.id}
                   message={message}

@@ -169,7 +169,7 @@ export default function MessagesTab({
               </Button>
             </div>
 
-            <Card className="h-[calc(100vh-16rem)]">
+            <Card className="fixed-height-card overflow-hidden">
               <ConversationView
                 messages={messages}
                 userName={activeConversation.userName}

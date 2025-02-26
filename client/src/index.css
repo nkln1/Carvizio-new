@@ -1,3 +1,10 @@
+
+.fixed-height-card {
+  height: calc(100vh - 16rem);
+  position: relative;
+  overflow: hidden;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
