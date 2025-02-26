@@ -43,7 +43,7 @@ export default function MessagesTab({
   // Query for fetching request details when needed
   const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<RequestType>({
     queryKey: ['request-details', activeConversation?.requestId],
-    enabled: !!activeConversation?.requestId,
+    enabled: !!activeConversation?.requestId && !!showDetailsDialog,
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token || !activeConversation?.requestId) {
@@ -52,23 +52,33 @@ export default function MessagesTab({
 
       const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache'
         }
       });
 
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Request details fetch failed:', {
+          status: response.status,
+          error: errorData
+        });
         throw new Error('Failed to fetch request details');
       }
 
-      return response.json();
+      const data = await response.json();
+      return data;
     },
-    staleTime: 30000,
-    retry: 2,
+    staleTime: 15000,
+    cacheTime: 30000,
+    retry: 3,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
     onError: (error) => {
       console.error('Error fetching request details:', error);
       toast({
         variant: "destructive",
-        title: "Eroare",
+        title: "Eroare la încărcarea detaliilor",
         description: "Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou."
       });
     }
@@ -186,7 +196,8 @@ export default function MessagesTab({
             <ScrollArea className="h-full max-h-[60vh] pr-4">
               {isLoadingRequest ? (
                 <div className="flex justify-center items-center py-8">
-                  <p className="text-muted-foreground">Se încarcă detaliile...</p>
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <p className="ml-2 text-muted-foreground">Se încarcă detaliile...</p>
                 </div>
               ) : requestDetails ? (
                 <div className="space-y-6 p-2">
@@ -223,8 +234,23 @@ export default function MessagesTab({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-4 text-gray-500">
-                  Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou.
+                <div className="flex flex-col items-center justify-center py-8 gap-4">
+                  <div className="text-red-500">
+                    <FileText className="h-12 w-12" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-medium text-gray-900">Nu s-au putut încărca detaliile cererii</p>
+                    <p className="text-sm text-gray-500">Vă rugăm să reîmprospătați pagina sau să încercați din nou mai târziu</p>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setShowDetailsDialog(false);
+                      setTimeout(() => setShowDetailsDialog(true), 100);
+                    }}
+                  >
+                    Încearcă din nou
+                  </Button>
                 </div>
               )}
             </ScrollArea>
