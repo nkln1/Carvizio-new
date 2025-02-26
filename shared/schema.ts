@@ -54,6 +54,7 @@ export interface ServiceProviderUser extends BaseUser {
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   requestId: integer("request_id").notNull().references(() => requests.id),
+  offerId: integer("offer_id").references(() => sentOffers.id),  // New column
   senderId: integer("sender_id").notNull(),
   senderRole: text("sender_role", { enum: ["client", "service"] }).notNull(),
   receiverId: integer("receiver_id").notNull(),
@@ -68,6 +69,10 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   request: one(requests, {
     fields: [messages.requestId],
     references: [requests.id],
+  }),
+  offer: one(sentOffers, {  // New relation
+    fields: [messages.offerId],
+    references: [sentOffers.id],
   }),
   clientSender: one(clients, {
     fields: [messages.senderId],
@@ -271,8 +276,6 @@ export const viewedOffersRelations = relations(viewedOffers, ({ one }) => ({
     references: [sentOffers.id],
   }),
 }));
-
-// Add after the viewedOffers table definition
 
 // Add viewed accepted offers table definition
 export const viewedAcceptedOffers = pgTable("viewed_accepted_offers", {
