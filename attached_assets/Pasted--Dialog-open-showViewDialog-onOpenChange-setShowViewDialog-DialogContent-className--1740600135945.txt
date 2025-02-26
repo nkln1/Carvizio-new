@@ -1,0 +1,59 @@
+<Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalii Cerere</DialogTitle>
+              <DialogDescription>
+                Informații despre cererea selectată
+              </DialogDescription>
+            </DialogHeader>
+            {selectedRequest && (
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Titlu
+                  </h3>
+                  <p>{selectedRequest.title}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Descriere
+                  </h3>
+                  <p className="whitespace-pre-line">{selectedRequest.description}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Data preferată
+                  </h3>
+                  <p>
+                    {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Data trimiterii
+                  </h3>
+                  <p>
+                    {format(new Date(selectedRequest.createdAt), "dd.MM.yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Locație
+                  </h3>
+                  <p>{selectedRequest.cities?.join(", ")}, {selectedRequest.county}</p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {selectedRequest && (
+          <SubmitOfferForm
+            isOpen={showOfferDialog}
+            onClose={() => setShowOfferDialog(false)}
+            request={selectedRequest}
+            onSubmit={handleSubmitOffer}
+          />
+        )}
+      </CardContent>
+    </Card>
