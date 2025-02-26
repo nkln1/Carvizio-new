@@ -45,38 +45,33 @@ export default function MessagesTab({
     queryKey: ['request-details', activeConversation?.requestId],
     enabled: !!activeConversation?.requestId,
     queryFn: async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        if (!token || !activeConversation?.requestId) {
-          throw new Error('Missing token or request ID');
-        }
-
-        const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Request details fetch failed:', {
-            status: response.status,
-            error: errorData
-          });
-          throw new Error(errorData.message || 'Failed to fetch request details');
-        }
-
-        const data = await response.json();
-        console.log('Request details fetched successfully:', data);
-        return data;
-      } catch (error) {
-        console.error('Error in request details fetch:', error);
-        throw error;
+      const token = await auth.currentUser?.getIdToken();
+      if (!token || !activeConversation?.requestId) {
+        throw new Error('Missing token or request ID');
       }
+
+      const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch request details');
+      }
+
+      return response.json();
     },
-    retry: 1,
-    staleTime: 30000
+    staleTime: 30000,
+    retry: 2,
+    onError: (error) => {
+      console.error('Error fetching request details:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou."
+      });
+    }
   });
 
   // WebSocket initialization
