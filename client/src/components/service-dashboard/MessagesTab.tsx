@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, FileText, Loader2 } from "lucide-react";
+import { MessageSquare } from "lucide-react"; 
+import { RequestDetailsDialog } from "./requests/RequestDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -185,77 +186,11 @@ export default function MessagesTab({
           </div>
         )}
 
-        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Detalii Cerere</DialogTitle>
-              <DialogDescription>
-                Informații despre cererea selectată
-              </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="h-full max-h-[60vh] pr-4">
-              {isLoadingRequest ? (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <p className="ml-2 text-muted-foreground">Se încarcă detaliile...</p>
-                </div>
-              ) : requestDetails ? (
-                <div className="space-y-6 p-2">
-                  <div>
-                    <h3 className="font-medium text-lg mb-2">Detalii Cerere</h3>
-                    <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm text-gray-600">Titlu Cerere</p>
-                        <p className="font-medium">{requestDetails.title}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Descriere</p>
-                        <p className="whitespace-pre-line font-medium">{requestDetails.description}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Status</p>
-                        <p className="font-medium">{requestDetails.status}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Data preferată</p>
-                        <p className="font-medium">
-                          {format(new Date(requestDetails.preferredDate), "dd.MM.yyyy")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Locație</p>
-                        <p className="font-medium">
-                          {Array.isArray(requestDetails.cities) 
-                            ? `${requestDetails.cities.join(", ")}, ${requestDetails.county}`
-                            : requestDetails.county}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 gap-4">
-                  <div className="text-red-500">
-                    <FileText className="h-12 w-12" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-medium text-gray-900">Nu s-au putut încărca detaliile cererii</p>
-                    <p className="text-sm text-gray-500">Vă rugăm să reîmprospătați pagina sau să încercați din nou mai târziu</p>
-                  </div>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setShowDetailsDialog(false);
-                      setTimeout(() => setShowDetailsDialog(true), 100);
-                    }}
-                  >
-                    Încearcă din nou
-                  </Button>
-                </div>
-              )}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+        <RequestDetailsDialog
+          request={requestDetails}
+          open={showDetailsDialog} 
+          onOpenChange={setShowDetailsDialog}
+        />
       </CardContent>
     </Card>
   );
