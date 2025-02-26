@@ -181,11 +181,11 @@ export default function MessagesTab({
         )}
 
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
               <DialogDescription>
-                Vizualizați toate detaliile cererii asociate acestei conversații
+                Informații despre cererea selectată
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-full max-h-[60vh] pr-4">
