@@ -253,7 +253,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
             <CardTitle className="text-[#00aff5]">
               Cereri în Așteptare
               {newRequestsCount > 0 && (
-                <span className="ml-2 px-2 py-1 text-sm bg-[#00aff5] text-white rounded-full">
+                <span className="ml-3 px-3 py-1 text-sm bg-[#00aff5] text-white rounded-full">
                   {newRequestsCount}
                 </span>
               )}
