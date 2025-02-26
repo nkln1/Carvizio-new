@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Loader2 } from "lucide-react"; 
-import { RequestDetailsDialog } from "./requests/RequestDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,7 +14,6 @@ import websocketService from "@/lib/websocket";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { Request } from "@shared/schema";
-import { auth } from "@/lib/firebase";
 
 interface MessagesTabProps {
   initialConversation?: ConversationInfo | null;
@@ -43,53 +41,26 @@ export default function MessagesTab({
 
   // Query for fetching request details when needed
   const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<Request>({
-    queryKey: ['request-details', activeConversation?.requestId],
-    enabled: !!activeConversation?.requestId && !!showDetailsDialog,
+    queryKey: ['request', activeConversation?.requestId],
+    enabled: !!activeConversation?.requestId && showDetailsDialog,
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token || !activeConversation?.requestId) {
-        throw new Error('Missing token or request ID');
+      if (!activeConversation?.requestId) {
+        throw new Error('No request ID available');
       }
 
-      console.log('Fetching request details:', {
-        requestId: activeConversation.requestId,
-        tokenAvailable: !!token
-      });
+      console.log('Fetching request details for ID:', activeConversation.requestId);
 
-      const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache' // Added for better cache control
-        },
-        next: { revalidateOnFocus: false } // added to prevent refetch on window focus
-      });
+      const response = await fetch(`/api/requests/${activeConversation.requestId}`);
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Request details fetch failed:', {
-          status: response.status,
-          error: errorData
-        });
+        const error = await response.text();
+        console.error('Failed to fetch request:', error);
         throw new Error('Failed to fetch request details');
       }
 
       const data = await response.json();
-      console.log('Request details fetched successfully:', data);
+      console.log('Received request details:', data);
       return data;
-    },
-    staleTime: 15000,
-    cacheTime: 30000,
-    retry: 3,
-    retryDelay: 1000,
-    refetchOnWindowFocus: false,
-    onError: (error) => {
-      console.error('Error fetching request details:', error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou."
-      });
     }
   });
 
