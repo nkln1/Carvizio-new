@@ -302,7 +302,7 @@ export function OffersTab({
                 variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs"
-                onClick={() => handleAction(offer.id, () => setSelectedOffer(offer))}
+                onClick={() => handleAction(offer.id, async () => setSelectedOffer(offer))}
               >
                 <Eye className="w-3 h-3 mr-1" />
                 Vezi detalii

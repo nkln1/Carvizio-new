@@ -18,7 +18,7 @@ import type { AcceptedOfferWithClient } from "@shared/schema";
 import { SearchBar } from "./offers/SearchBar";
 import { OfferCard } from "./offers/OfferCard";
 import { OfferDetailsDialog } from "./offers/OfferDetailsDialog";
-import { useOfferManagement } from "@/hooks/useOfferManagement";
+import { useServiceOfferManagement } from "@/hooks/useServiceOfferManagement";
 import { useAcceptedOffers } from "@/hooks/useAcceptedOffers";
 
 interface AcceptedOffersTabProps {
@@ -27,7 +27,7 @@ interface AcceptedOffersTabProps {
 
 export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<AcceptedOfferWithClient | null>(null);
-  const { viewedAcceptedOffers, markAcceptedOfferAsViewed, newOffersCount } = useOfferManagement();
+  const { viewedAcceptedOffers, markAcceptedOfferAsViewed, newAcceptedOffersCount } = useServiceOfferManagement();
 
   const {
     offers,
@@ -96,9 +96,9 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
           <CardTitle className="text-[#00aff5] flex items-center gap-2">
             <SendHorizontal className="h-5 w-5" />
             Oferte Acceptate
-            {newOffersCount > 0 && (
+            {newAcceptedOffersCount > 0 && (
               <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
-                {newOffersCount} noi
+                {newAcceptedOffersCount} noi
               </span>
             )}
           </CardTitle>
