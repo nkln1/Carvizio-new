@@ -49,7 +49,11 @@ export function ConversationView({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Removed automatic scroll effect
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages]);
 
   useEffect(() => {
     let mounted = true;
@@ -108,8 +112,8 @@ export function ConversationView({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-hidden p-0">
-        <ScrollArea className="h-full">
+      <CardContent className="flex-1 overflow-hidden p-0 relative">
+        <ScrollArea className="h-full" style={{ position: 'relative' }}>
           {isLoading ? (
             <MessagesLoading />
           ) : (
