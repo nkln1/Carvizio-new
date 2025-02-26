@@ -64,6 +64,7 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
         userId: offer.requestUserId,
         userName: offer.requestUserName,
         requestId: offer.requestId,
+        offerId: offer.id,  // Adăugăm offerId pentru a arăta detaliile ofertei acceptate
         sourceTab: 'accepted-offer'
       });
     }

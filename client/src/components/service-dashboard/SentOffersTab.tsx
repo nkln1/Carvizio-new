@@ -96,6 +96,7 @@
               userId: offer.requestUserId,
               userName: offer.requestUserName,
               requestId: offer.requestId,
+              offerId: offer.id,  // Adăugăm offerId pentru a arăta detaliile ofertei în conversație
               sourceTab: 'sent-offer'
             });
           }

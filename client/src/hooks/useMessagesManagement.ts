@@ -9,11 +9,15 @@ import { apiRequest } from "@/lib/queryClient";
 const MESSAGES_STALE_TIME = 1000 * 15; // 15 seconds
 const CONVERSATIONS_STALE_TIME = 1000 * 30; // 30 seconds
 
-export function useMessagesManagement(initialConversation: {
+interface ConversationInfo {
   userId: number;
   userName: string;
   requestId: number;
-} | null) {
+  offerId?: number;
+  sourceTab?: string;
+}
+
+export function useMessagesManagement(initialConversation: ConversationInfo | null) {
   const [activeConversation, setActiveConversation] = useState(initialConversation);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -88,18 +92,22 @@ export function useMessagesManagement(initialConversation: {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Now send the message with improved error handling
+      // Construim payload-ul mesajului, incluzând offerId dacă există
+      const messagePayload = {
+        content: message,
+        receiverId: activeConversation.userId,
+        requestId: activeConversation.requestId,
+        offerId: activeConversation.offerId // Includem offerId dacă există
+      };
+
+      // Trimitem mesajul
       const messageResponse = await fetch('/api/service/messages/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          content: message,
-          receiverId: activeConversation.userId,
-          requestId: activeConversation.requestId
-        })
+        body: JSON.stringify(messagePayload)
       });
 
       if (!messageResponse.ok) {
@@ -108,10 +116,7 @@ export function useMessagesManagement(initialConversation: {
           status: messageResponse.status,
           statusText: messageResponse.statusText,
           errorData,
-          requestData: {
-            receiverId: activeConversation.userId,
-            requestId: activeConversation.requestId
-          }
+          requestData: messagePayload
         });
         throw new Error(`Failed to send message: ${messageResponse.status} - ${errorData}`);
       }
@@ -151,9 +156,9 @@ export function useMessagesManagement(initialConversation: {
     }
   };
 
-  const loadOfferDetails = async (requestId: number) => {
+  const loadOfferDetails = async (offerId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/service/offers/request/${requestId}`);
+      const response = await apiRequest('GET', `/api/service/offers/${offerId}`);
       return response;
     } catch (error) {
       console.error('Error loading offer details:', error);

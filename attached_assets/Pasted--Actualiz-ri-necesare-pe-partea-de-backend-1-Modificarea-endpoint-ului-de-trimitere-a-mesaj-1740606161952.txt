@@ -1,0 +1,128 @@
+// Actualizări necesare pe partea de backend
+
+// 1. Modificarea endpoint-ului de trimitere a mesajelor pentru a accepta și salva offerId
+
+// În handler-ul pentru POST /api/service/messages/send, actualizați codul:
+app.post('/api/service/messages/send', async (req, res) => {
+  try {
+    const { content, receiverId, receiverRole = 'client', requestId, offerId } = req.body;
+    
+    // Verificăm datele primite
+    if (!content || !receiverId || !requestId) {
+      return res.status(400).json({ message: 'Content, receiverId și requestId sunt obligatorii' });
+    }
+
+    // Obținem utilizatorul autentificat
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'Utilizator neautentificat' });
+    }
+
+    // Creăm mesajul în baza de date, incluzând offerId dacă există
+    const messageData = {
+      request_id: requestId,
+      sender_id: user.id,
+      sender_role: 'service',
+      receiver_id: receiverId,
+      receiver_role: receiverRole,
+      content: content,
+      is_read: false,
+      created_at: new Date(),
+      offer_id: offerId || null // Adăugăm offerId sau null dacă nu există
+    };
+
+    // Inserăm în baza de date
+    const query = `
+      INSERT INTO messages 
+      (request_id, sender_id, sender_role, receiver_id, receiver_role, content, is_read, created_at, offer_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+    
+    const values = [
+      messageData.request_id,
+      messageData.sender_id,
+      messageData.sender_role,
+      messageData.receiver_id,
+      messageData.receiver_role,
+      messageData.content,
+      messageData.is_read,
+      messageData.created_at,
+      messageData.offer_id
+    ];
+
+    const result = await db.query(query, values);
+    const newMessage = result.rows[0];
+
+    // Formatul răspunsului pentru frontend
+    const formattedMessage = {
+      id: newMessage.id,
+      requestId: newMessage.request_id,
+      senderId: newMessage.sender_id,
+      senderRole: newMessage.sender_role,
+      receiverId: newMessage.receiver_id,
+      receiverRole: newMessage.receiver_role,
+      content: newMessage.content,
+      isRead: newMessage.is_read,
+      createdAt: newMessage.created_at,
+      offerId: newMessage.offer_id // Includem offerId în răspuns
+    };
+
+    // Trimitem și prin WebSocket dacă este cazul
+    if (webSocketServer) {
+      const messageForSocket = {
+        type: 'NEW_MESSAGE',
+        message: formattedMessage
+      };
+      
+      // Transmitem la toți clienții conectați (sau puteți filtra destinatarii)
+      webSocketServer.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(messageForSocket));
+        }
+      });
+    }
+
+    return res.status(201).json(formattedMessage);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return res.status(500).json({ message: 'Eroare internă la trimiterea mesajului' });
+  }
+});
+
+// 2. Actualizarea endpoint-ului pentru obținerea mesajelor pentru a include și offerId
+
+// În handler-ul pentru GET /api/service/messages/:requestId, actualizați formatul răspunsului:
+app.get('/api/service/messages/:requestId', async (req, res) => {
+  try {
+    // Logica existentă pentru verificări și obținerea utilizatorului...
+
+    const requestId = req.params.requestId;
+    const query = `
+      SELECT * FROM messages
+      WHERE request_id = $1
+      ORDER BY created_at ASC
+    `;
+    
+    const result = await db.query(query, [requestId]);
+    
+    // Formatăm mesajele pentru frontend, incluzând offerId
+    const formattedMessages = result.rows.map(msg => ({
+      id: msg.id,
+      requestId: msg.request_id,
+      senderId: msg.sender_id,
+      senderRole: msg.sender_role,
+      receiverId: msg.receiver_id,
+      receiverRole: msg.receiver_role,
+      content: msg.content,
+      isRead: msg.is_read,
+      createdAt: msg.created_at,
+      offerId: msg.offer_id // Includem offerId pentru fiecare mesaj
+    }));
+    
+    return res.json(formattedMessages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    return res.status(500).json({ message: 'Eroare internă la obținerea mesajelor' });
+  }
+});

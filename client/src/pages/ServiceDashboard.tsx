@@ -31,6 +31,7 @@ export interface ConversationInfo {
   userId: number;
   userName: string;
   requestId: number;
+  offerId?: number;
   sourceTab?: 'request' | 'sent-offer' | 'accepted-offer';
 }
 

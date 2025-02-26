@@ -64,6 +64,31 @@ export default function MessagesTab({
     }
   });
 
+  // Query pentru a obține detalii despre ofertă când este necesar
+  const { data: offerDetails, isLoading: isLoadingOffer } = useQuery({
+    queryKey: ['offer', activeConversation?.offerId],
+    enabled: !!activeConversation?.offerId && showDetailsDialog,
+    queryFn: async () => {
+      if (!activeConversation?.offerId) {
+        throw new Error('No offer ID available');
+      }
+
+      console.log('Fetching offer details for ID:', activeConversation.offerId);
+
+      const response = await fetch(`/api/service/offers/${activeConversation.offerId}`);
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Failed to fetch offer:', error);
+        throw new Error('Failed to fetch offer details');
+      }
+
+      const data = await response.json();
+      console.log('Received offer details:', data);
+      return data;
+    }
+  });
+
   // WebSocket initialization
   useEffect(() => {
     let mounted = true;
@@ -100,6 +125,7 @@ export default function MessagesTab({
     userId: number;
     userName: string;
     requestId: number;
+    offerId?: number;
     sourceTab?: string;
   }) => {
     setActiveConversation(conv);
@@ -168,64 +194,114 @@ export default function MessagesTab({
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogContent className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Detalii Cerere</DialogTitle>
+              <DialogTitle>
+                {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
+              </DialogTitle>
               <DialogDescription>
-                Informații despre cererea selectată
+                {activeConversation?.offerId 
+                  ? "Informații despre cererea și oferta selectată" 
+                  : "Informații despre cererea selectată"}
               </DialogDescription>
             </DialogHeader>
-            {isLoadingRequest ? (
+
+            {isLoadingRequest || (activeConversation?.offerId && isLoadingOffer) ? (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
                 <p className="text-muted-foreground ml-2">Se încarcă detaliile...</p>
               </div>
-            ) : requestDetails ? (
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Titlu
-                  </h3>
-                  <p>{requestDetails.title}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Descriere
-                  </h3>
-                  <p className="whitespace-pre-line">{requestDetails.description}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Data preferată
-                  </h3>
-                  <p>
-                    {format(new Date(requestDetails.preferredDate), "dd.MM.yyyy")}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Data trimiterii
-                  </h3>
-                  <p>
-                    {format(new Date(requestDetails.createdAt), "dd.MM.yyyy")}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Locație
-                  </h3>
-                  <p>{requestDetails.cities?.join(", ")}, {requestDetails.county}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Status
-                  </h3>
-                  <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                    {requestDetails.status}
-                  </span>
-                </div>
-              </div>
             ) : (
-              <div className="text-center py-4 text-gray-500">
-                Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou.
+              <div className="space-y-6">
+                {/* Detalii cerere - afișate întotdeauna */}
+                {requestDetails && (
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-md">Detalii Cerere</h3>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        Titlu
+                      </h4>
+                      <p>{requestDetails.title}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        Descriere
+                      </h4>
+                      <p className="whitespace-pre-line">{requestDetails.description}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        Data preferată
+                      </h4>
+                      <p>
+                        {format(new Date(requestDetails.preferredDate), "dd.MM.yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        Data trimiterii
+                      </h4>
+                      <p>
+                        {format(new Date(requestDetails.createdAt), "dd.MM.yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        Locație
+                      </h4>
+                      <p>{requestDetails.cities?.join(", ")}, {requestDetails.county}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        Status
+                      </h4>
+                      <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                        {requestDetails.status}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Detalii ofertă - afișate doar dacă există offerId */}
+                {activeConversation?.offerId && offerDetails && (
+                  <div className="space-y-3 mt-6 pt-6 border-t">
+                    <h3 className="font-medium text-md">Detalii Ofertă</h3>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">Titlu</h4>
+                      <p>{offerDetails.title}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">Preț</h4>
+                      <p className="font-bold text-[#00aff5]">{offerDetails.price} RON</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">Detalii</h4>
+                      <p className="whitespace-pre-line">{offerDetails.details}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">Date disponibile</h4>
+                      <p>
+                        {offerDetails.availableDates.map((date: string) => 
+                          format(new Date(date), "dd.MM.yyyy")
+                        ).join(", ")}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">Status</h4>
+                      <span className={`px-2 py-1 rounded-full text-sm ${
+                        offerDetails.status.toLowerCase() === 'accepted' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {offerDetails.status}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {!requestDetails && !offerDetails && (
+                  <div className="text-center py-4 text-gray-500">
+                    Nu s-au putut încărca detaliile. Vă rugăm să încercați din nou.
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>

@@ -217,6 +217,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
+
   const handleMessageClick = async (request: RequestType) => {
     try {
       const token = await auth.currentUser?.getIdToken();
@@ -257,6 +258,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
           userId: request.clientId,
           userName: clientName,
           requestId: request.id,
+          // Nu includem offerId pentru că această conversație este inițiată direct din cerere
           sourceTab: 'request'
         });
       }
