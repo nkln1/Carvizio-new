@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, FileText } from "lucide-react"; 
+import { MessageSquare, FileText, Loader2 } from "lucide-react"; 
 import { RequestDetailsDialog } from "./requests/RequestDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
