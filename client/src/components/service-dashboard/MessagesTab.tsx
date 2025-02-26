@@ -85,7 +85,7 @@ export default function MessagesTab({
     }
   };
 
-  const handleConversationSelect = ({
+  const handleConversationSelect = async ({
     userId,
     userName,
     requestId,
@@ -96,11 +96,11 @@ export default function MessagesTab({
       onConversationClear();
     }
 
-    if (conv.requestId) {
-      const request = await loadRequestDetails(conv.requestId);
+    if (requestId) {
+      const request = await loadRequestDetails(requestId);
       setActiveRequest(request);
 
-      const offer = await loadOfferDetails(conv.requestId);
+      const offer = await loadOfferDetails(requestId);
       setOfferDetails(offer);
     }
   };
