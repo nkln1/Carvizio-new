@@ -54,7 +54,6 @@ export default function MessagesTab({
         }
       } catch (error) {
         console.error('Failed to initialize WebSocket:', error);
-        // Retry after a delay if initialization fails
         if (mounted) {
           setTimeout(initializeWebSocket, 2000);
         }
@@ -99,74 +98,82 @@ export default function MessagesTab({
   }
 
   return (
-    <Card className="h-[calc(100vh-12rem)] flex flex-col border-[#00aff5]/20">
-      <CardHeader className="flex-shrink-0">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          {activeConversation ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBack}
-              className="mr-2 hover:bg-gray-100 gap-2"
+    <div className="space-y-6">
+      {!activeConversation ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {conversations.map((conv) => (
+            <Card 
+              key={`${conv.userId}-${conv.requestId}`}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleConversationSelect({
+                userId: conv.userId,
+                userName: conv.userName || `Client ${conv.userId}`,
+                requestId: conv.requestId,
+              })}
             >
-              Înapoi
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-[#00aff5]" />
+                  {conv.userName || `Client ${conv.userId}`}
+                </CardTitle>
+                {conv.requestTitle && (
+                  <CardDescription className="truncate">
+                    {conv.requestTitle}
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 truncate">{conv.lastMessage}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs text-gray-500">
+                    {conv.lastMessageDate
+                      ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm")
+                      : ""}
+                  </span>
+                  {conv.unreadCount > 0 && (
+                    <span className="bg-[#00aff5] text-white px-2 py-0.5 rounded-full text-xs">
+                      {conv.unreadCount}
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={handleBack}
+              variant="ghost"
+              className="hover:bg-gray-100"
+            >
+              ← Înapoi la conversații
             </Button>
-          ) : null}
-          <MessageSquare className="h-5 w-5" />
-          {activeConversation ? `Chat cu ${activeConversation.userName}` : "Mesaje"}
-        </CardTitle>
-        {activeConversation && (
-          <div className="flex justify-between items-center">
-            <CardDescription>Comunicare directă cu clienții</CardDescription>
             <Button
               variant="outline"
               size="sm"
-              className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+              className="ml-auto bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
               onClick={() => setShowDetailsDialog(true)}
             >
               <Info className="h-4 w-4 mr-2" />
               Vezi Detalii Cerere și Ofertă
             </Button>
           </div>
-        )}
-      </CardHeader>
 
-      <CardContent className="p-0 flex flex-1 min-h-0">
-        <div className={`${activeConversation ? "hidden md:block" : ""} w-1/3 border-r flex flex-col`}>
-          <div className="p-4 border-b">
-            <h3 className="text-sm font-medium text-gray-500">Conversații</h3>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-4">
-              <ConversationList
-                conversations={conversations}
-                isLoading={isLoadingConversations}
-                activeConversationId={activeConversation?.userId}
-                onSelectConversation={handleConversationSelect}
-              />
-            </div>
-          </ScrollArea>
-        </div>
-
-        <div className="flex-1 flex flex-col min-h-0">
-          {activeConversation ? (
+          <Card className="h-[calc(100vh-16rem)]">
             <ConversationView
               messages={messages}
               userName={activeConversation.userName}
               currentUserId={user.id}
               isLoading={isLoadingMessages}
-              onBack={handleBack}
               onSendMessage={sendMessage}
+              onBack={handleBack}
             />
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              Selectează o conversație pentru a începe
-            </div>
-          )}
+          </Card>
         </div>
-      </CardContent>
+      )}
 
-      {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -178,7 +185,6 @@ export default function MessagesTab({
           {offerDetails && (
             <ScrollArea className="h-full max-h-[60vh] pr-4">
               <div className="space-y-6 p-2">
-                {/* Offer Details Content */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
@@ -219,6 +225,6 @@ export default function MessagesTab({
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }
