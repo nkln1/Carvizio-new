@@ -7,12 +7,12 @@ export function useWebSocket() {
 
   const connect = useCallback(async () => {
     try {
-      // Ensure we have access to environment variables
-      if (!import.meta.env.VITE_REPL_URL) {
-        throw new Error('VITE_REPL_URL not available');
+      // Ensure window.location is available
+      if (!window.location.host) {
+        throw new Error('Host not available');
       }
 
-      // Wait for any HMR operations to complete
+      // Wait for a bit to ensure everything is initialized
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       await websocketService.ensureConnection();
@@ -27,25 +27,30 @@ export function useWebSocket() {
 
   useEffect(() => {
     let mounted = true;
-    let cleanup: (() => void) | undefined;
+    let retryTimeout: NodeJS.Timeout;
 
-    // Only attempt connection if the document is fully loaded
-    const attemptConnection = () => {
+    const initializeWebSocket = async () => {
       if (!mounted) return;
-      connect().catch(console.error);
+
+      try {
+        await connect();
+      } catch (error) {
+        // Retry after 3 seconds if the host is not available
+        retryTimeout = setTimeout(initializeWebSocket, 3000);
+      }
     };
 
+    // Only initialize after document is fully loaded
     if (document.readyState === 'complete') {
-      attemptConnection();
+      initializeWebSocket();
     } else {
-      const onLoad = () => attemptConnection();
-      window.addEventListener('load', onLoad);
-      cleanup = () => window.removeEventListener('load', onLoad);
+      window.addEventListener('load', initializeWebSocket);
     }
 
     return () => {
       mounted = false;
-      if (cleanup) cleanup();
+      clearTimeout(retryTimeout);
+      window.removeEventListener('load', initializeWebSocket);
       websocketService.disconnect();
     };
   }, [connect]);

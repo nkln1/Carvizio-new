@@ -3,39 +3,36 @@ class WebSocketService {
   private messageHandlers: Set<(data: any) => void> = new Set();
 
   private getWebSocketUrl(): string {
-    // Ensure VITE_REPL_URL is available
-    if (typeof import.meta === 'undefined' || !import.meta.env || !import.meta.env.VITE_REPL_URL) {
-      console.error('VITE_REPL_URL is not available');
-      return '';
+    // Use window.location as the primary source
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+
+    if (!host) {
+      throw new Error('Host not available');
     }
 
-    const url = new URL(import.meta.env.VITE_REPL_URL);
-    return `wss://${url.host}/ws`;
+    return `${protocol}//${host}/ws`;
   }
 
   public async ensureConnection(): Promise<void> {
-    // If we already have an open connection, use it
+    // If already connected, return immediately
     if (this.ws?.readyState === WebSocket.OPEN) {
       return Promise.resolve();
     }
 
-    // If we have a connection in progress, close it
+    // Close any existing connection
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
 
     return new Promise((resolve, reject) => {
-      const wsUrl = this.getWebSocketUrl();
-      if (!wsUrl) {
-        return reject(new Error('Could not construct WebSocket URL'));
-      }
-
       try {
+        const wsUrl = this.getWebSocketUrl();
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected successfully');
+          console.log('WebSocket connected');
           resolve();
         };
 
