@@ -65,12 +65,18 @@ export default function MessagesTab({
   useEffect(() => {
     const loadDetails = async () => {
       if (activeConversation?.requestId) {
-        const request = await loadRequestDetails(activeConversation.requestId);
-        setActiveRequest(request);
+        try {
+          const request = await loadRequestDetails(activeConversation.requestId);
+          setActiveRequest(request);
 
-        if (activeConversation.sourceTab && ['sent-offer', 'accepted-offer'].includes(activeConversation.sourceTab)) {
-          const offer = await loadOfferDetails(activeConversation.requestId);
-          setOfferDetails(offer);
+          if (activeConversation.sourceTab && ['sent-offer', 'accepted-offer'].includes(activeConversation.sourceTab)) {
+            const offer = await loadOfferDetails(activeConversation.requestId);
+            setOfferDetails(offer);
+          } else {
+            setOfferDetails(null); // Clear offer details if not from offer tabs
+          }
+        } catch (error) {
+          console.error('Error loading conversation details:', error);
         }
       }
     };
@@ -95,12 +101,18 @@ export default function MessagesTab({
       onConversationClear();
     }
 
-    if (conv.requestId) {
-      const request = await loadRequestDetails(conv.requestId);
-      setActiveRequest(request);
+    try {
+      if (conv.requestId) {
+        const request = await loadRequestDetails(conv.requestId);
+        setActiveRequest(request);
 
-      const offer = await loadOfferDetails(conv.requestId);
-      setOfferDetails(offer);
+        const offer = await loadOfferDetails(conv.requestId);
+        if (offer) {
+          setOfferDetails(offer);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversation details:', error);
     }
   };
 
