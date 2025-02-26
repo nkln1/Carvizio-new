@@ -49,9 +49,7 @@ export function ConversationView({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Removed automatic scroll effect
 
   useEffect(() => {
     let mounted = true;
