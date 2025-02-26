@@ -42,22 +42,14 @@ class WebSocketService {
 
   private getWebSocketUrl(): string {
     const replitUrl = import.meta.env.VITE_REPL_URL;
-    let host = window.location.host;
-    console.log('Current window.location.host:', host);
-    console.log('Current window.location.protocol:', window.location.protocol);
-
-    // Use Replit URL as fallback if window.location.host is not available
-    if (!host && replitUrl) {
-      host = new URL(replitUrl).host;
+    if (!replitUrl) {
+      throw new Error('VITE_REPL_URL environment variable is not set');
     }
 
-    if (!host) {
-      throw new Error('Window location host is not available');
-    }
-
-    const isSecure = window.location.protocol === 'https:';
+    const url = new URL(replitUrl);
+    const isSecure = url.protocol === 'https:';
     const protocol = isSecure ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${host}/ws`; // Changed from '/api/ws' to '/ws'
+    const wsUrl = `${protocol}//${url.host}/ws`;
 
     console.log('Constructed WebSocket URL:', wsUrl);
     return wsUrl;
@@ -69,12 +61,6 @@ class WebSocketService {
     }
 
     try {
-      if (!window.location.host) {
-        console.log('Host not available, will retry in 1 second');
-        setTimeout(() => this.connect(), 1000);
-        return;
-      }
-
       const wsUrl = this.getWebSocketUrl();
       console.log('Attempting WebSocket connection to:', wsUrl);
 
