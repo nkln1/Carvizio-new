@@ -81,7 +81,7 @@ export default function MessagesTab({
       console.error('Error fetching request details:', error);
       toast({
         variant: "destructive",
-        title: "Eroare la încărcarea detaliilor",
+        title: "Eroare",
         description: "Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou."
       });
     }
@@ -196,7 +196,11 @@ export default function MessagesTab({
                 Informații despre cererea selectată
               </DialogDescription>
             </DialogHeader>
-            {requestDetails && (
+            {isLoadingRequest ? (
+              <div className="flex justify-center items-center py-8">
+                <p className="text-muted-foreground">Se încarcă detaliile...</p>
+              </div>
+            ) : requestDetails ? (
               <div className="space-y-3">
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
@@ -240,6 +244,10 @@ export default function MessagesTab({
                     {requestDetails.status}
                   </span>
                 </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou.
               </div>
             )}
           </DialogContent>
