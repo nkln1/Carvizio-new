@@ -54,8 +54,10 @@ export default function MessagesTab({
       const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache' // Added for better cache control
+        },
+        next: { revalidateOnFocus: false } // added to prevent refetch on window focus
       });
 
       if (!response.ok) {
