@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, FileText } from "lucide-react"; 
+import { MessageSquare, Loader2 } from "lucide-react"; 
 import { RequestDetailsDialog } from "./requests/RequestDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -14,7 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import type { Request as RequestType } from "@shared/schema";
+import type { Request } from "@shared/schema";
 import { auth } from "@/lib/firebase";
 
 interface MessagesTabProps {
@@ -42,7 +42,7 @@ export default function MessagesTab({
   const [wsInitialized, setWsInitialized] = useState(false);
 
   // Query for fetching request details when needed
-  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<RequestType>({
+  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<Request>({
     queryKey: ['request-details', activeConversation?.requestId],
     enabled: !!activeConversation?.requestId && !!showDetailsDialog,
     queryFn: async () => {
