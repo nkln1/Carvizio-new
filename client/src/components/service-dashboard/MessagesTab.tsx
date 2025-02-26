@@ -51,6 +51,11 @@ export default function MessagesTab({
         throw new Error('Missing token or request ID');
       }
 
+      console.log('Fetching request details:', {
+        requestId: activeConversation.requestId,
+        tokenAvailable: !!token
+      });
+
       const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,6 +75,7 @@ export default function MessagesTab({
       }
 
       const data = await response.json();
+      console.log('Request details fetched successfully:', data);
       return data;
     },
     staleTime: 15000,
@@ -198,7 +204,8 @@ export default function MessagesTab({
             </DialogHeader>
             {isLoadingRequest ? (
               <div className="flex justify-center items-center py-8">
-                <p className="text-muted-foreground">Se încarcă detaliile...</p>
+                <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+                <p className="text-muted-foreground ml-2">Se încarcă detaliile...</p>
               </div>
             ) : requestDetails ? (
               <div className="space-y-3">
