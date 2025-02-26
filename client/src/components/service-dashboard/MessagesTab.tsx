@@ -85,12 +85,13 @@ export default function MessagesTab({
     }
   };
 
-  const handleConversationSelect = async (conv: {
-    userId: number;
-    userName: string;
-    requestId: number;
-  }) => {
-    setActiveConversation(conv);
+  const handleConversationSelect = ({
+    userId,
+    userName,
+    requestId,
+    sourceTab,
+  }: ConversationInfo) => {
+    setActiveConversation({ userId, userName, requestId, sourceTab });
     if (initialConversation && onConversationClear) {
       onConversationClear();
     }
@@ -103,6 +104,23 @@ export default function MessagesTab({
       setOfferDetails(offer);
     }
   };
+
+  const handleViewDetails = () => {
+    if (!activeConversation) return;
+
+    switch (activeConversation.sourceTab) {
+      case 'request':
+        // Show request details dialog
+        setShowDetailsDialog(true);
+        break;
+      case 'sent-offer':
+      case 'accepted-offer':
+        // Show offer details dialog
+        setShowDetailsDialog(true);
+        break;
+    }
+  };
+
 
   if (!user) {
     return null;
@@ -130,6 +148,7 @@ export default function MessagesTab({
                   userId: conv.userId,
                   userName: conv.userName || `Client ${conv.userId}`,
                   requestId: conv.requestId,
+                  sourceTab: conv.sourceTab, // Add sourceTab
                 })}
               >
                 <CardHeader className="pb-2">
@@ -171,17 +190,15 @@ export default function MessagesTab({
               >
                 ← Înapoi la conversații
               </Button>
-              {activeRequest && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-                  onClick={() => setShowDetailsDialog(true)}
-                >
-                  <Info className="h-4 w-4 mr-2" />
-                  Vezi Detalii
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                onClick={handleViewDetails}
+              >
+                <Info className="h-4 w-4 mr-2" />
+                Vezi Detalii
+              </Button>
             </div>
 
             <Card className="fixed-height-card overflow-hidden">
@@ -190,8 +207,9 @@ export default function MessagesTab({
                 userName={activeConversation.userName}
                 currentUserId={user.id}
                 isLoading={isLoadingMessages}
-                onSendMessage={sendMessage}
                 onBack={handleBack}
+                onSendMessage={sendMessage}
+                onViewDetails={handleViewDetails}
               />
             </Card>
           </div>

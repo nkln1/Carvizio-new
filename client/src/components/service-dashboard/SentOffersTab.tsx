@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SentOffersTabProps {
-  onMessageClick?: (userId: number, userName: string, requestId: number) => void;
+  onMessageClick?: (userId: number, userName: string, requestId: number, sourceTab: 'sent-offer') => void;
 }
 
 export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
