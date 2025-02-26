@@ -14,6 +14,7 @@ import websocketService from "@/lib/websocket";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { Request as RequestType } from "@shared/schema";
+import { auth } from "@/lib/firebase";
 
 interface MessagesTabProps {
   initialConversation?: ConversationInfo | null;
@@ -40,12 +41,12 @@ export default function MessagesTab({
   const [wsInitialized, setWsInitialized] = useState(false);
 
   // Query for fetching request details when needed
-  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery({
+  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<RequestType>({
     queryKey: ['request-details', activeConversation?.requestId],
     enabled: !!activeConversation?.requestId,
     queryFn: async () => {
       try {
-        const token = await user?.getIdToken();
+        const token = await auth.currentUser?.getIdToken();
         if (!token || !activeConversation?.requestId) {
           throw new Error('Missing token or request ID');
         }
