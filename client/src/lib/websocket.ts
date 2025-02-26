@@ -11,17 +11,20 @@ class WebSocketService {
   private connectionReject: ((error: Error) => void) | null = null;
 
   constructor() {
-    // Wait for the window to be fully loaded before initializing
+    // Initialize only after DOM is fully loaded and HMR is ready
     if (typeof window !== 'undefined') {
-      if (document.readyState === 'complete') {
-        // Add a delay to ensure Vite's HMR WebSocket is initialized first
-        setTimeout(() => this.initialize(), 2000);
-      } else {
-        window.addEventListener('load', () => {
-          // Add a delay to ensure Vite's HMR WebSocket is initialized first
-          setTimeout(() => this.initialize(), 2000);
-        });
-      }
+      const waitForHMR = () => {
+        setTimeout(() => {
+          if (document.readyState === 'complete') {
+            this.initialize();
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(() => this.initialize(), 2000);
+            });
+          }
+        }, 100);
+      };
+      waitForHMR();
     }
   }
 
@@ -142,7 +145,10 @@ class WebSocketService {
   }
 
   public async ensureConnection(): Promise<void> {
+    // If not initialized, initialize and wait for connection
     if (!this.isInitialized) {
+      // Add additional delay to ensure Vite's HMR is ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
       this.initialize();
     }
     return this.connectionPromise || Promise.resolve();
