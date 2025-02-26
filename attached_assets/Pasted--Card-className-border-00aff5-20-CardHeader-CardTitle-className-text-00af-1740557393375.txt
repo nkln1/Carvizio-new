@@ -1,0 +1,56 @@
+ <Card className="border-[#00aff5]/20">
+      <CardHeader>
+        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          Mesaje
+        </CardTitle>
+        <CardDescription>
+          Comunicare directă cu clienții și gestionarea conversațiilor
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isViewingConversation ? renderConversation() : renderMessagesList()}
+        <Dialog open={showRequestDetails} onOpenChange={setShowRequestDetails}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalii Cerere</DialogTitle>
+            </DialogHeader>
+            {selectedMessageRequest && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Titlu</h3>
+                  <p>{selectedMessageRequest.title}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Descriere</h3>
+                  <p className="whitespace-pre-wrap">{selectedMessageRequest.description}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Data Preferată</h3>
+                  <p>{formatDateSafely(selectedMessageRequest.preferredDate)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Locație</h3>
+                  <p>{selectedMessageRequest.county} - {selectedMessageRequest.cities?.join(", ")}</p>
+                </div>
+                {selectedMessageRequest.carDetails && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-medium text-sm text-muted-foreground mb-2">Detalii Mașină</h3>
+                    <div className="space-y-2">
+                      <p><span className="text-gray-600">Marcă:</span> {selectedMessageRequest.carDetails.make}</p>
+                      <p><span className="text-gray-600">Model:</span> {selectedMessageRequest.carDetails.model}</p>
+                      <p><span className="text-gray-600">An:</span> {selectedMessageRequest.carDetails.year}</p>
+                      <p><span className="text-gray-600">Kilometraj:</span> {selectedMessageRequest.carDetails.mileage} km</p>
+                      {selectedMessageRequest.carDetails.vin && (
+                        <p><span className="text-gray-600">VIN:</span> {selectedMessageRequest.carDetails.vin}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
