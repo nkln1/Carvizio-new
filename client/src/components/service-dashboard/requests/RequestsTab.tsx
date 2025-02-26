@@ -20,12 +20,13 @@ import type { Request } from "@/types/dashboard";
 import { RequestCard } from "./RequestCard";
 import { RequestDetailsDialog } from "./RequestDetailsDialog";
 import { useRequestsManagement } from "@/hooks/useRequestsManagement";
+import type { ConversationInfo } from "@/pages/ServiceDashboard";
 
 interface RequestsTabProps {
-  onCreateRequest?: () => void;
+  onMessageClick?: (conversationInfo: ConversationInfo) => void;
 }
 
-export function RequestsTab({ onCreateRequest }: RequestsTabProps) {
+export function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
   const {
@@ -55,6 +56,18 @@ export function RequestsTab({ onCreateRequest }: RequestsTabProps) {
     if (!viewedRequests.has(request.id)) {
       await markRequestViewed(request.id);
       setViewedRequests(prev => new Set([...prev, request.id]));
+    }
+  };
+
+  const handleMessageClick = (request: Request) => {
+    if (onMessageClick) {
+      const conversationInfo: ConversationInfo = {
+        userId: request.clientId,
+        userName: request.clientName || `Client ${request.clientId}`,
+        requestId: request.id,
+        sourceTab: 'request'
+      };
+      onMessageClick(conversationInfo);
     }
   };
 
@@ -152,6 +165,7 @@ export function RequestsTab({ onCreateRequest }: RequestsTabProps) {
                         setSelectedRequest(request);
                       }}
                       onCancel={handleCancelRequest}
+                      onMessage={handleMessageClick}
                       isViewed={viewedRequests.has(request.id)}
                     />
                   ))}

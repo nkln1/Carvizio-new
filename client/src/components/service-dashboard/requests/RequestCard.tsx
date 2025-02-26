@@ -1,19 +1,23 @@
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, MessageSquare } from "lucide-react";
 import type { Request } from "@/types/dashboard";
 
 interface RequestCardProps {
   request: Request;
   onView: (request: Request) => void;
   onCancel: (requestId: number) => void;
+  onMessage?: (request: Request) => void;
+  isViewed?: boolean;
 }
 
 export function RequestCard({
   request,
   onView,
   onCancel,
+  onMessage,
+  isViewed,
 }: RequestCardProps) {
   return (
     <Card className="hover:bg-gray-50 transition-colors">
@@ -60,6 +64,17 @@ export function RequestCard({
               <Eye className="h-4 w-4" />
               Detalii
             </Button>
+            {onMessage && request.status !== "Anulat" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onMessage(request)}
+                className="text-green-500 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Mesaj
+              </Button>
+            )}
             {request.status !== "Anulat" && (
               <Button
                 variant="ghost"
