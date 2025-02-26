@@ -10,7 +10,7 @@ import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
-import { wss } from './index';
+
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -413,15 +413,15 @@ export function registerRoutes(app: Express): Server {
       const request = await storage.createRequest(requestData);
 
       // Broadcast the new request to all connected services
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'NEW_REQUEST',
-            payload: request,
-            timestamp: new Date().toISOString()
-          }));
-        }
-      });
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  if (client.readyState === WebSocket.OPEN) {
+      //    client.send(JSON.stringify({
+      //      type: 'NEW_REQUEST',
+      //      payload: request,
+      //      timestamp: new Date().toISOString()
+      //    }));
+      //  }
+      //});
 
       res.status(201).json(request);
     } catch (error: any) {
@@ -624,19 +624,19 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Send notification through WebSocket with improved error handling
-      wss.clients.forEach((client) => {
-        try {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'NEW_OFFER',
-              payload: offer,
-              timestamp: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.error('Error sending WebSocket message:', error);
-        }
-      });
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  try {
+      //    if (client.readyState === WebSocket.OPEN) {
+      //      client.send(JSON.stringify({
+      //        type: 'NEW_OFFER',
+      //        payload: offer,
+      //        timestamp: new Date().toISOString()
+      //      }));
+      //    }
+      //  } catch (error) {
+      //    console.error('Error sending WebSocket message:', error);
+      //  }
+      //});
 
       res.status(201).json(offer);
     } catch (error: any) {
@@ -808,27 +808,27 @@ export function registerRoutes(app: Express): Server {
       await storage.updateRequest(offer.requestId, { status: "Rezolvat" });
 
       // Send notifications through WebSocket with improved error handling
-      wss.clients.forEach((client) => {
-        try {
-          if (client.readyState === WebSocket.OPEN) {
-            // Notify about offer status change
-            client.send(JSON.stringify({
-              type: 'OFFER_STATUS_CHANGED',
-              payload: { ...updatedOffer, status: "Accepted" },
-              timestamp: new Date().toISOString()
-            }));
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  try {
+      //    if (client.readyState === WebSocket.OPEN) {
+      //      // Notify about offer status change
+      //      client.send(JSON.stringify({
+      //        type: 'OFFER_STATUS_CHANGED',
+      //        payload: { ...updatedOffer, status: "Accepted" },
+      //        timestamp: new Date().toISOString()
+      //      }));
 
-            // Notify about request status change
-            client.send(JSON.stringify({
-              type: 'REQUEST_STATUS_CHANGED',
-              payload: { requestId: offer.requestId, status: "Rezolvat" },
-              timestamp: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.error('Error sending WebSocket message:', error);
-        }
-      });
+      //      // Notify about request status change
+      //      client.send(JSON.stringify({
+      //        type: 'REQUEST_STATUS_CHANGED',
+      //        payload: { requestId: offer.requestId, status: "Rezolvat" },
+      //        timestamp: new Date().toISOString()
+      //      }));
+      //    }
+      //  } catch (error) {
+      //    console.error('Error sending WebSocket message:', error);
+      //  }
+      //});
 
       res.json(updatedOffer);
     } catch (error) {
@@ -848,19 +848,19 @@ export function registerRoutes(app: Express): Server {
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Rejected");
 
       // Send notification through WebSocket with improved error handling
-      wss.clients.forEach((client) => {
-        try {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'OFFER_STATUS_CHANGED',
-              payload: { ...updatedOffer, status: "Rejected" },
-              timestamp: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.error('Error sending WebSocket message:', error);
-        }
-      });
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  try {
+      //    if (client.readyState === WebSocket.OPEN) {
+      //      client.send(JSON.stringify({
+      //        type: 'OFFER_STATUS_CHANGED',
+      //        payload: { ...updatedOffer, status: "Rejected" },
+      //        timestamp: new Date().toISOString()
+      //      }));
+      //    }
+      //  } catch (error) {
+      //    console.error('Error sending WebSocket message:', error);
+      //  }
+      //});
 
       res.json(updatedOffer);
     } catch (error) {
@@ -881,19 +881,19 @@ export function registerRoutes(app: Express): Server {
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Pending");
 
       // Send notification through WebSocket with improved error handling
-      wss.clients.forEach((client) => {
-        try {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'OFFER_STATUS_CHANGED',
-              payload: { ...updatedOffer, status: "Pending" },
-              timestamp: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.error('Error sending WebSocket message:', error);
-        }
-      });
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  try {
+      //    if (client.readyState === WebSocket.OPEN) {
+      //      client.send(JSON.stringify({
+      //        type: 'OFFER_STATUS_CHANGED',
+      //        payload: { ...updatedOffer, status: "Pending" },
+      //        timestamp: new Date().toISOString()
+      //      }));
+      //    }
+      //  } catch (error) {
+      //    console.error('Error sending WebSocket message:', error);
+      //  }
+      //});
 
       res.json(updatedOffer);
     } catch (error) {
@@ -1004,15 +1004,15 @@ export function registerRoutes(app: Express): Server {
       };
 
       // Send real-time notification
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'NEW_MESSAGE',
-            payload: enrichedMessage,
-            timestamp: new Date().toISOString()
-          }));
-        }
-      });
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  if (client.readyState === WebSocket.OPEN) {
+      //    client.send(JSON.stringify({
+      //      type: 'NEW_MESSAGE',
+      //      payload: enrichedMessage,
+      //      timestamp: new Date().toISOString()
+      //    }));
+      //  }
+      //});
 
       res.status(201).json(enrichedMessage);
     } catch (error: any) {
@@ -1123,19 +1123,19 @@ export function registerRoutes(app: Express): Server {
       };
 
       // Send notification through WebSocket with improved error handling
-      wss.clients.forEach((client) => {
-        try {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'NEW_MESSAGE',
-              payload: enrichedMessage,
-              timestamp: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.error('Error sending WebSocket message:', error);
-        }
-      });
+      //wss.clients.forEach((client) => { //Commented out because this is handled in the websocket message
+      //  try {
+      //    if (client.readyState === WebSocket.OPEN) {
+      //      client.send(JSON.stringify({
+      //        type: 'NEW_MESSAGE',
+      //        payload: enrichedMessage,
+      //        timestamp: new Date().toISOString()
+      //      }));
+      //    }
+      //  } catch (error) {
+      //    console.error('Error sending WebSocket message:', error);
+      //  }
+      //});
 
       res.json(enrichedMessage);
     } catch (error) {
@@ -1338,46 +1338,52 @@ export function registerRoutes(app: Express): Server {
   // Initialize WebSocket server with new path
   const wss = new WebSocketServer({ 
     server,
-    path: '/ws'  // Changed from '/api/ws' to '/ws'
+    path: '/ws',
+    perMessageDeflate: false
   });
 
   // WebSocket connection handler with improved error handling
-  wss.on('connection', (ws) => {
-    console.log('New WebSocket connection established');
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('New WebSocket connection established: /ws');
 
-    ws.on('message', (message) => {
+    ws.on('message', async (message: string) => {
       try {
         const data = JSON.parse(message.toString());
         console.log('Received message:', data);
-        // Handle different message types
-        switch (data.type) {
-          case 'OFFER_SENT':
-            // Broadcast to all connected clients
-            wss.clients.forEach(client => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                  type: 'NEW_OFFER',
-                  payload: data.payload,
-                  timestamp: new Date().toISOString()
-                }));
-              }
-            });
-            break;
-          default:
-            console.log('Unknown message type:', data.type);
-        }
+
+        // Echo back to confirm receipt
+        ws.send(JSON.stringify({
+          type: 'RECEIVED',
+          timestamp: new Date().toISOString()
+        }));
       } catch (error) {
-        console.error('Error processing WebSocket message:', error);
+        console.error('Error processing message:', error);
+        ws.send(JSON.stringify({
+          type: 'ERROR',
+          message: 'Failed to process message',
+          timestamp: new Date().toISOString()
+        }));
       }
     });
 
+    // Send immediate connection confirmation
+    ws.send(JSON.stringify({
+      type: 'CONNECTED',
+      timestamp: new Date().toISOString()
+    }));
+
     ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      console.error('WebSocket connection error:', error);
     });
 
     ws.on('close', (code, reason) => {
-      console.log(`Client disconnected. Code: ${code}, Reason: ${reason}`);
+      console.log('Client disconnected. Code:', code, 'Reason:', reason);
     });
+  });
+
+  // Handle server errors
+  server.on('error', (error) => {
+    console.error('Server error:', error);
   });
 
   return server;

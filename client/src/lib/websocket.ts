@@ -91,6 +91,7 @@ class WebSocketService {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('Received WebSocket message:', data);
           this.messageHandlers.forEach(handler => handler(data));
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
