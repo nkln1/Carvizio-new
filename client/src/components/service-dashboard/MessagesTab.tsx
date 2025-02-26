@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, FileText, Loader2 } from "lucide-react"; 
+import { MessageSquare } from "lucide-react"; 
 import { RequestDetailsDialog } from "./requests/RequestDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -29,8 +29,6 @@ export default function MessagesTab({
   const { user } = useAuth();
   const { toast } = useToast();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-const [showViewDialog, setShowViewDialog] = useState(false);
-const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const {
     activeConversation,
     setActiveConversation,
@@ -44,7 +42,7 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
   const [wsInitialized, setWsInitialized] = useState(false);
 
   // Query for fetching request details when needed
-  const { data: requestDetails, isLoading: isLoadingRequest, refetch: refetchRequestDetails } = useQuery<RequestType>({
+  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<RequestType>({
     queryKey: ['request-details', activeConversation?.requestId],
     enabled: !!activeConversation?.requestId && !!showDetailsDialog,
     queryFn: async () => {
@@ -61,7 +59,12 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch request details: ${response.status}`);
+        const errorData = await response.text();
+        console.error('Request details fetch failed:', {
+          status: response.status,
+          error: errorData
+        });
+        throw new Error('Failed to fetch request details');
       }
 
       const data = await response.json();
@@ -69,9 +72,17 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
     },
     staleTime: 15000,
     cacheTime: 30000,
-    retry: 2,
+    retry: 3,
     retryDelay: 1000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    onError: (error) => {
+      console.error('Error fetching request details:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare la încărcarea detaliilor",
+        description: "Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou."
+      });
+    }
   });
 
   // WebSocket initialization
@@ -119,10 +130,7 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
   };
 
   const handleViewDetails = () => {
-    if (activeConversation?.requestId && requestDetails) {
-      setSelectedRequest(requestDetails);
-      setShowViewDialog(true);
-    }
+    setShowDetailsDialog(true);
   };
 
   if (!user) {
@@ -178,7 +186,7 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
           </div>
         )}
 
-        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogContent className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalii Cerere</DialogTitle>
@@ -186,42 +194,61 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
                 Informații despre cererea selectată
               </DialogDescription>
             </DialogHeader>
-            {selectedRequest && (
-              <div className="space-y-3">
+            {requestDetails ? (
+              <div className="space-y-4">
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Titlu
                   </h3>
-                  <p>{selectedRequest.title}</p>
+                  <p>{requestDetails.title}</p>
                 </div>
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Descriere
                   </h3>
-                  <p className="whitespace-pre-line">{selectedRequest.description}</p>
+                  <p className="whitespace-pre-line">{requestDetails.description}</p>
                 </div>
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Data preferată
                   </h3>
                   <p>
-                    {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Data trimiterii
-                  </h3>
-                  <p>
-                    {format(new Date(selectedRequest.createdAt), "dd.MM.yyyy")}
+                    {format(new Date(requestDetails.preferredDate), "dd.MM.yyyy")}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Locație
                   </h3>
-                  <p>{selectedRequest.cities?.join(", ")}, {selectedRequest.county}</p>
+                  <p>{requestDetails.cities?.join(", ")}, {requestDetails.county}</p>
                 </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Status
+                  </h3>
+                  <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                    {requestDetails.status}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 gap-4">
+                <div className="text-red-500">
+                  <FileText className="h-12 w-12" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-gray-900">Nu s-au putut încărca detaliile cererii</p>
+                  <p className="text-sm text-gray-500">Vă rugăm să reîmprospătați pagina sau să încercați din nou mai târziu</p>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowDetailsDialog(false);
+                    setTimeout(() => setShowDetailsDialog(true), 100);
+                  }}
+                >
+                  Încearcă din nou
+                </Button>
               </div>
             )}
           </DialogContent>
