@@ -7,6 +7,14 @@ export function useWebSocket() {
 
   const connect = useCallback(async () => {
     try {
+      // Wait for document to be fully loaded
+      if (document.readyState !== 'complete') {
+        return;
+      }
+
+      // Add additional delay to ensure HMR is ready
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       await websocketService.ensureConnection();
       setIsConnected(true);
       setError(null);
@@ -19,20 +27,19 @@ export function useWebSocket() {
   useEffect(() => {
     let mounted = true;
 
-    const initializeWebSocket = async () => {
-      // Wait for the DOM to be fully loaded
-      if (document.readyState !== 'complete') {
-        window.addEventListener('load', () => {
-          if (mounted) {
-            connect();
-          }
-        });
+    const initWebSocket = async () => {
+      if (document.readyState === 'complete') {
+        if (mounted) await connect();
       } else {
-        await connect();
+        const onLoad = async () => {
+          if (mounted) await connect();
+        };
+        window.addEventListener('load', onLoad);
+        return () => window.removeEventListener('load', onLoad);
       }
     };
 
-    initializeWebSocket();
+    initWebSocket();
 
     return () => {
       mounted = false;

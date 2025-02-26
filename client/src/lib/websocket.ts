@@ -10,36 +10,6 @@ class WebSocketService {
   private connectionResolve: (() => void) | null = null;
   private connectionReject: ((error: Error) => void) | null = null;
 
-  constructor() {
-    // Initialize only after DOM is fully loaded and HMR is ready
-    if (typeof window !== 'undefined') {
-      const waitForHMR = () => {
-        setTimeout(() => {
-          if (document.readyState === 'complete') {
-            this.initialize();
-          } else {
-            window.addEventListener('load', () => {
-              setTimeout(() => this.initialize(), 2000);
-            });
-          }
-        }, 100);
-      };
-      waitForHMR();
-    }
-  }
-
-  private initialize() {
-    if (this.isInitialized) return;
-    console.log('Initializing WebSocket service...');
-
-    this.isInitialized = true;
-    this.connectionPromise = new Promise((resolve, reject) => {
-      this.connectionResolve = resolve;
-      this.connectionReject = reject;
-      this.connect();
-    });
-  }
-
   private getWebSocketUrl(): string {
     const replitUrl = import.meta.env.VITE_REPL_URL;
     if (!replitUrl) {
@@ -138,11 +108,13 @@ class WebSocketService {
   }
 
   public async ensureConnection(): Promise<void> {
-    // If not initialized, initialize and wait for connection
     if (!this.isInitialized) {
-      // Add additional delay to ensure Vite's HMR is ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      this.initialize();
+      this.isInitialized = true;
+      this.connectionPromise = new Promise((resolve, reject) => {
+        this.connectionResolve = resolve;
+        this.connectionReject = reject;
+        this.connect();
+      });
     }
     return this.connectionPromise || Promise.resolve();
   }
