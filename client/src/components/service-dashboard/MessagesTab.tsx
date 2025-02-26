@@ -186,11 +186,73 @@ export default function MessagesTab({
           </div>
         )}
 
-        <RequestDetailsDialog
-          request={requestDetails}
-          open={showDetailsDialog} 
-          onOpenChange={setShowDetailsDialog}
-        />
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detalii Cerere</DialogTitle>
+              <DialogDescription>
+                Informații despre cererea selectată
+              </DialogDescription>
+            </DialogHeader>
+            {requestDetails ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Titlu
+                  </h3>
+                  <p>{requestDetails.title}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Descriere
+                  </h3>
+                  <p className="whitespace-pre-line">{requestDetails.description}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Data preferată
+                  </h3>
+                  <p>
+                    {format(new Date(requestDetails.preferredDate), "dd.MM.yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Locație
+                  </h3>
+                  <p>{requestDetails.cities?.join(", ")}, {requestDetails.county}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Status
+                  </h3>
+                  <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                    {requestDetails.status}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 gap-4">
+                <div className="text-red-500">
+                  <FileText className="h-12 w-12" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-gray-900">Nu s-au putut încărca detaliile cererii</p>
+                  <p className="text-sm text-gray-500">Vă rugăm să reîmprospătați pagina sau să încercați din nou mai târziu</p>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowDetailsDialog(false);
+                    setTimeout(() => setShowDetailsDialog(true), 100);
+                  }}
+                >
+                  Încearcă din nou
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
