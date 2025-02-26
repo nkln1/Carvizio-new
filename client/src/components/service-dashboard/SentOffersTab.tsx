@@ -85,6 +85,16 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
     );
   };
 
+  const handleViewOffer = (offer: SentOffer) => {
+    setSelectedOffer(offer);
+  };
+
+  const handleMessageClick = (offer: SentOffer) => {
+    if (onMessageClick && offer.requestUserId && offer.requestUserName) {
+      onMessageClick(offer.requestUserId, offer.requestUserName, offer.requestId);
+    }
+  };
+
   const filteredOffers = filterOffers(offers);
   const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -203,7 +213,7 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
                           <Button
                             variant="outline"
                             className="mt-2"
-                            onClick={() => setSelectedOffer(offer)}
+                            onClick={() => handleViewOffer(offer)}
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             Vezi detalii
@@ -212,7 +222,7 @@ export default function SentOffersTab({ onMessageClick }: SentOffersTabProps) {
                             <Button
                               variant="outline"
                               className="mt-2"
-                              onClick={() => onMessageClick(offer.requestUserId, offer.requestUserName, offer.requestId)}
+                              onClick={() => handleMessageClick(offer)}
                             >
                               <MessageSquare className="w-4 h-4 mr-2" />
                               Mesaj Client
