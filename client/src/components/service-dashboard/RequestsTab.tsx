@@ -34,11 +34,12 @@ import type { Request as RequestType } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import { SubmitOfferForm } from "./SubmitOfferForm";
 import websocketService from "@/lib/websocket";
+import { ConversationInfo } from "@/pages/ServiceDashboard";
 
 const ITEMS_PER_PAGE = 5;
 
 interface RequestsTabProps {
-  onMessageClick?: (userId: number, userName: string, requestId: number) => void;
+  onMessageClick?: (conversationInfo: ConversationInfo) => void;
 }
 
 export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
@@ -221,32 +222,50 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/client/${request.clientId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Încearcă să obții detaliile clientului, dar gestionează cazul în care API-ul eșuează
+      let clientName = `Client ${request.clientId}`;
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch client details');
+      try {
+        const response = await fetch(`/api/service/client/${request.clientId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const clientData = await response.json();
+            if (clientData && clientData.name) {
+              clientName = clientData.name;
+            }
+          }
+        }
+      } catch (clientError) {
+        console.warn('Could not fetch client details, using default name:', clientError);
       }
 
-      const clientData = await response.json();
-      const clientName = clientData.name || `Client ${request.clientId}`;
+      // Marchează cererea ca văzută dacă este nouă
+      const isNew = !viewedRequestIds.includes(request.id);
+      if (isNew) {
+        await markRequestAsViewed(request.id);
+      }
 
+      // Continuă cu deschiderea conversației, chiar dacă obținerea detaliilor clientului a eșuat
       if (onMessageClick) {
-        const isNew = !viewedRequestIds.includes(request.id);
-        if (isNew) {
-          await markRequestAsViewed(request.id);
-        }
-        onMessageClick(request.clientId, clientName, request.id);
+        onMessageClick({
+          userId: request.clientId,
+          userName: clientName,
+          requestId: request.id,
+          sourceTab: 'request'
+        });
       }
     } catch (error) {
-      console.error('Error fetching client details:', error);
+      console.error('Error starting conversation:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to start conversation. Please try again.",
+        title: "Eroare",
+        description: "Nu s-a putut începe conversația. Încercați din nou.",
       });
     }
   };

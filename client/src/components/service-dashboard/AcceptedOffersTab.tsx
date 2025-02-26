@@ -20,9 +20,10 @@ import { OfferCard } from "./offers/OfferCard";
 import { OfferDetailsDialog } from "./offers/OfferDetailsDialog";
 import { useServiceOfferManagement } from "@/hooks/useServiceOfferManagement";
 import { useAcceptedOffers } from "@/hooks/useAcceptedOffers";
+import { ConversationInfo } from "@/pages/ServiceDashboard";
 
 interface AcceptedOffersTabProps {
-  onMessageClick?: (userId: number, userName: string, requestId: number) => void;
+  onMessageClick?: (conversationInfo: ConversationInfo) => void;
 }
 
 export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabProps) {
@@ -59,7 +60,12 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
   const handleMessageClick = (offer: AcceptedOfferWithClient) => {
     if (onMessageClick && offer.requestUserId && offer.requestUserName && offer.requestId) {
       handleAction(offer.id);
-      onMessageClick(offer.requestUserId, offer.requestUserName, offer.requestId);
+      onMessageClick({
+        userId: offer.requestUserId,
+        userName: offer.requestUserName,
+        requestId: offer.requestId,
+        sourceTab: 'accepted-offer'
+      });
     }
   };
 

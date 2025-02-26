@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, Info } from "lucide-react";
 import { MessageCard } from "./MessageCard";
 import type { Message } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,8 @@ interface ConversationViewProps {
   isLoading?: boolean;
   onBack: () => void;
   onSendMessage: (content: string) => Promise<void>;
+  onViewDetails?: () => void;
+  showDetailsButton?: boolean;
 }
 
 const MessagesLoading = () => (
@@ -38,7 +40,9 @@ export function ConversationView({
   currentUserId,
   isLoading,
   onBack,
-  onSendMessage
+  onSendMessage,
+  onViewDetails,
+  showDetailsButton = false
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -95,16 +99,29 @@ export function ConversationView({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="border-b">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={onBack}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <CardTitle>{userName}</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle>{userName}</CardTitle>
+          </div>
+          {showDetailsButton && onViewDetails && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+              onClick={onViewDetails}
+            >
+              <Info className="h-4 w-4 mr-2" />
+              Vezi Detalii
+            </Button>
+          )}
         </div>
       </CardHeader>
 

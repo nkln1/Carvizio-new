@@ -9,13 +9,15 @@ interface ConversationListProps {
   conversations: Conversation[];
   isLoading: boolean;
   activeConversationId?: number;
-  onSelectConversation: (conv: { userId: number; userName: string; requestId: number; }) => void;
+  activeRequestId?: number;
+  onSelectConversation: (conv: { userId: number; userName: string; requestId: number; sourceTab?: string }) => void;
 }
 
 export function ConversationList({
   conversations,
   isLoading,
   activeConversationId,
+  activeRequestId,
   onSelectConversation
 }: ConversationListProps) {
   if (isLoading) {
@@ -40,7 +42,7 @@ export function ConversationList({
         <div
           key={`${conv.userId}-${conv.requestId}`}
           className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-            activeConversationId === conv.userId
+            activeConversationId === conv.userId && activeRequestId === conv.requestId
               ? "bg-[#00aff5] text-white"
               : "hover:bg-gray-100"
           }`}
@@ -49,6 +51,7 @@ export function ConversationList({
               userId: conv.userId,
               userName: conv.userName || `Client ${conv.userId}`,
               requestId: conv.requestId,
+              sourceTab: conv.sourceTab
             })
           }
         >
@@ -74,7 +77,7 @@ export function ConversationList({
                 <FileText className="h-3 w-3 opacity-60" />
                 <p
                   className={`text-xs truncate ${
-                    activeConversationId === conv.userId
+                    activeConversationId === conv.userId && activeRequestId === conv.requestId
                       ? "opacity-90"
                       : "opacity-60"
                   }`}
@@ -87,7 +90,7 @@ export function ConversationList({
               <Badge 
                 variant="default" 
                 className={`mt-1 ${
-                  activeConversationId === conv.userId
+                  activeConversationId === conv.userId && activeRequestId === conv.requestId
                     ? "bg-white text-[#00aff5]"
                     : "bg-[#00aff5]"
                 }`}

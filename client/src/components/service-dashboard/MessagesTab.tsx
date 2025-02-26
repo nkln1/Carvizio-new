@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationView } from "./messages/ConversationView";
+import { ConversationList } from "./messages/ConversationList";
 import { ConversationInfo } from "@/pages/ServiceDashboard";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
@@ -66,17 +67,50 @@ export default function MessagesTab({
     const loadDetails = async () => {
       if (activeConversation?.requestId) {
         try {
-          const request = await loadRequestDetails(activeConversation.requestId);
-          setActiveRequest(request);
+          // Încercăm să încărcăm detaliile cererii
+          const requestData = await loadRequestDetails(activeConversation.requestId);
+          console.log("Request details loaded:", requestData);
 
+          // Verificăm dacă au fost încărcate datele corecte (și nu doar un cod de status)
+          if (requestData && typeof requestData === 'object' && 
+              (requestData.title || requestData.description)) {
+            setActiveRequest(requestData);
+          } else {
+            console.error('Invalid request data structure:', requestData);
+            // Încercăm să setăm un obiect minimal pentru a afișa ceva în dialog
+            setActiveRequest({
+              title: "Informațiile cererii nu sunt disponibile complet",
+              description: "Detaliile complete nu au putut fi încărcate.",
+              status: typeof requestData === 'object' && requestData.status ? 
+                     requestData.status : "Necunoscut"
+            });
+          }
+
+          // Încărcăm detaliile ofertei dacă este cazul
           if (activeConversation.sourceTab && ['sent-offer', 'accepted-offer'].includes(activeConversation.sourceTab)) {
-            const offer = await loadOfferDetails(activeConversation.requestId);
-            setOfferDetails(offer);
+            try {
+              const offerData = await loadOfferDetails(activeConversation.requestId);
+              if (offerData && typeof offerData === 'object' && 
+                  (offerData.title || offerData.price || offerData.details)) {
+                setOfferDetails(offerData);
+              } else {
+                console.error('Invalid offer data structure:', offerData);
+                setOfferDetails(null);
+              }
+            } catch (offerError) {
+              console.error('Error loading offer details:', offerError);
+              setOfferDetails(null);
+            }
           } else {
             setOfferDetails(null); // Clear offer details if not from offer tabs
           }
         } catch (error) {
           console.error('Error loading conversation details:', error);
+          setActiveRequest({
+            title: "Eroare la încărcarea datelor",
+            description: "Nu s-au putut încărca detaliile cererii.",
+            status: "Eroare"
+          });
         }
       }
     };
@@ -95,6 +129,7 @@ export default function MessagesTab({
     userId: number;
     userName: string;
     requestId: number;
+    sourceTab?: string;
   }) => {
     setActiveConversation(conv);
     if (initialConversation && onConversationClear) {
@@ -106,14 +141,22 @@ export default function MessagesTab({
         const request = await loadRequestDetails(conv.requestId);
         setActiveRequest(request);
 
-        const offer = await loadOfferDetails(conv.requestId);
-        if (offer) {
-          setOfferDetails(offer);
+        if (conv.sourceTab && ['sent-offer', 'accepted-offer'].includes(conv.sourceTab)) {
+          const offer = await loadOfferDetails(conv.requestId);
+          if (offer) {
+            setOfferDetails(offer);
+          }
+        } else {
+          setOfferDetails(null);
         }
       }
     } catch (error) {
       console.error('Error loading conversation details:', error);
     }
+  };
+
+  const handleViewDetails = () => {
+    setShowDetailsDialog(true);
   };
 
   if (!user) {
@@ -134,44 +177,13 @@ export default function MessagesTab({
       <CardContent>
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
-            {conversations.map((conv) => (
-              <Card 
-                key={`${conv.userId}-${conv.requestId}`}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => handleConversationSelect({
-                  userId: conv.userId,
-                  userName: conv.userName || `Client ${conv.userId}`,
-                  requestId: conv.requestId,
-                })}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-[#00aff5]" />
-                    {conv.userName || `Client ${conv.userId}`}
-                  </CardTitle>
-                  {conv.requestTitle && (
-                    <CardDescription className="truncate">
-                      {conv.requestTitle}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 truncate">{conv.lastMessage}</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-gray-500">
-                      {conv.lastMessageDate
-                        ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm")
-                        : ""}
-                    </span>
-                    {conv.unreadCount > 0 && (
-                      <span className="bg-[#00aff5] text-white px-2 py-0.5 rounded-full text-xs">
-                        {conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <ConversationList 
+              conversations={conversations}
+              isLoading={isLoadingConversations}
+              activeConversationId={activeConversation?.userId}
+              activeRequestId={activeConversation?.requestId}
+              onSelectConversation={handleConversationSelect}
+            />
           </div>
         ) : (
           <div className="space-y-4">
@@ -183,17 +195,6 @@ export default function MessagesTab({
               >
                 ← Înapoi la conversații
               </Button>
-              {activeRequest && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-                  onClick={() => setShowDetailsDialog(true)}
-                >
-                  <Info className="h-4 w-4 mr-2" />
-                  Vezi Detalii
-                </Button>
-              )}
             </div>
 
             <Card className="fixed-height-card overflow-hidden">
@@ -204,6 +205,8 @@ export default function MessagesTab({
                 isLoading={isLoadingMessages}
                 onSendMessage={sendMessage}
                 onBack={handleBack}
+                onViewDetails={handleViewDetails}
+                showDetailsButton={!!activeConversation.requestId}
               />
             </Card>
           </div>
@@ -256,16 +259,40 @@ export default function MessagesTab({
                     <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="text-sm text-gray-600">Titlu Cerere</p>
-                        <p className="font-medium">{activeRequest.title}</p>
+                        <p className="font-medium">{activeRequest.title || "Nedisponibil"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Descriere</p>
-                        <p className="font-medium">{activeRequest.description}</p>
+                        <p className="font-medium">{activeRequest.description || "Nedisponibil"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Status</p>
-                        <p className="font-medium">{activeRequest.status}</p>
+                        <p className="font-medium">
+                          {typeof activeRequest.status === 'number' ? 
+                            `Cod status: ${activeRequest.status}` : 
+                            activeRequest.status || "Necunoscut"}
+                        </p>
                       </div>
+                      {activeRequest.preferredDate && (
+                        <div>
+                          <p className="text-sm text-gray-600">Data preferată</p>
+                          <p className="font-medium">
+                            {typeof activeRequest.preferredDate === 'string' ? 
+                              format(new Date(activeRequest.preferredDate), "dd.MM.yyyy") : 
+                              "Nedisponibil"}
+                          </p>
+                        </div>
+                      )}
+                      {activeRequest.cities && activeRequest.county && (
+                        <div>
+                          <p className="text-sm text-gray-600">Locație</p>
+                          <p className="font-medium">
+                            {Array.isArray(activeRequest.cities) ? 
+                              `${activeRequest.cities.join(", ")}, ${activeRequest.county}` : 
+                              activeRequest.county || "Nedisponibil"}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
