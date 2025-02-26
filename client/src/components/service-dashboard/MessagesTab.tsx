@@ -6,16 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationView } from "./messages/ConversationView";
+import { ConversationInfo } from "@/pages/ServiceDashboard";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
 
 interface MessagesTabProps {
-  initialConversation?: {
-    userId: number;
-    userName: string;
-    requestId: number;
-  } | null;
+  initialConversation?: ConversationInfo | null;
   onConversationClear?: () => void;
 }
 
@@ -64,6 +61,22 @@ export default function MessagesTab({
       mounted = false;
     };
   }, [wsInitialized]);
+
+  useEffect(() => {
+    const loadDetails = async () => {
+      if (activeConversation?.requestId) {
+        const request = await loadRequestDetails(activeConversation.requestId);
+        setActiveRequest(request);
+
+        if (activeConversation.sourceTab && ['sent-offer', 'accepted-offer'].includes(activeConversation.sourceTab)) {
+          const offer = await loadOfferDetails(activeConversation.requestId);
+          setOfferDetails(offer);
+        }
+      }
+    };
+
+    loadDetails();
+  }, [activeConversation]);
 
   const handleBack = () => {
     setActiveConversation(null);
@@ -158,15 +171,17 @@ export default function MessagesTab({
               >
                 ← Înapoi la conversații
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-auto bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-                onClick={() => setShowDetailsDialog(true)}
-              >
-                <Info className="h-4 w-4 mr-2" />
-                Vezi Detalii Cerere și Ofertă
-              </Button>
+              {activeRequest && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                  onClick={() => setShowDetailsDialog(true)}
+                >
+                  <Info className="h-4 w-4 mr-2" />
+                  Vezi Detalii
+                </Button>
+              )}
             </div>
 
             <Card className="fixed-height-card overflow-hidden">
@@ -185,52 +200,65 @@ export default function MessagesTab({
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Detalii Complete Cerere și Ofertă</DialogTitle>
+              <DialogTitle>
+                {offerDetails ? "Detalii Complete Ofertă" : "Detalii Cerere"}
+              </DialogTitle>
               <DialogDescription>
-                Vizualizați toate detaliile cererii și ofertei asociate acestei conversații
+                {offerDetails
+                  ? "Vizualizați toate detaliile cererii și ofertei asociate acestei conversații"
+                  : "Vizualizați toate detaliile cererii asociate acestei conversații"
+                }
               </DialogDescription>
             </DialogHeader>
-            {offerDetails && (
-              <ScrollArea className="h-full max-h-[60vh] pr-4">
-                <div className="space-y-6 p-2">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="text-sm text-gray-600">Titlu</p>
-                          <p className="font-medium">{offerDetails.title}</p>
+            <ScrollArea className="h-full max-h-[60vh] pr-4">
+              <div className="space-y-6 p-2">
+                {offerDetails && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-600">Titlu</p>
+                        <p className="font-medium">{offerDetails.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Preț</p>
+                        <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Status</p>
+                        <p className="font-medium">{offerDetails.status}</p>
+                      </div>
+                      {offerDetails.details && (
+                        <div className="col-span-2">
+                          <p className="text-sm text-gray-600">Detalii</p>
+                          <p className="font-medium">{offerDetails.details}</p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Preț</p>
-                          <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Status</p>
-                          <p className="font-medium">{offerDetails.status}</p>
-                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeRequest && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Detalii Cerere</h3>
+                    <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-600">Titlu Cerere</p>
+                        <p className="font-medium">{activeRequest.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Descriere</p>
+                        <p className="font-medium">{activeRequest.description}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Status</p>
+                        <p className="font-medium">{activeRequest.status}</p>
                       </div>
                     </div>
-
-                    {activeRequest && (
-                      <div>
-                        <h3 className="font-medium text-lg mb-2">Detalii Cerere</h3>
-                        <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="text-sm text-gray-600">Titlu Cerere</p>
-                            <p className="font-medium">{activeRequest.title}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">Descriere</p>
-                            <p className="font-medium">{activeRequest.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-              </ScrollArea>
-            )}
+                )}
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </CardContent>

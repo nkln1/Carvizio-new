@@ -27,16 +27,19 @@ const TAB_NAMES: Record<TabId, string> = {
   "cont": "Cont",
 };
 
+export interface ConversationInfo {
+  userId: number;
+  userName: string;
+  requestId: number;
+  sourceTab?: 'request' | 'sent-offer' | 'accepted-offer';
+}
+
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeConversation, setActiveConversation] = useState<{
-    userId: number;
-    userName: string;
-    requestId: number;
-  } | null>(null);
+  const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
   const { toast } = useToast();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
@@ -59,8 +62,8 @@ export default function ServiceDashboard() {
     setIsMenuOpen(false);
   };
 
-  const handleMessageClick = (userId: number, userName: string, requestId: number) => {
-    setActiveConversation({ userId, userName, requestId });
+  const handleMessageClick = (conversationInfo: ConversationInfo) => {
+    setActiveConversation(conversationInfo);
     handleTabChange("mesaje");
   };
 
