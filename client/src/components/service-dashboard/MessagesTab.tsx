@@ -67,33 +67,56 @@ export default function MessagesTab({
     const loadDetails = async () => {
       if (activeConversation?.requestId) {
         try {
+          // Încercăm să încărcăm detaliile cererii
           const requestData = await loadRequestDetails(activeConversation.requestId);
-          if (requestData && typeof requestData === 'object') {
+          console.log("Request details loaded:", requestData);
+
+          // Verificăm dacă au fost încărcate datele corecte (și nu doar un cod de status)
+          if (requestData && typeof requestData === 'object' && 
+              (requestData.title || requestData.description)) {
             setActiveRequest(requestData);
+          } else {
+            console.error('Invalid request data structure:', requestData);
+            // Încercăm să setăm un obiect minimal pentru a afișa ceva în dialog
+            setActiveRequest({
+              title: "Informațiile cererii nu sunt disponibile complet",
+              description: "Detaliile complete nu au putut fi încărcate.",
+              status: typeof requestData === 'object' && requestData.status ? 
+                     requestData.status : "Necunoscut"
+            });
           }
 
+          // Încărcăm detaliile ofertei dacă este cazul
           if (activeConversation.sourceTab && ['sent-offer', 'accepted-offer'].includes(activeConversation.sourceTab)) {
             try {
               const offerData = await loadOfferDetails(activeConversation.requestId);
-              if (offerData && typeof offerData === 'object') {
+              if (offerData && typeof offerData === 'object' && 
+                  (offerData.title || offerData.price || offerData.details)) {
                 setOfferDetails(offerData);
+              } else {
+                console.error('Invalid offer data structure:', offerData);
+                setOfferDetails(null);
               }
-            } catch (error) {
-              console.error('Error loading offer details:', error);
+            } catch (offerError) {
+              console.error('Error loading offer details:', offerError);
               setOfferDetails(null);
             }
           } else {
-            setOfferDetails(null);
+            setOfferDetails(null); // Clear offer details if not from offer tabs
           }
         } catch (error) {
-          console.error('Error loading request details:', error);
-          setActiveRequest(null);
+          console.error('Error loading conversation details:', error);
+          setActiveRequest({
+            title: "Eroare la încărcarea datelor",
+            description: "Nu s-au putut încărca detaliile cererii.",
+            status: "Eroare"
+          });
         }
       }
     };
 
     loadDetails();
-  }, [activeConversation, loadRequestDetails, loadOfferDetails]);
+  }, [activeConversation]);
 
   const handleBack = () => {
     setActiveConversation(null);
@@ -102,7 +125,12 @@ export default function MessagesTab({
     }
   };
 
-  const handleConversationSelect = async (conv: ConversationInfo) => {
+  const handleConversationSelect = async (conv: {
+    userId: number;
+    userName: string;
+    requestId: number;
+    sourceTab?: string;
+  }) => {
     setActiveConversation(conv);
     if (initialConversation && onConversationClear) {
       onConversationClear();
@@ -115,7 +143,9 @@ export default function MessagesTab({
 
         if (conv.sourceTab && ['sent-offer', 'accepted-offer'].includes(conv.sourceTab)) {
           const offer = await loadOfferDetails(conv.requestId);
-          setOfferDetails(offer);
+          if (offer) {
+            setOfferDetails(offer);
+          }
         } else {
           setOfferDetails(null);
         }
@@ -157,7 +187,7 @@ export default function MessagesTab({
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
               <Button 
                 onClick={handleBack}
                 variant="ghost"
@@ -165,16 +195,6 @@ export default function MessagesTab({
               >
                 ← Înapoi la conversații
               </Button>
-              {activeRequest && (
-                <Button
-                  onClick={handleViewDetails}
-                  variant="outline"
-                  className="text-[#00aff5] hover:text-[#0099d6] hover:bg-[#00aff5]/10"
-                >
-                  <Info className="h-4 w-4 mr-2" />
-                  Vezi detalii
-                </Button>
-              )}
             </div>
 
             <Card className="fixed-height-card overflow-hidden">
@@ -239,21 +259,27 @@ export default function MessagesTab({
                     <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="text-sm text-gray-600">Titlu Cerere</p>
-                        <p className="font-medium">{activeRequest.title}</p>
+                        <p className="font-medium">{activeRequest.title || "Nedisponibil"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Descriere</p>
-                        <p className="font-medium whitespace-pre-line">{activeRequest.description}</p>
+                        <p className="font-medium">{activeRequest.description || "Nedisponibil"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Status</p>
-                        <p className="font-medium">{activeRequest.status}</p>
+                        <p className="font-medium">
+                          {typeof activeRequest.status === 'number' ? 
+                            `Cod status: ${activeRequest.status}` : 
+                            activeRequest.status || "Necunoscut"}
+                        </p>
                       </div>
                       {activeRequest.preferredDate && (
                         <div>
                           <p className="text-sm text-gray-600">Data preferată</p>
                           <p className="font-medium">
-                            {format(new Date(activeRequest.preferredDate), "dd.MM.yyyy")}
+                            {typeof activeRequest.preferredDate === 'string' ? 
+                              format(new Date(activeRequest.preferredDate), "dd.MM.yyyy") : 
+                              "Nedisponibil"}
                           </p>
                         </div>
                       )}
@@ -261,7 +287,9 @@ export default function MessagesTab({
                         <div>
                           <p className="text-sm text-gray-600">Locație</p>
                           <p className="font-medium">
-                            {activeRequest.cities.join(", ")}, {activeRequest.county}
+                            {Array.isArray(activeRequest.cities) ? 
+                              `${activeRequest.cities.join(", ")}, ${activeRequest.county}` : 
+                              activeRequest.county || "Nedisponibil"}
                           </p>
                         </div>
                       )}
