@@ -42,7 +42,7 @@ export default function MessagesTab({
   const [wsInitialized, setWsInitialized] = useState(false);
 
   // Query for fetching request details when needed
-  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery<RequestType>({
+  const { data: requestDetails, isLoading: isLoadingRequest, refetch: refetchRequestDetails } = useQuery<RequestType>({
     queryKey: ['request-details', activeConversation?.requestId],
     enabled: !!activeConversation?.requestId && !!showDetailsDialog,
     queryFn: async () => {
@@ -59,12 +59,7 @@ export default function MessagesTab({
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Request details fetch failed:', {
-          status: response.status,
-          error: errorData
-        });
-        throw new Error('Failed to fetch request details');
+        throw new Error(`Failed to fetch request details: ${response.status}`);
       }
 
       const data = await response.json();
@@ -72,17 +67,9 @@ export default function MessagesTab({
     },
     staleTime: 15000,
     cacheTime: 30000,
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
-    refetchOnWindowFocus: false,
-    onError: (error) => {
-      console.error('Error fetching request details:', error);
-      toast({
-        variant: "destructive",
-        title: "Eroare la încărcarea detaliilor",
-        description: "Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou."
-      });
-    }
+    refetchOnWindowFocus: false
   });
 
   // WebSocket initialization
@@ -194,7 +181,13 @@ export default function MessagesTab({
                 Informații despre cererea selectată
               </DialogDescription>
             </DialogHeader>
-            {requestDetails ? (
+            {isLoadingRequest ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin">
+                  <Loader2 className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </div>
+            ) : requestDetails ? (
               <div className="space-y-4">
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
@@ -238,16 +231,14 @@ export default function MessagesTab({
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-medium text-gray-900">Nu s-au putut încărca detaliile cererii</p>
-                  <p className="text-sm text-gray-500">Vă rugăm să reîmprospătați pagina sau să încercați din nou mai târziu</p>
+                  <p className="text-sm text-gray-500">Vă rugăm să încercați din nou</p>
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => {
-                    setShowDetailsDialog(false);
-                    setTimeout(() => setShowDetailsDialog(true), 100);
-                  }}
+                  onClick={() => refetchRequestDetails()}
+                  className="flex items-center gap-2"
                 >
-                  Încearcă din nou
+                  <span>Încearcă din nou</span>
                 </Button>
               </div>
             )}
