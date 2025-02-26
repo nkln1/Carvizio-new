@@ -1081,7 +1081,7 @@ export function registerRoutes(app: Express): Server {
   // Add this endpoint after the existing /api/messages GET endpoint
   app.post("/api/service/messages/send", validateFirebaseToken, async (req, res) => {
     try {
-      const { content, receiverId, requestId } = req.body;
+      const { content, receiverId, requestId, offerId } = req.body;
 
       if (!requestId) {
         return res.status(400).json({ error: "requestId is required" });
@@ -1112,7 +1112,8 @@ export function registerRoutes(app: Express): Server {
         senderRole: "service",
         receiverId: receiver.id,
         receiverRole: "client",
-        content
+        content,
+        offerId: offerId || null
       });
 
       // Add names to the response

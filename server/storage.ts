@@ -524,17 +524,36 @@ export class DatabaseStorage implements IStorage {
     return this.getServiceProviderById(id);
   }
 
-  async createMessage(message: InsertMessage): Promise<Message> {
+  async createMessage({
+    requestId,
+    senderId,
+    senderRole,
+    receiverId,
+    receiverRole,
+    content,
+    offerId
+  }: {
+    requestId: number;
+    senderId: number;
+    senderRole: "client" | "service";
+    receiverId: number;
+    receiverRole: "client" | "service";
+    content: string;
+    offerId?: number | null;
+  }): Promise<Message> {
     try {
-      const [newMessage] = await db
-        .insert(messages)
-        .values({
-          ...message,
-          isRead: false,
-          createdAt: new Date()
-        })
-        .returning();
-      return newMessage;
+      const [message] = await db.insert(messages).values({
+        requestId,
+        senderId,
+        senderRole,
+        receiverId,
+        receiverRole,
+        content,
+        offerId: offerId || null,
+        isRead: false,
+        createdAt: new Date()
+      }).returning();
+      return message;
     } catch (error) {
       console.error('Error creating message:', error);
       throw error;
