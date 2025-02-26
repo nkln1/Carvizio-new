@@ -10,7 +10,7 @@ import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
-
+import { wss } from './index';
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -412,6 +412,17 @@ export function registerRoutes(app: Express): Server {
 
       const request = await storage.createRequest(requestData);
 
+      // Broadcast the new request to all connected services
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'NEW_REQUEST',
+            payload: request,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
+
       res.status(201).json(request);
     } catch (error: any) {
       console.error("Error creating request:", error);
@@ -612,6 +623,21 @@ export function registerRoutes(app: Express): Server {
         requestUserName: requestUser.name
       });
 
+      // Send notification through WebSocket with improved error handling
+      wss.clients.forEach((client) => {
+        try {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'NEW_OFFER',
+              payload: offer,
+              timestamp: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error sending WebSocket message:', error);
+        }
+      });
+
       res.status(201).json(offer);
     } catch (error: any) {
       console.error("Error creating service offer:", error);
@@ -781,6 +807,29 @@ export function registerRoutes(app: Express): Server {
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
       await storage.updateRequest(offer.requestId, { status: "Rezolvat" });
 
+      // Send notifications through WebSocket with improved error handling
+      wss.clients.forEach((client) => {
+        try {
+          if (client.readyState === WebSocket.OPEN) {
+            // Notify about offer status change
+            client.send(JSON.stringify({
+              type: 'OFFER_STATUS_CHANGED',
+              payload: { ...updatedOffer, status: "Accepted" },
+              timestamp: new Date().toISOString()
+            }));
+
+            // Notify about request status change
+            client.send(JSON.stringify({
+              type: 'REQUEST_STATUS_CHANGED',
+              payload: { requestId: offer.requestId, status: "Rezolvat" },
+              timestamp: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error sending WebSocket message:', error);
+        }
+      });
+
       res.json(updatedOffer);
     } catch (error) {
       console.error("Error accepting offer:", error);
@@ -797,6 +846,21 @@ export function registerRoutes(app: Express): Server {
 
       const offerId = parseInt(req.params.id);
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Rejected");
+
+      // Send notification through WebSocket with improved error handling
+      wss.clients.forEach((client) => {
+        try {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'OFFER_STATUS_CHANGED',
+              payload: { ...updatedOffer, status: "Rejected" },
+              timestamp: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error sending WebSocket message:', error);
+        }
+      });
 
       res.json(updatedOffer);
     } catch (error) {
@@ -815,6 +879,21 @@ export function registerRoutes(app: Express): Server {
 
       const offerId = parseInt(req.params.id);
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Pending");
+
+      // Send notification through WebSocket with improved error handling
+      wss.clients.forEach((client) => {
+        try {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'OFFER_STATUS_CHANGED',
+              payload: { ...updatedOffer, status: "Pending" },
+              timestamp: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error sending WebSocket message:', error);
+        }
+      });
 
       res.json(updatedOffer);
     } catch (error) {
@@ -858,7 +937,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add endpoint to get viewed offers
-app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
+  app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
     try {      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(403).json({ error: "Access denied. Only clients can view their viewed offers." });
@@ -923,6 +1002,17 @@ app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => 
         senderName: await getUserDisplayName(message.senderId, message.senderRole, storage),
         receiverName: await getUserDisplayName(message.receiverId, message.receiverRole, storage)
       };
+
+      // Send real-time notification
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'NEW_MESSAGE',
+            payload: enrichedMessage,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
 
       res.status(201).json(enrichedMessage);
     } catch (error: any) {
@@ -1031,6 +1121,21 @@ app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => 
         senderName: sender.companyName,
         receiverName: receiver.name
       };
+
+      // Send notification through WebSocket with improved error handling
+      wss.clients.forEach((client) => {
+        try {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'NEW_MESSAGE',
+              payload: enrichedMessage,
+              timestamp: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error sending WebSocket message:', error);
+        }
+      });
 
       res.json(enrichedMessage);
     } catch (error) {
@@ -1228,42 +1333,41 @@ app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => 
     }
   });
 
-  const server = createServer(app);
+  const httpServer = createServer(app);
 
-  // Initialize WebSocket server with minimal configuration
-  const wss = new WebSocketServer({ 
-    server,
-    path: '/ws'  // Keep this path consistent with client
+  // Initialize WebSocket server with the correct path to match client
+  const wss = new WebSocketServer({
+    server: httpServer,
+    path: '/api/ws'  // Match the client's WebSocket path
   });
 
-  // WebSocket connection handler
-  wss.on('connection', (ws: WebSocket) => {
+  // WebSocket connection handler with improved error handling
+  wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
-
-    // Send immediate connection acknowledgment
-    ws.send(JSON.stringify({
-      type: 'CONNECTED',
-      timestamp: new Date().toISOString()
-    }));
 
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
         console.log('Received message:', data);
-
-        // Broadcast to all clients except sender
-        wss.clients.forEach(client => {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
-          }
-        });
+        // Handle different message types
+        switch (data.type) {
+          case 'OFFER_SENT':
+            // Broadcast to all connected clients
+            wss.clients.forEach(client => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                  type: 'NEW_OFFER',
+                  payload: data.payload,
+                  timestamp: new Date().toISOString()
+                }));
+              }
+            });
+            break;
+          default:
+            console.log('Unknown message type:', data.type);
+        }
       } catch (error) {
-        console.error('Error processing message:', error);
-        ws.send(JSON.stringify({
-          type: 'ERROR',
-          error: 'Failed to process message',
-          timestamp: new Date().toISOString()
-        }));
+        console.error('Error processing WebSocket message:', error);
       }
     });
 
@@ -1276,5 +1380,5 @@ app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => 
     });
   });
 
-  return server;
+  return httpServer;
 }
