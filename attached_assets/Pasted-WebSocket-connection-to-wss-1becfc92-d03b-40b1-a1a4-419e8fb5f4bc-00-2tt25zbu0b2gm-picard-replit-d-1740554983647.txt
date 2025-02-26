@@ -1,0 +1,77 @@
+WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:535 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/' is invalid.
+    at setupWebSocket (client:535:19)
+    at fallback (client:508:16)
+    at WebSocket.<anonymous> (client:551:7)
+setupWebSocket @ client:535
+fallback @ client:508
+(anonymous) @ client:551
+chunk-RPCDYKBN.js?v=6c365447:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+firebase.ts:27 Firebase auth state: Logged in
+firebase.ts:29 Email verified: true
+firebase.ts:19 Firebase persistence set to LOCAL
+2AuthContext.tsx:40 Firebase persistence set to LOCAL
+websocket.ts:69 Error creating WebSocket: Error: VITE_REPL_URL environment variable is not set
+    at WebSocketService.getWebSocketUrl (websocket.ts:16:13)
+    at WebSocketService.connect (websocket.ts:34:26)
+    at websocket.ts:116:14
+    at new Promise (<anonymous>)
+    at WebSocketService.ensureConnection (websocket.ts:113:32)
+    at setupWebSocket (RequestsTab.tsx:124:32)
+    at RequestsTab.tsx:149:5
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=6c365447:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=6c365447:18156:19)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=6c365447:18129:17)
+connect @ websocket.ts:69
+(anonymous) @ websocket.ts:116
+ensureConnection @ websocket.ts:113
+setupWebSocket @ RequestsTab.tsx:124
+(anonymous) @ RequestsTab.tsx:149
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=6c365447:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=6c365447:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=6c365447:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=6c365447:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=6c365447:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=6c365447:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=6c365447:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=6c365447:19416
+commitRoot @ chunk-RPCDYKBN.js?v=6c365447:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=6c365447:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=6c365447:555
+flush @ @tanstack_react-query.js?v=6c365447:569
+batch @ @tanstack_react-query.js?v=6c365447:587
+dispatch_fn @ @tanstack_react-query.js?v=6c365447:996
+setData @ @tanstack_react-query.js?v=6c365447:696
+onSuccess @ @tanstack_react-query.js?v=6c365447:897
+resolve @ @tanstack_react-query.js?v=6c365447:456
+Promise.then
+run @ @tanstack_react-query.js?v=6c365447:498
+start @ @tanstack_react-query.js?v=6c365447:536
+fetch @ @tanstack_react-query.js?v=6c365447:926
+executeFetch_fn @ @tanstack_react-query.js?v=6c365447:2211
+onSubscribe @ @tanstack_react-query.js?v=6c365447:1898
+subscribe @ @tanstack_react-query.js?v=6c365447:24
+(anonymous) @ @tanstack_react-query.js?v=6c365447:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=6c365447:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=6c365447:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=6c365447:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=6c365447:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=6c365447:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=6c365447:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=6c365447:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=6c365447:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=6c365447:19432
+commitRoot @ chunk-RPCDYKBN.js?v=6c365447:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=6c365447:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18718
+workLoop @ chunk-RPCDYKBN.js?v=6c365447:197
+flushWork @ chunk-RPCDYKBN.js?v=6c365447:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=6c365447:384
+websocket.ts:78 Scheduling reconnect attempt 1/5 in 3000ms

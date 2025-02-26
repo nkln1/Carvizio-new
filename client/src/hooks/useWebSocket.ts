@@ -7,18 +7,19 @@ export function useWebSocket() {
 
   const connect = useCallback(async () => {
     try {
-      // Wait for document to be fully loaded
-      if (document.readyState !== 'complete') {
-        return;
+      // Ensure we have access to environment variables
+      if (!import.meta.env.VITE_REPL_URL) {
+        throw new Error('VITE_REPL_URL not available');
       }
 
-      // Add additional delay to ensure HMR is ready
+      // Wait for any HMR operations to complete
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       await websocketService.ensureConnection();
       setIsConnected(true);
       setError(null);
     } catch (err) {
+      console.error('WebSocket connection error:', err);
       setError(err as Error);
       setIsConnected(false);
     }
@@ -26,23 +27,25 @@ export function useWebSocket() {
 
   useEffect(() => {
     let mounted = true;
+    let cleanup: (() => void) | undefined;
 
-    const initWebSocket = async () => {
-      if (document.readyState === 'complete') {
-        if (mounted) await connect();
-      } else {
-        const onLoad = async () => {
-          if (mounted) await connect();
-        };
-        window.addEventListener('load', onLoad);
-        return () => window.removeEventListener('load', onLoad);
-      }
+    // Only attempt connection if the document is fully loaded
+    const attemptConnection = () => {
+      if (!mounted) return;
+      connect().catch(console.error);
     };
 
-    initWebSocket();
+    if (document.readyState === 'complete') {
+      attemptConnection();
+    } else {
+      const onLoad = () => attemptConnection();
+      window.addEventListener('load', onLoad);
+      cleanup = () => window.removeEventListener('load', onLoad);
+    }
 
     return () => {
       mounted = false;
+      if (cleanup) cleanup();
       websocketService.disconnect();
     };
   }, [connect]);
