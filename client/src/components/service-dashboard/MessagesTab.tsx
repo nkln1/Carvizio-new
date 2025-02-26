@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, Info } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +11,8 @@ import { ConversationInfo } from "@/pages/ServiceDashboard";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface MessagesTabProps {
   initialConversation?: ConversationInfo | null;
@@ -22,6 +24,7 @@ export default function MessagesTab({
   onConversationClear,
 }: MessagesTabProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const {
     activeConversation,
@@ -30,15 +33,42 @@ export default function MessagesTab({
     conversations,
     isLoadingMessages,
     isLoadingConversations,
-    sendMessage,
-    loadRequestDetails,
-    loadOfferDetails
+    sendMessage
   } = useMessagesManagement(initialConversation);
 
-  const [activeRequest, setActiveRequest] = useState<any>(null);
-  const [offerDetails, setOfferDetails] = useState<any>(null);
   const [wsInitialized, setWsInitialized] = useState(false);
 
+  // Query for fetching request details when needed
+  const { data: requestDetails, isLoading: isLoadingRequest } = useQuery({
+    queryKey: ['request-details', activeConversation?.requestId],
+    enabled: !!activeConversation?.requestId,
+    queryFn: async () => {
+      const token = await user?.getIdToken();
+      if (!token || !activeConversation?.requestId) return null;
+
+      const response = await fetch(`/api/service/requests/${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch request details');
+      }
+
+      return response.json();
+    },
+    onError: (error) => {
+      console.error('Error fetching request details:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca detaliile cererii. Încercați din nou.",
+      });
+    }
+  });
+
+  // WebSocket initialization
   useEffect(() => {
     let mounted = true;
 
@@ -63,61 +93,6 @@ export default function MessagesTab({
     };
   }, [wsInitialized]);
 
-  useEffect(() => {
-    const loadDetails = async () => {
-      if (activeConversation?.requestId) {
-        try {
-          // Încercăm să încărcăm detaliile cererii
-          const requestData = await loadRequestDetails(activeConversation.requestId);
-          console.log("Request details loaded:", requestData);
-
-          // Verificăm dacă au fost încărcate datele corecte (și nu doar un cod de status)
-          if (requestData && typeof requestData === 'object' && 
-              (requestData.title || requestData.description)) {
-            setActiveRequest(requestData);
-          } else {
-            console.error('Invalid request data structure:', requestData);
-            // Încercăm să setăm un obiect minimal pentru a afișa ceva în dialog
-            setActiveRequest({
-              title: "Informațiile cererii nu sunt disponibile complet",
-              description: "Detaliile complete nu au putut fi încărcate.",
-              status: typeof requestData === 'object' && requestData.status ? 
-                     requestData.status : "Necunoscut"
-            });
-          }
-
-          // Încărcăm detaliile ofertei dacă este cazul
-          if (activeConversation.sourceTab && ['sent-offer', 'accepted-offer'].includes(activeConversation.sourceTab)) {
-            try {
-              const offerData = await loadOfferDetails(activeConversation.requestId);
-              if (offerData && typeof offerData === 'object' && 
-                  (offerData.title || offerData.price || offerData.details)) {
-                setOfferDetails(offerData);
-              } else {
-                console.error('Invalid offer data structure:', offerData);
-                setOfferDetails(null);
-              }
-            } catch (offerError) {
-              console.error('Error loading offer details:', offerError);
-              setOfferDetails(null);
-            }
-          } else {
-            setOfferDetails(null); // Clear offer details if not from offer tabs
-          }
-        } catch (error) {
-          console.error('Error loading conversation details:', error);
-          setActiveRequest({
-            title: "Eroare la încărcarea datelor",
-            description: "Nu s-au putut încărca detaliile cererii.",
-            status: "Eroare"
-          });
-        }
-      }
-    };
-
-    loadDetails();
-  }, [activeConversation]);
-
   const handleBack = () => {
     setActiveConversation(null);
     if (initialConversation && onConversationClear) {
@@ -125,7 +100,7 @@ export default function MessagesTab({
     }
   };
 
-  const handleConversationSelect = async (conv: {
+  const handleConversationSelect = (conv: {
     userId: number;
     userName: string;
     requestId: number;
@@ -134,24 +109,6 @@ export default function MessagesTab({
     setActiveConversation(conv);
     if (initialConversation && onConversationClear) {
       onConversationClear();
-    }
-
-    try {
-      if (conv.requestId) {
-        const request = await loadRequestDetails(conv.requestId);
-        setActiveRequest(request);
-
-        if (conv.sourceTab && ['sent-offer', 'accepted-offer'].includes(conv.sourceTab)) {
-          const offer = await loadOfferDetails(conv.requestId);
-          if (offer) {
-            setOfferDetails(offer);
-          }
-        } else {
-          setOfferDetails(null);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading conversation details:', error);
     }
   };
 
@@ -215,88 +172,55 @@ export default function MessagesTab({
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>
-                {offerDetails ? "Detalii Complete Ofertă" : "Detalii Cerere"}
-              </DialogTitle>
+              <DialogTitle>Detalii Cerere</DialogTitle>
               <DialogDescription>
-                {offerDetails
-                  ? "Vizualizați toate detaliile cererii și ofertei asociate acestei conversații"
-                  : "Vizualizați toate detaliile cererii asociate acestei conversații"
-                }
+                Vizualizați toate detaliile cererii asociate acestei conversații
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-full max-h-[60vh] pr-4">
-              <div className="space-y-6 p-2">
-                {offerDetails && (
-                  <div>
-                    <h3 className="font-medium text-lg mb-2">Detalii Ofertă</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm text-gray-600">Titlu</p>
-                        <p className="font-medium">{offerDetails.title}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Preț</p>
-                        <p className="font-medium text-[#00aff5]">{offerDetails.price} RON</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Status</p>
-                        <p className="font-medium">{offerDetails.status}</p>
-                      </div>
-                      {offerDetails.details && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-600">Detalii</p>
-                          <p className="font-medium">{offerDetails.details}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {activeRequest && (
+              {isLoadingRequest ? (
+                <div className="flex justify-center items-center py-8">
+                  <p className="text-muted-foreground">Se încarcă detaliile...</p>
+                </div>
+              ) : requestDetails ? (
+                <div className="space-y-6 p-2">
                   <div>
                     <h3 className="font-medium text-lg mb-2">Detalii Cerere</h3>
                     <div className="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="text-sm text-gray-600">Titlu Cerere</p>
-                        <p className="font-medium">{activeRequest.title || "Nedisponibil"}</p>
+                        <p className="font-medium">{requestDetails.title}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Descriere</p>
-                        <p className="font-medium">{activeRequest.description || "Nedisponibil"}</p>
+                        <p className="whitespace-pre-line font-medium">{requestDetails.description}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Status</p>
+                        <p className="font-medium">{requestDetails.status}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Data preferată</p>
                         <p className="font-medium">
-                          {typeof activeRequest.status === 'number' ? 
-                            `Cod status: ${activeRequest.status}` : 
-                            activeRequest.status || "Necunoscut"}
+                          {format(new Date(requestDetails.preferredDate), "dd.MM.yyyy")}
                         </p>
                       </div>
-                      {activeRequest.preferredDate && (
-                        <div>
-                          <p className="text-sm text-gray-600">Data preferată</p>
-                          <p className="font-medium">
-                            {typeof activeRequest.preferredDate === 'string' ? 
-                              format(new Date(activeRequest.preferredDate), "dd.MM.yyyy") : 
-                              "Nedisponibil"}
-                          </p>
-                        </div>
-                      )}
-                      {activeRequest.cities && activeRequest.county && (
-                        <div>
-                          <p className="text-sm text-gray-600">Locație</p>
-                          <p className="font-medium">
-                            {Array.isArray(activeRequest.cities) ? 
-                              `${activeRequest.cities.join(", ")}, ${activeRequest.county}` : 
-                              activeRequest.county || "Nedisponibil"}
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <p className="text-sm text-gray-600">Locație</p>
+                        <p className="font-medium">
+                          {Array.isArray(requestDetails.cities) 
+                            ? `${requestDetails.cities.join(", ")}, ${requestDetails.county}`
+                            : requestDetails.county}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  Nu s-au putut încărca detaliile cererii. Vă rugăm să încercați din nou.
+                </div>
+              )}
             </ScrollArea>
           </DialogContent>
         </Dialog>
