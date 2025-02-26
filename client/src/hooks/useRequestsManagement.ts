@@ -17,29 +17,33 @@ export function useRequestsManagement() {
   const queryClient = useQueryClient();
 
   // Optimized requests query with proper caching
-  const { data: requests = [], isLoading, error } = useQuery<Request[]>({
+  const { data: requests = [], isLoading, error } = useQuery({
     queryKey: ['/api/service/requests'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/requests', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
+      const response = await apiRequest('GET', '/api/service/requests');
       if (!response.ok) {
         throw new Error('Failed to fetch requests');
       }
-
       return response.json();
     },
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     refetchOnWindowFocus: false,
     retry: 2
   });
+
+  // Function to mark a request as viewed
+  const markRequestViewed = async (requestId: number) => {
+    try {
+      await apiRequest('POST', `/api/service/viewed-requests`, {
+        body: { requestId }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error marking request as viewed:', error);
+      return false;
+    }
+  };
 
   // Optimized handler for request cancellation
   const handleCancelRequest = async (requestId: number) => {
@@ -97,7 +101,7 @@ export function useRequestsManagement() {
     if (!searchTerm) return requests;
 
     const searchLower = searchTerm.toLowerCase();
-    return requests.filter(request =>
+    return requests.filter((request: Request) =>
       request.title.toLowerCase().includes(searchLower) ||
       request.description.toLowerCase().includes(searchLower) ||
       request.cities?.join(", ").toLowerCase().includes(searchLower) ||
@@ -124,5 +128,6 @@ export function useRequestsManagement() {
     totalPages,
     startIndex,
     handleCancelRequest,
+    markRequestViewed
   };
 }

@@ -21,6 +21,7 @@ import { RequestCard } from "./RequestCard";
 import { RequestDetailsDialog } from "./RequestDetailsDialog";
 import { useRequestsManagement } from "@/hooks/useRequestsManagement";
 import type { ConversationInfo } from "@/pages/ServiceDashboard";
+import { useToast } from "@/hooks/use-toast";
 
 interface RequestsTabProps {
   onMessageClick?: (conversationInfo: ConversationInfo) => void;
@@ -29,6 +30,8 @@ interface RequestsTabProps {
 export function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [viewedRequests, setViewedRequests] = useState<Set<number>>(new Set());
+  const { toast } = useToast();
+
   const {
     requests,
     totalRequests,
@@ -59,15 +62,26 @@ export function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
-  const handleMessageClick = (request: Request) => {
+  const handleMessageClick = async (request: Request) => {
     if (onMessageClick) {
-      const conversationInfo: ConversationInfo = {
-        userId: request.clientId,
-        userName: request.clientName || `Client ${request.clientId}`,
-        requestId: request.id,
-        sourceTab: 'request'
-      };
-      onMessageClick(conversationInfo);
+      try {
+        // Create conversation info
+        const conversationInfo: ConversationInfo = {
+          userId: request.clientId,
+          userName: request.clientName || `Client ${request.clientId}`,
+          requestId: request.id,
+          sourceTab: 'request'
+        };
+
+        onMessageClick(conversationInfo);
+      } catch (error) {
+        console.error('Error starting conversation:', error);
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Nu s-a putut iniția conversația. Vă rugăm să încercați din nou.",
+        });
+      }
     }
   };
 
