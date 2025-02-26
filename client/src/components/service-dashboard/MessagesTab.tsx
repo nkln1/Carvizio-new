@@ -119,7 +119,10 @@ const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null)
   };
 
   const handleViewDetails = () => {
-    setShowDetailsDialog(true);
+    if (activeConversation?.requestId && requestDetails) {
+      setSelectedRequest(requestDetails);
+      setShowViewDialog(true);
+    }
   };
 
   if (!user) {
