@@ -47,22 +47,50 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [localViewedRequests, setLocalViewedRequests] = useState<number[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Query to fetch requests
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
     queryKey: ['/api/service/requests'],
-    staleTime: 5000 // Add staleTime to prevent unnecessary refetches
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch requests');
+      }
+
+      return response.json();
+    },
+    staleTime: 0
   });
 
-  // Query to fetch viewed requests - only on initial load
-  const { data: viewedRequestIds = [], isFetchingViewedRequests } = useQuery<number[]>({
+  // Query to fetch viewed requests
+  const { data: viewedRequestIds = [], isFetching: isFetchingViewedRequests } = useQuery<number[]>({
     queryKey: ['/api/service/viewed-requests'],
-    staleTime: Infinity, // Never refetch automatically
-    onSuccess: (data) => {
-      setLocalViewedRequests(data);
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/viewed-requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch viewed requests');
+      }
+
+      const viewedRequests = await response.json();
+      return viewedRequests.map((vr: any) => vr.requestId);
     }
   });
 
@@ -82,8 +110,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         throw new Error('Failed to mark request as viewed');
       }
 
-      // Update local state instead of refetching
-      setLocalViewedRequests(prev => [...prev, requestId]);
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/viewed-requests'] });
     } catch (error) {
       console.error('Error marking request as viewed:', error);
     }
@@ -129,16 +156,14 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   }, [queryClient, toast]);
 
   const handleViewRequest = async (request: RequestType) => {
-    if (!localViewedRequests.includes(request.id)) {
-      await markRequestAsViewed(request.id);
-    }
+    await markRequestAsViewed(request.id);
     setSelectedRequest(request);
     setShowViewDialog(true);
   };
 
   const filteredRequests = requests.filter(req => {
     if (req.status !== "Active") return false;
-    if (showOnlyNew && localViewedRequests.includes(req.id)) return false;
+    if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
     return true;
   });
 
@@ -147,7 +172,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
-  const newRequestsCount = filteredRequests.filter(req => !localViewedRequests.includes(req.id)).length;
+  const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
 
   const handleSubmitOffer = async (values: any) => {
     try {
@@ -171,6 +196,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         throw new Error(errorData.message || "Failed to submit offer");
       }
 
+      const data = await response.json();
       await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
       setShowOfferDialog(false);
       toast({
@@ -189,10 +215,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const handleMessageClick = async (request: RequestType) => {
     try {
-      if (!localViewedRequests.includes(request.id)) {
-        await markRequestAsViewed(request.id);
-      }
-
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -270,7 +292,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {request.title}
-                          {!localViewedRequests.includes(request.id) && (
+                          {!viewedRequestIds.includes(request.id) && (
                             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
                               NOU
                             </span>
@@ -305,7 +327,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleMessageClick(request)}
+                            onClick={() => {
+                              markRequestAsViewed(request.id);
+                              handleMessageClick(request);
+                            }}
                             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -316,9 +341,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                if (!localViewedRequests.includes(request.id)) {
-                                  markRequestAsViewed(request.id);
-                                }
+                                markRequestAsViewed(request.id);
                                 setSelectedRequest(request);
                                 setShowOfferDialog(true);
                               }}
