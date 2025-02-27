@@ -702,6 +702,17 @@ export function registerRoutes(app: Express): Server {
       if (!requestUser) {
         return res.status(404).json({ error: "Request user not found" });
       }
+      
+      // Check if this service provider has already sent an offer for this request
+      const existingOffers = await storage.getSentOffersByServiceProvider(provider.id);
+      const hasExistingOffer = existingOffers.some(offer => offer.requestId === req.body.requestId);
+      
+      if (hasExistingOffer) {
+        return res.status(400).json({ 
+          error: "Cannot create offer", 
+          message: "Ați trimis deja o ofertă pentru această cerere" 
+        });
+      }
 
       // Convert ISO date strings back to Date objects
       const availableDates = req.body.availableDates.map((dateStr: string) => new Date(dateStr));
