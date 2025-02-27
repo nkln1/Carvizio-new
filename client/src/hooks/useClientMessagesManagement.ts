@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -20,12 +20,12 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
 
   // Fetch conversations
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
-    queryKey: ['/api/client/conversations'],
+    queryKey: ['/api/messages/conversations'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/client/conversations', {
+      const response = await fetch('/api/messages/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -41,14 +41,14 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
 
   // Fetch messages for active conversation
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ['/api/client/messages', activeConversation?.requestId, activeConversation?.userId],
+    queryKey: ['/api/messages', activeConversation?.requestId, activeConversation?.userId],
     queryFn: async () => {
       if (!activeConversation?.requestId || !activeConversation?.userId) return [];
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/messages/${activeConversation.requestId}/${activeConversation.userId}`, {
+      const response = await fetch(`/api/messages/${activeConversation.requestId}/${activeConversation.userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -70,7 +70,7 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/messages/${activeConversation.requestId}/send`, {
+      const response = await fetch(`/api/messages/${activeConversation.requestId}/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -91,9 +91,9 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
 
       // Invalidate queries to refresh the messages
       await queryClient.invalidateQueries({ 
-        queryKey: ['/api/client/messages', activeConversation.requestId, activeConversation.userId]
+        queryKey: ['/api/messages', activeConversation.requestId, activeConversation.userId]
       });
-      await queryClient.invalidateQueries({ queryKey: ['/api/client/conversations'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/messages/conversations'] });
 
       // WebSocket notification
       try {
@@ -123,7 +123,7 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/requests/${requestId}`, {
+      const response = await fetch(`/api/requests/${requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -145,7 +145,7 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/offers/${requestId}`, {
+      const response = await fetch(`/api/offers/${requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
