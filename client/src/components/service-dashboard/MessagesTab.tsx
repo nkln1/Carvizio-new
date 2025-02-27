@@ -275,6 +275,7 @@ export default function MessagesTab({
                 {activeConversation?.offerId 
                   ? "Informații despre cererea și oferta selectată" 
                   : "Informații despre cererea selectată"}
+              </DialogDescription>tată"}
               </DialogDescription>
             </DialogHeader>
 
