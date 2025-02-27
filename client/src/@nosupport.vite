@@ -1,0 +1,21 @@
+if (typeof window !== 'undefined') {
+  Object.defineProperties(window, {
+    '__vite_plugin_react_preamble_installed__': {
+      value: true,
+      configurable: false,
+      writable: false
+    },
+    '__vite_is_modern_browser': {
+      value: true,
+      configurable: false,
+      writable: false
+    },
+    '__vite_is_dynamic_import_support': {
+      value: true,
+      configurable: false,
+      writable: false
+    }
+  });
+}
+
+export {};

@@ -84,6 +84,11 @@ app.use((req, res, next) => {
   }
 
   // Set CSP headers with WebSocket permissions
+  const isDev = app.get("env") === "development";
+  const connectSources = isDev 
+    ? "'self' wss: ws: https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com https://*.replit.dev:* http://*.replit.dev:*"
+    : "'self' wss: ws: https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com";
+
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -91,7 +96,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https: blob:; " +
-    "connect-src 'self' wss: ws: https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com; " +
+    `connect-src ${connectSources}; ` +
     "frame-src 'self' https://*.firebaseauth.com"
   );
   next();

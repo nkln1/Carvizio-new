@@ -25,35 +25,40 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    // Explicitly disable HMR
+    hmr: false, 
+    // Set allowed hosts to true
     allowedHosts: true,
+  };
+
+  // Custom Vite logger with error handling
+  const customLogger = {
+    ...viteLogger,
+    error: (msg: string, options: any) => {
+      // Only log the error, don't crash the server
+      viteLogger.error(msg, options);
+    },
   };
 
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      },
-    },
+    customLogger,
     server: serverOptions,
     appType: "custom",
   });
 
-  // Configure Vite middleware with proper headers
+  // Configure CORS headers
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
     }
     next();
   });
-  
+
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
@@ -66,14 +71,26 @@ export async function setupVite(app: Express, server: Server) {
         "index.html",
       );
 
-      // always reload the index.html file from disk incase it changes
+      // Add a cache-busting query parameter to prevent stale content
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      const timestamp = new Date().getTime();
       template = template.replace(
         `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`,
+        `src="/src/main.tsx?v=${nanoid()}&t=${timestamp}"`,
       );
+
       const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+
+      // Add cache control headers to prevent caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store',
+        'Content-Type': 'text/html',
+      });
+
+      res.status(200).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);

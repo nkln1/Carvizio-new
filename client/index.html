@@ -11,6 +11,17 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module">
+      window.__vite_is_modern_browser = true;
+      window.__vite_plugin_react_preamble_installed__ = true;
+
+      console.log("[App] Încărcare aplicație...");
+
+      const timestamp = new Date().getTime();
+      const scriptEl = document.createElement('script');
+      scriptEl.type = 'module';
+      scriptEl.src = `/src/main.tsx?t=${timestamp}`;
+      document.body.appendChild(scriptEl);
+    </script>
   </body>
 </html>
