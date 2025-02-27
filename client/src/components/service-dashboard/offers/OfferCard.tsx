@@ -74,13 +74,6 @@ export function OfferCard({
                 <Eye className="w-4 h-4 mr-1" />
                 Vezi detalii
               </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onCancel(offer.id)}
-              >
-                Anulează
-              </Button>
             </div>
           </div>
         </div>
