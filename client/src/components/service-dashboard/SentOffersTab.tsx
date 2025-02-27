@@ -1,4 +1,4 @@
-      import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
       import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
       import { SendHorizontal, Loader2, MessageSquare, Eye } from "lucide-react";
       import {
@@ -19,7 +19,7 @@
       import { auth } from "@/lib/firebase";
       import { useToast } from "@/hooks/use-toast";
       import type { SentOffer } from "@shared/schema";
-      import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+      import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
       import { format } from "date-fns";
       import { SearchBar } from "./offers/SearchBar";
       import { Button } from "@/components/ui/button";
@@ -294,6 +294,9 @@
         <DialogContent className="max-h-[95vh] overflow-y-auto pr-4"> {/* Added max-height and overflow-y-auto */}
           <DialogHeader>
             <DialogTitle>Detalii Complete Ofertă</DialogTitle>
+            <DialogDescription>
+              Informații detaliate despre oferta trimisă
+            </DialogDescription>
           </DialogHeader>
           {selectedOffer && (
             <div className="space-y-6">
@@ -369,6 +372,6 @@
           )}
         </DialogContent>
       </Dialog>
-    </Card>
-  );
-}
+          </Card>
+        );
+      }
