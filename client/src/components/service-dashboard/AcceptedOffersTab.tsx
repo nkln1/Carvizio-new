@@ -104,8 +104,8 @@ export default function AcceptedOffersTab({ onMessageClick }: AcceptedOffersTabP
             <SendHorizontal className="h-5 w-5" />
             Oferte Acceptate
             {newAcceptedOffersCount > 0 && (
-              <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
-                {newAcceptedOffersCount} noi
+              <span className="ml-3 px-3 py-1 text-sm bg-[#00aff5] text-white rounded-full">
+                {newAcceptedOffersCount}
               </span>
             )}
           </CardTitle>

@@ -16,6 +16,7 @@ import SentOffersTab from "@/components/service-dashboard/SentOffersTab";
 import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab";
 import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
+import { useServiceOfferManagement } from "@/hooks/useServiceOfferManagement";
 
 type TabId = "cereri" | "oferte-trimise" | "oferte-acceptate" | "mesaje" | "cont";
 
@@ -41,7 +42,11 @@ export default function ServiceDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
+  const [newRequestsCount, setNewRequestsCount] = useState<number>(0);
   const { toast } = useToast();
+
+  // Use the service offer management hook to get the new accepted offers count
+  const { newAcceptedOffersCount } = useServiceOfferManagement();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
@@ -57,6 +62,59 @@ export default function ServiceDashboard() {
     });
     return () => unsubscribe();
   }, [setLocation]);
+
+  // Query to fetch viewed requests
+  const { data: viewedRequestIds = [] } = useQuery<number[]>({
+    queryKey: ['/api/service/viewed-requests'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/viewed-requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch viewed requests');
+      }
+
+      const viewedRequests = await response.json();
+      return viewedRequests.map((vr: any) => vr.requestId);
+    }
+  });
+
+  // Query to fetch all active requests
+  const { data: requests = [] } = useQuery({
+    queryKey: ['/api/service/requests'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch requests');
+      }
+
+      return response.json();
+    },
+    staleTime: 0
+  });
+
+  // Calculate new requests count
+  useEffect(() => {
+    if (requests.length && viewedRequestIds.length) {
+      const activeRequests = requests.filter((req: any) => req.status === "Active");
+      const newCount = activeRequests.filter((req: any) => !viewedRequestIds.includes(req.id)).length;
+      setNewRequestsCount(newCount);
+    }
+  }, [requests, viewedRequestIds]);
 
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
@@ -139,6 +197,16 @@ export default function ServiceDashboard() {
                   className={activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
                 >
                   {item.label}
+                  {item.id === "cereri" && newRequestsCount > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                      {newRequestsCount}
+                    </span>
+                  )}
+                  {item.id === "oferte-acceptate" && newAcceptedOffersCount > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                      {newAcceptedOffersCount}
+                    </span>
+                  )}
                 </Button>
               ))}
             </div>
@@ -162,6 +230,16 @@ export default function ServiceDashboard() {
                         }`}
                       >
                         {item.label}
+                        {item.id === "cereri" && newRequestsCount > 0 && (
+                          <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                            {newRequestsCount}
+                          </span>
+                        )}
+                        {item.id === "oferte-acceptate" && newAcceptedOffersCount > 0 && (
+                          <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                            {newAcceptedOffersCount}
+                          </span>
+                        )}
                       </Button>
                     ))}
                   </div>

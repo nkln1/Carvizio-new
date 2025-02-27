@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, Loader2 } from "lucide-react"; 
+import { MessageSquare, Loader2, Search } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,8 +11,10 @@ import { ConversationInfo } from "@/pages/ServiceDashboard";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { Request } from "@shared/schema";
+import { Input } from "@/components/ui/input";
 
 interface MessagesTabProps {
   initialConversation?: ConversationInfo | null;
@@ -32,7 +34,7 @@ const safeFormatDate = (date: any, formatStr: string = "dd.MM.yyyy"): string => 
   try {
     return format(new Date(date), formatStr);
   } catch (error) {
-    console.error("Error formatting date:", error, date);
+    console.error("Error formatting date:", error);
     return "Dată nedisponibilă";
   }
 };
@@ -43,7 +45,10 @@ export default function MessagesTab({
 }: MessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const {
     activeConversation,
     setActiveConversation,
@@ -115,16 +120,12 @@ export default function MessagesTab({
 
     try {
       // Încărcăm detaliile cererii
-      console.log("Loading request details for requestId:", activeConversation.requestId);
       const request = await loadRequestDetails(activeConversation.requestId);
-      console.log("Request details loaded:", request);
       setRequestData(request);
 
       // Dacă există un offerId, încărcăm și detaliile ofertei
       if (activeConversation.offerId) {
-        console.log("Loading offer details for offerId:", activeConversation.offerId);
         const offer = await loadOfferDetails(activeConversation.requestId);
-        console.log("Offer details loaded:", offer);
         setOfferData(offer);
       }
     } catch (error) {
@@ -141,6 +142,59 @@ export default function MessagesTab({
     setShowDetailsDialog(true);
   };
 
+  // Filtrarea conversațiilor pe baza termenului de căutare
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchTerm) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (conv.userName && conv.userName.toLowerCase().includes(searchLower)) ||
+      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower)) ||
+      (conv.requestTitle && conv.requestTitle.toLowerCase().includes(searchLower))
+    );
+  });
+
+  // Funcție pentru ștergerea unei conversații
+  const handleDeleteConversation = async (requestId: number, userId: number) => {
+    try {
+      const token = await user?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/messages/${requestId}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ requestId, userId })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete conversation');
+      }
+
+      // Invalidăm query-ul pentru a reîncărca lista de conversații
+      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+
+      // Dacă conversația ștearsă era cea activă, o resetăm
+      if (activeConversation?.requestId === requestId && activeConversation?.userId === userId) {
+        setActiveConversation(null);
+      }
+
+      toast({
+        title: "Succes",
+        description: "Conversația a fost ștearsă cu succes.",
+      });
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut șterge conversația. Vă rugăm să încercați din nou.",
+      });
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -148,10 +202,23 @@ export default function MessagesTab({
   return (
     <Card className="border-[#00aff5]/20">
       <CardHeader>
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Mesaje
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-[#00aff5] flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Mesaje
+          </CardTitle>
+          {!activeConversation && (
+            <div className="relative w-[300px]">
+              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Caută conversații..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
         <CardDescription>
           Comunicare directă cu clienții și gestionarea conversațiilor
         </CardDescription>
@@ -160,11 +227,12 @@ export default function MessagesTab({
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
             <ConversationList 
-              conversations={conversations}
+              conversations={filteredConversations}
               isLoading={isLoadingConversations}
               activeConversationId={activeConversation?.userId}
               activeRequestId={activeConversation?.requestId}
               onSelectConversation={handleConversationSelect}
+              onDeleteConversation={handleDeleteConversation}
             />
           </div>
         ) : (
@@ -194,21 +262,21 @@ export default function MessagesTab({
           </div>
         )}
 
-            <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-              <DialogContent 
-                className="max-h-[80vh] overflow-y-auto"
-                aria-describedby="message-details-description"
-              >
-                <DialogHeader>
-                  <DialogTitle>
-                    {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
-                  </DialogTitle>
-                  <DialogDescription id="message-details-description">
-                    {activeConversation?.offerId 
-                      ? "Informații despre cererea și oferta selectată" 
-                      : "Informații despre cererea selectată"}
-                  </DialogDescription>
-                </DialogHeader>
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+          <DialogContent 
+            className="max-h-[80vh] overflow-y-auto"
+            aria-describedby="message-details-description"
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
+              </DialogTitle>
+              <DialogDescription id="message-details-description">
+                {activeConversation?.offerId 
+                  ? "Informații despre cererea și oferta selectată" 
+                  : "Informații despre cererea selectată"}
+              </DialogDescription>
+            </DialogHeader>
 
             {isLoadingData ? (
               <div className="flex justify-center items-center py-8">
