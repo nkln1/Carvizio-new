@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Request as RequestType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
+import { AccountTab } from "@/components/dashboard/AccountTab";
 import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
 import { useCarManagement } from "@/hooks/useCarManagement";
@@ -33,59 +34,17 @@ export interface ClientConversationInfo {
 }
 
 export default function ClientDashboard() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("profile");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { toast } = useToast();
 
-  // State pentru gestionarea conversațiilor
-    const [initialConversation, setInitialConversation] = useState<ClientConversationInfo | null>(null);
-
-    // Funcția pentru a naviga la o conversație din alte taburi
-    const handleMessageClick = (conversationInfo: ClientConversationInfo) => {
-      setInitialConversation(conversationInfo);
-      setActiveTab("messages");
-    };
-
-    // Funcția pentru a reveni la tabul anterior după închiderea conversației
-    const handleConversationClear = () => {
-      setInitialConversation(null);
-    };
-
-    return (
-      <div className="container mx-auto p-4 space-y-4">
-        <h1 className="text-2xl font-bold text-[#00aff5]">Panou de Control Client</h1>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="requests">Cereri</TabsTrigger>
-            <TabsTrigger value="offers">Oferte Primite</TabsTrigger>
-            <TabsTrigger value="messages">Mesaje</TabsTrigger>
-            <TabsTrigger value="account">Cont</TabsTrigger>
-          </TabsList>
-          <TabsContent value="requests">
-            <RequestsTab />
-          </TabsContent>
-          <TabsContent value="offers">
-            <OffersTab onMessageClick={handleMessageClick} />
-          </TabsContent>
-          <TabsContent value="messages">
-            <ClientMessagesTab 
-              initialConversation={initialConversation}
-              onConversationClear={handleConversationClear}
-            />
-          </TabsContent>
-          <TabsContent value="account">
-            <AccountTab />
-          </TabsContent>
-        </Tabs>
-      </div>
-    );
-  
+  const [initialConversation, setInitialConversation] = useState<ClientConversationInfo | null>(null);
 
   const {
     selectedCar,
@@ -119,9 +78,20 @@ export default function ClientDashboard() {
     refetchOnWindowFocus: true,
   });
 
+  // Function to handle message click from other tabs
+  const handleMessageClick = (conversationInfo: ClientConversationInfo) => {
+    setInitialConversation(conversationInfo);
+    setActiveTab("messages");
+  };
+
+  // Function to clear conversation when going back
+  const handleConversationClear = () => {
+    setInitialConversation(null);
+  };
+
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) {
+    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
+      if (!authUser) {
         setLocation("/");
       }
     });
@@ -146,7 +116,7 @@ export default function ClientDashboard() {
     if (activeTab === "offers") {
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
     }
-  }, [activeTab]);
+  }, [activeTab, queryClient]);
 
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -302,12 +272,7 @@ export default function ClientDashboard() {
             {activeTab === "offers" && (
               <OffersTab
                 offers={offers}
-                onMessageClick={(userId: number, userName: string) => {
-                  toast({
-                    title: "În curând",
-                    description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                  });
-                }}
+                onMessageClick={handleMessageClick}
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
@@ -316,7 +281,12 @@ export default function ClientDashboard() {
               />
             )}
 
-            {activeTab === "messages" && <MessagesTab />}
+            {activeTab === "messages" && (
+              <MessagesTab
+                initialConversation={initialConversation}
+                onConversationClear={handleConversationClear}
+              />
+            )}
 
             {activeTab === "car" && (
               <CarsTab
@@ -333,6 +303,10 @@ export default function ClientDashboard() {
 
             {activeTab === "profile" && userProfile && (
               <ProfileTab userProfile={userProfile} />
+            )}
+
+            {activeTab === "account" && (
+              <AccountTab />
             )}
           </>
         )}
