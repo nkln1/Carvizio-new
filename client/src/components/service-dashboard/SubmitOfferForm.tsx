@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -61,16 +62,33 @@ export function SubmitOfferForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
+  // Creăm titlul automat bazat pe cerere
+  const defaultTitle = `Ofertă pentru ${request.title}`;
+
+  // Inițializăm formularul
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
     defaultValues: {
-      title: `Ofertă pentru ${request.title}`,
+      title: defaultTitle,
       details: "",
       availableDates: [],
       price: 0,
       notes: "",
     },
   });
+
+  // Resetăm formularul când se deschide dialogul
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        title: defaultTitle, // Setăm titlul automat
+        details: "",
+        availableDates: [],
+        price: 0,
+        notes: "",
+      });
+    }
+  }, [isOpen, request, form, defaultTitle]);
 
   const handleSubmit = async (values: OfferFormValues) => {
     try {
@@ -103,17 +121,20 @@ export function SubmitOfferForm({
     );
   };
 
+  // ID unic pentru descriere, pentru a rezolva avertismentul de accesibilitate
+  const descriptionId = "offer-form-description";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
-        aria-describedby="offer-form-description"
+        aria-describedby={descriptionId}
       >
         <DialogHeader>
           <DialogTitle>Trimite Ofertă</DialogTitle>
-          <p id="offer-form-description" className="text-sm text-muted-foreground">
+          <DialogDescription id={descriptionId}>
             Completați detaliile ofertei pentru această cerere de service
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -124,7 +145,12 @@ export function SubmitOfferForm({
                 <FormItem>
                   <FormLabel>Titlul ofertei</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Titlul ofertei" />
+                    <Input 
+                      {...field}
+                      readOnly={true} // Facem câmpul readonly
+                      disabled={true} // Adăugăm și disabled pentru un aspect vizual clar
+                      className="bg-gray-100 cursor-not-allowed" // Stil pentru a arăta clar că este readonly
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

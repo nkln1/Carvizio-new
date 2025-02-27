@@ -28,17 +28,17 @@ export function OfferDetailsDialog({
   const dialogDescriptionId = `offer-details-description-${offer.id}`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="max-w-3xl"
-        aria-describedby={dialogDescriptionId}
-      >
-        <DialogHeader>
-          <DialogTitle>Detalii Complete Ofertă</DialogTitle>
-          <DialogDescription id={dialogDescriptionId}>
-            Vizualizați detaliile complete ale ofertei acceptate de {offer.clientName}
-          </DialogDescription>
-        </DialogHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent 
+            className="max-h-[95vh] overflow-y-auto pr-4"
+            aria-describedby="offer-details-description"
+          >
+            <DialogHeader>
+              <DialogTitle>Detalii Complete Ofertă</DialogTitle>
+              <DialogDescription id="offer-details-description">
+                Informații despre oferta selectată
+              </DialogDescription>
+            </DialogHeader>
         <ScrollArea className="h-full max-h-[60vh]">
           <div className="space-y-6 p-2">
             <div>

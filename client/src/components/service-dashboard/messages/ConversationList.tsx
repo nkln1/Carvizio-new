@@ -55,7 +55,7 @@ export function ConversationList({
             })
           }
         >
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10 shrink-0">
             <span>
               {(conv.userName || `C${conv.userId}`).substring(0, 2).toUpperCase()}
             </span>
@@ -65,20 +65,28 @@ export function ConversationList({
               <p className="font-medium">
                 {conv.userName || `Client ${conv.userId}`}
               </p>
-              <span className="text-xs opacity-70">
+              <span className={`text-xs ${
+                activeConversationId === conv.userId && activeRequestId === conv.requestId
+                  ? "opacity-90"
+                  : "opacity-70"
+              }`}>
                 {conv.lastMessageDate
                   ? format(new Date(conv.lastMessageDate), "dd.MM.yyyy HH:mm")
                   : ""}
               </span>
             </div>
-            <p className="text-sm opacity-70 truncate">{conv.lastMessage}</p>
+            <p className={`text-sm truncate ${
+              activeConversationId === conv.userId && activeRequestId === conv.requestId
+                ? "opacity-90"
+                : "opacity-70"
+            }`}>{conv.lastMessage}</p>
             {conv.requestTitle && (
               <div className="flex items-center gap-1 mt-1">
                 <FileText className="h-3 w-3 opacity-60" />
                 <p
                   className={`text-xs truncate ${
                     activeConversationId === conv.userId && activeRequestId === conv.requestId
-                      ? "opacity-90"
+                      ? "opacity-90 font-medium"
                       : "opacity-60"
                   }`}
                 >

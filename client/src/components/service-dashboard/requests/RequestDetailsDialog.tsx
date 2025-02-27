@@ -23,9 +23,15 @@ export function RequestDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent 
+        className="max-h-[80vh] overflow-y-auto"
+        aria-describedby="request-details-description"
+      >
         <DialogHeader>
           <DialogTitle>Detalii Cerere</DialogTitle>
+          <DialogDescription id="request-details-description">
+            Informații complete despre cererea selectată
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full">
           <div className="space-y-4">

@@ -589,6 +589,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Adaugă aceste endpoint-uri în fișierul routes.ts
+
+  // Endpoint pentru a prelua o cerere specifică după ID
+  app.get("/api/service/requests/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
+      }
+
+      const requestId = parseInt(req.params.id);
+      const request = await storage.getRequest(requestId);
+
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      res.json(request);
+    } catch (error) {
+      console.error("Error getting request by ID:", error);
+      res.status(500).json({ error: "Failed to get request" });
+    }
+  });
+
+  // Endpoint pentru a prelua o ofertă specifică după ID
+  app.get("/api/service/offers/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view offers." });
+      }
+
+      const offerId = parseInt(req.params.id);
+
+      // Obținem toate ofertele pentru acest furnizor de servicii
+      const sentOffers = await storage.getSentOffersByServiceProvider(provider.id);
+
+      // Găsim oferta specifică
+      const offer = sentOffers.find(o => o.id === offerId);
+
+      if (!offer) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+
+      // Pentru ofertele acceptate, adăugăm detalii despre client
+      if (offer.status === "Accepted") {
+        const request = await storage.getRequest(offer.requestId);
+        if (request) {
+          const client = await storage.getClient(request.clientId);
+          if (client) {
+            return res.json({
+              ...offer,
+              clientName: client.name,
+              clientPhone: client.phone
+            });
+          }
+        }
+      }
+
+      res.json(offer);
+    } catch (error) {
+      console.error("Error getting offer by ID:", error);
+      res.status(500).json({ error: "Failed to get offer" });
+    }
+  });
+
+  // Adaugă acest endpoint în fișierul routes.ts
+
+  // Endpoint pentru a obține toate ofertele pentru o cerere specifică
+  app.get("/api/service/offers/request/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view offers." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+
+      // Obținem toate ofertele pentru această cerere
+      const offers = await storage.getSentOffersByRequest(requestId);
+
+      // Filtrăm ofertele pentru a include doar cele ale furnizorului de servicii curent
+      const providerOffers = offers.filter(offer => offer.serviceProviderId === provider.id);
+
+      if (providerOffers.length === 0) {
+        return res.status(404).json({ error: "No offers found for this request" });
+      }
+
+      res.json(providerOffers);
+    } catch (error) {
+      console.error("Error getting offers for request:", error);
+      res.status(500).json({ error: "Failed to get offers for request" });
+    }
+  });
+  
   // Fix create offer endpoint to include required fields
   app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
     try {
@@ -1184,6 +1279,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add this endpoint to get service conversations
+
   app.get("/api/service/conversations", validateFirebaseToken, async (req, res) => {
     try {
       const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
@@ -1198,11 +1294,14 @@ export function registerRoutes(app: Express): Server {
       const conversationsByRequest = messages.reduce((acc: any, message: any) => {
         if (!acc[message.requestId]) {
           acc[message.requestId] = message;
+        } else if (new Date(message.createdAt) > new Date(acc[message.requestId].createdAt)) {
+          // Keep the most recent message for this request
+          acc[message.requestId] = message;
         }
         return acc;
       }, {});
 
-      // Get client information for each conversation
+      // Get client information and request details for each conversation
       const conversations = await Promise.all(
         Object.values(conversationsByRequest).map(async (message: any) => {
           const request = await storage.getRequest(message.requestId);
@@ -1211,19 +1310,32 @@ export function registerRoutes(app: Express): Server {
           const client = await storage.getClient(request.clientId);
           if (!client) return null;
 
+          // Get unread count
+          const unreadMessages = messages.filter(m => 
+            m.requestId === message.requestId && 
+            m.receiverId === serviceProvider.id &&
+            m.receiverRole === "service" &&
+            !m.isRead
+          );
+
           return {
             userId: client.id,
             userName: client.name,
             requestId: message.requestId,
-            lastMessage: message.content
+            requestTitle: request.title, // Include request title
+            lastMessage: message.content,
+            lastMessageDate: message.createdAt,
+            unreadCount: unreadMessages.length
           };
         })
       );
 
-      // Filter out null values and sort by requestId
+      // Filter out null values and sort by date (most recent first)
       const validConversations = conversations
         .filter(conv => conv !== null)
-        .sort((a: any, b: any) => b.requestId - a.requestId);
+        .sort((a: any, b: any) => 
+          new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
+        );
 
       res.json(validConversations);
     } catch (error) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -43,11 +43,15 @@ interface RequestsTabProps {
 }
 
 export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
+  // State pentru gestionarea vizualizării cererii și trimiterea ofertei
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
+
+  // State pentru filtrare
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -117,45 +121,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
-  useEffect(() => {
-    let removeHandler: (() => void) | undefined;
-
-    const setupWebSocket = async () => {
-      try {
-        await websocketService.ensureConnection();
-
-        const handleWebSocketMessage = (data: any) => {
-          if (data.type === 'NEW_REQUEST') {
-            queryClient.invalidateQueries({ queryKey: ['/api/service/requests'] });
-          } else if (data.type === 'ERROR') {
-            toast({
-              variant: "destructive",
-              title: "Eroare de conexiune",
-              description: data.message || "A apărut o eroare de conexiune. Vă rugăm să reîncărcați pagina.",
-            });
-          }
-        };
-
-        removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-      } catch (error) {
-        console.error('Failed to setup WebSocket connection:', error);
-        toast({
-          variant: "destructive",
-          title: "Eroare de conexiune",
-          description: "Nu s-a putut stabili conexiunea cu serverul. Vă rugăm să reîncărcați pagina.",
-        });
-      }
-    };
-
-    setupWebSocket();
-
-    return () => {
-      if (removeHandler) {
-        removeHandler();
-      }
-    };
-  }, [queryClient, toast]);
-
   const handleViewRequest = async (request: RequestType) => {
     const isNew = !viewedRequestIds.includes(request.id);
     if (isNew) {
@@ -165,18 +130,15 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     setShowViewDialog(true);
   };
 
-  const filteredRequests = requests.filter(req => {
-    if (req.status !== "Active") return false;
-    if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
-    return true;
-  });
-
-  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentRequests = filteredRequests.slice(startIndex, endIndex);
-
-  const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
+  const handleSubmitOfferClick = async (request: RequestType) => {
+    const isNew = !viewedRequestIds.includes(request.id);
+    if (isNew) {
+      await markRequestAsViewed(request.id);
+    }
+    // Setăm cererea selectată și deschide dialogul
+    setSelectedRequest(request);
+    setShowOfferDialog(true);
+  };
 
   const handleSubmitOffer = async (values: any) => {
     try {
@@ -217,6 +179,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
+  const handleCloseOfferDialog = () => {
+    // Închide dialogul și resetează cererea selectată
+    setShowOfferDialog(false);
+  };
 
   const handleMessageClick = async (request: RequestType) => {
     try {
@@ -258,7 +224,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
           userId: request.clientId,
           userName: clientName,
           requestId: request.id,
-          // Nu includem offerId pentru că această conversație este inițiată direct din cerere
           sourceTab: 'request'
         });
       }
@@ -272,14 +237,24 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
-  const handleSubmitOfferClick = async (request: RequestType) => {
-    const isNew = !viewedRequestIds.includes(request.id);
-    if (isNew) {
-      await markRequestAsViewed(request.id);
-    }
-    setSelectedRequest(request);
-    setShowOfferDialog(true);
-  };
+  const filteredRequests = requests.filter(req => {
+    if (req.status !== "Active") return false;
+    if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+
+  const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
+
+  if (isLoading || isFetchingViewedRequests) {
+    return (
+      <div className="text-center py-4 text-gray-500">Se încarcă...</div>
+    );
+  }
 
   return (
     <Card>
@@ -307,9 +282,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading || isFetchingViewedRequests ? (
-          <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-        ) : currentRequests.length > 0 ? (
+        {currentRequests.length > 0 ? (
           <>
             <div className="overflow-x-auto">
               <Table>
@@ -485,7 +458,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         {selectedRequest && (
           <SubmitOfferForm
             isOpen={showOfferDialog}
-            onClose={() => setShowOfferDialog(false)}
+            onClose={handleCloseOfferDialog}
             request={selectedRequest}
             onSubmit={handleSubmitOffer}
           />

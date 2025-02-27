@@ -146,23 +146,67 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
     }
   };
 
+  // Modifică funcțiile loadRequestDetails și loadOfferDetails pentru a gestiona erorile mai bine
+
   const loadRequestDetails = async (requestId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/service/requests/${requestId}`);
-      return response;
+      console.log('Loading request details for ID:', requestId);
+
+      // Obține token-ul de autentificare
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      // Încearcă să obții detaliile cererii
+      const response = await fetch(`/api/service/requests/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Failed to fetch request details:', error);
+        throw new Error(`Failed to fetch request details: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Request details loaded successfully:', data);
+      return data;
     } catch (error) {
-      console.error('Error loading request details:', error);
-      return null;
+      console.error('Error in loadRequestDetails:', error);
+      throw error;
     }
   };
 
-  const loadOfferDetails = async (offerId: number) => {
+  const loadOfferDetails = async (requestId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/service/offers/${offerId}`);
-      return response;
+      console.log('Loading offers for request ID:', requestId);
+
+      // Obține token-ul de autentificare
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      // Încearcă să obții ofertele pentru această cerere
+      const response = await fetch(`/api/service/offers/request/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Failed to fetch offer details:', error);
+        throw new Error(`Failed to fetch offer details: ${response.status}`);
+      }
+
+      const offers = await response.json();
+      console.log('Offers for request loaded successfully:', offers);
+
+      // Returnează prima ofertă (presupunem că este cea relevantă pentru conversație)
+      return Array.isArray(offers) && offers.length > 0 ? offers[0] : null;
     } catch (error) {
-      console.error('Error loading offer details:', error);
-      return null;
+      console.error('Error in loadOfferDetails:', error);
+      throw error;
     }
   };
 
