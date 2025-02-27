@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { Message } from "@shared/schema";
+import type { Message, Conversation as SchemaConversation } from "@shared/schema";
 import websocketService from "@/lib/websocket";
 
 interface ConversationInfo {
@@ -10,16 +10,14 @@ interface ConversationInfo {
   userName: string;
   requestId: number;
   offerId?: number;
+  sourceTab?: string;
 }
 
-interface Conversation {
-  userId: number;
-  userName: string;
-  requestId: number;
-  offerId?: number;
-  lastMessage?: string;
-  lastMessageDate?: Date;
+// Extend the base conversation type with client-specific fields
+interface Conversation extends SchemaConversation {
   requestTitle?: string;
+  offerId?: number;
+  sourceTab?: string;
 }
 
 export function useClientMessagesManagement(initialConversation: ConversationInfo | null = null) {
@@ -95,11 +93,15 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       });
       await queryClient.invalidateQueries({ queryKey: ['/api/client/conversations'] });
 
-      // Send message through WebSocket
-      websocketService.send('new_message', {
-        recipientId: activeConversation.userId,
-        requestId: activeConversation.requestId,
-        content
+      // Handle WebSocket message
+      websocketService.ensureConnection().then(() => {
+        websocketService.sendMessage('new_message', {
+          recipientId: activeConversation.userId,
+          requestId: activeConversation.requestId,
+          content
+        });
+      }).catch(err => {
+        console.error('WebSocket error:', err);
       });
 
     } catch (error) {
