@@ -21,6 +21,8 @@ import { OfferDetailsDialog } from "./offers/OfferDetailsDialog";
 import { useServiceOfferManagement } from "@/hooks/useServiceOfferManagement";
 import { useAcceptedOffers } from "@/hooks/useAcceptedOffers";
 import { ConversationInfo } from "@/pages/ServiceDashboard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 
 interface AcceptedOffersTabProps {
   onMessageClick?: (conversationInfo: ConversationInfo) => void;
