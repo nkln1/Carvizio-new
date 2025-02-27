@@ -40,10 +40,9 @@ const ITEMS_PER_PAGE = 5;
 
 interface RequestsTabProps {
   onMessageClick?: (conversationInfo: ConversationInfo) => void;
-  onNewRequestsCountChange?: (count: number) => void;
 }
 
-export default function RequestsTab({ onMessageClick, onNewRequestsCountChange }: RequestsTabProps) {
+export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   // State pentru gestionarea vizualizării cererii și trimiterea ofertei
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
@@ -250,13 +249,6 @@ export default function RequestsTab({ onMessageClick, onNewRequestsCountChange }
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
   const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
-
-  // Report new requests count to parent component
-  useEffect(() => {
-    if (onNewRequestsCountChange) {
-      onNewRequestsCountChange(newRequestsCount);
-    }
-  }, [newRequestsCount, onNewRequestsCountChange]);
 
   if (isLoading || isFetchingViewedRequests) {
     return (

@@ -42,7 +42,6 @@ export default function ServiceDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
   const { toast } = useToast();
-  const [newRequestsCount, setNewRequestsCount] = useState(0); // Added state for new requests count
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
@@ -140,11 +139,6 @@ export default function ServiceDashboard() {
                   className={activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
                 >
                   {item.label}
-                  {item.id === "cereri" && newRequestsCount > 0 && ( //Added conditional rendering for the counter
-                    <span className="ml-2 text-xs bg-[#00aff5] text-white rounded-full px-2 py-0.5">
-                      {newRequestsCount}
-                    </span>
-                  )}
                 </Button>
               ))}
             </div>
@@ -168,11 +162,6 @@ export default function ServiceDashboard() {
                         }`}
                       >
                         {item.label}
-                        {item.id === "cereri" && newRequestsCount > 0 && ( //Added conditional rendering for the counter
-                          <span className="ml-2 text-xs bg-[#00aff5] text-white rounded-full px-2 py-0.5">
-                            {newRequestsCount}
-                          </span>
-                        )}
                       </Button>
                     ))}
                   </div>
@@ -199,7 +188,7 @@ export default function ServiceDashboard() {
               case "oferte-acceptate":
                 return <AcceptedOffersTab onMessageClick={handleMessageClick} />;
               case "cereri":
-                return <RequestsTab onMessageClick={handleMessageClick} onNewRequestsCountChange={setNewRequestsCount} />;
+                return <RequestsTab onMessageClick={handleMessageClick} />;
               case "cont":
                 return <AccountTab />;
               default:
