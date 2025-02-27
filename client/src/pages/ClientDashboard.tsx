@@ -24,6 +24,14 @@ import { useCarManagement } from "@/hooks/useCarManagement";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 import { CarDialog } from "@/components/car/CarDialog";
 
+export interface ClientConversationInfo {
+  userId: number;
+  userName: string;
+  requestId: number;
+  offerId?: number;
+  sourceTab?: string;
+}
+
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
@@ -33,6 +41,51 @@ export default function ClientDashboard() {
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
+
+  // State pentru gestionarea conversațiilor
+    const [initialConversation, setInitialConversation] = useState<ClientConversationInfo | null>(null);
+
+    // Funcția pentru a naviga la o conversație din alte taburi
+    const handleMessageClick = (conversationInfo: ClientConversationInfo) => {
+      setInitialConversation(conversationInfo);
+      setActiveTab("messages");
+    };
+
+    // Funcția pentru a reveni la tabul anterior după închiderea conversației
+    const handleConversationClear = () => {
+      setInitialConversation(null);
+    };
+
+    return (
+      <div className="container mx-auto p-4 space-y-4">
+        <h1 className="text-2xl font-bold text-[#00aff5]">Panou de Control Client</h1>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="requests">Cereri</TabsTrigger>
+            <TabsTrigger value="offers">Oferte Primite</TabsTrigger>
+            <TabsTrigger value="messages">Mesaje</TabsTrigger>
+            <TabsTrigger value="account">Cont</TabsTrigger>
+          </TabsList>
+          <TabsContent value="requests">
+            <RequestsTab />
+          </TabsContent>
+          <TabsContent value="offers">
+            <OffersTab onMessageClick={handleMessageClick} />
+          </TabsContent>
+          <TabsContent value="messages">
+            <ClientMessagesTab 
+              initialConversation={initialConversation}
+              onConversationClear={handleConversationClear}
+            />
+          </TabsContent>
+          <TabsContent value="account">
+            <AccountTab />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  
 
   const {
     selectedCar,

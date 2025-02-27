@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClientMessagesManagement } from "@/hooks/useClientMessagesManagement";
-import { ConversationView } from "../service-dashboard/messages/ConversationView";
-import { ConversationList } from "../service-dashboard/messages/ConversationList";
+import { ConversationView } from "./messages/ConversationView";
+import { ConversationList } from "./messages/ConversationList";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
@@ -14,12 +14,23 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 
-// Utility function to check if a date is valid
+interface ClientMessagesTabProps {
+  initialConversation?: {
+    userId: number;
+    userName: string;
+    requestId: number;
+    offerId?: number;
+    sourceTab?: string;
+  } | null;
+  onConversationClear?: () => void;
+}
+
+// Funcție utilitară pentru a verifica dacă o dată este validă
 const isValidDate = (date: any): boolean => {
   return date && !isNaN(new Date(date).getTime());
 };
 
-// Utility function to safely format date
+// Funcție utilitară pentru a formata data în siguranță
 const safeFormatDate = (date: any, formatStr: string = "dd.MM.yyyy"): string => {
   if (!isValidDate(date)) {
     return "Dată nedisponibilă";
@@ -32,11 +43,15 @@ const safeFormatDate = (date: any, formatStr: string = "dd.MM.yyyy"): string => 
   }
 };
 
-export function MessagesTab() {
+export default function ClientMessagesTab({
+  initialConversation = null,
+  onConversationClear,
+}: ClientMessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [wsInitialized, setWsInitialized] = useState(false);
 
   const {
     activeConversation,
@@ -48,14 +63,42 @@ export function MessagesTab() {
     sendMessage,
     loadRequestDetails,
     loadOfferDetails
-  } = useClientMessagesManagement();
+  } = useClientMessagesManagement(initialConversation);
 
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
+  // WebSocket initialization
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeWebSocket = async () => {
+      try {
+        if (!wsInitialized && mounted) {
+          await websocketService.ensureConnection();
+          setWsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Failed to initialize WebSocket:', error);
+        if (mounted) {
+          setTimeout(initializeWebSocket, 2000);
+        }
+      }
+    };
+
+    initializeWebSocket();
+
+    return () => {
+      mounted = false;
+    };
+  }, [wsInitialized]);
+
   const handleBack = () => {
     setActiveConversation(null);
+    if (initialConversation && onConversationClear) {
+      onConversationClear();
+    }
   };
 
   const handleConversationSelect = (conv: {
@@ -63,8 +106,12 @@ export function MessagesTab() {
     userName: string;
     requestId: number;
     offerId?: number;
+    sourceTab?: string;
   }) => {
     setActiveConversation(conv);
+    if (initialConversation && onConversationClear) {
+      onConversationClear();
+    }
   };
 
   const handleViewDetails = async () => {
@@ -81,7 +128,7 @@ export function MessagesTab() {
 
       // If there's an offerId, load offer details
       if (activeConversation.offerId) {
-        const offer = await loadOfferDetails(activeConversation.requestId);
+        const offer = await loadOfferDetails(activeConversation.offerId);
         setOfferData(offer);
       }
     } catch (error) {
@@ -183,12 +230,12 @@ export function MessagesTab() {
           >
             <DialogHeader>
               <DialogTitle>
-                {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
+                {activeConversation?.offerId ? "Detalii Ofertă" : "Detalii Cerere"}
               </DialogTitle>
               <DialogDescription id="message-details-description">
                 {activeConversation?.offerId 
-                  ? "Informații despre cererea și oferta selectată" 
-                  : "Informații despre cererea selectată"}
+                  ? "Informații despre oferta primită" 
+                  : "Informații despre cererea ta"}
               </DialogDescription>
             </DialogHeader>
 
@@ -249,6 +296,10 @@ export function MessagesTab() {
                   <div className="space-y-3 mt-6 pt-6 border-t">
                     <h3 className="font-medium text-md">Detalii Ofertă</h3>
                     <div>
+                      <h4 className="font-medium text-sm text-muted-foreground">Service Auto</h4>
+                      <p>{offerData.serviceProviderName || "Nedisponibil"}</p>
+                    </div>
+                    <div>
                       <h4 className="font-medium text-sm text-muted-foreground">Titlu</h4>
                       <p>{offerData.title || "Nedisponibil"}</p>
                     </div>
@@ -281,11 +332,22 @@ export function MessagesTab() {
                       <span className={`px-2 py-1 rounded-full text-sm ${
                         offerData.status && offerData.status.toLowerCase() === 'accepted' 
                           ? 'bg-green-100 text-green-800' 
-                          : 'bg-blue-100 text-blue-800'
+                          : offerData.status && offerData.status.toLowerCase() === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {offerData.status || "Pending"}
+                        {offerData.status === 'Accepted' ? 'Acceptată' : 
+                         offerData.status === 'Rejected' ? 'Respinsă' : 
+                         offerData.status === 'Pending' ? 'În așteptare' : 
+                         offerData.status || "Nedisponibil"}
                       </span>
                     </div>
+                    {offerData.notes && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground">Observații</h4>
+                        <p className="whitespace-pre-line">{offerData.notes}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

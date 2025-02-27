@@ -13,6 +13,10 @@ interface ConversationInfo {
   sourceTab?: string;
 }
 
+// Cache time constants
+const MESSAGES_STALE_TIME = 1000 * 15; // 15 seconds
+const CONVERSATIONS_STALE_TIME = 1000 * 30; // 30 seconds
+
 export function useClientMessagesManagement(initialConversation: ConversationInfo | null = null) {
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(initialConversation);
   const { toast } = useToast();
@@ -20,12 +24,12 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
 
   // Fetch conversations
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
-    queryKey: ['/api/messages/conversations'],
+    queryKey: ['/api/client/conversations'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/messages/conversations', {
+      const response = await fetch('/api/client/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -36,19 +40,22 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         throw new Error('Failed to fetch conversations');
       }
       return response.json();
-    }
+    },
+    staleTime: CONVERSATIONS_STALE_TIME,
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnWindowFocus: false
   });
 
   // Fetch messages for active conversation
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ['/api/messages', activeConversation?.requestId, activeConversation?.userId],
+    queryKey: ['/api/client/messages', activeConversation?.requestId, activeConversation?.userId],
     queryFn: async () => {
       if (!activeConversation?.requestId || !activeConversation?.userId) return [];
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/messages/${activeConversation.requestId}/${activeConversation.userId}`, {
+      const response = await fetch(`/api/client/messages/${activeConversation.requestId}/${activeConversation.userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -60,7 +67,11 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       }
       return response.json();
     },
-    enabled: !!activeConversation?.requestId && !!activeConversation?.userId
+    enabled: !!activeConversation?.requestId && !!activeConversation?.userId,
+    staleTime: MESSAGES_STALE_TIME,
+    gcTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
   const sendMessage = useCallback(async (content: string) => {
@@ -70,18 +81,21 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/messages/${activeConversation.requestId}/send`, {
+      // Construiește payload-ul mesajului, incluzând offerId dacă există
+      const messagePayload = {
+        content,
+        receiverId: activeConversation.userId,
+        requestId: activeConversation.requestId,
+        offerId: activeConversation.offerId // Include offerId dacă există
+      };
+
+      const response = await fetch(`/api/client/messages/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          content,
-          recipientId: activeConversation.userId,
-          requestId: activeConversation.requestId,
-          offerId: activeConversation.offerId
-        })
+        body: JSON.stringify(messagePayload)
       });
 
       if (!response.ok) {
@@ -89,13 +103,20 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         throw new Error('Failed to send message');
       }
 
-      // Invalidate queries to refresh the messages
-      await queryClient.invalidateQueries({ 
-        queryKey: ['/api/messages', activeConversation.requestId, activeConversation.userId]
-      });
-      await queryClient.invalidateQueries({ queryKey: ['/api/messages/conversations'] });
+      const newMessage = await response.json();
 
-      // WebSocket notification
+      // Actualizează cache-ul de mesaje
+      queryClient.setQueryData(
+        ['/api/client/messages', activeConversation.requestId, activeConversation.userId],
+        (old: Message[] | undefined) => [...(old || []), newMessage]
+      );
+
+      // Invalidează query-ul pentru conversații pentru a actualiza ultimul mesaj
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/client/conversations']
+      });
+
+      // Notificare WebSocket
       try {
         await websocketService.ensureConnection();
         websocketService.send('new_message', {
@@ -107,6 +128,7 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         console.error('WebSocket error:', wsError);
       }
 
+      return newMessage;
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -118,46 +140,60 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
     }
   }, [activeConversation, queryClient, toast]);
 
+  // Funcție pentru a încărca detaliile cererii
   const loadRequestDetails = useCallback(async (requestId: number) => {
     try {
+      console.log('Loading request details for ID:', requestId);
+
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/requests/${requestId}`, {
+      const response = await fetch(`/api/client/requests/${requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
-        console.error('Failed to load request details:', await response.text());
-        throw new Error('Failed to load request details');
+        const error = await response.text();
+        console.error('Failed to fetch request details:', error);
+        throw new Error(`Failed to fetch request details: ${response.status}`);
       }
-      return response.json();
+
+      const data = await response.json();
+      console.log('Request details loaded successfully:', data);
+      return data;
     } catch (error) {
-      console.error('Error loading request details:', error);
+      console.error('Error in loadRequestDetails:', error);
       throw error;
     }
   }, []);
 
-  const loadOfferDetails = useCallback(async (requestId: number) => {
+  // Funcție pentru a încărca detaliile ofertei
+  const loadOfferDetails = useCallback(async (offerId: number) => {
     try {
+      console.log('Loading offer details for ID:', offerId);
+
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/offers/${requestId}`, {
+      const response = await fetch(`/api/client/offers/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
-        console.error('Failed to load offer details:', await response.text());
-        throw new Error('Failed to load offer details');
+        const error = await response.text();
+        console.error('Failed to fetch offer details:', error);
+        throw new Error(`Failed to fetch offer details: ${response.status}`);
       }
-      return response.json();
+
+      const data = await response.json();
+      console.log('Offer details loaded successfully:', data);
+      return data;
     } catch (error) {
-      console.error('Error loading offer details:', error);
+      console.error('Error in loadOfferDetails:', error);
       throw error;
     }
   }, []);
