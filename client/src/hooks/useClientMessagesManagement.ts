@@ -2,20 +2,13 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { Message, Conversation as SchemaConversation } from "@shared/schema";
+import type { Message, Conversation } from "@shared/schema";
 import websocketService from "@/lib/websocket";
 
 interface ConversationInfo {
   userId: number;
   userName: string;
   requestId: number;
-  offerId?: number;
-  sourceTab?: string;
-}
-
-// Extend the base conversation type with client-specific fields
-interface Conversation extends SchemaConversation {
-  requestTitle?: string;
   offerId?: number;
   sourceTab?: string;
 }
@@ -38,7 +31,10 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch conversations');
+      if (!response.ok) {
+        console.error('Failed to fetch conversations:', await response.text());
+        throw new Error('Failed to fetch conversations');
+      }
       return response.json();
     }
   });
@@ -58,7 +54,10 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch messages');
+      if (!response.ok) {
+        console.error('Failed to fetch messages:', await response.text());
+        throw new Error('Failed to fetch messages');
+      }
       return response.json();
     },
     enabled: !!activeConversation?.requestId && !!activeConversation?.userId
@@ -85,7 +84,10 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         })
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {
+        console.error('Failed to send message:', await response.text());
+        throw new Error('Failed to send message');
+      }
 
       // Invalidate queries to refresh the messages
       await queryClient.invalidateQueries({ 
@@ -93,16 +95,17 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
       });
       await queryClient.invalidateQueries({ queryKey: ['/api/client/conversations'] });
 
-      // Handle WebSocket message
-      websocketService.ensureConnection().then(() => {
-        websocketService.sendMessage('new_message', {
+      // WebSocket notification
+      try {
+        await websocketService.ensureConnection();
+        websocketService.send('new_message', {
           recipientId: activeConversation.userId,
           requestId: activeConversation.requestId,
           content
         });
-      }).catch(err => {
-        console.error('WebSocket error:', err);
-      });
+      } catch (wsError) {
+        console.error('WebSocket error:', wsError);
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -111,22 +114,25 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         title: "Eroare",
         description: "Nu s-a putut trimite mesajul. Încercați din nou.",
       });
+      throw error;
     }
   }, [activeConversation, queryClient, toast]);
 
-  // Load request and offer details
   const loadRequestDetails = useCallback(async (requestId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/requests/${requestId}`, {
+      const response = await fetch(`/api/client/requests/${requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) throw new Error('Failed to load request details');
+      if (!response.ok) {
+        console.error('Failed to load request details:', await response.text());
+        throw new Error('Failed to load request details');
+      }
       return response.json();
     } catch (error) {
       console.error('Error loading request details:', error);
@@ -145,7 +151,10 @@ export function useClientMessagesManagement(initialConversation: ConversationInf
         }
       });
 
-      if (!response.ok) throw new Error('Failed to load offer details');
+      if (!response.ok) {
+        console.error('Failed to load offer details:', await response.text());
+        throw new Error('Failed to load offer details');
+      }
       return response.json();
     } catch (error) {
       console.error('Error loading offer details:', error);
