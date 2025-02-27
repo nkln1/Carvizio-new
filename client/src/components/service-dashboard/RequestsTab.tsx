@@ -35,7 +35,6 @@ import { Switch } from "@/components/ui/switch";
 import { SubmitOfferForm } from "./SubmitOfferForm";
 import websocketService from "@/lib/websocket";
 import { ConversationInfo } from "@/pages/ServiceDashboard";
-import type { Offer } from "@shared/schema";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -44,98 +43,89 @@ interface RequestsTabProps {
 }
 
 export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
+  // State pentru gestionarea vizualizării cererii și trimiterea ofertei
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(
+    null,
+  );
 
+  // State pentru filtrare
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query to fetch requests
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
-    queryKey: ['/api/service/requests'],
+    queryKey: ["/api/service/requests"],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch('/api/service/requests', {
+      const response = await fetch("/api/service/requests", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch requests');
+        throw new Error("Failed to fetch requests");
       }
 
       return response.json();
     },
-    staleTime: 0
+    staleTime: 0,
   });
 
-  const { data: viewedRequestIds = [], isFetching: isFetchingViewedRequests } = useQuery<number[]>({
-    queryKey: ['/api/service/viewed-requests'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+  // Query to fetch viewed requests
+  const { data: viewedRequestIds = [], isFetching: isFetchingViewedRequests } =
+    useQuery<number[]>({
+      queryKey: ["/api/service/viewed-requests"],
+      queryFn: async () => {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch('/api/service/viewed-requests', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+        const response = await fetch("/api/service/viewed-requests", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch viewed requests");
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch viewed requests');
-      }
-
-      const viewedRequests = await response.json();
-      return viewedRequests.map((vr: any) => vr.requestId);
-    }
-  });
-
-  const { data: serviceOffers = [] } = useQuery<Offer[]>({
-    queryKey: ['/api/service/offers'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/offers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch offers');
-      }
-
-      return response.json();
-    }
-  });
-
+        const viewedRequests = await response.json();
+        return viewedRequests.map((vr: any) => vr.requestId);
+      },
+    });
 
   const markRequestAsViewed = async (requestId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
-      const response = await fetch(`/api/service/mark-request-viewed/${requestId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(
+        `/api/service/mark-request-viewed/${requestId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to mark request as viewed');
+        throw new Error("Failed to mark request as viewed");
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/viewed-requests'] });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/service/viewed-requests"],
+      });
     } catch (error) {
-      console.error('Error marking request as viewed:', error);
+      console.error("Error marking request as viewed:", error);
     }
   };
 
@@ -153,6 +143,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     if (isNew) {
       await markRequestAsViewed(request.id);
     }
+    // Setăm cererea selectată și deschide dialogul
     setSelectedRequest(request);
     setShowOfferDialog(true);
   };
@@ -180,46 +171,50 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       }
 
       const data = await response.json();
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/service/requests"] });
-
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/service/offers"],
+      });
       setShowOfferDialog(false);
       toast({
         title: "Succes",
         description: "Oferta a fost trimisă cu succes!",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error submitting offer:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: error.message || "Nu s-a putut trimite oferta. Încercați din nou.",
+        description: "Nu s-a putut trimite oferta. Încercați din nou.",
       });
     }
   };
 
   const handleCloseOfferDialog = () => {
+    // Închide dialogul și resetează cererea selectată
     setShowOfferDialog(false);
   };
 
   const handleMessageClick = async (request: RequestType) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token available");
 
+      // Încearcă să obții detaliile clientului, dar gestionează cazul în care API-ul eșuează
       let clientName = `Client ${request.clientId}`;
 
       try {
-        const response = await fetch(`/api/service/client/${request.clientId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await fetch(
+          `/api/service/client/${request.clientId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
 
         if (response.ok) {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
             const clientData = await response.json();
             if (clientData && clientData.name) {
               clientName = clientData.name;
@@ -227,24 +222,29 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
           }
         }
       } catch (clientError) {
-        console.warn('Could not fetch client details, using default name:', clientError);
+        console.warn(
+          "Could not fetch client details, using default name:",
+          clientError,
+        );
       }
 
+      // Marchează cererea ca văzută dacă este nouă
       const isNew = !viewedRequestIds.includes(request.id);
       if (isNew) {
         await markRequestAsViewed(request.id);
       }
 
+      // Continuă cu deschiderea conversației, chiar dacă obținerea detaliilor clientului a eșuat
       if (onMessageClick) {
         onMessageClick({
           userId: request.clientId,
           userName: clientName,
           requestId: request.id,
-          sourceTab: 'request'
+          sourceTab: "request",
         });
       }
     } catch (error) {
-      console.error('Error starting conversation:', error);
+      console.error("Error starting conversation:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
@@ -253,11 +253,9 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     }
   };
 
-  const filteredRequests = requests.filter(req => {
+  const filteredRequests = requests.filter((req) => {
     if (req.status !== "Active") return false;
     if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
-    const hasExistingOffer = serviceOffers.some(offer => offer.requestId === req.id);
-    if (hasExistingOffer) return false;
     return true;
   });
 
@@ -266,12 +264,12 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
-  const newRequestsCount = filteredRequests.filter(req => !viewedRequestIds.includes(req.id)).length;
+  const newRequestsCount = filteredRequests.filter(
+    (req) => !viewedRequestIds.includes(req.id),
+  ).length;
 
   if (isLoading || isFetchingViewedRequests) {
-    return (
-      <div className="text-center py-4 text-gray-500">Se încarcă...</div>
-    );
+    return <div className="text-center py-4 text-gray-500">Se încarcă...</div>;
   }
 
   return (
@@ -292,10 +290,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-500">Doar cereri noi</span>
-            <Switch
-              checked={showOnlyNew}
-              onCheckedChange={setShowOnlyNew}
-            />
+            <Switch checked={showOnlyNew} onCheckedChange={setShowOnlyNew} />
           </div>
         </div>
       </CardHeader>
@@ -316,7 +311,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                 </TableHeader>
                 <TableBody>
                   {currentRequests.map((request) => (
-                    <TableRow key={request.id} className="hover:bg-gray-50 transition-colors">
+                    <TableRow
+                      key={request.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {request.title}
@@ -378,7 +376,8 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                             onClick={() => {
                               toast({
                                 title: "În curând",
-                                description: "Funcționalitatea de respingere va fi disponibilă în curând.",
+                                description:
+                                  "Funcționalitatea de respingere va fi disponibilă în curând.",
                               });
                             }}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
@@ -399,7 +398,9 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -410,7 +411,9 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -420,7 +423,7 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
           </>
         ) : (
           <div className="text-center py-4 text-gray-500">
-            Nu există cereri active în acest moment pentru locația dvs.
+            Nu există cereri noi în acest moment pentru locația dvs.
           </div>
         )}
 
@@ -444,14 +447,19 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Descriere
                   </h3>
-                  <p className="whitespace-pre-line">{selectedRequest.description}</p>
+                  <p className="whitespace-pre-line">
+                    {selectedRequest.description}
+                  </p>
                 </div>
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Data preferată
                   </h3>
                   <p>
-                    {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                    {format(
+                      new Date(selectedRequest.preferredDate),
+                      "dd.MM.yyyy",
+                    )}
                   </p>
                 </div>
                 <div>
@@ -466,7 +474,10 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Locație
                   </h3>
-                  <p>{selectedRequest.cities?.join(", ")}, {selectedRequest.county}</p>
+                  <p>
+                    {selectedRequest.cities?.join(", ")},{" "}
+                    {selectedRequest.county}
+                  </p>
                 </div>
               </div>
             )}
