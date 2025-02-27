@@ -43,10 +43,10 @@ const safeFormatDate = (date: any, formatStr: string = "dd.MM.yyyy"): string => 
   }
 };
 
-export default function ClientMessagesTab({
+export const MessagesTab = ({
   initialConversation = null,
   onConversationClear,
-}: ClientMessagesTabProps) {
+}: ClientMessagesTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -188,7 +188,7 @@ export default function ClientMessagesTab({
       <CardContent>
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
-            <ConversationList 
+            <ConversationList
               conversations={filteredConversations}
               isLoading={isLoadingConversations}
               activeConversationId={activeConversation?.userId}
@@ -199,7 +199,7 @@ export default function ClientMessagesTab({
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <Button 
+              <Button
                 onClick={handleBack}
                 variant="ghost"
                 className="hover:bg-gray-100"
@@ -224,7 +224,7 @@ export default function ClientMessagesTab({
         )}
 
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-          <DialogContent 
+          <DialogContent
             className="max-h-[80vh] overflow-y-auto"
             aria-describedby="message-details-description"
           >
@@ -233,8 +233,8 @@ export default function ClientMessagesTab({
                 {activeConversation?.offerId ? "Detalii Ofertă" : "Detalii Cerere"}
               </DialogTitle>
               <DialogDescription id="message-details-description">
-                {activeConversation?.offerId 
-                  ? "Informații despre oferta primită" 
+                {activeConversation?.offerId
+                  ? "Informații despre oferta primită"
                   : "Informații despre cererea ta"}
               </DialogDescription>
             </DialogHeader>
@@ -261,24 +261,24 @@ export default function ClientMessagesTab({
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground">Data preferată</h4>
                       <p>
-                        {isValidDate(requestData.preferredDate) 
-                          ? safeFormatDate(requestData.preferredDate) 
+                        {isValidDate(requestData.preferredDate)
+                          ? safeFormatDate(requestData.preferredDate)
                           : "Dată nedisponibilă"}
                       </p>
                     </div>
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground">Data trimiterii</h4>
                       <p>
-                        {isValidDate(requestData.createdAt) 
-                          ? safeFormatDate(requestData.createdAt) 
+                        {isValidDate(requestData.createdAt)
+                          ? safeFormatDate(requestData.createdAt)
                           : "Dată nedisponibilă"}
                       </p>
                     </div>
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground">Locație</h4>
                       <p>
-                        {requestData.cities && Array.isArray(requestData.cities) 
-                          ? `${requestData.cities.join(", ")}, ${requestData.county || ""}` 
+                        {requestData.cities && Array.isArray(requestData.cities)
+                          ? `${requestData.cities.join(", ")}, ${requestData.county || ""}`
                           : "Locație nedisponibilă"}
                       </p>
                     </div>
@@ -330,16 +330,16 @@ export default function ClientMessagesTab({
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground">Status</h4>
                       <span className={`px-2 py-1 rounded-full text-sm ${
-                        offerData.status && offerData.status.toLowerCase() === 'accepted' 
-                          ? 'bg-green-100 text-green-800' 
+                        offerData.status && offerData.status.toLowerCase() === 'accepted'
+                          ? 'bg-green-100 text-green-800'
                           : offerData.status && offerData.status.toLowerCase() === 'rejected'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {offerData.status === 'Accepted' ? 'Acceptată' : 
-                         offerData.status === 'Rejected' ? 'Respinsă' : 
-                         offerData.status === 'Pending' ? 'În așteptare' : 
-                         offerData.status || "Nedisponibil"}
+                        {offerData.status === 'Accepted' ? 'Acceptată' :
+                          offerData.status === 'Rejected' ? 'Respinsă' :
+                            offerData.status === 'Pending' ? 'În așteptare' :
+                              offerData.status || "Nedisponibil"}
                       </span>
                     </div>
                     {offerData.notes && (
@@ -363,4 +363,4 @@ export default function ClientMessagesTab({
       </CardContent>
     </Card>
   );
-}
+};
