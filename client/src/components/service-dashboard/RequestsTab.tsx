@@ -35,6 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { SubmitOfferForm } from "./SubmitOfferForm";
 import websocketService from "@/lib/websocket";
 import { ConversationInfo } from "@/pages/ServiceDashboard";
+import type { Offer } from "@shared/schema";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -43,19 +44,16 @@ interface RequestsTabProps {
 }
 
 export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
-  // State pentru gestionarea vizualizării cererii și trimiterea ofertei
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
 
-  // State pentru filtrare
   const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query to fetch requests
   const { data: requests = [], isLoading } = useQuery<RequestType[]>({
     queryKey: ['/api/service/requests'],
     queryFn: async () => {
@@ -77,7 +75,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     staleTime: 0
   });
 
-  // Query to fetch viewed requests
   const { data: viewedRequestIds = [], isFetching: isFetchingViewedRequests } = useQuery<number[]>({
     queryKey: ['/api/service/viewed-requests'],
     queryFn: async () => {
@@ -98,6 +95,27 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       return viewedRequests.map((vr: any) => vr.requestId);
     }
   });
+
+  const { data: serviceOffers = [] } = useQuery<Offer[]>({
+    queryKey: ['/api/service/offers'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/service/offers', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch offers');
+      }
+
+      return response.json();
+    }
+  });
+
 
   const markRequestAsViewed = async (requestId: number) => {
     try {
@@ -135,7 +153,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
     if (isNew) {
       await markRequestAsViewed(request.id);
     }
-    // Setăm cererea selectată și deschide dialogul
     setSelectedRequest(request);
     setShowOfferDialog(true);
   };
@@ -163,24 +180,26 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       }
 
       const data = await response.json();
+
       await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/service/requests"] });
+
       setShowOfferDialog(false);
       toast({
         title: "Succes",
         description: "Oferta a fost trimisă cu succes!",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting offer:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu s-a putut trimite oferta. Încercați din nou.",
+        description: error.message || "Nu s-a putut trimite oferta. Încercați din nou.",
       });
     }
   };
 
   const handleCloseOfferDialog = () => {
-    // Închide dialogul și resetează cererea selectată
     setShowOfferDialog(false);
   };
 
@@ -189,7 +208,6 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Încearcă să obții detaliile clientului, dar gestionează cazul în care API-ul eșuează
       let clientName = `Client ${request.clientId}`;
 
       try {
@@ -212,13 +230,11 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
         console.warn('Could not fetch client details, using default name:', clientError);
       }
 
-      // Marchează cererea ca văzută dacă este nouă
       const isNew = !viewedRequestIds.includes(request.id);
       if (isNew) {
         await markRequestAsViewed(request.id);
       }
 
-      // Continuă cu deschiderea conversației, chiar dacă obținerea detaliilor clientului a eșuat
       if (onMessageClick) {
         onMessageClick({
           userId: request.clientId,
@@ -240,6 +256,8 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const filteredRequests = requests.filter(req => {
     if (req.status !== "Active") return false;
     if (showOnlyNew && viewedRequestIds.includes(req.id)) return false;
+    const hasExistingOffer = serviceOffers.some(offer => offer.requestId === req.id);
+    if (hasExistingOffer) return false;
     return true;
   });
 
