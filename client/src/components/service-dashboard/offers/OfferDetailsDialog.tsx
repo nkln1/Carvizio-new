@@ -25,7 +25,8 @@ export function OfferDetailsDialog({
 }: OfferDetailsDialogProps) {
   if (!offer) return null;
 
-  const dialogDescriptionId = `offer-details-description-${offer.id}`;
+  // Create a unique ID for each offer's dialog description
+  const dialogDescriptionId = `offer-details-dialog-description-${offer.id}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

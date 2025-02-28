@@ -199,6 +199,9 @@ export default function MessagesTab({
     return null;
   }
 
+  // Add a unique ID for the dialog description
+  const dialogDescriptionId = "message-details-dialog-description";
+
   return (
     <Card className="border-[#00aff5]/20">
       <CardHeader>
@@ -265,13 +268,13 @@ export default function MessagesTab({
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogContent 
             className="max-h-[80vh] overflow-y-auto"
-            aria-describedby="dialog-description"
+            aria-describedby={dialogDescriptionId}
           >
             <DialogHeader>
               <DialogTitle>
                 {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
               </DialogTitle>
-              <DialogDescription id="dialog-description">
+              <DialogDescription id={dialogDescriptionId}>
                 {activeConversation?.offerId 
                   ? "Informații despre cererea și oferta selectată" 
                   : "Informații despre cererea selectată"}
