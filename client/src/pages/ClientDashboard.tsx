@@ -16,7 +16,7 @@ import { RequestForm } from "@/components/request/RequestForm";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
-import { MessagesTab } from "@/components/dashboard/MessagesTab";
+import MessagesTab from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
@@ -82,6 +82,9 @@ export default function ClientDashboard() {
       } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
         queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+      } else if (data.type === 'NEW_MESSAGE') {
+        queryClient.invalidateQueries({ queryKey: ["/api/client/messages"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
       }
     };
 
@@ -250,10 +253,7 @@ export default function ClientDashboard() {
               <OffersTab
                 offers={offers}
                 onMessageClick={(userId: number, userName: string) => {
-                  toast({
-                    title: "În curând",
-                    description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
-                  });
+                  setActiveTab("messages");
                 }}
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
