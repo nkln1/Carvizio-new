@@ -30,62 +30,70 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
     queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     enabled: !!activeConversation,
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`${baseEndpoint}/messages/${activeConversation?.requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("Error response from messages endpoint:", {
-          status: response.status,
-          statusText: response.statusText,
-          errorData
+        const response = await fetch(`${baseEndpoint}/messages/${activeConversation?.requestId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
-        throw new Error(`Failed to fetch messages: ${response.status} - ${errorData}`);
-      }
 
-      return response.json();
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Error response from messages endpoint:", {
+            status: response.status,
+            statusText: response.statusText,
+            errorData
+          });
+          throw new Error(`Failed to fetch messages: ${response.status} - ${errorData}`);
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
     },
     staleTime: MESSAGES_STALE_TIME,
-    gcTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
-    retry: 2
+    refetchInterval: MESSAGES_STALE_TIME,
+    refetchOnWindowFocus: true
   });
 
   // Conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
     queryKey: [`${baseEndpoint}/conversations`],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`${baseEndpoint}/conversations`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("Error response from conversations endpoint:", {
-          status: response.status,
-          statusText: response.statusText,
-          errorData
+        const response = await fetch(`${baseEndpoint}/conversations`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
-        throw new Error(`Failed to fetch conversations: ${response.status} - ${errorData}`);
-      }
 
-      return response.json();
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Error response from conversations endpoint:", {
+            status: response.status,
+            statusText: response.statusText,
+            errorData
+          });
+          throw new Error(`Failed to fetch conversations: ${response.status} - ${errorData}`);
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        throw error;
+      }
     },
     staleTime: CONVERSATIONS_STALE_TIME,
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    refetchOnWindowFocus: false
+    refetchInterval: CONVERSATIONS_STALE_TIME,
+    refetchOnWindowFocus: true
   });
 
   const sendMessage = async (message: string) => {
@@ -102,7 +110,7 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
         offerId: activeConversation.offerId
       };
 
-      const messageResponse = await fetch(`${baseEndpoint}/messages/send`, {
+      const response = await fetch(`${baseEndpoint}/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,24 +119,26 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
         body: JSON.stringify(messagePayload)
       });
 
-      if (!messageResponse.ok) {
-        const errorData = await messageResponse.text();
+      if (!response.ok) {
+        const errorData = await response.text();
         console.error("Error response from send message endpoint:", {
-          status: messageResponse.status,
-          statusText: messageResponse.statusText,
+          status: response.status,
+          statusText: response.statusText,
           errorData,
           requestData: messagePayload
         });
-        throw new Error(`Failed to send message: ${messageResponse.status} - ${errorData}`);
+        throw new Error(`Failed to send message: ${response.status} - ${errorData}`);
       }
 
-      const newMessage = await messageResponse.json();
+      const newMessage = await response.json();
 
+      // Update the messages cache optimistically
       queryClient.setQueryData(
         [`${baseEndpoint}/messages`, activeConversation.requestId],
         (old: Message[] | undefined) => [...(old || []), newMessage]
       );
 
+      // Invalidate conversations to update last message
       await queryClient.invalidateQueries({
         queryKey: [`${baseEndpoint}/conversations`]
       });
@@ -139,7 +149,7 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: error instanceof Error ? error.message : "Nu s-a putut trimite mesajul. Încercați din nou.",
+        description: "Nu s-a putut trimite mesajul. Încercați din nou.",
       });
       throw error;
     }
@@ -147,8 +157,6 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
 
   const loadRequestDetails = async (requestId: number) => {
     try {
-      console.log('Loading request details for ID:', requestId);
-
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -164,9 +172,7 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
         throw new Error(`Failed to fetch request details: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Request details loaded successfully:', data);
-      return data;
+      return response.json();
     } catch (error) {
       console.error('Error in loadRequestDetails:', error);
       throw error;
@@ -175,8 +181,6 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
 
   const loadOfferDetails = async (requestId: number) => {
     try {
-      console.log('Loading offers for request ID:', requestId);
-
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -193,8 +197,6 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
       }
 
       const offers = await response.json();
-      console.log('Offers for request loaded successfully:', offers);
-
       return Array.isArray(offers) && offers.length > 0 ? offers[0] : null;
     } catch (error) {
       console.error('Error in loadOfferDetails:', error);
