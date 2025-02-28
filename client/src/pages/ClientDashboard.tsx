@@ -282,6 +282,7 @@ export default function ClientDashboard() {
             {activeTab === "messages" && (
               <MessagesTab 
                 initialConversation={initialConversation}
+                onConversationClear={() => setInitialConversation(null)}
               />
             )}
 

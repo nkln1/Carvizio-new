@@ -23,9 +23,13 @@ export interface InitialConversationProps {
 
 interface MessagesTabProps {
   initialConversation?: InitialConversationProps;
+  onConversationClear?: () => void;
 }
 
-export function MessagesTab({ initialConversation }: MessagesTabProps) {
+export function MessagesTab({
+  initialConversation = null,
+  onConversationClear,
+}: MessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -48,7 +52,7 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
     loadOfferDetails
   } = useMessagesManagement(initialConversation, true); // Pass true for client context
 
-  // Handle WebSocket initialization
+  // WebSocket initialization
   useEffect(() => {
     let mounted = true;
 
@@ -73,17 +77,12 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
     };
   }, [wsInitialized]);
 
-  // Filter conversations based on search term
-  const filteredConversations = conversations.filter(conv => {
-    if (!searchTerm) return true;
-
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (conv.userName && conv.userName.toLowerCase().includes(searchLower)) ||
-      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower)) ||
-      (conv.requestTitle && conv.requestTitle.toLowerCase().includes(searchLower))
-    );
-  });
+  const handleBack = () => {
+    setActiveConversation(null);
+    if (initialConversation && onConversationClear) {
+      onConversationClear();
+    }
+  };
 
   const handleConversationSelect = (conv: {
     userId: number;
@@ -93,10 +92,9 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
     sourceTab?: string;
   }) => {
     setActiveConversation(conv);
-  };
-
-  const handleBack = () => {
-    setActiveConversation(null);
+    if (initialConversation && onConversationClear) {
+      onConversationClear();
+    }
   };
 
   const handleViewDetails = async () => {
@@ -107,9 +105,11 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
     setOfferData(null);
 
     try {
+      // Load request details
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
 
+      // If there's an offerId, load offer details
       if (activeConversation.offerId) {
         const offer = await loadOfferDetails(activeConversation.requestId);
         setOfferData(offer);
@@ -128,9 +128,25 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
     setShowDetailsDialog(true);
   };
 
+  // Filter conversations based on search term
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchTerm) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (conv.userName && conv.userName.toLowerCase().includes(searchLower)) ||
+      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower)) ||
+      (conv.requestTitle && conv.requestTitle.toLowerCase().includes(searchLower))
+    );
+  });
+
   if (!user) {
     return null;
   }
+
+  // Create unique IDs for dialog accessibility
+  const dialogTitleId = `message-details-dialog-title-${Math.random().toString(36).substring(2, 15)}`;
+  const dialogDescriptionId = `message-details-dialog-description-${Math.random().toString(36).substring(2, 15)}`;
 
   return (
     <Card className="border-[#00aff5]/20">
@@ -140,7 +156,7 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
             <MessageSquare className="h-5 w-5" />
             Mesaje
           </CardTitle>
-          {!activeConversation && conversations.length > 0 && (
+          {!activeConversation && (
             <div className="relative w-[300px]">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -210,10 +226,10 @@ export function MessagesTab({ initialConversation }: MessagesTabProps) {
           <DialogPortal>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle id={dialogTitleId}>
                   {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription id={dialogDescriptionId}>
                   {activeConversation?.offerId 
                     ? "Informații despre cererea și oferta selectată" 
                     : "Informații despre cererea selectată"}

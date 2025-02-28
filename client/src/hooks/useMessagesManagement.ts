@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
 
 // Cache time constants
 const MESSAGES_STALE_TIME = 1000 * 15; // 15 seconds
@@ -18,7 +17,7 @@ interface ConversationInfo {
 }
 
 export function useMessagesManagement(initialConversation: ConversationInfo | null, isClient: boolean = false) {
-  const [activeConversation, setActiveConversation] = useState(initialConversation);
+  const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(initialConversation);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,7 +75,13 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
         });
 
         if (!response.ok) {
-          const errorData = await response.text();
+          let errorData;
+          const contentType = response.headers.get("Content-Type") || "";
+          if (contentType.includes("application/json")) {
+            errorData = await response.json();
+          } else {
+            errorData = await response.text();
+          }
           console.error("Error response from conversations endpoint:", {
             status: response.status,
             statusText: response.statusText,
@@ -120,7 +125,13 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
+        let errorData;
+        const contentType = response.headers.get("Content-Type") || "";
+        if (contentType.includes("application/json")) {
+          errorData = await response.json();
+        } else {
+          errorData = await response.text();
+        }
         console.error("Error response from send message endpoint:", {
           status: response.status,
           statusText: response.statusText,
