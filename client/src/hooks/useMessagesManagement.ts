@@ -20,6 +20,7 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(initialConversation);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isClientContext = isClient; // Added for clarity
 
   // Define base endpoints based on user type
   const baseEndpoint = isClient ? '/api/client' : '/api/service';
@@ -101,68 +102,82 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
     refetchOnWindowFocus: true
   });
 
-  const sendMessage = async (message: string) => {
-    if (!activeConversation) return;
+  const sendMessage = async (
+    content: string, 
+    receiverId?: number, 
+    receiverRole?: string, 
+    requestId?: number, 
+    offerId?: number
+  ) => {
+    if (!content.trim()) {
+      return;
+    }
+
+    // Use provided parameters or fall back to activeConversation
+    const targetReceiverId = receiverId || activeConversation?.userId;
+    const targetReceiverRole = receiverRole || (isClientContext ? "service" : "client");
+    const targetRequestId = requestId || activeConversation?.requestId;
+    const targetOfferId = offerId || activeConversation?.offerId;
+
+    if (!targetReceiverId || !targetRequestId) {
+      console.error("Missing required data for sending message");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not send message - missing conversation data.",
+      });
+      return;
+    }
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      if (!token) throw new Error("No authentication token");
 
-      const messagePayload = {
-        content: message,
-        receiverId: activeConversation.userId,
-        requestId: activeConversation.requestId,
-        offerId: activeConversation.offerId
-      };
+      console.log("Sending message:", {
+        content,
+        receiverId: targetReceiverId,
+        receiverRole: targetReceiverRole,
+        requestId: targetRequestId,
+        offerId: targetOfferId
+      });
 
-      const response = await fetch(`${baseEndpoint}/messages/send`, {
-        method: 'POST',
+      const response = await fetch("/api/messages", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(messagePayload)
+        body: JSON.stringify({
+          content,
+          receiverId: targetReceiverId,
+          receiverRole: targetReceiverRole,
+          requestId: targetRequestId,
+          offerId: targetOfferId,
+        }),
       });
 
       if (!response.ok) {
-        let errorData;
-        const contentType = response.headers.get("Content-Type") || "";
-        if (contentType.includes("application/json")) {
-          errorData = await response.json();
-        } else {
-          errorData = await response.text();
-        }
-        console.error("Error response from send message endpoint:", {
-          status: response.status,
-          statusText: response.statusText,
-          errorData,
-          requestData: messagePayload
-        });
-        throw new Error(`Failed to send message: ${response.status} - ${errorData}`);
+        const errorText = await response.text();
+        throw new Error(`Failed to send message: ${errorText}`);
       }
 
       const newMessage = await response.json();
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-      // Update the messages cache optimistically
-      queryClient.setQueryData(
-        [`${baseEndpoint}/messages`, activeConversation.requestId],
-        (old: Message[] | undefined) => [...(old || []), newMessage]
-      );
-
-      // Invalidate conversations to update last message
-      await queryClient.invalidateQueries({
-        queryKey: [`${baseEndpoint}/conversations`]
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/messages", targetRequestId] 
       });
-
-      return newMessage;
+      queryClient.invalidateQueries({ 
+        queryKey: isClientContext ? ["/api/client/conversations"] : ["/api/service/conversations"] 
+      });
     } catch (error) {
-      console.error('Error in sendMessage:', error);
+      console.error("Error in sendMessage:", error);
       toast({
         variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-a putut trimite mesajul. Încercați din nou.",
+        title: "Error",
+        description: "Failed to send message. Please try again.",
       });
-      throw error;
     }
   };
 

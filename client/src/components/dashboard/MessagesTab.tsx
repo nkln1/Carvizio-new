@@ -52,6 +52,19 @@ export function MessagesTab({
     loadOfferDetails
   } = useMessagesManagement(initialConversation, true); // Pass true for client context
 
+  // Handle initial conversation from props
+  useEffect(() => {
+    if (initialConversation && initialConversation.userId && initialConversation.requestId) {
+      console.log("Setting initial conversation:", initialConversation);
+      setActiveConversation({
+        userId: initialConversation.userId,
+        userName: initialConversation.userName || "Service Provider",
+        requestId: initialConversation.requestId,
+        offerId: initialConversation.offerId
+      });
+    }
+  }, [initialConversation, setActiveConversation]);
+
   // WebSocket initialization
   useEffect(() => {
     let mounted = true;
@@ -77,9 +90,28 @@ export function MessagesTab({
     };
   }, [wsInitialized]);
 
+  // Refresh conversations on tab visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
+        if (activeConversation?.requestId) {
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/messages", activeConversation.requestId] 
+          });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [queryClient, activeConversation]);
+
   const handleBack = () => {
     setActiveConversation(null);
-    if (initialConversation && onConversationClear) {
+    if (onConversationClear) {
       onConversationClear();
     }
   };
@@ -91,8 +123,9 @@ export function MessagesTab({
     offerId?: number;
     sourceTab?: string;
   }) => {
+    console.log("Selected conversation:", conv);
     setActiveConversation(conv);
-    if (initialConversation && onConversationClear) {
+    if (onConversationClear) {
       onConversationClear();
     }
   };
@@ -213,7 +246,7 @@ export function MessagesTab({
                 userName={activeConversation.userName}
                 currentUserId={user.id}
                 isLoading={isLoadingMessages}
-                onSendMessage={sendMessage}
+                onSendMessage={(content) => sendMessage(content, activeConversation.userId, "service", activeConversation.requestId, activeConversation.offerId)}
                 onBack={handleBack}
                 onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
