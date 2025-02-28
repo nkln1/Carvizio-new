@@ -1485,6 +1485,74 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add endpoint to get client conversations
+  app.get("/api/client/conversations", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Client not found" });
+      }
+
+      // Get all messages for this client
+      const messages = await storage.getUserMessages(client.id, "client", null);
+
+      // Group messages by requestId
+      const conversationsByRequest = messages.reduce((acc, message) => {
+        if (!acc[message.requestId]) {
+          acc[message.requestId] = message;
+        } else if (new Date(message.createdAt) > new Date(acc[message.requestId].createdAt)) {
+          // Keep the most recent message for this request
+          acc[message.requestId] = message;
+        }
+        return acc;
+      }, {});
+
+      // Get service provider information and request details for each conversation
+      const conversations = await Promise.all(
+        Object.values(conversationsByRequest).map(async (message) => {
+          const request = await storage.getRequest(message.requestId);
+          if (!request) return null;
+
+          // Find the service provider who sent or received messages
+          const serviceProviderId = message.senderRole === "service" ? message.senderId : message.receiverId;
+          const serviceProvider = await storage.getServiceProvider(serviceProviderId);
+          if (!serviceProvider) return null;
+
+          // Get unread count
+          const unreadMessages = messages.filter(m => 
+            m.requestId === message.requestId && 
+            m.receiverId === client.id &&
+            m.receiverRole === "client" &&
+            !m.isRead
+          );
+
+          return {
+            userId: serviceProvider.id,
+            userName: serviceProvider.companyName,
+            requestId: message.requestId,
+            requestTitle: request.title,
+            lastMessage: message.content,
+            lastMessageDate: message.createdAt,
+            unreadCount: unreadMessages.length,
+            offerId: message.offerId
+          };
+        })
+      );
+
+      // Filter out null values and sort by date (most recent first)
+      const validConversations = conversations
+        .filter(conv => conv !== null)
+        .sort((a, b) => 
+          new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
+        );
+
+      res.json(validConversations);
+    } catch (error) {
+      console.error("Error fetching client conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket server with the correct path to match client

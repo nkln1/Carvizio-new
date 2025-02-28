@@ -27,6 +27,31 @@ export function useMessagesManagement(
     refetch: refetchConversations
   } = useQuery({
     queryKey: [isClientContext ? "/api/client/conversations" : "/api/service/conversations"],
+    queryFn: async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error("Authentication required");
+
+        const endpoint = isClientContext 
+          ? "/api/client/conversations" 
+          : "/api/service/conversations";
+
+        const response = await fetch(endpoint, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch conversations");
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        return [];
+      }
+    },
     enabled: true,
     refetchOnWindowFocus: true,
     staleTime: 10000, // 10 seconds
@@ -94,7 +119,7 @@ export function useMessagesManagement(
 
   // Mutation for sending messages
   const sendMessageMutation = useMutation({
-    mutationFn: async (data: {
+    mutationFn: async (messageData: {
       content: string;
       receiverId: number;
       receiverRole: string;
@@ -104,30 +129,31 @@ export function useMessagesManagement(
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Authentication required");
 
-      console.log("Sending message:", data);
+      const endpoint = isClientContext 
+        ? "/api/messages" 
+        : "/api/service/messages/send";
 
-      const endpoint = isClientContext ? "/api/messages" : "/api/service/messages/send";
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(messageData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to send message");
+        const errorMessage = await response.text();
+        throw new Error(errorMessage || "Failed to send message");
       }
 
       return response.json();
     },
     onSuccess: (newMessage) => {
-      // Optimistically update the messages array
-      setMessages(prev => [...prev, newMessage]);
+      // Update messages with the new message
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
       
-      // Invalidate relevant queries to trigger refetch
+      // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ["/api/messages", activeConversation?.requestId] });
       queryClient.invalidateQueries({ 
         queryKey: [isClientContext ? "/api/client/conversations" : "/api/service/conversations"] 
@@ -137,8 +163,8 @@ export function useMessagesManagement(
       console.error("Error in sendMessage:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: "Eroare",
+        description: "Mesajul nu a putut fi trimis. Încercați din nou.",
       });
     },
   });
@@ -152,9 +178,8 @@ export function useMessagesManagement(
       requestId: number,
       offerId?: number
     ) => {
-      if (!content.trim()) return;
-
       try {
+        console.log("Sending message:", { content, receiverId, receiverRole, requestId, offerId });
         await sendMessageMutation.mutateAsync({
           content,
           receiverId,
@@ -170,12 +195,12 @@ export function useMessagesManagement(
   );
 
   // Function to load request details
-  const loadRequestDetails = useCallback(async (requestId: number) => {
+  const loadRequestDetails = async (requestId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Authentication required");
 
-      const endpoint = isClientContext 
+      const endpoint = isClientContext
         ? `/api/requests/${requestId}`
         : `/api/service/requests/${requestId}`;
 
@@ -194,15 +219,19 @@ export function useMessagesManagement(
       console.error("Error loading request details:", error);
       throw error;
     }
-  }, [isClientContext]);
+  };
 
   // Function to load offer details
-  const loadOfferDetails = useCallback(async (requestId: number) => {
+  const loadOfferDetails = async (requestId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Authentication required");
 
-      const response = await fetch(`/api/client/offers/request/${requestId}`, {
+      const endpoint = isClientContext
+        ? `/api/client/offers?requestId=${requestId}`
+        : `/api/service/offers/request/${requestId}`;
+
+      const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -213,15 +242,17 @@ export function useMessagesManagement(
       }
 
       const offers = await response.json();
-      // Find the accepted offer if any
-      const acceptedOffer = offers.find((offer: any) => offer.status === "Accepted");
-      
-      return acceptedOffer || offers[0]; // Return accepted offer or first offer
+      if (Array.isArray(offers) && offers.length > 0) {
+        // Return the first offer or the accepted one if exists
+        const acceptedOffer = offers.find(o => o.status === "Accepted");
+        return acceptedOffer || offers[0];
+      }
+      return null;
     } catch (error) {
       console.error("Error loading offer details:", error);
       throw error;
     }
-  }, []);
+  };
 
   return {
     activeConversation,
