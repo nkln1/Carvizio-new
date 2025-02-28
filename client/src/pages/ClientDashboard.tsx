@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Request as RequestType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -18,33 +18,21 @@ import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
-import { AccountTab } from "@/components/dashboard/AccountTab";
 import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
 import { useCarManagement } from "@/hooks/useCarManagement";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 import { CarDialog } from "@/components/car/CarDialog";
 
-export interface ClientConversationInfo {
-  userId: number;
-  userName: string;
-  requestId: number;
-  offerId?: number;
-  sourceTab?: string;
-}
-
 export default function ClientDashboard() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("profile");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const [initialConversation, setInitialConversation] = useState<ClientConversationInfo | null>(null);
+  const { toast } = useToast();
 
   const {
     selectedCar,
@@ -78,20 +66,9 @@ export default function ClientDashboard() {
     refetchOnWindowFocus: true,
   });
 
-  // Function to handle message click from other tabs
-  const handleMessageClick = (conversationInfo: ClientConversationInfo) => {
-    setInitialConversation(conversationInfo);
-    setActiveTab("messages");
-  };
-
-  // Function to clear conversation when going back
-  const handleConversationClear = () => {
-    setInitialConversation(null);
-  };
-
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
-      if (!authUser) {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) {
         setLocation("/");
       }
     });
@@ -116,7 +93,7 @@ export default function ClientDashboard() {
     if (activeTab === "offers") {
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
     }
-  }, [activeTab, queryClient]);
+  }, [activeTab]);
 
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -272,7 +249,12 @@ export default function ClientDashboard() {
             {activeTab === "offers" && (
               <OffersTab
                 offers={offers}
-                onMessageClick={handleMessageClick}
+                onMessageClick={(userId: number, userName: string) => {
+                  toast({
+                    title: "În curând",
+                    description: "Funcționalitatea de mesaje va fi disponibilă în curând.",
+                  });
+                }}
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
@@ -281,12 +263,7 @@ export default function ClientDashboard() {
               />
             )}
 
-            {activeTab === "messages" && (
-              <MessagesTab
-                initialConversation={initialConversation}
-                onConversationClear={handleConversationClear}
-              />
-            )}
+            {activeTab === "messages" && <MessagesTab />}
 
             {activeTab === "car" && (
               <CarsTab
@@ -303,10 +280,6 @@ export default function ClientDashboard() {
 
             {activeTab === "profile" && userProfile && (
               <ProfileTab userProfile={userProfile} />
-            )}
-
-            {activeTab === "account" && (
-              <AccountTab />
             )}
           </>
         )}

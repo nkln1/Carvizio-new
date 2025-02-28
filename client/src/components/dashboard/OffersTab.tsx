@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
-  onMessageClick?: (conversationInfo: ClientConversationInfo) => void;
+  onMessageClick?: (userId: number, userName: string) => void;
   refreshRequests?: () => Promise<void>;
   viewedOffers: Set<number>;
   markOfferAsViewed?: (offerId: number) => Promise<void>;
@@ -69,16 +69,13 @@ export function OffersTab({
     }
   };
 
-  const handleMessageClick = (offer: any) => {
+  const handleMessageClick = (offer: OfferWithProvider) => {
     if (onMessageClick && offer.serviceProviderId && offer.serviceProviderName) {
-      onMessageClick({
-        userId: offer.serviceProviderId,
-        userName: offer.serviceProviderName,
-        requestId: offer.requestId,
-        offerId: offer.id,
-        sourceTab: 'offer'
+      return handleAction(offer.id, async () => {
+        onMessageClick(offer.serviceProviderId, offer.serviceProviderName);
       });
     }
+    return Promise.resolve();
   };
 
   const handleAcceptOffer = async (offer: OfferWithProvider) => {
