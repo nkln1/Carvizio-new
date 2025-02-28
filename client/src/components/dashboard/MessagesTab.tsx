@@ -34,50 +34,7 @@ export function MessagesTab() {
     sendMessage,
     loadRequestDetails,
     loadOfferDetails
-  } = useMessagesManagement(null, true); // Pass true to indicate client context
-
-  const handleBack = () => {
-    setActiveConversation(null);
-  };
-
-  const handleConversationSelect = (conv: {
-    userId: number;
-    userName: string;
-    requestId: number;
-    offerId?: number;
-    sourceTab?: string;
-  }) => {
-    setActiveConversation(conv);
-  };
-
-  const handleViewDetails = async () => {
-    if (!activeConversation?.requestId) return;
-
-    setIsLoadingData(true);
-    setRequestData(null);
-    setOfferData(null);
-
-    try {
-      const request = await loadRequestDetails(activeConversation.requestId);
-      setRequestData(request);
-
-      if (activeConversation.offerId) {
-        const offer = await loadOfferDetails(activeConversation.requestId);
-        setOfferData(offer);
-      }
-    } catch (error) {
-      console.error("Error loading details:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca detaliile. Vă rugăm să încercați din nou."
-      });
-    } finally {
-      setIsLoadingData(false);
-    }
-
-    setShowDetailsDialog(true);
-  };
+  } = useMessagesManagement(null, true); // Pass true for client context
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv => {
@@ -90,6 +47,20 @@ export function MessagesTab() {
       (conv.requestTitle && conv.requestTitle.toLowerCase().includes(searchLower))
     );
   });
+
+  const handleConversationSelect = (conv: {
+    userId: number;
+    userName: string;
+    requestId: number;
+    offerId?: number;
+    sourceTab?: string;
+  }) => {
+    setActiveConversation(conv);
+  };
+
+  const handleBack = () => {
+    setActiveConversation(null);
+  };
 
   if (!user) {
     return null;
@@ -127,7 +98,7 @@ export function MessagesTab() {
                 <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
                 <p className="text-muted-foreground ml-2">Se încarcă conversațiile...</p>
               </div>
-            ) : filteredConversations.length === 0 ? (
+            ) : conversations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>Nu există conversații încă.</p>
                 <p className="text-sm mt-2">
@@ -162,13 +133,12 @@ export function MessagesTab() {
                 isLoading={isLoadingMessages}
                 onSendMessage={sendMessage}
                 onBack={handleBack}
-                onViewDetails={handleViewDetails}
+                onViewDetails={() => setShowDetailsDialog(true)}
                 showDetailsButton={!!activeConversation.requestId}
               />
             </Card>
           </div>
         )}
-
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogPortal>
             <DialogContent>
