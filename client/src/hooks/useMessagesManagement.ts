@@ -17,20 +17,23 @@ interface ConversationInfo {
   sourceTab?: string;
 }
 
-export function useMessagesManagement(initialConversation: ConversationInfo | null) {
+export function useMessagesManagement(initialConversation: ConversationInfo | null, isClient: boolean = false) {
   const [activeConversation, setActiveConversation] = useState(initialConversation);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Define base endpoints based on user type
+  const baseEndpoint = isClient ? '/api/client' : '/api/service';
+
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ['/api/service/messages', activeConversation?.requestId],
+    queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     enabled: !!activeConversation,
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/messages/${activeConversation?.requestId}`, {
+      const response = await fetch(`${baseEndpoint}/messages/${activeConversation?.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -57,12 +60,12 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
 
   // Conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
-    queryKey: ['/api/service/conversations'],
+    queryKey: [`${baseEndpoint}/conversations`],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch('/api/service/conversations', {
+      const response = await fetch(`${baseEndpoint}/conversations`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -92,16 +95,14 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Construim payload-ul mesajului, incluzând offerId dacă există
       const messagePayload = {
         content: message,
         receiverId: activeConversation.userId,
         requestId: activeConversation.requestId,
-        offerId: activeConversation.offerId // Includem offerId dacă există
+        offerId: activeConversation.offerId
       };
 
-      // Trimitem mesajul
-      const messageResponse = await fetch('/api/service/messages/send', {
+      const messageResponse = await fetch(`${baseEndpoint}/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,15 +124,13 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
 
       const newMessage = await messageResponse.json();
 
-      // Update messages cache
       queryClient.setQueryData(
-        ['/api/service/messages', activeConversation.requestId],
+        [`${baseEndpoint}/messages`, activeConversation.requestId],
         (old: Message[] | undefined) => [...(old || []), newMessage]
       );
 
-      // Invalidate conversations to update last message
       await queryClient.invalidateQueries({
-        queryKey: ['/api/service/conversations']
+        queryKey: [`${baseEndpoint}/conversations`]
       });
 
       return newMessage;
@@ -146,18 +145,14 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
     }
   };
 
-  // Modifică funcțiile loadRequestDetails și loadOfferDetails pentru a gestiona erorile mai bine
-
   const loadRequestDetails = async (requestId: number) => {
     try {
       console.log('Loading request details for ID:', requestId);
 
-      // Obține token-ul de autentificare
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Încearcă să obții detaliile cererii
-      const response = await fetch(`/api/service/requests/${requestId}`, {
+      const response = await fetch(`${baseEndpoint}/requests/${requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -182,12 +177,10 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
     try {
       console.log('Loading offers for request ID:', requestId);
 
-      // Obține token-ul de autentificare
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Încearcă să obții ofertele pentru această cerere
-      const response = await fetch(`/api/service/offers/request/${requestId}`, {
+      const response = await fetch(`${baseEndpoint}/offers/request/${requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -202,7 +195,6 @@ export function useMessagesManagement(initialConversation: ConversationInfo | nu
       const offers = await response.json();
       console.log('Offers for request loaded successfully:', offers);
 
-      // Returnează prima ofertă (presupunem că este cea relevantă pentru conversație)
       return Array.isArray(offers) && offers.length > 0 ? offers[0] : null;
     } catch (error) {
       console.error('Error in loadOfferDetails:', error);

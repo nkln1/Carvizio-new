@@ -34,7 +34,7 @@ export function MessagesTab() {
     sendMessage,
     loadRequestDetails,
     loadOfferDetails
-  } = useMessagesManagement(null);
+  } = useMessagesManagement(null, true); // Pass true to indicate client context
 
   const handleBack = () => {
     setActiveConversation(null);
@@ -103,7 +103,7 @@ export function MessagesTab() {
             <MessageSquare className="h-5 w-5" />
             Mesaje
           </CardTitle>
-          {!activeConversation && (
+          {!activeConversation && filteredConversations.length > 0 && (
             <div className="relative w-[300px]">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -122,11 +122,25 @@ export function MessagesTab() {
       <CardContent>
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
-            <ConversationList 
-              conversations={filteredConversations}
-              isLoading={isLoadingConversations}
-              onSelectConversation={handleConversationSelect}
-            />
+            {isLoadingConversations ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+                <p className="text-muted-foreground ml-2">Se încarcă conversațiile...</p>
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Nu există conversații încă.</p>
+                <p className="text-sm mt-2">
+                  Conversațiile vor apărea aici după ce veți interacționa cu service-urile.
+                </p>
+              </div>
+            ) : (
+              <ConversationList 
+                conversations={filteredConversations}
+                isLoading={false}
+                onSelectConversation={handleConversationSelect}
+              />
+            )}
           </div>
         ) : (
           <div className="space-y-4">
