@@ -1,6 +1,3 @@
-<TabsTrigger
-  value="new"
-  className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
->
-  Oferte Noi {newOffersCount ? `(${newOffersCount})` : ""}
-</TabsTrigger>;
+
+// This file is being deleted as it's not used and its functionality
+// is already handled by the OffersTab.tsx component in the dashboard folder
