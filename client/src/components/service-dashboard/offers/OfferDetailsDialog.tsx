@@ -26,23 +26,24 @@ export function OfferDetailsDialog({
 }: OfferDetailsDialogProps) {
   if (!offer) return null;
 
-  // Create a unique ID base for the dialog
-  const dialogId = `offer-details-dialog-${offer.id}`;
+  // Create static IDs for accessibility
+  const dialogTitleId = "offer-details-dialog-title";
+  const dialogDescriptionId = "offer-details-dialog-description";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
         <DialogContent 
           className="max-h-[95vh] overflow-y-auto pr-4"
-          aria-labelledby={`${dialogId}-title`}
-          aria-describedby={`${dialogId}-description`}
+          aria-labelledby={dialogTitleId}
+          aria-describedby={dialogDescriptionId}
         >
           <DialogHeader>
-            <DialogTitle id={`${dialogId}-title`}>
+            <DialogTitle id={dialogTitleId}>
               Detalii Complete Ofertă
             </DialogTitle>
-            <DialogDescription id={`${dialogId}-description`}>
-              Informații despre oferta selectată
+            <DialogDescription id={dialogDescriptionId}>
+              Informații complete despre oferta selectată
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-full max-h-[60vh]">

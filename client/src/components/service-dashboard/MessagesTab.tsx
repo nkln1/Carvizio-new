@@ -21,9 +21,6 @@ interface MessagesTabProps {
   onConversationClear?: () => void;
 }
 
-// Create a unique ID for the dialog description outside the component
-const MESSAGE_DETAILS_DIALOG_ID = "message-details-dialog";
-
 // Funcție utilitară pentru a verifica dacă o dată este validă
 const isValidDate = (date: any): boolean => {
   return date && !isNaN(new Date(date).getTime());
@@ -202,6 +199,9 @@ export default function MessagesTab({
     return null;
   }
 
+  // Create unique IDs for dialog accessibility
+  const dialogTitleId = "message-details-dialog-title";
+  const dialogDescriptionId = "message-details-dialog-description";
 
   return (
     <Card className="border-[#00aff5]/20">
@@ -233,8 +233,6 @@ export default function MessagesTab({
             <ConversationList 
               conversations={filteredConversations}
               isLoading={isLoadingConversations}
-              activeConversationId={activeConversation?.userId}
-              activeRequestId={activeConversation?.requestId}
               onSelectConversation={handleConversationSelect}
               onDeleteConversation={handleDeleteConversation}
             />
@@ -270,14 +268,14 @@ export default function MessagesTab({
           <DialogPortal>
             <DialogContent 
               className="max-h-[80vh] overflow-y-auto"
-              aria-labelledby={`${MESSAGE_DETAILS_DIALOG_ID}-title`}
-              aria-describedby={`${MESSAGE_DETAILS_DIALOG_ID}-description`}
+              aria-labelledby={dialogTitleId}
+              aria-describedby={dialogDescriptionId}
             >
               <DialogHeader>
-                <DialogTitle id={`${MESSAGE_DETAILS_DIALOG_ID}-title`}>
+                <DialogTitle id={dialogTitleId}>
                   {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
                 </DialogTitle>
-                <DialogDescription id={`${MESSAGE_DETAILS_DIALOG_ID}-description`}>
+                <DialogDescription id={dialogDescriptionId}>
                   {activeConversation?.offerId 
                     ? "Informații despre cererea și oferta selectată" 
                     : "Informații despre cererea selectată"}
@@ -291,7 +289,6 @@ export default function MessagesTab({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Detalii cerere - afișate întotdeauna */}
                   {requestData && (
                     <div className="space-y-3">
                       <h3 className="font-medium text-md">Detalii Cerere</h3>
@@ -348,7 +345,6 @@ export default function MessagesTab({
                     </div>
                   )}
 
-                  {/* Detalii ofertă - afișate doar dacă există offerId și offerData */}
                   {activeConversation?.offerId && offerData && (
                     <div className="space-y-3 mt-6 pt-6 border-t">
                       <h3 className="font-medium text-md">Detalii Ofertă</h3>
