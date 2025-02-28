@@ -80,6 +80,7 @@ interface IStorage {
     getViewedOffersByClient: any;
     getViewedAcceptedOffersByServiceProvider: any;
     markAcceptedOfferAsViewed: any;
+    getSentOffersByRequest: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -454,6 +455,33 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add endpoint to get a specific request by ID for client
+  app.get("/api/requests/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+
+      const requestId = parseInt(req.params.id);
+      const request = await storage.getRequest(requestId);
+
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Verify the client owns this request
+      if (request.clientId !== client.id) {
+        return res.status(403).json({ error: "Not authorized to view this request" });
+      }
+
+      res.json(request);
+    } catch (error) {
+      console.error("Error getting client request:", error);
+      res.status(500).json({ error: "Failed to get request" });
+    }
+  });
+
   app.patch("/api/requests/:id", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
@@ -683,7 +711,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to get offers for request" });
     }
   });
-  
+
   // Fix create offer endpoint to include required fields
   app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
     try {
@@ -702,11 +730,11 @@ export function registerRoutes(app: Express): Server {
       if (!requestUser) {
         return res.status(404).json({ error: "Request user not found" });
       }
-      
+
       // Check if this service provider has already sent an offer for this request
       const existingOffers = await storage.getSentOffersByServiceProvider(provider.id);
       const hasExistingOffer = existingOffers.some(offer => offer.requestId === req.body.requestId);
-      
+
       if (hasExistingOffer) {
         return res.status(400).json({ 
           error: "Cannot create offer", 
