@@ -9,16 +9,14 @@ class WebSocketService {
   private connectionPromise: Promise<void> | null = null;
   private connectionResolve: (() => void) | null = null;
   private connectionReject: ((error: Error) => void) | null = null;
+  private isReconnecting = false;
 
   constructor() {
-    // Initialize when the document is ready
     if (typeof window !== 'undefined') {
       if (document.readyState === 'complete') {
-        setTimeout(() => this.initialize(), 1000);
+        this.initialize();
       } else {
-        window.addEventListener('load', () => {
-          setTimeout(() => this.initialize(), 1000);
-        });
+        window.addEventListener('load', () => this.initialize());
       }
     }
   }
@@ -34,6 +32,33 @@ class WebSocketService {
       this.connectionReject = reject;
       this.connect();
     });
+
+    // Add page visibility change handler
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Page became visible, checking WebSocket connection...');
+        this.checkConnection();
+      }
+    });
+
+    // Add online/offline handlers
+    window.addEventListener('online', () => {
+      console.log('Network connection restored, reconnecting WebSocket...');
+      this.checkConnection();
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('Network connection lost');
+      this.cleanup();
+    });
+  }
+
+  private checkConnection() {
+    if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+      console.log('WebSocket connection needs to be restored');
+      this.reconnectAttempt = 0;
+      this.connect();
+    }
   }
 
   private getWebSocketUrl(): string {
@@ -51,6 +76,11 @@ class WebSocketService {
   }
 
   private connect() {
+    if (this.isReconnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
+      console.log('Connection attempt already in progress');
+      return;
+    }
+
     if (typeof window === 'undefined' || !window.location) {
       console.log('Window not available, delaying connection...');
       setTimeout(() => this.connect(), 1000);
@@ -67,10 +97,21 @@ class WebSocketService {
 
       console.log('Attempting WebSocket connection to:', wsUrl);
       this.ws = new WebSocket(wsUrl);
+      this.isReconnecting = true;
+
+      // Set a connection timeout
+      const connectionTimeout = setTimeout(() => {
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          console.log('WebSocket connection timeout');
+          this.ws.close();
+        }
+      }, 10000);
 
       this.ws.onopen = () => {
         console.log('WebSocket connection established');
+        clearTimeout(connectionTimeout);
         this.reconnectAttempt = 0;
+        this.isReconnecting = false;
         if (this.connectionResolve) {
           this.connectionResolve();
         }
@@ -87,13 +128,17 @@ class WebSocketService {
 
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        clearTimeout(connectionTimeout);
+        this.isReconnecting = false;
         if (this.connectionReject && this.reconnectAttempt === 0) {
           this.connectionReject(new Error('WebSocket connection failed'));
         }
       };
 
       this.ws.onclose = (event) => {
-        console.log(`WebSocket connection closed (code: ${event.code})`);
+        console.log(`WebSocket connection closed (code: ${event.code}, reason: ${event.reason})`);
+        clearTimeout(connectionTimeout);
+        this.isReconnecting = false;
         if (this.ws) {
           this.ws = null;
           this.scheduleReconnect();
@@ -101,6 +146,7 @@ class WebSocketService {
       };
     } catch (error) {
       console.error('Error creating WebSocket:', error);
+      this.isReconnecting = false;
       this.scheduleReconnect();
     }
   }
@@ -138,6 +184,7 @@ class WebSocketService {
       }
       this.ws = null;
     }
+    this.isReconnecting = false;
   }
 
   public async ensureConnection(): Promise<void> {
