@@ -10,7 +10,6 @@ import { ConversationList } from "@/components/service-dashboard/messages/Conver
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -50,12 +49,11 @@ export function MessagesTab({
     sendMessage,
     loadRequestDetails,
     loadOfferDetails
-  } = useMessagesManagement(initialConversation, true); // Pass true for client context
+  } = useMessagesManagement(initialConversation, true);
 
-  // Handle initial conversation from props
+  // Effect for handling initialConversation updates
   useEffect(() => {
-    if (initialConversation && initialConversation.userId && initialConversation.requestId) {
-      console.log("Setting initial conversation:", initialConversation);
+    if (initialConversation?.userId && initialConversation?.requestId) {
       setActiveConversation({
         userId: initialConversation.userId,
         userName: initialConversation.userName || "Service Provider",
@@ -63,12 +61,7 @@ export function MessagesTab({
         offerId: initialConversation.offerId
       });
     }
-  }, [
-    initialConversation?.userId,
-    initialConversation?.userName,
-    initialConversation?.requestId,
-    initialConversation?.offerId
-  ]);
+  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId]);
 
   // WebSocket initialization
   useEffect(() => {
@@ -95,25 +88,6 @@ export function MessagesTab({
     };
   }, [wsInitialized]);
 
-  // Refresh conversations on tab visibility
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
-        if (activeConversation?.requestId) {
-          queryClient.invalidateQueries({ 
-            queryKey: ["/api/messages", activeConversation.requestId] 
-          });
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [queryClient, activeConversation]);
-
   const handleBack = () => {
     setActiveConversation(null);
     if (onConversationClear) {
@@ -128,7 +102,6 @@ export function MessagesTab({
     offerId?: number;
     sourceTab?: string;
   }) => {
-    console.log("Selected conversation:", conv);
     setActiveConversation(conv);
     if (onConversationClear) {
       onConversationClear();
@@ -194,7 +167,7 @@ export function MessagesTab({
             <MessageSquare className="h-5 w-5" />
             Mesaje
           </CardTitle>
-          {!activeConversation && (
+          {!activeConversation && filteredConversations.length > 0 && (
             <div className="relative w-[300px]">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -218,7 +191,7 @@ export function MessagesTab({
                 <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
                 <p className="text-muted-foreground ml-2">Se încarcă conversațiile...</p>
               </div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>Nu există conversații încă.</p>
                 <p className="text-sm mt-2">
@@ -230,6 +203,8 @@ export function MessagesTab({
                 conversations={filteredConversations}
                 isLoading={false}
                 onSelectConversation={handleConversationSelect}
+                activeConversationId={activeConversation?.userId}
+                activeRequestId={activeConversation?.requestId}
               />
             )}
           </div>
@@ -251,7 +226,7 @@ export function MessagesTab({
                 userName={activeConversation.userName}
                 currentUserId={user.id}
                 isLoading={isLoadingMessages}
-                onSendMessage={(content) => sendMessage(content, activeConversation.userId, "service", activeConversation.requestId, activeConversation.offerId)}
+                onSendMessage={(content) => sendMessage(content)}
                 onBack={handleBack}
                 onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
@@ -262,7 +237,11 @@ export function MessagesTab({
 
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogPortal>
-            <DialogContent>
+            <DialogContent
+              className="max-h-[80vh] overflow-y-auto"
+              aria-labelledby={dialogTitleId}
+              aria-describedby={dialogDescriptionId}
+            >
               <DialogHeader>
                 <DialogTitle id={dialogTitleId}>
                   {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
@@ -274,7 +253,7 @@ export function MessagesTab({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="max-h-[80vh] overflow-y-auto">
+              <div className="space-y-6">
                 {isLoadingData ? (
                   <div className="flex justify-center items-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />

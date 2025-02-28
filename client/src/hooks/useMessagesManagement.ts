@@ -1,267 +1,211 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { InitialConversationProps } from "@/components/dashboard/MessagesTab";
+import type { Message, Conversation } from "@shared/schema";
+
+const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
+const CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
+
+export interface ConversationInfo {
+  userId: number;
+  userName: string;
+  requestId: number;
+  offerId?: number;
+  sourceTab?: string;
+}
 
 export function useMessagesManagement(
-  initialConversation: InitialConversationProps | null = null,
-  isClientContext: boolean = false
+  initialConversation: ConversationInfo | null = null,
+  isClient: boolean = false
 ) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [activeConversation, setActiveConversation] = useState<{
-    userId: number;
-    userName: string;
-    requestId: number;
-    offerId?: number;
-    sourceTab?: string;
-  } | null>(null);
-  
-  // Initialize with initial conversation if provided
+  const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
+
+  // Set initial conversation only once when the component mounts
   useEffect(() => {
     if (initialConversation && initialConversation.userId && initialConversation.requestId) {
       setActiveConversation({
         userId: initialConversation.userId,
-        userName: initialConversation.userName || "Service Provider",
+        userName: initialConversation.userName || 'Unknown User',
         requestId: initialConversation.requestId,
         offerId: initialConversation.offerId
       });
     }
   }, []);
-  const [messages, setMessages] = useState<any[]>([]);
 
-  // Query for fetching conversations
-  const {
-    data: conversations = [],
-    isLoading: isLoadingConversations,
-    refetch: refetchConversations
-  } = useQuery({
-    queryKey: [isClientContext ? "/api/client/conversations" : "/api/service/conversations"],
+  // Define base endpoints based on user type
+  const baseEndpoint = isClient ? '/api/client' : '/api/service';
+
+  // Messages query
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
+    queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     queryFn: async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error("Authentication required");
+      if (!activeConversation?.requestId) return [];
 
-        const endpoint = isClientContext 
-          ? "/api/client/conversations" 
-          : "/api/service/conversations";
-
-        const response = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch conversations");
-        }
-
-        return response.json();
-      } catch (error) {
-        console.error("Error fetching conversations:", error);
-        return [];
-      }
-    },
-    enabled: true,
-    refetchOnWindowFocus: true,
-    staleTime: 10000, // 10 seconds
-  });
-
-  // Query for fetching messages for active conversation
-  const {
-    data: fetchedMessages = [],
-    isLoading: isLoadingMessages,
-    refetch: refetchMessages
-  } = useQuery({
-    queryKey: ["/api/messages", activeConversation?.requestId],
-    queryFn: async () => {
-      try {
-        if (!activeConversation?.requestId) return [];
-
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error("Authentication required");
-
-        const endpoint = isClientContext 
-          ? `/api/messages/${activeConversation.requestId}`
-          : `/api/service/messages/${activeConversation.requestId}`;
-
-        const response = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch messages");
-        }
-
-        return response.json();
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-        return [];
-      }
-    },
-    enabled: !!activeConversation?.requestId,
-    refetchInterval: 5000, // Poll every 5 seconds
-    refetchOnWindowFocus: true,
-  });
-
-  // Update messages state when fetched messages change
-  useEffect(() => {
-    if (fetchedMessages) {
-      setMessages(fetchedMessages);
-    }
-  }, [fetchedMessages]);
-
-  // Initialize with any provided initial conversation
-  useEffect(() => {
-    if (initialConversation && initialConversation.userId && initialConversation.requestId) {
-      setActiveConversation({
-        userId: initialConversation.userId,
-        userName: initialConversation.userName || "User",
-        requestId: initialConversation.requestId,
-        offerId: initialConversation.offerId,
-      });
-    }
-  }, [initialConversation]);
-
-  // Mutation for sending messages
-  const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: {
-      content: string;
-      receiverId: number;
-      receiverRole: string;
-      requestId: number;
-      offerId?: number;
-    }) => {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error('No authentication token available');
 
-      const endpoint = isClientContext 
-        ? "/api/messages" 
-        : "/api/service/messages/send";
-
-      const response = await fetch(endpoint, {
-        method: "POST",
+      const response = await fetch(`${baseEndpoint}/messages/${activeConversation.requestId}`, {
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(messageData),
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
-        const errorMessage = await response.text();
-        throw new Error(errorMessage || "Failed to send message");
+        const errorData = await response.text();
+        console.error("Error response from messages endpoint:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(`Failed to fetch messages: ${response.status}`);
       }
 
       return response.json();
     },
-    onSuccess: (newMessage) => {
-      // Update messages with the new message
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    enabled: !!activeConversation?.requestId,
+    staleTime: MESSAGES_STALE_TIME,
+    refetchInterval: MESSAGES_STALE_TIME
+  });
 
-      // Invalidate queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ["/api/messages", activeConversation?.requestId] });
-      queryClient.invalidateQueries({ 
-        queryKey: [isClientContext ? "/api/client/conversations" : "/api/service/conversations"] 
+  // Conversations query
+  const { data: conversations = [], isLoading: isLoadingConversations } = useQuery({
+    queryKey: [`${baseEndpoint}/conversations`],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`${baseEndpoint}/conversations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Error response from conversations endpoint:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(`Failed to fetch conversations: ${response.status}`);
+      }
+
+      return response.json();
     },
-    onError: (error) => {
-      console.error("Error in sendMessage:", error);
+    staleTime: CONVERSATIONS_STALE_TIME,
+    refetchInterval: CONVERSATIONS_STALE_TIME
+  });
+
+  const sendMessage = useCallback(async (content: string) => {
+    if (!activeConversation) {
+      console.error('No active conversation to send message to');
+      return;
+    }
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const messagePayload = {
+        content,
+        receiverId: activeConversation.userId,
+        requestId: activeConversation.requestId,
+        offerId: activeConversation.offerId
+      };
+
+      const response = await fetch(`${baseEndpoint}/messages/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(messagePayload)
+      });
+
+      if (!response.ok) {
+        let errorMessage;
+        const contentType = response.headers.get("Content-Type") || "";
+        if (contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || 'Unknown error';
+        } else {
+          errorMessage = await response.text();
+        }
+        throw new Error(`Failed to send message: ${response.status} - ${errorMessage}`);
+      }
+
+      const newMessage = await response.json();
+
+      // Update messages cache optimistically
+      queryClient.setQueryData(
+        [`${baseEndpoint}/messages`, activeConversation.requestId],
+        (old: Message[] | undefined) => [...(old || []), newMessage]
+      );
+
+      // Invalidate conversations to update last message
+      await queryClient.invalidateQueries({
+        queryKey: [`${baseEndpoint}/conversations`]
+      });
+
+      return newMessage;
+    } catch (error) {
+      console.error('Error in sendMessage:', error);
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Mesajul nu a putut fi trimis. Încercați din nou.",
+        description: "Nu s-a putut trimite mesajul. Încercați din nou.",
       });
-    },
-  });
+      throw error;
+    }
+  }, [activeConversation, baseEndpoint, queryClient, toast]);
 
-  // Function to send a message
-  const sendMessage = useCallback(
-    async (
-      content: string,
-      receiverId: number,
-      receiverRole: string,
-      requestId: number,
-      offerId?: number
-    ) => {
-      try {
-        console.log("Sending message:", { content, receiverId, receiverRole, requestId, offerId });
-        await sendMessageMutation.mutateAsync({
-          content,
-          receiverId,
-          receiverRole,
-          requestId,
-          offerId,
-        });
-      } catch (error) {
-        console.error("Error in sendMessage:", error);
-      }
-    },
-    [sendMessageMutation]
-  );
-
-  // Function to load request details
-  const loadRequestDetails = async (requestId: number) => {
+  const loadRequestDetails = useCallback(async (requestId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error('No authentication token available');
 
-      const endpoint = isClientContext
-        ? `/api/requests/${requestId}`
-        : `/api/service/requests/${requestId}`;
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${baseEndpoint}/requests/${requestId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
-        throw new Error("Failed to load request details");
+        throw new Error(`Failed to fetch request details: ${response.status}`);
       }
 
       return response.json();
     } catch (error) {
-      console.error("Error loading request details:", error);
+      console.error('Error in loadRequestDetails:', error);
       throw error;
     }
-  };
+  }, [baseEndpoint]);
 
-  // Function to load offer details
-  const loadOfferDetails = async (requestId: number) => {
+  const loadOfferDetails = useCallback(async (requestId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error('No authentication token available');
 
-      const endpoint = isClientContext
-        ? `/api/client/offers?requestId=${requestId}`
-        : `/api/service/offers/request/${requestId}`;
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${baseEndpoint}/offers/request/${requestId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
-        throw new Error("Failed to load offer details");
+        throw new Error(`Failed to fetch offer details: ${response.status}`);
       }
 
       const offers = await response.json();
-      if (Array.isArray(offers) && offers.length > 0) {
-        // Return the first offer or the accepted one if exists
-        const acceptedOffer = offers.find(o => o.status === "Accepted");
-        return acceptedOffer || offers[0];
-      }
-      return null;
+      return Array.isArray(offers) && offers.length > 0 ? offers[0] : null;
     } catch (error) {
-      console.error("Error loading offer details:", error);
+      console.error('Error in loadOfferDetails:', error);
       throw error;
     }
-  };
+  }, [baseEndpoint]);
 
   return {
     activeConversation,
@@ -272,8 +216,6 @@ export function useMessagesManagement(
     isLoadingConversations,
     sendMessage,
     loadRequestDetails,
-    loadOfferDetails,
-    refetchMessages,
-    refetchConversations
+    loadOfferDetails
   };
 }
