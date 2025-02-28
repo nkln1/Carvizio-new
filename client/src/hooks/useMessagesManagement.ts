@@ -16,7 +16,19 @@ export function useMessagesManagement(
     requestId: number;
     offerId?: number;
     sourceTab?: string;
-  } | null>(initialConversation);
+  } | null>(null);
+  
+  // Initialize with initial conversation if provided
+  useEffect(() => {
+    if (initialConversation && initialConversation.userId && initialConversation.requestId) {
+      setActiveConversation({
+        userId: initialConversation.userId,
+        userName: initialConversation.userName || "Service Provider",
+        requestId: initialConversation.requestId,
+        offerId: initialConversation.offerId
+      });
+    }
+  }, []);
   const [messages, setMessages] = useState<any[]>([]);
 
   // Query for fetching conversations
@@ -97,7 +109,9 @@ export function useMessagesManagement(
 
   // Update messages state when fetched messages change
   useEffect(() => {
-    setMessages(fetchedMessages);
+    if (fetchedMessages) {
+      setMessages(fetchedMessages);
+    }
   }, [fetchedMessages]);
 
   // Initialize with any provided initial conversation
