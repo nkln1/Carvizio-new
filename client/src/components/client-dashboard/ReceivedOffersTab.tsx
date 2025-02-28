@@ -1,3 +1,6 @@
-<TabsTrigger value="new" className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white">
-            Oferte Noi {newOffersCount ? `(${newOffersCount})` : ''}
-          </TabsTrigger>
+<TabsTrigger
+  value="new"
+  className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
+>
+  Oferte Noi {newOffersCount ? `(${newOffersCount})` : ""}
+</TabsTrigger>;
