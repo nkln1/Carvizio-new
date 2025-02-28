@@ -63,12 +63,7 @@ export function MessagesTab({
         offerId: initialConversation.offerId
       });
     }
-  }, [
-    initialConversation?.userId, 
-    initialConversation?.userName, 
-    initialConversation?.requestId, 
-    initialConversation?.offerId
-  ]);
+  }, [initialConversation]);
 
   // WebSocket initialization
   useEffect(() => {
