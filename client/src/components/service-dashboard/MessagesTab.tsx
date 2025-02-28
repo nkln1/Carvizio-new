@@ -265,13 +265,13 @@ export default function MessagesTab({
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogContent 
             className="max-h-[80vh] overflow-y-auto"
-            aria-describedby="message-details-description"
+            aria-describedby="dialog-description"
           >
             <DialogHeader>
               <DialogTitle>
                 {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
               </DialogTitle>
-              <DialogDescription id="message-details-description">
+              <DialogDescription id="dialog-description">
                 {activeConversation?.offerId 
                   ? "Informații despre cererea și oferta selectată" 
                   : "Informații despre cererea selectată"}
