@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Loader2, Search } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,22 @@ import { ConversationList } from "@/components/service-dashboard/messages/Conver
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import websocketService from "@/lib/websocket";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function MessagesTab() {
+export interface InitialConversationProps {
+  userId?: number;
+  userName?: string;
+  requestId?: number;
+  offerId?: number;
+}
+
+interface MessagesTabProps {
+  initialConversation?: InitialConversationProps;
+}
+
+export function MessagesTab({ initialConversation }: MessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -34,7 +46,32 @@ export function MessagesTab() {
     sendMessage,
     loadRequestDetails,
     loadOfferDetails
-  } = useMessagesManagement(null, true); // Pass true for client context
+  } = useMessagesManagement(initialConversation, true); // Pass true for client context
+
+  // Handle WebSocket initialization
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeWebSocket = async () => {
+      try {
+        if (!wsInitialized && mounted) {
+          await websocketService.ensureConnection();
+          setWsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Failed to initialize WebSocket:', error);
+        if (mounted) {
+          setTimeout(initializeWebSocket, 2000);
+        }
+      }
+    };
+
+    initializeWebSocket();
+
+    return () => {
+      mounted = false;
+    };
+  }, [wsInitialized]);
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv => {
@@ -62,6 +99,35 @@ export function MessagesTab() {
     setActiveConversation(null);
   };
 
+  const handleViewDetails = async () => {
+    if (!activeConversation?.requestId) return;
+
+    setIsLoadingData(true);
+    setRequestData(null);
+    setOfferData(null);
+
+    try {
+      const request = await loadRequestDetails(activeConversation.requestId);
+      setRequestData(request);
+
+      if (activeConversation.offerId) {
+        const offer = await loadOfferDetails(activeConversation.requestId);
+        setOfferData(offer);
+      }
+    } catch (error) {
+      console.error("Error loading details:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca detaliile. Vă rugăm să încercați din nou."
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
+
+    setShowDetailsDialog(true);
+  };
+
   if (!user) {
     return null;
   }
@@ -74,7 +140,7 @@ export function MessagesTab() {
             <MessageSquare className="h-5 w-5" />
             Mesaje
           </CardTitle>
-          {!activeConversation && filteredConversations.length > 0 && (
+          {!activeConversation && conversations.length > 0 && (
             <div className="relative w-[300px]">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -133,12 +199,13 @@ export function MessagesTab() {
                 isLoading={isLoadingMessages}
                 onSendMessage={sendMessage}
                 onBack={handleBack}
-                onViewDetails={() => setShowDetailsDialog(true)}
+                onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
               />
             </Card>
           </div>
         )}
+
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogPortal>
             <DialogContent>

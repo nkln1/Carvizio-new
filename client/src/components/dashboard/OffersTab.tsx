@@ -31,10 +31,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-
 interface OffersTabProps {
   offers: OfferWithProvider[];
-  onMessageClick?: (userId: number, userName: string) => void;
+  onMessageClick?: (userId: number, userName: string, requestId: number, offerId?: number) => void;
   refreshRequests?: () => Promise<void>;
   viewedOffers: Set<number>;
   markOfferAsViewed?: (offerId: number) => Promise<void>;
@@ -72,7 +71,12 @@ export function OffersTab({
   const handleMessageClick = (offer: OfferWithProvider) => {
     if (onMessageClick && offer.serviceProviderId && offer.serviceProviderName) {
       return handleAction(offer.id, async () => {
-        onMessageClick(offer.serviceProviderId, offer.serviceProviderName);
+        onMessageClick(
+          offer.serviceProviderId,
+          offer.serviceProviderName,
+          offer.requestId,
+          offer.id
+        );
       });
     }
     return Promise.resolve();

@@ -16,7 +16,7 @@ import { RequestForm } from "@/components/request/RequestForm";
 import { RequestsTab } from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
-import MessagesTab from "@/components/dashboard/MessagesTab";
+import { MessagesTab, InitialConversationProps } from "@/components/dashboard/MessagesTab";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import websocketService from "@/lib/websocket";
 import { useAuth } from "@/context/AuthContext";
@@ -32,6 +32,7 @@ export default function ClientDashboard() {
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [initialConversation, setInitialConversation] = useState<InitialConversationProps | null>(null);
   const { toast } = useToast();
 
   const {
@@ -95,6 +96,13 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (activeTab === "offers") {
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+    }
+  }, [activeTab]);
+
+  // Reset initial conversation when leaving messages tab
+  useEffect(() => {
+    if (activeTab !== "messages") {
+      setInitialConversation(null);
     }
   }, [activeTab]);
 
@@ -162,6 +170,16 @@ export default function ClientDashboard() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleInitMessage = (userId: number, userName: string, requestId: number, offerId?: number) => {
+    setInitialConversation({
+      userId,
+      userName,
+      requestId,
+      offerId
+    });
+    setActiveTab("messages");
   };
 
   if (!user) {
@@ -252,9 +270,7 @@ export default function ClientDashboard() {
             {activeTab === "offers" && (
               <OffersTab
                 offers={offers}
-                onMessageClick={(userId: number, userName: string) => {
-                  setActiveTab("messages");
-                }}
+                onMessageClick={handleInitMessage}
                 refreshRequests={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
                 }}
@@ -263,7 +279,11 @@ export default function ClientDashboard() {
               />
             )}
 
-            {activeTab === "messages" && <MessagesTab />}
+            {activeTab === "messages" && (
+              <MessagesTab 
+                initialConversation={initialConversation}
+              />
+            )}
 
             {activeTab === "car" && (
               <CarsTab
