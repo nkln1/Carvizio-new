@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
@@ -98,11 +97,7 @@ export function useMessagesManagement(
 
   // Update messages state when fetched messages change
   useEffect(() => {
-    if (fetchedMessages && fetchedMessages.length > 0) {
-      setMessages(fetchedMessages);
-    } else {
-      setMessages([]);
-    }
+    setMessages(fetchedMessages);
   }, [fetchedMessages]);
 
   // Initialize with any provided initial conversation
@@ -152,7 +147,7 @@ export function useMessagesManagement(
     onSuccess: (newMessage) => {
       // Update messages with the new message
       setMessages((prevMessages) => [...prevMessages, newMessage]);
-      
+
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ["/api/messages", activeConversation?.requestId] });
       queryClient.invalidateQueries({ 
