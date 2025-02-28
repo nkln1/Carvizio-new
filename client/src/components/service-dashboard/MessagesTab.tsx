@@ -200,8 +200,8 @@ export default function MessagesTab({
   }
 
   // Create unique IDs for dialog accessibility
-  const dialogTitleId = "message-details-dialog-title";
-  const dialogDescriptionId = "message-details-dialog-description";
+  const dialogTitleId = `message-details-dialog-title-${Math.random().toString(36).substring(2, 15)}`;
+  const dialogDescriptionId = `message-details-dialog-description-${Math.random().toString(36).substring(2, 15)}`;
 
   return (
     <Card className="border-[#00aff5]/20">

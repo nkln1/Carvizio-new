@@ -27,8 +27,8 @@ export function OfferDetailsDialog({
   if (!offer) return null;
 
   // Create static IDs for accessibility
-  const dialogTitleId = "offer-details-dialog-title";
-  const dialogDescriptionId = "offer-details-dialog-description";
+  const dialogTitleId = `offer-details-title-${offer.id}`;
+  const dialogDescriptionId = `offer-details-description-${offer.id}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
