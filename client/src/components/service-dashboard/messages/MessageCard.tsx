@@ -50,9 +50,6 @@ export function MessageCard({ message, isCurrentUser }: MessageCardProps) {
   const displayName = isCurrentUser ? "You" : message.senderName;
   const initial = displayName.charAt(0).toUpperCase();
 
-  // Debug logging
-  console.log("MessageCard props:", { message, isCurrentUser, senderName });
-
   return (
     <div className={cn(
       "flex items-start gap-2 max-w-[80%] mb-4",

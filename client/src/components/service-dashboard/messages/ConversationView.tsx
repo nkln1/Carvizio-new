@@ -71,10 +71,6 @@ export function ConversationView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Log messages to debug
-  console.log("ConversationView messages:", messages);
-  console.log("ConversationView currentUserId:", currentUserId);
-
   // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -125,28 +121,20 @@ export function ConversationView({
               <Loader2 className="h-8 w-8 animate-spin text-[#00aff5] mb-2" />
               <p className="text-sm text-gray-500">Se încarcă mesajele...</p>
             </div>
-          ) : !Array.isArray(messages) || messages.length === 0 ? (
+          ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
               <p>Nu există mesaje încă.</p>
               <p className="text-sm mt-2">Trimite un mesaj pentru a începe o conversație.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((message, index) => {
-                // For client dashboard, the client is the current user
-                const isCurrentUser = message.senderRole === "client";
-                // Use the message's senderName property if available, otherwise fallback
-                const senderName = isCurrentUser ? "You" : (message.senderName || userName);
-
-                return (
-                  <MessageCard
-                    key={index}
-                    message={message}
-                    isCurrentUser={isCurrentUser}
-                    senderName={senderName}
-                  />
-                );
-              })}
+              {messages.map((message) => (
+                <MessageCard
+                  key={message.id}
+                  message={message}
+                  isCurrentUser={message.senderId === currentUserId}
+                />
+              ))}
               <div ref={messagesEndRef} />
             </div>
           )}
