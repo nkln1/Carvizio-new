@@ -507,7 +507,11 @@ export class DatabaseStorage implements IStorage {
       console.log('Retrieved offers:', offers.map(o => ({
         id: o.id,
         title: o.title,
-        serviceProviderName: o.serviceProviderName
+        serviceProviderName: o.serviceProviderName,
+        status: o.status,
+        availableDates: o.availableDates,
+        price: o.price,
+        details: o.details ? o.details.substring(0, 50) + '...' : 'No details'
       })));
 
       return offers;

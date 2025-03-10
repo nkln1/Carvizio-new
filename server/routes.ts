@@ -1727,7 +1727,7 @@ export function registerRoutes(app: Express): Server {
   wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
 
-    ws.on('message, (message) => {
+    ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
         console.log('Received message:', data);
