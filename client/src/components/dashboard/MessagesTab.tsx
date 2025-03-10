@@ -10,7 +10,7 @@ import { MessageDetailsDialog } from "./MessageDetailsDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
-import { useQueryClient } from "@tanstack/react-query";
+import { auth } from "@/lib/firebase";
 import type { Message, Conversation } from "@shared/schema";
 
 export interface InitialConversationProps {
@@ -87,7 +87,7 @@ export function MessagesTab({
 
   const loadRequestDetails = async (requestId: number) => {
     try {
-      const token = await user?.getIdToken();
+      const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
       const response = await fetch(`/api/requests/${requestId}`, {
@@ -109,7 +109,7 @@ export function MessagesTab({
 
   const loadOfferDetails = async (requestId: number) => {
     try {
-      const token = await user?.getIdToken();
+      const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
       const response = await fetch(`/api/client/offers/${requestId}`, {
@@ -156,13 +156,17 @@ export function MessagesTab({
     setOfferData(null);
 
     try {
+      // Load request details
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
 
+      // If there's an offer ID, load offer details
       if (activeConversation.offerId) {
         const offer = await loadOfferDetails(activeConversation.requestId);
         setOfferData(offer);
       }
+
+      setShowDetailsDialog(true);
     } catch (error) {
       console.error("Error loading details:", error);
       toast({
@@ -173,8 +177,6 @@ export function MessagesTab({
     } finally {
       setIsLoadingData(false);
     }
-
-    setShowDetailsDialog(true);
   };
 
   // Filter conversations based on search term
