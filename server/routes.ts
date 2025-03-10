@@ -1674,3 +1674,62 @@ export function registerRoutes(app: Express): Server {
 
   return httpServer;
 }
+
+app.get("/api/client/messages/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Client not found" });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const request = await storage.getRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Ensure the client owns this request
+      if (request.clientId !== client.id) {
+        return res.status(403).json({ error: "Not authorized to view messages for this request" });
+      }
+
+      // Get messages for this specific request
+      const messages = await storage.getUserMessages(client.id, "client", requestId);
+
+      // Mark messages as read
+      await Promise.all(
+        messages
+          .filter(m => m.receiverId === client.id && !m.isRead)
+          .map(m => storage.markMessageAsRead(m.id))
+      );
+
+      // Get service provider information for enriching messages
+      const serviceProviderIds = [...new Set(
+        messages.map(m => m.senderRole === "service" ? m.senderId : m.receiverId)
+      )];
+
+      const serviceProviders = await Promise.all(
+        serviceProviderIds.map(id => storage.getServiceProvider(id))
+      );
+
+      const serviceProviderMap = serviceProviders.reduce((map, sp) => {
+        if (sp) map[sp.id] = sp;
+        return map;
+      }, {});
+
+      // Enrich messages with sender and receiver names
+      const enrichedMessages = messages.map(message => ({
+        ...message,
+        senderName: message.senderRole === "client" ? client.name : 
+                    (serviceProviderMap[message.senderId]?.companyName || "Unknown Service"),
+        receiverName: message.receiverRole === "client" ? client.name : 
+                      (serviceProviderMap[message.receiverId]?.companyName || "Unknown Service")
+      }));
+
+      console.log('Sending enriched messages for client:', enrichedMessages.length);
+      res.json(enrichedMessages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
