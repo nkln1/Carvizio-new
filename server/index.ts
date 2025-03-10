@@ -12,11 +12,13 @@ const wss = new WebSocketServer({
   server,
   path: '/api/ws',
   clientTracking: true,
-  // Add WebSocket server options with improved error handling
+  // Add WebSocket server options
   verifyClient: (info, cb) => {
     try {
-      // Allow all origins to fix connection issues
-      cb(true); // Accept all connections
+      // Allow all origins in development
+      // You can add more validation here if needed
+      const origin = info.origin;
+      cb(true); // Accept the connection
     } catch (error) {
       console.error('WebSocket verification error:', error);
       cb(false, 500, 'WebSocket verification failed');

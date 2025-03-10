@@ -1,144 +1,170 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useRef } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ArrowLeft, FileText } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, ArrowLeft, Info } from "lucide-react";
+import { MessageCard } from "./MessageCard";
+import type { Message } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import MessageCard from "./MessageCard";
-import { Message } from "@/types/message";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import websocketService from "@/lib/websocket";
 
 interface ConversationViewProps {
   messages: Message[];
   userName: string;
   currentUserId: number;
-  isLoading: boolean;
-  onSendMessage: (content: string) => void;
+  isLoading?: boolean;
   onBack: () => void;
+  onSendMessage: (content: string) => Promise<void>;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
 }
 
-const ConversationView: React.FC<ConversationViewProps> = ({
+const MessagesLoading = () => (
+  <div className="space-y-4 p-4">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="flex items-start gap-4">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+export function ConversationView({
   messages,
   userName,
   currentUserId,
   isLoading,
-  onSendMessage,
   onBack,
+  onSendMessage,
   onViewDetails,
-  showDetailsButton = false,
-}) => {
-  const [messageText, setMessageText] = useState("");
+  showDetailsButton = false
+}: ConversationViewProps) {
+  const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [wsInitialized, setWsInitialized] = useState(false);
 
-  // Scroll to bottom when messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Removed automatic scroll effect
+
   useEffect(() => {
-    if (messagesEndRef.current) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    }
-  }, [messages]);
+    let mounted = true;
 
-  // Focus input when component mounts
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
+    const initializeWebSocket = async () => {
+      try {
+        if (!wsInitialized && mounted) {
+          await websocketService.ensureConnection();
+          setWsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Failed to initialize WebSocket:', error);
+        // Retry after a delay if initialization fails
+        if (mounted) {
+          setTimeout(initializeWebSocket, 2000);
+        }
+      }
+    };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+    initializeWebSocket();
+
+    return () => {
+      mounted = false;
+    };
+  }, [wsInitialized]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (messageText.trim()) {
-      onSendMessage(messageText);
-      setMessageText("");
+    if (!newMessage.trim() || isSending) return;
+
+    try {
+      setIsSending(true);
+      await onSendMessage(newMessage.trim());
+      setNewMessage("");
+      scrollToBottom();
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsSending(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <CardHeader className="py-4 border-b">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="border-b">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onBack}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
               className="md:hidden"
+              onClick={onBack}
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <CardTitle className="text-base md:text-lg">{userName}</CardTitle>
+            <CardTitle>{userName}</CardTitle>
           </div>
-          {showDetailsButton && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+          {showDetailsButton && onViewDetails && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
               onClick={onViewDetails}
-              className="flex items-center gap-1"
             >
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Detalii</span>
+              <Info className="h-4 w-4 mr-2" />
+              Vezi Detalii
             </Button>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 p-0 flex flex-col">
-        <ScrollArea 
-          className="flex-1 p-4"
-          ref={scrollAreaRef}
-        >
+      <CardContent className="flex-1 overflow-hidden p-0">
+        <ScrollArea className="h-full">
           {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : ''}`}>
-                  <Skeleton className={`h-[60px] w-[200px] rounded-lg ${i % 2 === 0 ? 'bg-blue-100' : 'bg-gray-100'}`} />
-                </div>
-              ))}
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-center p-6">
-              <div className="text-gray-500">
-                <p className="mb-2">Nu există mesaje încă.</p>
-                <p>Trimite un mesaj pentru a începe o conversație.</p>
-              </div>
-            </div>
+            <MessagesLoading />
           ) : (
-            <div className="space-y-3">
-              {messages.map((message) => (
+            <div className="space-y-4 p-4">
+              {[...messages].sort((a, b) => 
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              ).map((message) => (
                 <MessageCard
                   key={message.id}
                   message={message}
-                  isMine={message.senderId === currentUserId}
+                  isCurrentUser={message.senderId === currentUserId}
                 />
               ))}
               <div ref={messagesEndRef} />
             </div>
           )}
         </ScrollArea>
-
-        <form 
-          onSubmit={handleSendMessage} 
-          className="p-3 border-t flex gap-2 sticky bottom-0 bg-white"
-        >
-          <Input
-            ref={inputRef}
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Scrie un mesaj..."
-            className="flex-1"
-          />
-          <Button type="submit" size="icon" disabled={!messageText.trim()}>
-            <Send size={18} />
-          </Button>
-        </form>
       </CardContent>
-    </div>
-  );
-};
 
-export default ConversationView;
+      <form
+        onSubmit={handleSubmit}
+        className="border-t p-4 flex gap-2"
+      >
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Scrie un mesaj..."
+          className="flex-1"
+          disabled={isSending}
+        />
+        <Button 
+          type="submit" 
+          disabled={!newMessage.trim() || isSending}
+          className="bg-[#00aff5] hover:bg-[#0099d6]"
+        >
+          <Send className={`h-4 w-4 ${isSending ? 'animate-pulse' : ''}`} />
+        </Button>
+      </form>
+    </Card>
+  );
+}
