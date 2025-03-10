@@ -732,9 +732,9 @@ export function registerRoutes(app: Express): Server {
       const hasExistingOffer = existingOffers.some(offer => offer.requestId === req.body.requestId);
 
       if (hasExistingOffer) {
-        return res.status(400).json({ 
-          error: "Cannot create offer", 
-          message: "Ați trimis deja o ofertă pentru această cerere" 
+        return res.status(400).json({
+          error: "Cannot create offer",
+          message: "Ați trimis deja o ofertă pentru această cerere"
         });
       }
 
@@ -901,6 +901,36 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error getting client offers:", error);
       res.status(500).json({ error: "Failed to get offers" });
+    }
+  });
+
+  // Add new endpoint for getting specific offer details
+  app.get("/api/client/offers/details/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can view offer details." });
+      }
+
+      const offerId = parseInt(req.params.id);
+      if (isNaN(offerId)) {
+        return res.status(400).json({ error: "Invalid offer ID" });
+      }
+
+      // Get all offers for this client
+      const clientOffers = await storage.getOffersForClient(client.id);
+
+      // Find the specific offer
+      const offer = clientOffers.find(o => o.id === offerId);
+
+      if (!offer) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+
+      res.json(offer);
+    } catch (error) {
+      console.error("Error getting offer details:", error);
+      res.status(500).json({ error: "Failed to get offer details" });
     }
   });
 
@@ -1345,8 +1375,8 @@ export function registerRoutes(app: Express): Server {
           if (!client) return null;
 
           // Get unread count
-          const unreadMessages = messages.filter(m => 
-            m.requestId === message.requestId && 
+          const unreadMessages = messages.filter(m =>
+            m.requestId === message.requestId &&
             m.receiverId === serviceProvider.id &&
             m.receiverRole === "service" &&
             !m.isRead
@@ -1367,7 +1397,7 @@ export function registerRoutes(app: Express): Server {
       // Filter out null values and sort by date (most recent first)
       const validConversations = conversations
         .filter(conv => conv !== null)
-        .sort((a: any, b: any) => 
+        .sort((a: any, b: any) =>
           new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
         );
 
@@ -1514,8 +1544,8 @@ export function registerRoutes(app: Express): Server {
           if (!serviceProvider) return null;
 
           // Get unread count
-          const unreadMessages = messages.filter(m => 
-            m.requestId === message.requestId && 
+          const unreadMessages = messages.filter(m =>
+            m.requestId === message.requestId &&
             m.receiverId === client.id &&
             m.receiverRole === "client" &&
             !m.isRead
@@ -1537,7 +1567,7 @@ export function registerRoutes(app: Express): Server {
       // Filter out null values and sort by date (most recent first)
       const validConversations = conversations
         .filter(conv => conv !== null)
-        .sort((a, b) => 
+        .sort((a, b) =>
           new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
         );
 
@@ -1586,7 +1616,7 @@ export function registerRoutes(app: Express): Server {
       return res.json(messages);
     } catch (error) {
       console.error('Error in GET /api/client/messages/:requestId:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: "Failed to fetch messages",
         message: error instanceof Error ? error.message : "Unknown error occurred"
       });
@@ -1608,9 +1638,9 @@ export function registerRoutes(app: Express): Server {
       // Validate required fields
       if (!content || !receiverId || !requestId) {
         console.log('Missing required fields:', { content, receiverId, requestId });
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid request data",
-          message: "Content, receiverId and requestId are required" 
+          message: "Content, receiverId and requestId are required"
         });
       }
 
@@ -1664,7 +1694,7 @@ export function registerRoutes(app: Express): Server {
       return res.status(201).json(enrichedMessage);
     } catch (error) {
       console.error('Error in POST /api/client/messages/send:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: "Failed to send message",
         message: error instanceof Error ? error.message : "Unknown error occurred"
       });
@@ -1694,7 +1724,7 @@ export function registerRoutes(app: Express): Server {
             wss.clients.forEach(client => {
               if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
-                  type: 'NEW_OFFER',
+                  type:'NEW_OFFER',
                   payload: data.payload,
                   timestamp: new Date().toISOString()
                 }));

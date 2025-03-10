@@ -107,12 +107,12 @@ export function MessagesTab({
     }
   };
 
-  const loadOfferDetails = async (requestId: number) => {
+  const loadOfferDetails = async (offerId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/offers/${requestId}`, {
+      const response = await fetch(`/api/client/offers/details/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -162,7 +162,7 @@ export function MessagesTab({
 
       // If there's an offer ID, load offer details
       if (activeConversation.offerId) {
-        const offer = await loadOfferDetails(activeConversation.requestId);
+        const offer = await loadOfferDetails(activeConversation.offerId);
         setOfferData(offer);
       }
 
@@ -180,7 +180,7 @@ export function MessagesTab({
   };
 
   // Filter conversations based on search term
-  const filteredConversations = conversations.filter((conv: Conversation) => {
+  const filteredConversations = conversations.filter(conv => {
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
