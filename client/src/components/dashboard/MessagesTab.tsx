@@ -119,7 +119,8 @@ export function MessagesTab({
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/offers/details/${offerId}`, {
+      // Use the same endpoint as used in the client dashboard
+      const response = await fetch(`/api/client/offers/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -128,7 +129,7 @@ export function MessagesTab({
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Server response:', errorText);
+        console.error('Server response for offer details:', errorText);
         throw new Error(`Failed to load offer details: ${errorText}`);
       }
 
@@ -172,11 +173,13 @@ export function MessagesTab({
       // Load request details
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
+      console.log('Request data set:', request);
 
       // If there's an offer ID, load offer details
       if (activeConversation.offerId) {
         console.log('Loading details for offer:', activeConversation.offerId);
         const offer = await loadOfferDetails(activeConversation.offerId);
+        console.log('Setting offer data:', offer);
         setOfferData(offer);
       }
 
