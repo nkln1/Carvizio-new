@@ -12,31 +12,32 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
 import { useQueryClient } from "@tanstack/react-query";
+import type { Message, Conversation } from "@shared/schema";
 
 export interface InitialConversationProps {
-  userId?: number;
+  userId: number;
   userName?: string;
-  requestId?: number;
+  requestId: number;
   offerId?: number;
 }
 
 interface MessagesTabProps {
-  initialConversation?: InitialConversationProps;
+  initialConversation?: InitialConversationProps | null;
   onConversationClear?: () => void;
 }
 
 export function MessagesTab({
-  initialConversation = null,
+  initialConversation,
   onConversationClear,
 }: MessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [wsInitialized, setWsInitialized] = useState(false);
 
   const {
@@ -49,7 +50,7 @@ export function MessagesTab({
     sendMessage,
     loadRequestDetails,
     loadOfferDetails
-  } = useMessagesManagement(initialConversation, true);
+  } = useMessagesManagement(initialConversation, true); // Pass true to indicate client mode
 
   // Effect for handling initialConversation updates
   useEffect(() => {
@@ -95,14 +96,13 @@ export function MessagesTab({
     }
   };
 
-  const handleConversationSelect = (conv: {
-    userId: number;
-    userName: string;
-    requestId: number;
-    offerId?: number;
-    sourceTab?: string;
-  }) => {
-    setActiveConversation(conv);
+  const handleConversationSelect = (conv: Conversation) => {
+    setActiveConversation({
+      userId: conv.userId,
+      userName: conv.userName,
+      requestId: conv.requestId,
+      offerId: conv.offerId
+    });
     if (onConversationClear) {
       onConversationClear();
     }
@@ -116,11 +116,9 @@ export function MessagesTab({
     setOfferData(null);
 
     try {
-      // Load request details
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
 
-      // If there's an offerId, load offer details
       if (activeConversation.offerId) {
         const offer = await loadOfferDetails(activeConversation.requestId);
         setOfferData(offer);
@@ -140,7 +138,7 @@ export function MessagesTab({
   };
 
   // Filter conversations based on search term
-  const filteredConversations = conversations.filter(conv => {
+  const filteredConversations = conversations.filter((conv: Conversation) => {
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -154,10 +152,6 @@ export function MessagesTab({
   if (!user) {
     return null;
   }
-
-  // Create unique IDs for dialog accessibility
-  const dialogTitleId = `message-details-dialog-title-${Math.random().toString(36).substring(2, 15)}`;
-  const dialogDescriptionId = `message-details-dialog-description-${Math.random().toString(36).substring(2, 15)}`;
 
   return (
     <Card className="border-[#00aff5]/20">
@@ -203,8 +197,6 @@ export function MessagesTab({
                 conversations={filteredConversations}
                 isLoading={false}
                 onSelectConversation={handleConversationSelect}
-                activeConversationId={activeConversation?.userId}
-                activeRequestId={activeConversation?.requestId}
               />
             )}
           </div>
@@ -226,7 +218,7 @@ export function MessagesTab({
                 userName={activeConversation.userName}
                 currentUserId={user.id}
                 isLoading={isLoadingMessages}
-                onSendMessage={(content) => sendMessage(content)}
+                onSendMessage={sendMessage}
                 onBack={handleBack}
                 onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
@@ -237,16 +229,12 @@ export function MessagesTab({
 
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
           <DialogPortal>
-            <DialogContent
-              className="max-h-[80vh] overflow-y-auto"
-              aria-labelledby={dialogTitleId}
-              aria-describedby={dialogDescriptionId}
-            >
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle id={dialogTitleId}>
+                <DialogTitle>
                   {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
                 </DialogTitle>
-                <DialogDescription id={dialogDescriptionId}>
+                <DialogDescription>
                   {activeConversation?.offerId 
                     ? "Informații despre cererea și oferta selectată" 
                     : "Informații despre cererea selectată"}
@@ -309,16 +297,6 @@ export function MessagesTab({
                         <div>
                           <h4 className="font-medium text-sm text-muted-foreground">Detalii</h4>
                           <p className="whitespace-pre-line">{offerData.details || "Nedisponibil"}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Status</h4>
-                          <span className={`px-2 py-1 rounded-full text-sm ${
-                            offerData.status && offerData.status.toLowerCase() === 'accepted' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {offerData.status || 'Pending'}
-                          </span>
                         </div>
                       </div>
                     )}
