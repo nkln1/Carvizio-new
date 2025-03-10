@@ -68,7 +68,8 @@ export function useMessagesManagement(
     },
     enabled: !!activeConversation?.requestId,
     staleTime: MESSAGES_STALE_TIME,
-    refetchInterval: MESSAGES_STALE_TIME
+    refetchInterval: MESSAGES_STALE_TIME,
+    refetchOnWindowFocus: true
   });
 
   // Conversations query

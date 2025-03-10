@@ -35,3 +35,46 @@ export function MessageCard({ message, isCurrentUser }: MessageCardProps) {
     </div>
   );
 }
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import type { Message } from "@shared/schema";
+
+interface MessageCardProps {
+  message: Message;
+  isCurrentUser: boolean;
+}
+
+export function MessageCard({ message, isCurrentUser }: MessageCardProps) {
+  const formattedTime = format(new Date(message.createdAt), "HH:mm");
+  const displayName = isCurrentUser ? "You" : message.senderName;
+  const initial = displayName.charAt(0).toUpperCase();
+
+  return (
+    <div className={cn(
+      "flex items-start gap-2 max-w-[80%] mb-4",
+      isCurrentUser ? "ml-auto flex-row-reverse" : ""
+    )}>
+      <Avatar className="h-8 w-8 mt-1">
+        <AvatarFallback className={isCurrentUser ? "bg-[#00aff5]" : "bg-gray-500"}>
+          {initial}
+        </AvatarFallback>
+      </Avatar>
+      <div>
+        <div className={cn(
+          "px-3 py-2 rounded-lg",
+          isCurrentUser 
+            ? "bg-[#00aff5] text-white rounded-tr-none" 
+            : "bg-gray-100 text-gray-800 rounded-tl-none"
+        )}>
+          <p className="text-sm">{message.content}</p>
+        </div>
+        <div className="flex items-center mt-1 text-xs text-gray-500">
+          <p className="font-medium">{displayName}</p>
+          <span className="mx-1">•</span>
+          <p>{formattedTime}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
