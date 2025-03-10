@@ -46,7 +46,7 @@ class WebSocketService {
 
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/ws`; // Updated path to match server
     console.log('WebSocket URL:', wsUrl);
     return wsUrl;
   }
@@ -76,6 +76,7 @@ class WebSocketService {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('Received WebSocket message:', data);
           this.messageHandlers.forEach(handler => handler(data));
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);

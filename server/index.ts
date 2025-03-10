@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 
 const app = express();
@@ -10,19 +10,8 @@ const server = http.createServer(app);
 // Initialize WebSocket server with proper configuration
 const wss = new WebSocketServer({ 
   server,
-  path: '/api/ws',
-  clientTracking: true,
-  // Add WebSocket server options
-  verifyClient: (info, cb) => {
-    try {
-      // Allow all origins in development
-      const origin = info.origin;
-      cb(true); // Accept the connection
-    } catch (error) {
-      console.error('WebSocket verification error:', error);
-      cb(false, 500, 'WebSocket verification failed');
-    }
-  }
+  path: '/ws',
+  clientTracking: true
 });
 
 // Improved WebSocket connection handling
@@ -40,24 +29,27 @@ wss.on('connection', (ws, req) => {
     try {
       const data = JSON.parse(message.toString());
       console.log('Received WebSocket message:', data);
+
+      // Broadcast message to all connected clients
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(data));
+        }
+      });
     } catch (error) {
       console.error('Error parsing WebSocket message:', error);
     }
   });
 
-  ws.on('close', (code, reason) => {
-    console.log(`Client disconnected. Code: ${code}, Reason: ${reason}`);
-  });
-
   ws.on('error', (error) => {
-    console.error(`WebSocket error occurred: ${error.message}`);
+    console.error('WebSocket error:', error);
   });
 });
 
 // Heartbeat to keep connections alive
 const interval = setInterval(() => {
   wss.clients.forEach((ws) => {
-    if (ws.readyState === ws.OPEN) {
+    if (ws.readyState === WebSocket.OPEN) {
       ws.ping();
     }
   });
@@ -67,81 +59,39 @@ wss.on('close', () => {
   clearInterval(interval);
 });
 
-// Configure middleware and CORS
+// Configure middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configure CORS for both HTTP and WebSocket
+// Configure CORS and security headers
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
-  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
 
-  // Set CSP headers with WebSocket permissions
-  const isDev = app.get("env") === "development";
-  const connectSources = isDev 
-    ? "'self' wss: ws: https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com https://*.replit.dev:* http://*.replit.dev:*"
-    : "'self' wss: ws: https://identitytoolkit.googleapis.com https://*.firebaseauth.com https://*.googleapis.com";
-
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
-    "img-src 'self' data: https: blob:; " +
-    `connect-src ${connectSources}; ` +
-    "frame-src 'self' https://*.firebaseauth.com"
-  );
-  next();
-});
-
-// Logging middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      console.log(logLine);
-    }
-  });
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Type', 'application/json');
 
   next();
 });
 
-// Initialize routes and error handling
+// Error handling middleware
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Error:', err);
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ error: message });
+});
+
+// Initialize routes
 (async () => {
   registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Error:', err);
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ error: message });
-  });
 
   if (app.get("env") === "development") {
     await setupVite(app, server);

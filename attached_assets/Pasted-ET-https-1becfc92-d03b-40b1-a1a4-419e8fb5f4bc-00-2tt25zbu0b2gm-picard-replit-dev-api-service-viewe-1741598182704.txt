@@ -1,0 +1,88 @@
+ET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/service/viewed-accepted-offers 403 (Forbidden)
+window.fetch @ hmr-disable.ts:95
+(anonymous) @ queryClient.ts:43
+await in (anonymous)
+fetchFn @ @tanstack_react-query.js?v=6c365447:840
+run @ @tanstack_react-query.js?v=6c365447:494
+start @ @tanstack_react-query.js?v=6c365447:536
+fetch @ @tanstack_react-query.js?v=6c365447:926
+executeFetch_fn @ @tanstack_react-query.js?v=6c365447:2211
+onSubscribe @ @tanstack_react-query.js?v=6c365447:1898
+subscribe @ @tanstack_react-query.js?v=6c365447:24
+(anonymous) @ @tanstack_react-query.js?v=6c365447:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=6c365447:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=6c365447:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=6c365447:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=6c365447:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=6c365447:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=6c365447:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=6c365447:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=6c365447:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=6c365447:19432
+commitRoot @ chunk-RPCDYKBN.js?v=6c365447:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=6c365447:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18718
+workLoop @ chunk-RPCDYKBN.js?v=6c365447:197
+flushWork @ chunk-RPCDYKBN.js?v=6c365447:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=6c365447:384
+useOfferManagement.ts:127 New offers calculation: {totalOffers: 0, viewedOffers: 8, newOffersCount: 0}
+useOfferManagement.ts:127 New offers calculation: {totalOffers: 11, viewedOffers: 8, newOffersCount: 3}
+useMessagesManagement.ts:111 Sending message with payload: {content: 'zzzz', receiverId: 1, receiverRole: 'service', requestId: 8, offerId: undefined}
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+15hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/service/viewed-accepted-offers 403 (Forbidden)
+window.fetch @ hmr-disable.ts:95
+(anonymous) @ queryClient.ts:43
+await in (anonymous)
+fetchFn @ @tanstack_react-query.js?v=6c365447:840
+run @ @tanstack_react-query.js?v=6c365447:494
+start @ @tanstack_react-query.js?v=6c365447:536
+fetch @ @tanstack_react-query.js?v=6c365447:926
+executeFetch_fn @ @tanstack_react-query.js?v=6c365447:2211
+(anonymous) @ @tanstack_react-query.js?v=6c365447:2245
+setInterval
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=6c365447:2243
+updateTimers_fn @ @tanstack_react-query.js?v=6c365447:2250
+onQueryUpdate @ @tanstack_react-query.js?v=6c365447:2206
+(anonymous) @ @tanstack_react-query.js?v=6c365447:998
+(anonymous) @ @tanstack_react-query.js?v=6c365447:997
+batch @ @tanstack_react-query.js?v=6c365447:583
+dispatch_fn @ @tanstack_react-query.js?v=6c365447:996
+onError @ @tanstack_react-query.js?v=6c365447:861
+reject @ @tanstack_react-query.js?v=6c365447:465
+(anonymous) @ @tanstack_react-query.js?v=6c365447:508
+Promise.catch
+run @ @tanstack_react-query.js?v=6c365447:498
+start @ @tanstack_react-query.js?v=6c365447:536
+fetch @ @tanstack_react-query.js?v=6c365447:926
+executeFetch_fn @ @tanstack_react-query.js?v=6c365447:2211
+onSubscribe @ @tanstack_react-query.js?v=6c365447:1898
+subscribe @ @tanstack_react-query.js?v=6c365447:24
+(anonymous) @ @tanstack_react-query.js?v=6c365447:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=6c365447:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=6c365447:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=6c365447:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=6c365447:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=6c365447:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=6c365447:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=6c365447:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=6c365447:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=6c365447:19432
+commitRoot @ chunk-RPCDYKBN.js?v=6c365447:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=6c365447:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18718
+workLoop @ chunk-RPCDYKBN.js?v=6c365447:197
+flushWork @ chunk-RPCDYKBN.js?v=6c365447:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=6c365447:384
+4hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: 
