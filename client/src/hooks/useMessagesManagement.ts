@@ -115,12 +115,18 @@ export function useMessagesManagement(
         content,
         receiverId: activeConversation.userId,
         requestId: activeConversation.requestId,
-        offerId: activeConversation.offerId
+        offerId: activeConversation.offerId,
+        receiverRole: isClient ? "service" : "client" // Add the receiver role
       };
 
       console.log('Sending message with payload:', messagePayload);
 
-      const response = await fetch(`${baseEndpoint}/messages/send`, {
+      // For client, use a different endpoint than service providers
+      const endpoint = isClient 
+        ? '/api/client/messages/send' 
+        : `${baseEndpoint}/messages/send`;
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +186,7 @@ export function useMessagesManagement(
       });
       throw error;
     }
-  }, [activeConversation, baseEndpoint, queryClient, toast]);
+  }, [activeConversation, baseEndpoint, queryClient, toast, isClient]);
 
   const loadRequestDetails = useCallback(async (requestId: number) => {
     try {
