@@ -12,17 +12,18 @@ if (!process.env.DATABASE_URL) {
 // Create a new pool with the DATABASE_URL and improved connection settings
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10, // Reduced from 20 to prevent overwhelming the VPS
-  idleTimeoutMillis: 60000, // Increased from 30000 to allow longer idle times
-  connectionTimeoutMillis: 10000, // Increased from 5000 to allow more time for connection
-  ssl: false // Disable SSL for VPS connection
+  max: 10,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 10000,
+  ssl: false
 });
 
 // Test database connection and keep retrying
 const testConnection = async () => {
   try {
     const client = await pool.connect();
-    console.log('Successfully connected to PostgreSQL database');
+    const result = await client.query('SELECT NOW()');
+    console.log('Successfully connected to PostgreSQL database:', result.rows[0]);
     client.release();
   } catch (err: any) {
     console.error('Database connection error:', err.message);

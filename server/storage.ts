@@ -4,29 +4,14 @@ import {
   cars,
   requests,
   sentOffers,
-  messages,
-  viewedRequests,
-  type Client,
-  type InsertClient,
-  type ServiceProvider,
-  type InsertServiceProvider,
-  type Car,
-  type InsertCar,
-  type Request,
-  type InsertRequest,
-  type SentOffer,
-  type InsertSentOffer,
+  messages as messagesTable,
   type Message,
-  type InsertMessage,
-  type ViewedRequest,
-  type InsertViewedRequest,
-  type ViewedOffer,
+  viewedRequests,
   viewedOffers,
-  type ViewedAcceptedOffer,
   viewedAcceptedOffers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, inArray, or, and } from "drizzle-orm";
+import { eq, desc, or, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -543,7 +528,7 @@ export class DatabaseStorage implements IStorage {
     offerId?: number | null;
   }): Promise<Message> {
     try {
-      const [message] = await db.insert(messages).values({
+      const [message] = await db.insert(messagesTable).values({
         requestId,
         senderId,
         senderRole,
@@ -565,8 +550,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [message] = await db
         .select()
-        .from(messages)
-        .where(eq(messages.id, id));
+        .from(messagesTable)
+        .where(eq(messagesTable.id, id));
       return message;
     } catch (error) {
       console.error('Error getting message:', error);
@@ -580,26 +565,26 @@ export class DatabaseStorage implements IStorage {
       const conditions = [
         or(
           and(
-            eq(messages.senderId, userId),
-            eq(messages.senderRole, userRole)
+            eq(messagesTable.senderId, userId),
+            eq(messagesTable.senderRole, userRole)
           ),
           and(
-            eq(messages.receiverId, userId),
-            eq(messages.receiverRole, userRole)
+            eq(messagesTable.receiverId, userId),
+            eq(messagesTable.receiverRole, userRole)
           )
         )
       ];
 
       // Add requestId filter if provided
       if (requestId) {
-        conditions.push(eq(messages.requestId, requestId));
+        conditions.push(eq(messagesTable.requestId, requestId));
       }
 
       const messageResults = await db
         .select()
-        .from(messages)
+        .from(messagesTable)
         .where(and(...conditions))
-        .orderBy(desc(messages.createdAt));
+        .orderBy(desc(messagesTable.createdAt));
 
       console.log('Retrieved messages:', messageResults.length);
       return messageResults;
@@ -612,9 +597,9 @@ export class DatabaseStorage implements IStorage {
   async markMessageAsRead(id: number): Promise<Message> {
     try {
       const [updatedMessage] = await db
-        .update(messages)
+        .update(messagesTable)
         .set({ isRead: true })
-        .where(eq(messages.id, id))
+        .where(eq(messagesTable.id, id))
         .returning();
       return updatedMessage;
     } catch (error) {
@@ -627,12 +612,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const unreadMessages = await db
         .select()
-        .from(messages)
+        .from(messagesTable)
         .where(
           and(
-            eq(messages.receiverId, userId),
-            eq(messages.receiverRole, userRole),
-            eq(messages.isRead, false)
+            eq(messagesTable.receiverId, userId),
+            eq(messagesTable.receiverRole, userRole),
+            eq(messagesTable.isRead, false)
           )
         );
       return unreadMessages.length;
@@ -809,17 +794,64 @@ export class DatabaseStorage implements IStorage {
   async getMessagesByRequest(requestId: number): Promise<Message[]> {
     try {
       console.log('Fetching messages for request:', requestId);
-      const messages = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.requestId, requestId))
-        .orderBy(desc(messages.createdAt));
 
-      console.log('Retrieved messages count:', messages.length);
-      return messages;
+      // First verify that the request exists
+      const request = await db
+        .select()
+        .from(requests)
+        .where(eq(requests.id, requestId))
+        .limit(1);
+
+      if (!request.length) {
+        console.log('Request not found:', requestId);
+        return [];
+      }
+
+      // Get all messages for this request with proper aliases for the messages table
+      const messageResults = await db
+        .select({
+          id: messagesTable.id,
+          requestId: messagesTable.requestId,
+          offerId: messagesTable.offerId,
+          senderId: messagesTable.senderId,
+          senderRole: messagesTable.senderRole,
+          receiverId: messagesTable.receiverId,
+          receiverRole: messagesTable.receiverRole,
+          content: messagesTable.content,
+          isRead: messagesTable.isRead,
+          createdAt: messagesTable.createdAt
+        })
+        .from(messagesTable)
+        .where(eq(messagesTable.requestId, requestId))
+        .orderBy(desc(messagesTable.createdAt));
+
+      console.log('Raw messages found:', messageResults.length);
+
+      // Enrich messages with sender information
+      const enrichedMessages = await Promise.all(
+        messageResults.map(async (msg) => {
+          let senderName = '';
+          try {
+            if (msg.senderRole === 'client') {
+              const sender = await this.getClientById(msg.senderId);
+              senderName = sender?.name || 'Unknown Client';
+            } else {
+              const sender = await this.getServiceProviderById(msg.senderId);
+              senderName = sender?.companyName || 'Unknown Service Provider';
+            }
+          } catch (error) {
+            console.error('Error getting sender info:', error);
+            senderName = msg.senderRole === 'client' ? 'Unknown Client' : 'Unknown Service Provider';
+          }
+          return { ...msg, senderName };
+        })
+      );
+
+      console.log('Successfully enriched messages:', enrichedMessages.length);
+      return enrichedMessages;
     } catch (error) {
-      console.error('Error getting messages by request:', error);
-      return [];
+      console.error('Error in getMessagesByRequest:', error);
+      throw error;
     }
   }
 }
