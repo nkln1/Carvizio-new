@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Loader2, Search } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationView } from "@/components/service-dashboard/messages/ConversationView";
 import { ConversationList } from "@/components/service-dashboard/messages/ConversationList";
-import { Input } from "@/components/ui/input";
+import { MessageDetailsDialog } from "./MessageDetailsDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
@@ -32,13 +31,12 @@ export function MessagesTab({
 }: MessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [wsInitialized, setWsInitialized] = useState(false);
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [wsInitialized, setWsInitialized] = useState(false);
 
   const {
     activeConversation,
@@ -47,10 +45,8 @@ export function MessagesTab({
     conversations,
     isLoadingMessages,
     isLoadingConversations,
-    sendMessage,
-    loadRequestDetails,
-    loadOfferDetails
-  } = useMessagesManagement(initialConversation, true); // Pass true to indicate client mode
+    sendMessage
+  } = useMessagesManagement(initialConversation, true);
 
   // Effect for handling initialConversation updates
   useEffect(() => {
@@ -88,6 +84,50 @@ export function MessagesTab({
       mounted = false;
     };
   }, [wsInitialized]);
+
+  const loadRequestDetails = async (requestId: number) => {
+    try {
+      const token = await user?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/requests/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load request details');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error loading request details:', error);
+      throw error;
+    }
+  };
+
+  const loadOfferDetails = async (requestId: number) => {
+    try {
+      const token = await user?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/client/offers/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load offer details');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error loading offer details:', error);
+      throw error;
+    }
+  };
 
   const handleBack = () => {
     setActiveConversation(null);
@@ -227,91 +267,13 @@ export function MessagesTab({
           </div>
         )}
 
-        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-          <DialogPortal>
-            <DialogContent className="max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {activeConversation?.offerId ? "Detalii Complete" : "Detalii Cerere"}
-                </DialogTitle>
-                <DialogDescription>
-                  {activeConversation?.offerId 
-                    ? "Informații despre cererea și oferta selectată" 
-                    : "Informații despre cererea selectată"}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6">
-                {isLoadingData ? (
-                  <div className="flex justify-center items-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-                    <p className="text-muted-foreground ml-2">Se încarcă detaliile...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {requestData && (
-                      <div className="space-y-3">
-                        <h3 className="font-medium text-md">Detalii Cerere</h3>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Titlu</h4>
-                          <p>{requestData.title || "Nedisponibil"}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Descriere</h4>
-                          <p className="whitespace-pre-line">{requestData.description || "Nedisponibil"}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Data preferată</h4>
-                          <p>{requestData.preferredDate || "Nedisponibil"}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Locație</h4>
-                          <p>
-                            {requestData.cities && Array.isArray(requestData.cities) 
-                              ? `${requestData.cities.join(", ")}, ${requestData.county || ""}` 
-                              : "Locație nedisponibilă"}
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Status</h4>
-                          <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                            {requestData.status || "Nedisponibil"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeConversation?.offerId && offerData && (
-                      <div className="space-y-3 mt-6 pt-6 border-t">
-                        <h3 className="font-medium text-md">Detalii Ofertă</h3>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Titlu</h4>
-                          <p>{offerData.title || "Nedisponibil"}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Preț</h4>
-                          <p className="font-bold text-[#00aff5]">
-                            {offerData.price ? `${offerData.price} RON` : "Nedisponibil"}
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground">Detalii</h4>
-                          <p className="whitespace-pre-line">{offerData.details || "Nedisponibil"}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {!requestData && (!activeConversation?.offerId || !offerData) && (
-                      <div className="text-center py-4 text-gray-500">
-                        Nu s-au putut încărca detaliile. Vă rugăm să încercați din nou.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </DialogPortal>
-        </Dialog>
+        <MessageDetailsDialog
+          open={showDetailsDialog}
+          onOpenChange={setShowDetailsDialog}
+          requestData={requestData}
+          offerData={offerData}
+          isLoadingData={isLoadingData}
+        />
       </CardContent>
     </Card>
   );
