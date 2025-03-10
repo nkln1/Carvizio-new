@@ -49,7 +49,8 @@ export function useMessagesManagement(
 
       const response = await fetch(`${baseEndpoint}/messages/${activeConversation.requestId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         }
       });
 
@@ -79,7 +80,8 @@ export function useMessagesManagement(
 
       const response = await fetch(`${baseEndpoint}/conversations`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         }
       });
 
@@ -116,28 +118,46 @@ export function useMessagesManagement(
         offerId: activeConversation.offerId
       };
 
+      console.log('Sending message with payload:', messagePayload);
+
       const response = await fetch(`${baseEndpoint}/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify(messagePayload)
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
         let errorMessage;
         const contentType = response.headers.get("Content-Type") || "";
-        if (contentType.includes("application/json")) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || 'Unknown error';
-        } else {
-          errorMessage = await response.text();
+
+        try {
+          if (contentType.includes("application/json")) {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || 'Unknown error';
+          } else {
+            errorMessage = await response.text();
+          }
+        } catch (e) {
+          errorMessage = 'Failed to parse error response';
         }
+
+        console.error('Error response details:', {
+          status: response.status,
+          contentType,
+          errorMessage
+        });
+
         throw new Error(`Failed to send message: ${response.status} - ${errorMessage}`);
       }
 
       const newMessage = await response.json();
+      console.log('Message sent successfully:', newMessage);
 
       // Update messages cache optimistically
       queryClient.setQueryData(
@@ -169,7 +189,8 @@ export function useMessagesManagement(
 
       const response = await fetch(`${baseEndpoint}/requests/${requestId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         }
       });
 
@@ -191,7 +212,8 @@ export function useMessagesManagement(
 
       const response = await fetch(`${baseEndpoint}/offers/request/${requestId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         }
       });
 
