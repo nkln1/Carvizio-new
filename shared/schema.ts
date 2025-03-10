@@ -3,6 +3,29 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Message validation schema
+export const MessageSchema = z.object({
+  content: z.string().min(1, "Message cannot be empty"),
+  senderId: z.number(),
+  senderRole: z.enum(["client", "service"]),
+  receiverId: z.number(),
+  receiverRole: z.enum(["client", "service"]),
+  requestId: z.number(),
+  offerId: z.number().optional(),
+});
+
+// Conversation validation schema
+export const ConversationSchema = z.object({
+  userId: z.number(),
+  userName: z.string(),
+  requestId: z.number(),
+  requestTitle: z.string().optional(),
+  lastMessage: z.string().optional(),
+  lastMessageDate: z.string().optional(),
+  unreadCount: z.number(),
+  offerId: z.number().optional(),
+});
+
 // Add Conversation type definition
 export interface Conversation {
   userId: number;
@@ -12,6 +35,7 @@ export interface Conversation {
   lastMessage?: string;
   lastMessageDate?: string;
   unreadCount: number;
+  offerId?: number;
 }
 
 const MessageRole = z.enum(["client", "service"]);
