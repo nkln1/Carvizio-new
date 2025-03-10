@@ -475,8 +475,26 @@ export class DatabaseStorage implements IStorage {
       // Get all offers for these requests with service provider details
       const offers = await db
         .select({
-          ...sentOffers,
-          serviceProviderName: serviceProviders.companyName
+          id: sentOffers.id,
+          serviceProviderId: sentOffers.serviceProviderId,
+          requestId: sentOffers.requestId,
+          title: sentOffers.title,
+          details: sentOffers.details,
+          availableDates: sentOffers.availableDates,
+          price: sentOffers.price,
+          notes: sentOffers.notes,
+          status: sentOffers.status,
+          createdAt: sentOffers.createdAt,
+          requestTitle: sentOffers.requestTitle,
+          requestDescription: sentOffers.requestDescription,
+          requestPreferredDate: sentOffers.requestPreferredDate,
+          requestCounty: sentOffers.requestCounty,
+          requestCities: sentOffers.requestCities,
+          serviceProviderName: serviceProviders.companyName,
+          serviceProviderPhone: serviceProviders.phone,
+          serviceProviderAddress: serviceProviders.address,
+          serviceProviderCounty: serviceProviders.county,
+          serviceProviderCity: serviceProviders.city
         })
         .from(sentOffers)
         .leftJoin(
@@ -486,7 +504,12 @@ export class DatabaseStorage implements IStorage {
         .where(inArray(sentOffers.requestId, requestIds))
         .orderBy(desc(sentOffers.createdAt));
 
-      console.log('Retrieved offers count:', offers.length);
+      console.log('Retrieved offers:', offers.map(o => ({
+        id: o.id,
+        title: o.title,
+        serviceProviderName: o.serviceProviderName
+      })));
+
       return offers;
     } catch (error) {
       console.error('Error getting offers for client:', error);

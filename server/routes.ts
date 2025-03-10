@@ -907,6 +907,8 @@ export function registerRoutes(app: Express): Server {
   // Add new endpoint for getting specific offer details
   app.get("/api/client/offers/details/:id", validateFirebaseToken, async (req, res) => {
     try {
+      console.log('Fetching offer details for ID:', req.params.id);
+
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(403).json({ error: "Access denied. Only clients can view offer details." });
@@ -919,15 +921,26 @@ export function registerRoutes(app: Express): Server {
 
       // Get all offers for this client
       const clientOffers = await storage.getOffersForClient(client.id);
+      console.log('Found offers for client:', clientOffers.length);
 
       // Find the specific offer
       const offer = clientOffers.find(o => o.id === offerId);
+      console.log('Found offer:', offer ? 'yes' : 'no');
 
       if (!offer) {
         return res.status(404).json({ error: "Offer not found" });
       }
 
-      res.json(offer);
+      // Format the available dates
+      const formattedOffer = {
+        ...offer,
+        availableDates: offer.availableDates?.map(date =>
+          date instanceof Date ? date.toISOString() : date
+        )
+      };
+
+      console.log('Sending formatted offer:', formattedOffer);
+      res.json(formattedOffer);
     } catch (error) {
       console.error("Error getting offer details:", error);
       res.status(500).json({ error: "Failed to get offer details" });
@@ -1097,7 +1110,8 @@ export function registerRoutes(app: Express): Server {
 
   // Add endpoint to get viewed offers
   app.get("/api/client/viewed-offers", validateFirebaseToken, async (req, res) => {
-    try {      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(403).json({ error: "Access denied. Only clients can view their viewed offers." });
       }
@@ -1132,7 +1146,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Validate receiver exists
-      const receiver = receiverRole=== "client"
+      const receiver = receiverRole === "client"
         ? await storage.getClient(receiverId)
         : await storage.getServiceProvider(receiverId);
 
@@ -1713,7 +1727,7 @@ export function registerRoutes(app: Express): Server {
   wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
 
-    ws.on('message', (message) => {
+    ws.on('message, (message) => {
       try {
         const data = JSON.parse(message.toString());
         console.log('Received message:', data);
@@ -1724,7 +1738,7 @@ export function registerRoutes(app: Express): Server {
             wss.clients.forEach(client => {
               if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
-                  type:'NEW_OFFER',
+                  type: 'NEW_OFFER',
                   payload: data.payload,
                   timestamp: new Date().toISOString()
                 }));

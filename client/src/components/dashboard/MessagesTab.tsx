@@ -87,20 +87,26 @@ export function MessagesTab({
 
   const loadRequestDetails = async (requestId: number) => {
     try {
+      console.log('Loading request details for ID:', requestId);
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
       const response = await fetch(`/api/requests/${requestId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load request details');
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error(`Failed to load request details: ${errorText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('Loaded request details:', data);
+      return data;
     } catch (error) {
       console.error('Error loading request details:', error);
       throw error;
@@ -109,20 +115,26 @@ export function MessagesTab({
 
   const loadOfferDetails = async (offerId: number) => {
     try {
+      console.log('Loading offer details for ID:', offerId);
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
       const response = await fetch(`/api/client/offers/details/${offerId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load offer details');
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error(`Failed to load offer details: ${errorText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('Loaded offer details:', data);
+      return data;
     } catch (error) {
       console.error('Error loading offer details:', error);
       throw error;
@@ -156,12 +168,14 @@ export function MessagesTab({
     setOfferData(null);
 
     try {
+      console.log('Loading details for request:', activeConversation.requestId);
       // Load request details
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
 
       // If there's an offer ID, load offer details
       if (activeConversation.offerId) {
+        console.log('Loading details for offer:', activeConversation.offerId);
         const offer = await loadOfferDetails(activeConversation.offerId);
         setOfferData(offer);
       }
@@ -186,8 +200,7 @@ export function MessagesTab({
     const searchLower = searchTerm.toLowerCase();
     return (
       (conv.userName && conv.userName.toLowerCase().includes(searchLower)) ||
-      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower)) ||
-      (conv.requestTitle && conv.requestTitle.toLowerCase().includes(searchLower))
+      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower))
     );
   });
 
