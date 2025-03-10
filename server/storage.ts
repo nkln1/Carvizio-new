@@ -11,7 +11,7 @@ import {
   viewedAcceptedOffers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, or, and } from "drizzle-orm";
+import { eq, desc, or, and, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -458,8 +458,11 @@ export class DatabaseStorage implements IStorage {
   }
   async getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string })[]> {
     try {
+      console.log('Getting offers for client:', clientId);
+
       // First get all requests for this client
       const clientRequests = await this.getClientRequests(clientId);
+      console.log('Found client requests:', clientRequests.length);
 
       if (!clientRequests.length) {
         return [];
@@ -467,35 +470,24 @@ export class DatabaseStorage implements IStorage {
 
       // Get the request IDs
       const requestIds = clientRequests.map(request => request.id);
+      console.log('Request IDs:', requestIds);
 
       // Get all offers for these requests with service provider details
       const offers = await db
         .select({
-          id: sentOffers.id,
-          serviceProviderId: sentOffers.serviceProviderId,
-          requestId: sentOffers.requestId,
-          title: sentOffers.title,
-          details: sentOffers.details,
-          availableDates: sentOffers.availableDates,
-          price: sentOffers.price,
-          notes: sentOffers.notes,
-          requestTitle: sentOffers.requestTitle,
-          requestDescription: sentOffers.requestDescription,
-          requestPreferredDate: sentOffers.requestPreferredDate,
-          requestCounty: sentOffers.requestCounty,
-          requestCities: sentOffers.requestCities,
-          requestUserId: sentOffers.requestUserId,
-          requestUserName: sentOffers.requestUserName,
-          status: sentOffers.status,
-          createdAt: sentOffers.createdAt,
+          ...sentOffers,
           serviceProviderName: serviceProviders.companyName
         })
         .from(sentOffers)
-        .leftJoin(serviceProviders, eq(sentOffers.serviceProviderId, serviceProviders.id))
+        .leftJoin(
+          serviceProviders,
+          eq(sentOffers.serviceProviderId, serviceProviders.id)
+        )
         .where(inArray(sentOffers.requestId, requestIds))
         .orderBy(desc(sentOffers.createdAt));
 
-      return offers as (SentOffer & { serviceProviderName: string })[];
+      console.log('Retrieved offers count:', offers.length);
+      return offers;
     } catch (error) {
       console.error('Error getting offers for client:', error);
       return [];

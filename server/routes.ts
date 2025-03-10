@@ -877,7 +877,7 @@ export function registerRoutes(app: Express): Server {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
 
-      // If useris a service provider, return 403
+      // If user is a service provider, return 403
       if (serviceProvider) {
         console.log("Service provider attempted to access client offers:", req.firebaseUser!.uid);
         return res.status(403).json({
