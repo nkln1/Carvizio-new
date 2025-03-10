@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
-import ErrorBoundary from "@/components/ErrorBoundary"; // Changed to default import
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 interface ConversationViewProps {
   messages: Message[];
@@ -53,8 +53,17 @@ export function ConversationView({
   const [wsInitialized, setWsInitialized] = useState(false);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
+
+  // Scroll to bottom when messages change or component mounts
+  useEffect(() => {
+    if (!isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading]);
 
   // Initialize WebSocket connection
   useEffect(() => {
