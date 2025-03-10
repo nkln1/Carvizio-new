@@ -874,7 +874,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update the client offers endpoint
-  app.get("/api/client/offers", validateFirebaseToken, async (req, res) => {
+  app.get("/api/client/offers", validateFirebaseToken, async (req, res) =>{
     try {
       console.log("Fetching offers for Firebase UID:", req.firebaseUser!.uid);
 
@@ -1550,6 +1550,195 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching client conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Message sending endpoint
+  app.post("/api/client/messages/send", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can send messages." });
+      }
+
+      const { content, receiverId, receiverRole, requestId, offerId } = req.body;
+
+      // Validate required fields
+      if (!content || !receiverId || !requestId) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          message: "Content, receiverId and requestId are required" 
+        });
+      }
+
+      // Create message
+      const message = await storage.createMessage({
+        senderId: client.id,
+        senderRole: 'client',
+        receiverId,
+        receiverRole: receiverRole || 'service',
+        content,
+        requestId,
+        offerId: offerId || null,
+        isRead: false,
+        createdAt: new Date()
+      });
+
+      // Send real-time notification through WebSocket
+      const messageNotification = {
+        type: 'NEW_MESSAGE',
+        payload: {
+          ...message,
+          senderName: client.name
+        }
+      };
+
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(JSON.stringify(messageNotification));
+          } catch (err) {
+            console.error('WebSocket send error:', err);
+          }
+        }
+      });
+
+      res.status(201).json(message);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ 
+        error: "Failed to send message",
+        message: "Internal server error occurred while sending message"
+      });
+    }
+  });
+
+  // Add the following message endpoints to the existing routes.ts file
+
+  // Message endpoints
+  app.get("/api/client/messages/:requestId", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can view messages." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      if (isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+
+      const messages = await storage.getMessagesByRequest(requestId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      res.status(500).json({ 
+        error: "Failed to fetch messages",
+        message: "Internal server error occurred while fetching messages"
+      });
+    }
+  });
+
+  app.get("/api/client/conversations", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can view conversations." });
+      }
+
+      const messages = await storage.getUserMessages(client.id, 'client');
+      const conversations: Record<string, any> = {};
+
+      // Group messages by request ID
+      for (const message of messages) {
+        if (!conversations[message.requestId]) {
+          const request = await storage.getRequest(message.requestId);
+          conversations[message.requestId] = {
+            userId: message.senderId === client.id ? message.receiverId : message.senderId,
+            userName: message.senderRole === 'client' ? request?.serviceName : request?.clientName,
+            requestId: message.requestId,
+            requestTitle: request?.title,
+            lastMessage: message.content,
+            lastMessageDate: message.createdAt,
+            unreadCount: message.isRead ? 0 : 1,
+            offerId: message.offerId
+          };
+        } else {
+          // Update last message info and unread count
+          conversations[message.requestId].lastMessage = message.content;
+          conversations[message.requestId].lastMessageDate = message.createdAt;
+          if (!message.isRead) {
+            conversations[message.requestId].unreadCount++;
+          }
+        }
+      }
+
+      res.json(Object.values(conversations));
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      res.status(500).json({ 
+        error: "Failed to fetch conversations",
+        message: "Internal server error occurred while fetching conversations"
+      });
+    }
+  });
+
+  app.post("/api/client/messages/send", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can send messages." });
+      }
+
+      const { content, receiverId, receiverRole, requestId, offerId } = req.body;
+
+      // Validate required fields
+      if (!content || !receiverId || !requestId) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          message: "Content, receiverId and requestId are required" 
+        });
+      }
+
+      // Create message
+      const message = await storage.createMessage({
+        senderId: client.id,
+        senderRole: 'client',
+        receiverId,
+        receiverRole: receiverRole || 'service',
+        content,
+        requestId,
+        offerId: offerId || null,
+        isRead: false,
+        createdAt: new Date()
+      });
+
+      // Send real-time notification through WebSocket
+      const messageNotification = {
+        type: 'NEW_MESSAGE',
+        payload: {
+          ...message,
+          senderName: client.name
+        }
+      };
+
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          try {
+            client.send(JSON.stringify(messageNotification));
+          } catch (err) {
+            console.error('WebSocket send error:', err);
+          }
+        }
+      });
+
+      res.status(201).json(message);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ 
+        error: "Failed to send message",
+        message: "Internal server error occurred while sending message"
+      });
     }
   });
 

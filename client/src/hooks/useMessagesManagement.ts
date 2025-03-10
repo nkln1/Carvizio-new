@@ -23,6 +23,9 @@ export function useMessagesManagement(
   const { toast } = useToast();
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
 
+  // Define base endpoints based on user type
+  const baseEndpoint = isClient ? '/api/client' : '/api/service';
+
   // Set initial conversation only once when the component mounts
   useEffect(() => {
     if (initialConversation && initialConversation.userId && initialConversation.requestId) {
@@ -35,9 +38,6 @@ export function useMessagesManagement(
       });
     }
   }, [initialConversation]);
-
-  // Define base endpoints based on user type
-  const baseEndpoint = isClient ? '/api/client' : '/api/service';
 
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
@@ -56,6 +56,11 @@ export function useMessagesManagement(
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Messages fetch error:', {
+          status: response.status,
+          error: errorText
+        });
         throw new Error(`Failed to fetch messages: ${response.status}`);
       }
 
@@ -81,6 +86,11 @@ export function useMessagesManagement(
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Conversations fetch error:', {
+          status: response.status,
+          error: errorText
+        });
         throw new Error(`Failed to fetch conversations: ${response.status}`);
       }
 
@@ -120,18 +130,30 @@ export function useMessagesManagement(
         body: JSON.stringify(messagePayload)
       });
 
+      // Log response details for debugging
+      const contentType = response.headers.get('Content-Type');
+      console.log('Response details:', {
+        status: response.status,
+        contentType
+      });
+
       if (!response.ok) {
-        const errorMessage = await response.text();
-        console.error('Error response:', {
-          status: response.status,
-          body: errorMessage
-        });
-        throw new Error(`Failed to send message: ${response.status}`);
+        let errorMessage = '';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || 'Unknown error';
+        } catch (e) {
+          // If response is not JSON, get text content
+          const textContent = await response.text();
+          console.error('Error response (text):', textContent);
+          errorMessage = 'Server error occurred';
+        }
+        throw new Error(`Failed to send message: ${errorMessage}`);
       }
 
       const newMessage = await response.json();
 
-      // Update messages cache optimistically
+      // Update messages cache
       queryClient.setQueryData(
         [`${baseEndpoint}/messages`, activeConversation.requestId],
         (old: Message[] | undefined) => [...(old || []), newMessage]
@@ -145,9 +167,14 @@ export function useMessagesManagement(
       return newMessage;
     } catch (error) {
       console.error('Error in sendMessage:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut trimite mesajul. Încercați din nou."
+      });
       throw error;
     }
-  }, [activeConversation, baseEndpoint, queryClient, isClient]);
+  }, [activeConversation, baseEndpoint, queryClient, isClient, toast]);
 
   return {
     activeConversation,

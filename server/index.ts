@@ -16,7 +16,6 @@ const wss = new WebSocketServer({
   verifyClient: (info, cb) => {
     try {
       // Allow all origins in development
-      // You can add more validation here if needed
       const origin = info.origin;
       cb(true); // Accept the connection
     } catch (error) {
@@ -68,12 +67,12 @@ wss.on('close', () => {
   clearInterval(interval);
 });
 
+// Configure middleware and CORS
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Configure CORS for both HTTP and WebSocket
 app.use((req, res, next) => {
-  // Allow requests from any origin in development
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -133,15 +132,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Initialize routes and error handling
 (async () => {
   registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Error:', err);
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    res.status(status).json({ error: message });
   });
 
   if (app.get("env") === "development") {
@@ -150,39 +149,10 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const startServer = async (initialPort: number) => {
-    let port = initialPort;
-    const maxRetries = 10;
-
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        await new Promise((resolve, reject) => {
-          server.listen(port, '0.0.0.0')
-            .once('listening', () => {
-              console.log(`Server running on port ${port}`);
-              resolve(true);
-            })
-            .once('error', (err: any) => {
-              if (err.code === 'EADDRINUSE') {
-                port++;
-                server.close();
-                resolve(false);
-              } else {
-                reject(err);
-              }
-            });
-        });
-        break;
-      } catch (error) {
-        console.error(`Failed to start server on port ${port}:`, error);
-        if (i === maxRetries - 1) throw error;
-      }
-    }
-  };
-
-  const initialPort = parseInt(process.env.PORT || '5000');
-  startServer(initialPort);
+  const port = parseInt(process.env.PORT || '5000');
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
+  });
 })();
 
-// Export wss for use in routes.ts
 export { wss };
