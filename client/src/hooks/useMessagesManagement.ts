@@ -56,11 +56,6 @@ export function useMessagesManagement(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Messages fetch error:', {
-          status: response.status,
-          error: errorText
-        });
         throw new Error(`Failed to fetch messages: ${response.status}`);
       }
 
@@ -86,11 +81,6 @@ export function useMessagesManagement(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Conversations fetch error:', {
-          status: response.status,
-          error: errorText
-        });
         throw new Error(`Failed to fetch conversations: ${response.status}`);
       }
 
@@ -130,25 +120,13 @@ export function useMessagesManagement(
         body: JSON.stringify(messagePayload)
       });
 
-      // Log response details for debugging
-      const contentType = response.headers.get('Content-Type');
-      console.log('Response details:', {
-        status: response.status,
-        contentType
-      });
-
       if (!response.ok) {
-        let errorMessage = '';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || 'Unknown error';
-        } catch (e) {
-          // If response is not JSON, get text content
-          const textContent = await response.text();
-          console.error('Error response (text):', textContent);
-          errorMessage = 'Server error occurred';
-        }
-        throw new Error(`Failed to send message: ${errorMessage}`);
+        const errorText = await response.text();
+        console.error('Error sending message:', {
+          status: response.status,
+          body: errorText
+        });
+        throw new Error(`Failed to send message: ${errorText}`);
       }
 
       const newMessage = await response.json();

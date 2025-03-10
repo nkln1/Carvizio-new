@@ -103,6 +103,7 @@ export interface IStorage {
   // Add methods for viewed accepted offers
   markAcceptedOfferAsViewed(serviceProviderId: number, offerId: number): Promise<ViewedAcceptedOffer>;
   getViewedAcceptedOffersByServiceProvider(serviceProviderId: number): Promise<ViewedAcceptedOffer[]>;
+  getMessagesByRequest(requestId: number): Promise<Message[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -802,6 +803,22 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(viewedAcceptedOffers.viewedAt));
     } catch (error) {
       console.error('Error getting viewed accepted offers:', error);
+      return [];
+    }
+  }
+  async getMessagesByRequest(requestId: number): Promise<Message[]> {
+    try {
+      console.log('Fetching messages for request:', requestId);
+      const messages = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.requestId, requestId))
+        .orderBy(desc(messages.createdAt));
+
+      console.log('Retrieved messages count:', messages.length);
+      return messages;
+    } catch (error) {
+      console.error('Error getting messages by request:', error);
       return [];
     }
   }

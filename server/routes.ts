@@ -617,31 +617,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Adaugă aceste endpoint-uri în fișierul routes.ts
-
-  // Endpoint pentru a prelua o cerere specifică după ID
-  app.get("/api/service/requests/:id", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
-      }
-
-      const requestId = parseInt(req.params.id);
-      const request = await storage.getRequest(requestId);
-
-      if (!request) {
-        return res.status(404).json({ error: "Request not found" });
-      }
-
-      res.json(request);
-    } catch (error) {
-      console.error("Error getting request by ID:", error);
-      res.status(500).json({ error: "Failed to get request" });
-    }
-  });
-
-  // Endpoint pentru a prelua o ofertă specifică după ID
+  // Add endpoint to get specific offer by ID
   app.get("/api/service/offers/:id", validateFirebaseToken, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
@@ -683,9 +659,29 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Adaugă acest endpoint în fișierul routes.ts
+  // Endpoint pentru a prelua o cerere specifică după ID
+  app.get("/api/service/requests/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can view requests." });
+      }
 
-  // Endpoint pentru a obține toate ofertele pentru o cerere specifică
+      const requestId = parseInt(req.params.id);
+      const request = await storage.getRequest(requestId);
+
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      res.json(request);
+    } catch (error) {
+      console.error("Error getting request by ID:", error);
+      res.status(500).json({ error: "Failed to get request" });
+    }
+  });
+
+  // Add endpoint to get all offers for a specific request
   app.get("/api/service/offers/request/:requestId", validateFirebaseToken, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
@@ -1628,8 +1624,29 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Invalid request ID" });
       }
 
+      // Verify the client owns this request
+      const request = await storage.getRequest(requestId);
+      if (!request || request.clientId !== client.id) {
+        return res.status(403).json({ error: "Not authorized to view these messages" });
+      }
+
       const messages = await storage.getMessagesByRequest(requestId);
-      res.json(messages);
+
+      // Enrich messages with sender names
+      const enrichedMessages = await Promise.all(messages.map(async (message) => {
+        let senderName = '';
+        if (message.senderRole === 'client') {
+          const sender = await storage.getClient(message.senderId);
+          senderName = sender?.name || 'Unknown Client';
+        } else {
+          const sender = await storage.getServiceProvider(message.senderId);
+          senderName = sender?.companyName || 'Unknown Service Provider';
+        }
+        return { ...message, senderName };
+      }));
+
+      console.log('Sending enriched messages:', enrichedMessages.length);
+      res.json(enrichedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       res.status(500).json({ 
