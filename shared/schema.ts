@@ -29,13 +29,15 @@ export const ConversationSchema = z.object({
 // Add Conversation type definition
 export interface Conversation {
   userId: number;
-  userName: string;
+  userName?: string;
   requestId: number;
-  requestTitle?: string;
+  offerId?: number;  // Adăugați această linie
   lastMessage?: string;
   lastMessageDate?: string;
+  lastMessageSenderId?: number;
   unreadCount: number;
-  offerId?: number;
+  requestTitle?: string;
+  sourceTab?: string;
 }
 
 const MessageRole = z.enum(["client", "service"]);

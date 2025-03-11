@@ -153,10 +153,10 @@ export default function MessagesTab({
     userId: number;
     userName: string;
     requestId: number;
-    offerId?: number;
+    offerId?: number;  // Asigurați-vă că this property exists
     sourceTab?: string;
   }) => {
-    setActiveConversation(conv);
+    setActiveConversation(conv);  // Acum conv include offerId dacă există
     if (initialConversation && onConversationClear) {
       onConversationClear();
     }
@@ -190,18 +190,18 @@ export default function MessagesTab({
     setOfferData(null);
 
     try {
-      console.log('Loading details for request:', activeConversation.requestId);
-      // Load request details
+      // Încărcăm detaliile cererii
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
-      console.log('Request data set:', request);
 
-      // If there's an offerId, load offer details
+      // Încărcăm detaliile ofertei doar dacă avem offerId direct
       if (activeConversation.offerId) {
-        console.log('Loading details for offer:', activeConversation.offerId);
-        const offer = await loadOfferDetails(activeConversation.offerId);
-        console.log('Setting offer data:', offer);
-        setOfferData(offer);
+        try {
+          const offer = await loadOfferDetails(activeConversation.offerId);
+          setOfferData(offer);
+        } catch (offerError) {
+          console.error("Error loading offer details:", offerError);
+        }
       }
 
       setShowDetailsDialog(true);

@@ -10,7 +10,8 @@ interface ConversationListProps {
   isLoading: boolean;
   activeConversationId?: number;
   activeRequestId?: number;
-  onSelectConversation: (conv: { userId: number; userName: string; requestId: number; sourceTab?: string }) => void;
+  onSelectConversation: (conv: { userId: number; userName: string; requestId: number; offerId?: number; sourceTab?: string }) => void;
+  onDeleteConversation?: (requestId: number, userId: number) => Promise<void>;
 }
 
 export function ConversationList({
@@ -51,6 +52,7 @@ export function ConversationList({
               userId: conv.userId,
               userName: conv.userName || `Client ${conv.userId}`,
               requestId: conv.requestId,
+              offerId: conv.offerId,  // Adăugați această linie
               sourceTab: conv.sourceTab
             })
           }
