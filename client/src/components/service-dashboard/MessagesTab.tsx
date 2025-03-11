@@ -15,6 +15,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { Request } from "@shared/schema";
 import { Input } from "@/components/ui/input";
+import { auth } from "@/lib/firebase";
+
 
 interface MessagesTabProps {
   initialConversation?: ConversationInfo | null;
@@ -48,6 +50,10 @@ export default function MessagesTab({
   const queryClient = useQueryClient();
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [wsInitialized, setWsInitialized] = useState(false);
+  const [requestData, setRequestData] = useState<any>(null);
+  const [offerData, setOfferData] = useState<any>(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const {
     activeConversation,
@@ -57,14 +63,55 @@ export default function MessagesTab({
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
-    loadRequestDetails,
-    loadOfferDetails
   } = useMessagesManagement(initialConversation);
 
-  const [wsInitialized, setWsInitialized] = useState(false);
-  const [requestData, setRequestData] = useState<any>(null);
-  const [offerData, setOfferData] = useState<any>(null);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  // Load request details function
+  const loadRequestDetails = async (requestId: number) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/requests/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load request details');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error loading request details:', error);
+      throw error;
+    }
+  };
+
+  // Load offer details function
+  const loadOfferDetails = async (requestId: number) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch(`/api/service/offers/${requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load offer details');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error loading offer details:', error);
+      throw error;
+    }
+  };
 
   // WebSocket initialization
   useEffect(() => {
@@ -125,7 +172,7 @@ export default function MessagesTab({
 
       // Dacă există un offerId, încărcăm și detaliile ofertei
       if (activeConversation.offerId) {
-        const offer = await loadOfferDetails(activeConversation.requestId);
+        const offer = await loadOfferDetails(activeConversation.offerId);
         setOfferData(offer);
       }
     } catch (error) {
