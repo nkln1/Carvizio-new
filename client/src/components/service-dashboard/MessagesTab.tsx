@@ -90,8 +90,8 @@ export default function MessagesTab({
 
   // Load offer details function
   const loadOfferDetails = async (offerId: number) => {
+    console.log("Loading offer details for ID:", offerId);
     try {
-      console.log('Loading offer details for ID:', offerId);
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -110,7 +110,7 @@ export default function MessagesTab({
       }
 
       const data = await response.json();
-      console.log('Loaded offer details:', data);
+      console.log("Offer details loaded successfully:", data);
       return data;
     } catch (error) {
       console.error('Error loading offer details:', error);
