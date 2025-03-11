@@ -169,18 +169,44 @@ export function MessagesTab({
     setOfferData(null);
 
     try {
-      console.log('Loading details for request:', activeConversation.requestId);
-      // Load request details
+      // Încărcăm detaliile cererii
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
-      console.log('Request data set:', request);
 
-      // If there's an offer ID, load offer details
-      if (activeConversation.offerId) {
-        console.log('Loading details for offer:', activeConversation.offerId);
-        const offer = await loadOfferDetails(activeConversation.offerId);
-        console.log('Setting offer data:', offer);
-        setOfferData(offer);
+      // Încărcăm detaliile ofertei
+      try {
+        // Prima dată verificăm dacă avem offerId direct
+        if (activeConversation.offerId) {
+          console.log("Loading offer with direct offerId:", activeConversation.offerId);
+          const offer = await loadOfferDetails(activeConversation.offerId);
+          setOfferData(offer);
+        } else {
+          // Dacă nu avem offerId direct, încercăm să obținem oferte pentru acest request
+          console.log("Attempting to find offers for requestId:", activeConversation.requestId);
+          const token = await auth.currentUser?.getIdToken();
+          if (!token) throw new Error('No authentication token available');
+
+          const response = await fetch(`/api/client/offers/request/${activeConversation.requestId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to load offers for request');
+          }
+
+          const offers = await response.json();
+          console.log("Found offers for request:", offers);
+
+          // Folosim prima ofertă găsită (sau cea mai recentă)
+          if (offers && offers.length > 0) {
+            setOfferData(offers[0]);
+          }
+        }
+      } catch (offerError) {
+        console.error("Error loading offer details:", offerError);
       }
 
       setShowDetailsDialog(true);
