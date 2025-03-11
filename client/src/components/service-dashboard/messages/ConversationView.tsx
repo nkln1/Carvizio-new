@@ -51,6 +51,7 @@ export function ConversationView({
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [wsInitialized, setWsInitialized] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -58,12 +59,13 @@ export function ConversationView({
     }
   };
 
-  // Scroll to bottom when messages change or component mounts
+  // Only scroll on initial load and when messages length changes
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !hasScrolled && messages.length > 0) {
       scrollToBottom();
+      setHasScrolled(true);
     }
-  }, [messages, isLoading]);
+  }, [isLoading, messages.length, hasScrolled]);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -110,6 +112,7 @@ export function ConversationView({
       setIsSending(true);
       await onSendMessage(newMessage.trim());
       setNewMessage("");
+      // Only scroll after sending a new message
       scrollToBottom();
     } catch (error) {
       console.error("Failed to send message:", error);

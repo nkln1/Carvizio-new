@@ -90,12 +90,12 @@ export default function MessagesTab({
   };
 
   // Load offer details function
-  const loadOfferDetails = async (requestId: number) => {
+  const loadOfferDetails = async (offerId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/offers/${requestId}`, {
+      const response = await fetch(`/api/service/my-offers/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
