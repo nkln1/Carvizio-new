@@ -192,12 +192,12 @@ export default function MessagesTab({
 
     try {
       console.log('Loading details for request:', activeConversation.requestId);
-      // Încărcăm detaliile cererii
+      // Load request details
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
       console.log('Request data set:', request);
 
-      // Dacă există un offerId, încărcăm și detaliile ofertei
+      // If there's an offerId, load offer details
       if (activeConversation.offerId) {
         console.log('Loading details for offer:', activeConversation.offerId);
         const offer = await loadOfferDetails(activeConversation.offerId);
@@ -428,7 +428,7 @@ export default function MessagesTab({
                         <div>
                           <h4 className="font-medium text-sm text-muted-foreground">Preț</h4>
                           <p className="font-bold text-[#00aff5]">
-                            {offerData.price ? `${offerData.price} RON` : "Nedisponibil"}
+                            {offerData.price ? `${offerId.price} RON` : "Nedisponibil"}
                           </p>
                         </div>
                         <div>
