@@ -96,7 +96,7 @@ export default function MessagesTab({
       if (!token) throw new Error('No authentication token available');
 
       // Corect endpoint-ul pentru obținerea detaliilor ofertei
-      const response = await fetch(`/api/service/offers/${offerId}`, {
+      const response = await fetch(`/api/service/offers/details/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -221,7 +221,7 @@ export default function MessagesTab({
 
           const offers = await response.json();
           console.log("Found offers for request:", offers);
-          
+
           // Folosim prima ofertă găsită (sau cea mai recentă)
           if (offers && offers.length > 0) {
             setOfferData(offers[0]);
@@ -229,6 +229,7 @@ export default function MessagesTab({
         }
       } catch (offerError) {
         console.error("Error loading offer details:", offerError);
+        setOfferData(null); // Set offerData to null if error occurs
       }
 
       setShowDetailsDialog(true);
