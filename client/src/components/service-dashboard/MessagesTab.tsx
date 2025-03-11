@@ -95,8 +95,7 @@ export default function MessagesTab({
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Use the same endpoint as used in the client dashboard
-      const response = await fetch(`/api/client/offers/${offerId}`, {
+      const response = await fetch(`/api/service/sent-offers/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -428,7 +427,7 @@ export default function MessagesTab({
                         <div>
                           <h4 className="font-medium text-sm text-muted-foreground">Preț</h4>
                           <p className="font-bold text-[#00aff5]">
-                            {offerData.price ? `${offerId.price} RON` : "Nedisponibil"}
+                            {offerData.price ? `${offerData.price} RON` : "Nedisponibil"}
                           </p>
                         </div>
                         <div>
