@@ -41,6 +41,14 @@ interface MessageDetailsDialogProps {
       }
     };
 
+    // Placeholder for the missing loadOfferDetails function
+    // This function should fetch offer details and update the offerData state
+    const loadOfferDetails = async () => {
+      //Implementation missing.  This should fetch offer details based on some ID.
+      console.warn("loadOfferDetails function is not implemented.");
+    };
+
+
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogPortal>
@@ -120,6 +128,7 @@ interface MessageDetailsDialogProps {
                     </div>
                   )}
 
+                  {/* Afișarea detaliilor ofertei */}
                   {offerData && (
                     <div className="space-y-3 mt-6 pt-6 border-t">
                       <h3 className="font-medium text-md">Detalii Ofertă</h3>

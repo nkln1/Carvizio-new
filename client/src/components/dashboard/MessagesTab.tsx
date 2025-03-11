@@ -114,12 +114,12 @@ export function MessagesTab({
   };
 
   const loadOfferDetails = async (offerId: number) => {
+    console.log("Loading offer details for ID:", offerId);
     try {
-      console.log('Loading offer details for ID:', offerId);
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Use the same endpoint as used in the client dashboard
+      // Endpoint-ul corect pentru clienți să obțină detaliile ofertei
       const response = await fetch(`/api/client/offers/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -128,16 +128,12 @@ export function MessagesTab({
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response for offer details:', errorText);
-        throw new Error(`Failed to load offer details: ${errorText}`);
+        throw new Error(`Failed to load offer details: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Loaded offer details:', data);
-      return data;
+      return await response.json();
     } catch (error) {
-      console.error('Error loading offer details:', error);
+      console.error("Error loading offer details:", error);
       throw error;
     }
   };
