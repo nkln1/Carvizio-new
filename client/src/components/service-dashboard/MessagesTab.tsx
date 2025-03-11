@@ -17,7 +17,6 @@ import type { Request } from "@shared/schema";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase";
 
-
 interface MessagesTabProps {
   initialConversation?: ConversationInfo | null;
   onConversationClear?: () => void;
@@ -92,10 +91,12 @@ export default function MessagesTab({
   // Load offer details function
   const loadOfferDetails = async (offerId: number) => {
     try {
+      console.log('Loading offer details for ID:', offerId);
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/my-offers/${offerId}`, {
+      // Use the same endpoint as used in the client dashboard
+      const response = await fetch(`/api/client/offers/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -103,10 +104,14 @@ export default function MessagesTab({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load offer details');
+        const errorText = await response.text();
+        console.error('Server response for offer details:', errorText);
+        throw new Error(`Failed to load offer details: ${errorText}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      console.log('Loaded offer details:', data);
+      return data;
     } catch (error) {
       console.error('Error loading offer details:', error);
       throw error;
@@ -145,7 +150,7 @@ export default function MessagesTab({
     }
   };
 
-  const handleConversationSelect = (conv: {
+  const handleConversationSelect = async (conv: {
     userId: number;
     userName: string;
     requestId: number;
@@ -155,6 +160,26 @@ export default function MessagesTab({
     setActiveConversation(conv);
     if (initialConversation && onConversationClear) {
       onConversationClear();
+    }
+
+    // Mark conversation as read
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      await fetch(`/api/service/conversations/${conv.requestId}/mark-read`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: conv.userId })
+      });
+
+      // Invalidate conversations query to update unread counts
+      queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
     }
   };
 
@@ -166,15 +191,21 @@ export default function MessagesTab({
     setOfferData(null);
 
     try {
+      console.log('Loading details for request:', activeConversation.requestId);
       // Încărcăm detaliile cererii
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
+      console.log('Request data set:', request);
 
       // Dacă există un offerId, încărcăm și detaliile ofertei
       if (activeConversation.offerId) {
+        console.log('Loading details for offer:', activeConversation.offerId);
         const offer = await loadOfferDetails(activeConversation.offerId);
+        console.log('Setting offer data:', offer);
         setOfferData(offer);
       }
+
+      setShowDetailsDialog(true);
     } catch (error) {
       console.error("Error loading details:", error);
       toast({
@@ -185,8 +216,6 @@ export default function MessagesTab({
     } finally {
       setIsLoadingData(false);
     }
-
-    setShowDetailsDialog(true);
   };
 
   // Filtrarea conversațiilor pe baza termenului de căutare
