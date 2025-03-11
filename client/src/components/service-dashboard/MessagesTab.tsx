@@ -201,6 +201,7 @@ export default function MessagesTab({
         if (activeConversation.offerId) {
           console.log("Loading offer with direct offerId:", activeConversation.offerId);
           const offer = await loadOfferDetails(activeConversation.offerId);
+          console.log("Loaded offer details with direct offerId:", offer);
           setOfferData(offer);
         } else {
           // Dacă nu avem offerId direct, încercăm să obținem oferte pentru acest request
@@ -222,15 +223,18 @@ export default function MessagesTab({
           const offers = await response.json();
           console.log("Found offers for request:", offers);
 
-          // Folosim prima ofertă găsită (sau cea mai recentă)
-          if (offers && offers.length > 0) {
-            setOfferData(offers[0]);
-          }
-        }
-      } catch (offerError) {
-        console.error("Error loading offer details:", offerError);
-        setOfferData(null); // Set offerData to null if error occurs
-      }
+                  // Folosim prima ofertă găsită (sau cea mai recentă)
+                  if (offers && offers.length > 0) {
+                    setOfferData(offers[0]);
+                    console.log("Set offer data from request offers:", offers[0]);
+                  } else {
+                    console.log("No offers found for this request");
+                  }
+                }
+              } catch (offerError) {
+                console.error("Error loading offer details:", offerError);
+                setOfferData(null); // Set offerData to null if error occurs
+              }
 
       setShowDetailsDialog(true);
     } catch (error) {
