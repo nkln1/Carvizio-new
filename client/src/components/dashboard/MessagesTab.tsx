@@ -120,7 +120,7 @@ export function MessagesTab({
       if (!token) throw new Error('No authentication token available');
 
       // Endpoint-ul corect pentru clienți să obțină detaliile ofertei
-      const response = await fetch(`/api/client/offers/${offerId}`, {
+      const response = await fetch(`/api/client/offers/details/${offerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
