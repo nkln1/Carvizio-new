@@ -191,9 +191,12 @@ export default function MessagesTab({
     setOfferData(null);
 
     try {
+      console.log("Loading details for conversation:", activeConversation);
+      
       // Încărcăm detaliile cererii
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
+      console.log("Loaded request details:", request);
 
       // Încărcăm detaliile ofertei
       try {
@@ -217,24 +220,26 @@ export default function MessagesTab({
           });
 
           if (!response.ok) {
-            throw new Error('Failed to load offers for request');
+            const errorText = await response.text();
+            console.error('Server response for offers:', errorText);
+            throw new Error(`Failed to load offers for request: ${errorText}`);
           }
 
           const offers = await response.json();
           console.log("Found offers for request:", offers);
 
-                  // Folosim prima ofertă găsită (sau cea mai recentă)
-                  if (offers && offers.length > 0) {
-                    setOfferData(offers[0]);
-                    console.log("Set offer data from request offers:", offers[0]);
-                  } else {
-                    console.log("No offers found for this request");
-                  }
-                }
-              } catch (offerError) {
-                console.error("Error loading offer details:", offerError);
-                setOfferData(null); // Set offerData to null if error occurs
-              }
+          // Folosim prima ofertă găsită (sau cea mai recentă)
+          if (offers && Array.isArray(offers) && offers.length > 0) {
+            setOfferData(offers[0]);
+            console.log("Set offer data from request offers:", offers[0]);
+          } else {
+            console.log("No offers found for this request");
+          }
+        }
+      } catch (offerError) {
+        console.error("Error loading offer details:", offerError);
+        setOfferData(null); // Set offerData to null if error occurs
+      }
 
       setShowDetailsDialog(true);
     } catch (error) {
@@ -449,7 +454,7 @@ export default function MessagesTab({
                       </div>
                     )}
 
-                    {activeConversation?.offerId && offerData && (
+                    {offerData && (
                       <div className="space-y-3 mt-6 pt-6 border-t">
                         <h3 className="font-medium text-md">Detalii Ofertă</h3>
                         <div>
