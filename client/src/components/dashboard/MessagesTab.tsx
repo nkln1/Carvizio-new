@@ -15,7 +15,7 @@ import type { Message, Conversation } from "@shared/schema";
 
 export interface InitialConversationProps {
   userId: number;
-  userName?: string;
+  userName: string;
   requestId: number;
   offerId?: number;
 }
@@ -45,7 +45,8 @@ export function MessagesTab({
     conversations,
     isLoadingMessages,
     isLoadingConversations,
-    sendMessage
+    sendMessage,
+    markConversationAsRead
   } = useMessagesManagement(initialConversation, true);
 
   // Effect for handling initialConversation updates
@@ -53,12 +54,15 @@ export function MessagesTab({
     if (initialConversation?.userId && initialConversation?.requestId) {
       setActiveConversation({
         userId: initialConversation.userId,
-        userName: initialConversation.userName || "Service Provider",
+        userName: initialConversation.userName,
         requestId: initialConversation.requestId,
         offerId: initialConversation.offerId
       });
+
+      // Mark conversation as read when opened directly
+      markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
-  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId]);
+  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead]);
 
   // WebSocket initialization
   useEffect(() => {
@@ -85,13 +89,41 @@ export function MessagesTab({
     };
   }, [wsInitialized]);
 
-  const loadRequestDetails = async (requestId: number) => {
+  const handleBack = () => {
+    setActiveConversation(null);
+    if (onConversationClear) {
+      onConversationClear();
+    }
+  };
+
+  const handleConversationSelect = async (conv: {
+    userId: number;
+    userName: string;
+    requestId: number;
+    offerId?: number;
+  }) => {
+    setActiveConversation(conv);
+    if (onConversationClear) {
+      onConversationClear();
+    }
+
+    // Mark conversation as read when selected
+    await markConversationAsRead(conv.requestId, conv.userId);
+  };
+
+  const handleViewDetails = async () => {
+    if (!activeConversation?.requestId) return;
+
+    setIsLoadingData(true);
+    setRequestData(null);
+    setOfferData(null);
+
     try {
-      console.log('Loading request details for ID:', requestId);
+      // Load request details
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/requests/${requestId}`, {
+      const response = await fetch(`/api/requests/${activeConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -105,104 +137,21 @@ export function MessagesTab({
       }
 
       const data = await response.json();
-      console.log('Loaded request details:', data);
-      return data;
-    } catch (error) {
-      console.error('Error loading request details:', error);
-      throw error;
-    }
-  };
+      setRequestData(data);
 
-  const loadOfferDetails = async (offerId: number) => {
-    console.log("Loading offer details for ID:", offerId);
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      // Endpoint-ul corect pentru clienți să obțină detaliile ofertei
-      const response = await fetch(`/api/client/offers/details/${offerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load offer details: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error loading offer details:", error);
-      throw error;
-    }
-  };
-
-  const handleBack = () => {
-    setActiveConversation(null);
-    if (onConversationClear) {
-      onConversationClear();
-    }
-  };
-
-  const handleConversationSelect = (conv: Conversation) => {
-    setActiveConversation({
-      userId: conv.userId,
-      userName: conv.userName,
-      requestId: conv.requestId,
-      offerId: conv.offerId
-    });
-    if (onConversationClear) {
-      onConversationClear();
-    }
-  };
-
-  const handleViewDetails = async () => {
-    if (!activeConversation?.requestId) return;
-
-    setIsLoadingData(true);
-    setRequestData(null);
-    setOfferData(null);
-
-    try {
-      // Încărcăm detaliile cererii
-      const request = await loadRequestDetails(activeConversation.requestId);
-      setRequestData(request);
-
-      // Încărcăm detaliile ofertei
-      try {
-        // Prima dată verificăm dacă avem offerId direct
-        if (activeConversation.offerId) {
-          console.log("Loading offer with direct offerId:", activeConversation.offerId);
-          const offer = await loadOfferDetails(activeConversation.offerId);
-          setOfferData(offer);
-        } else {
-          // Dacă nu avem offerId direct, încercăm să obținem oferte pentru acest request
-          console.log("Attempting to find offers for requestId:", activeConversation.requestId);
-          const token = await auth.currentUser?.getIdToken();
-          if (!token) throw new Error('No authentication token available');
-
-          const response = await fetch(`/api/client/offers/request/${activeConversation.requestId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to load offers for request');
+      // Load offer details if available
+      if (activeConversation.offerId) {
+        const offerResponse = await fetch(`/api/client/offers/details/${activeConversation.offerId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
+        });
 
-          const offers = await response.json();
-          console.log("Found offers for request:", offers);
-
-          // Folosim prima ofertă găsită (sau cea mai recentă)
-          if (offers && offers.length > 0) {
-            setOfferData(offers[0]);
-          }
+        if (offerResponse.ok) {
+          const offerData = await offerResponse.json();
+          setOfferData(offerData);
         }
-      } catch (offerError) {
-        console.error("Error loading offer details:", offerError);
       }
 
       setShowDetailsDialog(true);
