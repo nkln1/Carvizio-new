@@ -8,7 +8,6 @@ interface NavigationItemsProps {
   setIsMenuOpen: (open: boolean) => void;
   onCreateRequest: () => void;
   newOffersCount: number;
-  newMessagesCount: number;
   isMobile?: boolean;
 }
 
@@ -25,7 +24,6 @@ export function NavigationItems({
   setIsMenuOpen,
   onCreateRequest,
   newOffersCount,
-  newMessagesCount,
   isMobile = false,
 }: NavigationItemsProps) {
   const handleTabChange = (tab: string) => {
@@ -39,15 +37,10 @@ export function NavigationItems({
     { id: "requests", label: "Cereri" },
     {
       id: "offers",
-      label: "Oferte primite",
-      count: newOffersCount
+      label: `Oferte primite${newOffersCount > 0 ? ` (${newOffersCount})` : ''}`,
     },
     { id: "car", label: "Mașini" },
-    {
-      id: "messages",
-      label: "Mesaje",
-      count: newMessagesCount
-    },
+    { id: "messages", label: "Mesaje" },
     { id: "profile", label: "Cont" },
   ];
 
@@ -76,8 +69,8 @@ export function NavigationItems({
                   } relative`}
                 >
                   {item.label}
-                  {item.count && item.count > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                  {item.id === "offers" && item.count && item.count > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {item.count}
                     </span>
                   )}
@@ -117,8 +110,8 @@ export function NavigationItems({
           }`}
         >
           {item.label}
-          {item.count && item.count > 0 && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+          {item.id === "offers" && item.count && item.count > 0 && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {item.count}
             </span>
           )}
