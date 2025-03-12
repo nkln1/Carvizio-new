@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ export interface ConversationInfo {
 }
 
 export default function ServiceDashboard() {
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -69,11 +69,11 @@ export default function ServiceDashboard() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        setLocation("/");
+        navigate("/");
       }
     });
     return () => unsubscribe();
-  }, [setLocation]);
+  }, [navigate]);
 
   // Query to fetch viewed requests
   const { data: viewedRequestIds = [] } = useQuery<number[]>({
@@ -146,6 +146,24 @@ export default function ServiceDashboard() {
     });
   };
 
+  const handleProfileClick = () => {
+    if (userProfile && 'companyName' in userProfile) {
+      const serviceSlug = userProfile.companyName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      console.log('Navigating to service profile:', `/service/${serviceSlug}`);
+      navigate(`/service/${serviceSlug}`);
+      setIsMenuOpen(false);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut încărca datele profilului.",
+      });
+    }
+  };
+
   if (!user || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -207,13 +225,7 @@ export default function ServiceDashboard() {
                   variant="outline"
                   size="sm"
                   className="hidden md:flex items-center gap-2 text-[#00aff5]"
-                  onClick={() => {
-                    const serviceSlug = userProfile.companyName
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-+|-+$/g, '');
-                    setLocation(`/service/${serviceSlug}`);
-                  }}
+                  onClick={handleProfileClick}
                 >
                   <ExternalLink className="h-4 w-4" />
                   Vezi Profil public
@@ -252,14 +264,7 @@ export default function ServiceDashboard() {
                       <Button
                         variant="outline"
                         className="w-full justify-start text-left text-[#00aff5]"
-                        onClick={() => {
-                          const serviceSlug = userProfile.companyName
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]+/g, '-')
-                            .replace(/^-+|-+$/g, '');
-                          setLocation(`/service/${serviceSlug}`);
-                          setIsMenuOpen(false);
-                        }}
+                        onClick={handleProfileClick}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Vezi Profil public
