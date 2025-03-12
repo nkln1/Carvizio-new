@@ -150,7 +150,7 @@ export default function ServiceDashboard() {
       try {
         const serviceSlug = userProfile.companyName
           .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/\s+/g, '-')
           .replace(/^-+|-+$/g, '');
         console.log('Navigating to service profile:', `/service/${serviceSlug}`);
         window.location.href = `/service/${serviceSlug}`;

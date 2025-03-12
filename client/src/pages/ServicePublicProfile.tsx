@@ -1,4 +1,7 @@
+
 import { useState, useEffect } from "react";
+import { collection, query, where, getDocs, updateDoc, doc, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -9,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import {
   Building2,
@@ -21,10 +25,11 @@ import {
   Loader2,
   Pen,
 } from "lucide-react";
-import Navigation from "@/components/layout/Navigation";
-import Footer from "@/components/layout/Footer";
-import { ServiceProviderUser } from "@shared/schema";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Separator } from "@/components/ui/separator";
+import type { ServiceData, Rating, ServiceRatingStats } from "@/types/service";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import { decodeSlug } from "@/lib/utils";
 
 interface WorkingHours {
   monday: string;
@@ -36,31 +41,23 @@ interface WorkingHours {
   sunday: string;
 }
 
-interface Rating {
-  id: number;
-  serviceId: number;
-  clientId: number;
-  rating: number;
-  review?: string;
-  createdAt: Date;
-}
-
-interface ServiceRatingStats {
-  averageRating: number;
-  totalRatings: number;
-  ratingDistribution: { [key: number]: number };
-}
-
 interface ServicePublicProfileProps {
   params: {
     slug: string;
   };
 }
 
-export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileProps) {
+const normalizeCompanyName = (companyName: string | undefined): string => {
+  if (!companyName) return "";
+  return companyName.toLowerCase().trim();
+};
+
+export function ServicePublicProfile({ params }: ServicePublicProfileProps) {
+  const { slug } = params;
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [serviceData, setServiceData] = useState<ServiceData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [workingHours, setWorkingHours] = useState<WorkingHours>({
     monday: "09:00-18:00",
@@ -77,89 +74,168 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
     totalRatings: 0,
     ratingDistribution: {},
   });
-
-  // Fetch service data
-  const { data: serviceData, isLoading } = useQuery<ServiceProviderUser>({
-    queryKey: ['/api/auth/service-profile', slug],
-    queryFn: async () => {
-      console.log('Fetching service profile for slug:', slug);
-      const response = await fetch(`/api/auth/service-profile/${slug}`);
-      if (!response.ok) {
-        throw new Error('Service not found');
-      }
-      const data = await response.json();
-      console.log('Received service data:', data);
-      return data;
-    }
-  });
-
-  // Fetch ratings
-  const { data: ratingsData } = useQuery({
-    queryKey: ['/api/service/ratings', serviceData?.id],
-    enabled: !!serviceData?.id,
-    queryFn: async () => {
-      const response = await fetch(`/api/service/ratings/${serviceData?.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch ratings');
-      }
-      return response.json();
-    }
-  });
+  const [userRating, setUserRating] = useState<number>(0);
+  const [userReview, setUserReview] = useState<string>("");
+  const [canRate, setCanRate] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [serviceId, setServiceId] = useState<string>("");
+  const [acceptedOffers, setAcceptedOffers] = useState<string[]>([]);
 
   useEffect(() => {
-    if (ratingsData) {
-      setRatings(ratingsData.ratings || []);
-      setRatingStats(ratingsData.stats || {
-        averageRating: 0,
-        totalRatings: 0,
-        ratingDistribution: {},
-      });
-    }
-  }, [ratingsData]);
-
-  useEffect(() => {
-    if (serviceData?.workingHours) {
-      setWorkingHours(serviceData.workingHours);
-    }
-  }, [serviceData]);
-
-  const isOwner = user?.id === serviceData?.id;
-
-  const updateWorkingHoursMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/auth/service-profile/${serviceData?.id}/working-hours`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ workingHours }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update working hours');
+    async function fetchServiceData() {
+      try {
+        setLoading(true);
+        const decodedCompanyName = decodeSlug(slug);
+        const servicesRef = collection(db, "services");
+        const querySnapshot = await getDocs(servicesRef);
+        const matchingDoc = querySnapshot.docs.find(doc => {
+          const data = doc.data() as ServiceData;
+          return normalizeCompanyName(data.companyName) === normalizeCompanyName(decodedCompanyName);
+        });
+        if (matchingDoc) {
+          const data = matchingDoc.data() as ServiceData;
+          setServiceData({ ...data, id: matchingDoc.id });
+          setServiceId(matchingDoc.id);
+          if (data.workingHours) {
+            setWorkingHours(data.workingHours as WorkingHours);
+          }
+        } else {
+          console.error("Service not found for slug:", slug);
+          toast({
+            variant: "destructive",
+            title: "Service negăsit",
+            description: "Nu am putut găsi serviciul auto specificat.",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching service data:", error);
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Nu am putut încărca datele serviciului. Vă rugăm să încercați din nou.",
+        });
+      } finally {
+        setLoading(false);
       }
+    }
+    if (slug) {
+      fetchServiceData();
+    }
+  }, [slug, toast]);
 
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/service-profile', slug] });
+  const isOwner = user?.uid === serviceData?.id;
+
+  const handleSave = async () => {
+    if (!serviceData?.id || !isOwner) return;
+    try {
+      const serviceRef = doc(db, "services", serviceData.id);
+      await updateDoc(serviceRef, {
+        workingHours,
+      });
       toast({
         title: "Success",
-        description: "Programul de funcționare a fost actualizat cu succes",
+        description: "Working hours updated successfully",
       });
       setEditing(false);
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error("Error updating working hours:", error);
       toast({
         variant: "destructive",
-        title: "Eroare",
-        description: "Nu am putut actualiza programul de funcționare",
+        title: "Error",
+        description: "Could not update working hours",
       });
-    },
-  });
+    }
+  };
 
-  const renderRatingStars = (rating: number) => {
+  useEffect(() => {
+    async function fetchRatings() {
+      if (!serviceId) return;
+      try {
+        const ratingsRef = collection(db, "ratings");
+        const q = query(ratingsRef, where("serviceId", "==", serviceId));
+        const querySnapshot = await getDocs(q);
+        const fetchedRatings: Rating[] = [];
+        let totalRating = 0;
+        const distribution: { [key: number]: number } = {};
+        querySnapshot.forEach((doc) => {
+          const rating = doc.data() as Rating;
+          fetchedRatings.push({ ...rating, id: doc.id });
+          totalRating += rating.rating;
+          distribution[rating.rating] = (distribution[rating.rating] || 0) + 1;
+        });
+        setRatings(fetchedRatings);
+        setRatingStats({
+          averageRating: fetchedRatings.length > 0 ? totalRating / fetchedRatings.length : 0,
+          totalRatings: fetchedRatings.length,
+          ratingDistribution: distribution,
+        });
+        if (user) {
+          const offersRef = collection(db, "offers");
+          const offersQuery = query(
+            offersRef,
+            where("clientId", "==", user.uid),
+            where("serviceId", "==", serviceId),
+            where("status", "==", "Accepted")
+          );
+          const offersSnapshot = await getDocs(offersQuery);
+          const acceptedOfferIds = offersSnapshot.docs.map(doc => doc.id);
+          setAcceptedOffers(acceptedOfferIds);
+          const userRatingQuery = query(
+            ratingsRef,
+            where("clientId", "==", user.uid),
+            where("serviceId", "==", serviceId)
+          );
+          const userRatingSnapshot = await getDocs(userRatingQuery);
+          setCanRate(acceptedOfferIds.length > 0 && userRatingSnapshot.empty);
+        }
+      } catch (error) {
+        console.error("Error fetching ratings:", error);
+      }
+    }
+    fetchRatings();
+  }, [serviceId, user]);
+
+  const handleRatingSubmit = async () => {
+    if (!user || !serviceId || userRating === 0 || acceptedOffers.length === 0) return;
+    setSubmittingRating(true);
+    try {
+      const ratingData = {
+        serviceId,
+        clientId: user.uid,
+        offerId: acceptedOffers[0],
+        rating: userRating,
+        review: userReview.trim(),
+        createdAt: new Date(),
+      };
+      const ratingsRef = collection(db, "ratings");
+      await addDoc(ratingsRef, ratingData);
+      toast({
+        title: "Succes",
+        description: "Recenzia dvs. a fost adăugată cu succes.",
+      });
+      const q = query(ratingsRef, where("serviceId", "==", serviceId));
+      const querySnapshot = await getDocs(q);
+      const updatedRatings: Rating[] = [];
+      querySnapshot.forEach((doc) => {
+        updatedRatings.push({ ...doc.data() as Rating, id: doc.id });
+      });
+      setRatings(updatedRatings);
+      setCanRate(false);
+      setUserRating(0);
+      setUserReview("");
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu am putut adăuga recenzia. Vă rugăm să încercați din nou.",
+      });
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  const renderRatingStars = (rating: number, onRatingClick?: (rating: number) => void) => {
     return (
       <div className="flex items-center">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -169,42 +245,26 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
               star <= rating
                 ? "text-yellow-400 fill-yellow-400"
                 : "text-gray-300"
-            }`}
+            } ${onRatingClick ? "cursor-pointer" : ""}`}
+            onClick={() => onRatingClick && onRatingClick(star)}
           />
         ))}
       </div>
     );
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navigation />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-        </div>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
       </div>
     );
   }
 
   if (!serviceData) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navigation />
-        <div className="flex-grow flex items-center justify-center">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Service negăsit</h2>
-                <p className="text-gray-600">
-                  Ne pare rău, dar service-ul căutat nu a fost găsit.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Service not found</p>
       </div>
     );
   }
@@ -286,30 +346,24 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
                   </div>
                   {editing && isOwner && (
                     <Button
-                      onClick={() => updateWorkingHoursMutation.mutate()}
+                      onClick={handleSave}
                       className="mt-4 w-full bg-[#00aff5] hover:bg-[#0099d6]"
-                      disabled={updateWorkingHoursMutation.isPending}
                     >
-                      {updateWorkingHoursMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : null}
-                      Salvează modificările
+                      Save Changes
                     </Button>
                   )}
                 </div>
               </div>
-
               <div>
                 <h3 className="font-medium mb-2">Locație</h3>
                 <div className="aspect-video bg-gray-100 rounded-lg">
                   <div className="w-full h-full flex items-center justify-center text-gray-500">
-                    Google Maps va fi adăugat în curând
+                    Google Maps placeholder
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#00aff5]">
@@ -322,6 +376,40 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {canRate && (
+                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-medium mb-4">Adaugă o recenzie</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Rating</label>
+                      {renderRatingStars(userRating, setUserRating)}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Recenzie</label>
+                      <Textarea
+                        value={userReview}
+                        onChange={(e) => setUserReview(e.target.value)}
+                        placeholder="Descrieți experiența dvs. cu acest service auto..."
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleRatingSubmit}
+                      disabled={userRating === 0 || submittingRating}
+                      className="bg-[#00aff5] hover:bg-[#0099d6]"
+                    >
+                      {submittingRating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Se trimite...
+                        </>
+                      ) : (
+                        "Trimite recenzia"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="space-y-4">
                 {ratings.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
