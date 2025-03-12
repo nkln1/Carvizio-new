@@ -44,6 +44,7 @@ export default function ServiceDashboard() {
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
   const [newRequestsCount, setNewRequestsCount] = useState<number>(0);
   const { toast } = useToast();
+  //const queryClient = useQueryClient(); //This line was added in the edited snippet but is not used. Removing to avoid errors.
 
   // Use the service offer management hook to get the new accepted offers count
   const { newAcceptedOffersCount } = useServiceOfferManagement();
@@ -55,7 +56,7 @@ export default function ServiceDashboard() {
   });
 
   // Calculăm numărul de conversații cu mesaje noi
-  const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
+  const newMessagesCount = conversations.filter(conv => conv.hasNewMessages).length;
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
@@ -74,46 +75,12 @@ export default function ServiceDashboard() {
 
   // Query to fetch viewed requests
   const { data: viewedRequestIds = [] } = useQuery<number[]>({
-    queryKey: ['/api/service/viewed-requests'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/viewed-requests', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch viewed requests');
-      }
-
-      const viewedRequests = await response.json();
-      return viewedRequests.map((vr: any) => vr.requestId);
-    }
+    queryKey: ['/api/service/viewed-requests']
   });
 
   // Query to fetch all active requests
   const { data: requests = [] } = useQuery({
-    queryKey: ['/api/service/requests'],
-    queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch('/api/service/requests', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch requests');
-      }
-
-      return response.json();
-    },
-    staleTime: 0
+    queryKey: ['/api/service/requests']
   });
 
   // Calculate new requests count
@@ -188,7 +155,7 @@ export default function ServiceDashboard() {
     label,
     count: id === "cereri" ? newRequestsCount :
            id === "oferte-acceptate" ? newAcceptedOffersCount :
-           id === "mesaje" ? newConversationsCount : 0
+           id === "mesaje" ? newMessagesCount : 0
   }));
 
   return (
@@ -210,7 +177,7 @@ export default function ServiceDashboard() {
                 >
                   {item.label}
                   {item.count > 0 && (
-                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] text-center">
                       {item.count}
                     </span>
                   )}
@@ -238,7 +205,7 @@ export default function ServiceDashboard() {
                       >
                         {item.label}
                         {item.count > 0 && (
-                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] text-center">
                             {item.count}
                           </span>
                         )}
