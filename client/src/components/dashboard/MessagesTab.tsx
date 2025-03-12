@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Loader2, Search } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationView } from "@/components/service-dashboard/messages/ConversationView";
@@ -45,20 +46,9 @@ export function MessagesTab({
     conversations,
     isLoadingMessages,
     isLoadingConversations,
-    sendMessage
+    sendMessage,
+    markConversationAsRead
   } = useMessagesManagement(initialConversation, true);
-
-  // Effect for handling initialConversation updates
-  useEffect(() => {
-    if (initialConversation?.userId && initialConversation?.requestId) {
-      setActiveConversation({
-        userId: initialConversation.userId,
-        userName: initialConversation.userName || "Service Provider",
-        requestId: initialConversation.requestId,
-        offerId: initialConversation.offerId
-      });
-    }
-  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId]);
 
   // WebSocket initialization
   useEffect(() => {
@@ -85,59 +75,6 @@ export function MessagesTab({
     };
   }, [wsInitialized]);
 
-  const loadRequestDetails = async (requestId: number) => {
-    try {
-      console.log('Loading request details for ID:', requestId);
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/requests/${requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', errorText);
-        throw new Error(`Failed to load request details: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('Loaded request details:', data);
-      return data;
-    } catch (error) {
-      console.error('Error loading request details:', error);
-      throw error;
-    }
-  };
-
-  const loadOfferDetails = async (offerId: number) => {
-    console.log("Loading offer details for ID:", offerId);
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      // Endpoint-ul corect pentru clienți să obțină detaliile ofertei
-      const response = await fetch(`/api/client/offers/details/${offerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load offer details: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error loading offer details:", error);
-      throw error;
-    }
-  };
-
   const handleBack = () => {
     setActiveConversation(null);
     if (onConversationClear) {
@@ -145,80 +82,23 @@ export function MessagesTab({
     }
   };
 
-  const handleConversationSelect = (conv: Conversation) => {
-    setActiveConversation({
-      userId: conv.userId,
-      userName: conv.userName,
-      requestId: conv.requestId,
-      offerId: conv.offerId
-    });
+  const handleConversationSelect = async (conv: {
+    userId: number;
+    userName: string;
+    requestId: number;
+    offerId?: number;
+    sourceTab?: string;
+  }) => {
+    setActiveConversation(conv);
     if (onConversationClear) {
       onConversationClear();
     }
+
+    // Folosim funcția din hook pentru a marca conversația ca citită
+    await markConversationAsRead(conv.requestId, conv.userId);
   };
 
-  const handleViewDetails = async () => {
-    if (!activeConversation?.requestId) return;
-
-    setIsLoadingData(true);
-    setRequestData(null);
-    setOfferData(null);
-
-    try {
-      // Încărcăm detaliile cererii
-      const request = await loadRequestDetails(activeConversation.requestId);
-      setRequestData(request);
-
-      // Încărcăm detaliile ofertei
-      try {
-        // Prima dată verificăm dacă avem offerId direct
-        if (activeConversation.offerId) {
-          console.log("Loading offer with direct offerId:", activeConversation.offerId);
-          const offer = await loadOfferDetails(activeConversation.offerId);
-          setOfferData(offer);
-        } else {
-          // Dacă nu avem offerId direct, încercăm să obținem oferte pentru acest request
-          console.log("Attempting to find offers for requestId:", activeConversation.requestId);
-          const token = await auth.currentUser?.getIdToken();
-          if (!token) throw new Error('No authentication token available');
-
-          const response = await fetch(`/api/client/offers/request/${activeConversation.requestId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to load offers for request');
-          }
-
-          const offers = await response.json();
-          console.log("Found offers for request:", offers);
-
-          // Folosim prima ofertă găsită (sau cea mai recentă)
-          if (offers && offers.length > 0) {
-            setOfferData(offers[0]);
-          }
-        }
-      } catch (offerError) {
-        console.error("Error loading offer details:", offerError);
-      }
-
-      setShowDetailsDialog(true);
-    } catch (error) {
-      console.error("Error loading details:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca detaliile. Vă rugăm să încercați din nou."
-      });
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
-
-  // Filter conversations based on search term
+  // Filtrarea conversațiilor pe baza termenului de căutare
   const filteredConversations = conversations.filter(conv => {
     if (!searchTerm) return true;
 
@@ -274,7 +154,7 @@ export function MessagesTab({
               </div>
             ) : (
               <ConversationList 
-                conversations={filteredConversations}
+                conversations={filteredConversations as unknown as Conversation[]}
                 isLoading={false}
                 onSelectConversation={handleConversationSelect}
               />
@@ -300,7 +180,7 @@ export function MessagesTab({
                 isLoading={isLoadingMessages}
                 onSendMessage={sendMessage}
                 onBack={handleBack}
-                onViewDetails={handleViewDetails}
+                onViewDetails={() => setShowDetailsDialog(true)}
                 showDetailsButton={!!activeConversation.requestId}
               />
             </Card>

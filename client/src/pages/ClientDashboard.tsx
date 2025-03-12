@@ -3,10 +3,9 @@ import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
-import type { User as UserType, Request as RequestType } from "@shared/schema";
+import type { User as UserType, Conversation, Request as RequestType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,7 +90,7 @@ export default function ClientDashboard() {
 
     const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
     return () => removeHandler();
-  }, [queryClient]);
+  }, []);
 
   useEffect(() => {
     if (activeTab === "offers") {
@@ -99,7 +98,6 @@ export default function ClientDashboard() {
     }
   }, [activeTab]);
 
-  // Reset initial conversation when leaving messages tab
   useEffect(() => {
     if (activeTab !== "messages") {
       setInitialConversation(null);
@@ -182,6 +180,17 @@ export default function ClientDashboard() {
     setActiveTab("messages");
   };
 
+  // Query pentru conversații pentru a obține numărul de conversații noi
+  const { data: conversations = [] } = useQuery<Conversation[]>({
+    queryKey: ['/api/client/conversations'],
+    enabled: !!userProfile,
+    refetchInterval: 10000, // Reîmprospătare la fiecare 10 secunde
+  });
+
+  // Calculăm numărul de conversații cu mesaje noi
+  const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
+
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -231,6 +240,7 @@ export default function ClientDashboard() {
         setIsMenuOpen={setIsMenuOpen}
         onCreateRequest={() => setShowRequestDialog(true)}
         newOffersCount={newOffersCount}
+        newMessagesCount={newConversationsCount}
       />
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -248,6 +258,7 @@ export default function ClientDashboard() {
             onCreateRequest={() => setShowRequestDialog(true)}
             newOffersCount={newOffersCount}
             isMobile={true}
+            newMessagesCount={newConversationsCount}
           />
         </SheetContent>
       </Sheet>
@@ -280,7 +291,7 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "messages" && (
-              <MessagesTab 
+              <MessagesTab
                 initialConversation={initialConversation}
                 onConversationClear={() => setInitialConversation(null)}
               />
