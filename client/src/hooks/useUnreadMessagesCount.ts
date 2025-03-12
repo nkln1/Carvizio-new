@@ -14,7 +14,9 @@ export function useUnreadMessagesCount() {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
-          }
+          },
+          // Adăugăm un parametru unic pentru a evita cache-ul browserului
+          cache: 'no-store'
         });
 
         if (!response.ok) {
@@ -30,8 +32,10 @@ export function useUnreadMessagesCount() {
         return 0;
       }
     },
-    refetchInterval: 15000, // Refetch every 15 seconds pentru actualizări mai frecvente
-    staleTime: 5000, // Consider data stale after 5 seconds
+    refetchInterval: 8000, // Refetch mai frecvent (8 secunde)
+    staleTime: 3000, // Consider data stale mai repede (3 secunde)
     retry: 3, // Retry 3 times if the query fails
+    refetchOnWindowFocus: true, // Reîncarcă când fereastra primește focus
+    refetchOnMount: true, // Reîncarcă când componenta este montată
   });
 }

@@ -34,6 +34,16 @@ export default function ClientDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [initialConversation, setInitialConversation] = useState<InitialConversationProps | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Invalidare periodică pentru contorul de mesaje necitite
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
+    }, 10000); // Verifică la fiecare 10 secunde
+    
+    return () => clearInterval(interval);
+  }, [queryClient]);
 
   const {
     selectedCar,
