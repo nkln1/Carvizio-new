@@ -96,7 +96,7 @@ export function ConversationList({
                 {safeFormatDate(conv.lastMessageDate, "dd.MM.yyyy")}
               </span>
               {conv.unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                <span className="px-1.5 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
                   {conv.unreadCount}
                 </span>
               )}

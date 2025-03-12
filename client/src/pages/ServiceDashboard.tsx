@@ -214,7 +214,7 @@ export default function ServiceDashboard() {
                 >
                   {item.label}
                   {item.count > 0 && (
-                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
                       {item.count}
                     </span>
                   )}
@@ -242,7 +242,7 @@ export default function ServiceDashboard() {
                       >
                         {item.label}
                         {item.count > 0 && (
-                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
                             {item.count}
                           </span>
                         )}
