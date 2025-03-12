@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Mail, Menu } from "lucide-react";
+import { Loader2, Mail, Menu, ExternalLink } from "lucide-react";
 import type { User as UserType, Conversation } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,7 +191,7 @@ export default function ServiceDashboard() {
     label,
     count: id === "cereri" ? newRequestsCount :
            id === "oferte-acceptate" ? newAcceptedOffersCount :
-           id === "mesaje" ? unreadConversationsCount : 
+           id === "mesaje" ? unreadConversationsCount :
            0
   }));
 
@@ -200,8 +200,25 @@ export default function ServiceDashboard() {
       <nav className="bg-white border-b sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
+              {userProfile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden md:flex items-center gap-2 text-[#00aff5]"
+                  onClick={() => {
+                    const serviceSlug = userProfile.companyName
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .replace(/^-+|-+$/g, '');
+                    setLocation(`/service/${serviceSlug}`);
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Vezi Profil public
+                </Button>
+              )}
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
@@ -231,6 +248,23 @@ export default function ServiceDashboard() {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[80%] sm:w-[385px]">
                   <div className="flex flex-col gap-4 mt-6">
+                    {userProfile && (
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left text-[#00aff5]"
+                        onClick={() => {
+                          const serviceSlug = userProfile.companyName
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, '-')
+                            .replace(/^-+|-+$/g, '');
+                          setLocation(`/service/${serviceSlug}`);
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Vezi Profil public
+                      </Button>
+                    )}
                     {navigationItems.map((item) => (
                       <Button
                         key={item.id}

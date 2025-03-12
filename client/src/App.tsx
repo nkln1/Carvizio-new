@@ -9,6 +9,7 @@ import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
+import ServicePublicProfile from "@/pages/ServicePublicProfile";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/service-dashboard" component={ServiceDashboard} />
+      <Route path="/service/:slug" component={ServicePublicProfile} />
       <Route component={NotFound} />
     </Switch>
   );
