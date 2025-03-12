@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
 import type { User as UserType, Conversation, Request as RequestType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,7 @@ export default function ClientDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [initialConversation, setInitialConversation] = useState<InitialConversationProps | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const {
     selectedCar,
@@ -48,6 +49,16 @@ export default function ClientDashboard() {
     markOfferAsViewed,
     newOffersCount
   } = useOfferManagement();
+
+  // Query pentru conversații pentru a obține numărul de conversații noi
+  const { data: conversations = [] } = useQuery<Conversation[]>({
+    queryKey: ['/api/client/conversations'],
+    enabled: !!user,
+    refetchInterval: 10000, // Reîmprospătare la fiecare 10 secunde
+  });
+
+  // Calculăm numărul de conversații cu mesaje noi
+  const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
@@ -90,13 +101,13 @@ export default function ClientDashboard() {
 
     const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
     return () => removeHandler();
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (activeTab === "offers") {
       queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
     }
-  }, [activeTab]);
+  }, [activeTab, queryClient]);
 
   useEffect(() => {
     if (activeTab !== "messages") {
@@ -134,13 +145,11 @@ export default function ClientDashboard() {
       setShowRequestDialog(false);
       setPendingRequestData(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error creating request:", error);
       toast({
         title: "Error",
-        description: error instanceof Error
-          ? error.message
-          : "A apărut o eroare la trimiterea cererii.",
+        description: error.message || "A apărut o eroare la trimiterea cererii.",
         variant: "destructive",
       });
     },
@@ -179,17 +188,6 @@ export default function ClientDashboard() {
     });
     setActiveTab("messages");
   };
-
-  // Query pentru conversații pentru a obține numărul de conversații noi
-  const { data: conversations = [] } = useQuery<Conversation[]>({
-    queryKey: ['/api/client/conversations'],
-    enabled: !!userProfile,
-    refetchInterval: 10000, // Reîmprospătare la fiecare 10 secunde
-  });
-
-  // Calculăm numărul de conversații cu mesaje noi
-  const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
-
 
   if (!user) {
     return (

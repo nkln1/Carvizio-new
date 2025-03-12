@@ -1,0 +1,101 @@
+ncaught ReferenceError: useMutation is not defined
+    at ClientDashboard (ClientDashboard.tsx:107:33)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=6c365447:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=6c365447:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=6c365447:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=6c365447:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=6c365447:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=6c365447:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=6c365447:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=6c365447:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=6c365447:19137:13)
+ClientDashboard @ ClientDashboard.tsx:107
+renderWithHooks @ chunk-RPCDYKBN.js?v=6c365447:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=6c365447:14926
+beginWork @ chunk-RPCDYKBN.js?v=6c365447:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=6c365447:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=6c365447:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=6c365447:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=6c365447:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=6c365447:19201
+workLoopSync @ chunk-RPCDYKBN.js?v=6c365447:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=6c365447:19116
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18874
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=6c365447:18627
+ClientDashboard.tsx:107 Uncaught ReferenceError: useMutation is not defined
+    at ClientDashboard (ClientDashboard.tsx:107:33)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=6c365447:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=6c365447:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=6c365447:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=6c365447:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=6c365447:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=6c365447:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=6c365447:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=6c365447:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=6c365447:19137:13)
+ClientDashboard @ ClientDashboard.tsx:107
+renderWithHooks @ chunk-RPCDYKBN.js?v=6c365447:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=6c365447:14926
+beginWork @ chunk-RPCDYKBN.js?v=6c365447:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=6c365447:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=6c365447:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=6c365447:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=6c365447:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=6c365447:19201
+workLoopSync @ chunk-RPCDYKBN.js?v=6c365447:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=6c365447:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=6c365447:18736
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18879
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=6c365447:18627
+chunk-RPCDYKBN.js?v=6c365447:14032 The above error occurred in the <ClientDashboard> component:
+
+    at ClientDashboard (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/pages/ClientDashboard.tsx:26:27)
+    at Route (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=6c365447:323:16)
+    at Switch (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=6c365447:379:17)
+    at Router
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:13:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=6c365447:2805:3)
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ErrorBoundary.tsx:5:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+logCapturedError @ chunk-RPCDYKBN.js?v=6c365447:14032
+callback @ chunk-RPCDYKBN.js?v=6c365447:14078
+callCallback @ chunk-RPCDYKBN.js?v=6c365447:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=6c365447:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=6c365447:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=6c365447:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=6c365447:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=6c365447:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=6c365447:19353
+commitRoot @ chunk-RPCDYKBN.js?v=6c365447:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=6c365447:18627
+ErrorBoundary.tsx:21 Error caught by boundary: ReferenceError: useMutation is not defined
+    at ClientDashboard (ClientDashboard.tsx:107:33)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=6c365447:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=6c365447:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=6c365447:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=6c365447:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=6c365447:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=6c365447:19137:13)
+    at renderRootSync (chunk-RPCDYKBN.js?v=6c365447:19116:15)
+    at recoverFromConcurrentError (chunk-RPCDYKBN.js?v=6c365447:18736:28)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=6c365447:18879:28) {componentStack: '\n    at ClientDashboard (https://1becfc92-d03b-40b…/src/components/ErrorBoundary.tsx:5:5)\n    at App'}
+componentDidCatch @ ErrorBoundary.tsx:21
+callback @ chunk-RPCDYKBN.js?v=6c365447:14084
+callCallback @ chunk-RPCDYKBN.js?v=6c365447:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=6c365447:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=6c365447:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=6c365447:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=6c365447:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=6c365447:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=6c365447:19353
+commitRoot @ chunk-RPCDYKBN.js?v=6c365447:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=6c365447:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=6c365447:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=6c365447:18627
+6hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
