@@ -1,0 +1,44 @@
+Uncaught RangeError: Invalid time value
+    at format (chunk-O42U6HQT.js?v=6c365447:1760:11)
+    at MessagesTab.tsx:312:26
+    at Array.map (<anonymous>)
+    at MessagesTab (MessagesTab.tsx:279:41)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=6c365447:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=6c365447:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=6c365447:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=6c365447:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=6c365447:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=6c365447:3733:39)
+chunk-RPCDYKBN.js?v=6c365447:14032 The above error occurred in the <MessagesTab> component:
+
+    at MessagesTab (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/service-dashboard/MessagesTab.tsx:27:39)
+    at Suspense
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/common/ErrorBoundary.tsx:8:5)
+    at TabWrapper (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/common/TabWrapper.tsx:6:30)
+    at div
+    at div
+    at ServiceDashboard (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/pages/ServiceDashboard.tsx:28:27)
+    at Route (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=6c365447:323:16)
+    at Switch (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=6c365447:379:17)
+    at Router
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:13:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=6c365447:2805:3)
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ErrorBoundary.tsx:5:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+logCapturedError @ chunk-RPCDYKBN.js?v=6c365447:14032
+ErrorBoundary.tsx:28 ErrorBoundary caught an error: RangeError: Invalid time value
+    at format (chunk-O42U6HQT.js?v=6c365447:1760:11)
+    at MessagesTab.tsx:312:26
+    at Array.map (<anonymous>)
+    at MessagesTab (MessagesTab.tsx:279:41)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=6c365447:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=6c365447:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=6c365447:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=6c365447:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=6c365447:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=6c365447:19137:13) Object
+componentDidCatch @ ErrorBoundary.tsx:28
+4hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+10hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
