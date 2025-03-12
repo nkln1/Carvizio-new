@@ -231,7 +231,7 @@ export default function MessagesTab({ initialConversation, onConversationClear }
                           <div className="space-y-1">
                             <p className="text-sm">{message.message}</p>
                             <p className="text-xs opacity-70">
-                              {format(new Date(message.createdAt), "dd MMM yyyy, HH:mm")}
+                              {message.createdAt ? format(new Date(message.createdAt), "dd MMM yyyy, HH:mm") : "Date unknown"}
                             </p>
                           </div>
                         </div>
@@ -309,7 +309,7 @@ export default function MessagesTab({ initialConversation, onConversationClear }
                         </p>
                       </div>
                       <div className="text-xs text-gray-500">
-                        {format(new Date(conversation.updatedAt), "dd MMM")}
+                        {conversation.updatedAt ? format(new Date(conversation.updatedAt), "dd MMM") : "N/A"}
                       </div>
                       {conversation.unreadCount > 0 && (
                         <span className="absolute right-2 top-2 px-2 py-1 text-xs bg-[#00aff5] text-white rounded-full">
