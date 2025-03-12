@@ -45,6 +45,7 @@ export function useMessagesManagement(
       // Invalidate queries to update UI
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/conversations`] });
+      await queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
