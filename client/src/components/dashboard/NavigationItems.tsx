@@ -8,6 +8,7 @@ interface NavigationItemsProps {
   setIsMenuOpen: (open: boolean) => void;
   onCreateRequest: () => void;
   newOffersCount: number;
+  unreadMessagesCount?: number;
   isMobile?: boolean;
 }
 
@@ -24,6 +25,7 @@ export function NavigationItems({
   setIsMenuOpen,
   onCreateRequest,
   newOffersCount,
+  unreadMessagesCount = 0,
   isMobile = false,
 }: NavigationItemsProps) {
   const handleTabChange = (tab: string) => {
@@ -37,10 +39,15 @@ export function NavigationItems({
     { id: "requests", label: "Cereri" },
     {
       id: "offers",
-      label: `Oferte primite${newOffersCount > 0 ? ` (${newOffersCount})` : ''}`,
+      label: "Oferte primite",
+      count: newOffersCount,
     },
     { id: "car", label: "Mașini" },
-    { id: "messages", label: "Mesaje" },
+    { 
+      id: "messages", 
+      label: "Mesaje",
+      count: unreadMessagesCount 
+    },
     { id: "profile", label: "Cont" },
   ];
 
@@ -69,7 +76,7 @@ export function NavigationItems({
                   } relative`}
                 >
                   {item.label}
-                  {item.id === "offers" && item.count && item.count > 0 && (
+                  {item.count && item.count > 0 && (
                     <span className="absolute -top-1 -right-1 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {item.count}
                     </span>
@@ -110,7 +117,7 @@ export function NavigationItems({
           }`}
         >
           {item.label}
-          {item.id === "offers" && item.count && item.count > 0 && (
+          {item.count && item.count > 0 && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#00aff5] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {item.count}
             </span>
