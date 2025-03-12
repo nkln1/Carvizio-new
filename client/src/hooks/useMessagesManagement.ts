@@ -128,8 +128,13 @@ export function useMessagesManagement(
     refetchInterval: CONVERSATIONS_STALE_TIME
   });
 
+  // Get paginated conversations for filtered results
+  const getPaginatedConversations = (conversations: any[]) => {
+    return conversations.slice(startIndex, startIndex + itemsPerPage);
+  };
+
   // Get paginated conversations
-  const conversations = allConversations.slice(startIndex, startIndex + itemsPerPage);
+  const conversations = getPaginatedConversations(allConversations);
   const totalConversationPages = totalPages(allConversations);
 
   const sendMessage = useCallback(async (content: string) => {

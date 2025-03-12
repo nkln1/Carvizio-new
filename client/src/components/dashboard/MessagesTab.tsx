@@ -1,8 +1,20 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, Loader2, Search } from "lucide-react"; 
+import { MessageSquare, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationView } from "@/components/service-dashboard/messages/ConversationView";
 import { ConversationList } from "@/components/service-dashboard/messages/ConversationList";
@@ -46,7 +58,14 @@ export function MessagesTab({
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
-    markConversationAsRead
+    markConversationAsRead,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
+    totalItems,
+    startIndex
   } = useMessagesManagement(initialConversation, true);
 
   // Effect for handling initialConversation updates
@@ -222,11 +241,73 @@ export function MessagesTab({
                 </p>
               </div>
             ) : (
-              <ConversationList 
-                conversations={filteredConversations}
-                isLoading={false}
-                onSelectConversation={handleConversationSelect}
-              />
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-sm text-gray-500">
+                    Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalItems)} din {totalItems} conversații
+                  </div>
+                  <Select 
+                    value={itemsPerPage.toString()} 
+                    onValueChange={(value) => setItemsPerPage(Number(value))}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Număr de conversații" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 pe pagină</SelectItem>
+                      <SelectItem value="10">10 pe pagină</SelectItem>
+                      <SelectItem value="20">20 pe pagină</SelectItem>
+                      <SelectItem value="50">50 pe pagină</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              
+                <ConversationList 
+                  conversations={filteredConversations}
+                  isLoading={false}
+                  onSelectConversation={handleConversationSelect}
+                />
+                
+                {totalPages > 1 && (
+                  <Pagination className="mt-4">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }).map((_, index) => (
+                        <PaginationItem key={index}>
+                          <Button
+                            variant={currentPage === index + 1 ? "default" : "outline"}
+                            onClick={() => setCurrentPage(index + 1)}
+                            className="w-10"
+                          >
+                            {index + 1}
+                          </Button>
+                        </PaginationItem>
+                      ))}
+                      
+                      <PaginationItem>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
             )}
           </div>
         ) : (
