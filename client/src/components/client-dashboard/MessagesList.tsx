@@ -16,6 +16,8 @@ import {
   PaginationContent,
   PaginationItem,
 } from "@/components/ui/pagination";
+import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface MessagesListProps {
   setActiveTab?: (tab: string) => void;
@@ -31,6 +33,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [messageToSend, setMessageToSend] = useState('');
+
   const {
     conversations,
     messages,
@@ -49,8 +52,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
     startIndex
   } = useMessagesManagement({ initialConversation });
 
-  // Invalidarea query-ului când se selectează o conversație
-  const handleSelectConversation = (conversation: any) => {
+  const handleSelectConversation = async (conversation: any) => {
     setActiveConversation({
       userId: conversation.userId,
       userName: conversation.userName,
@@ -58,17 +60,14 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       offerId: conversation.offerId
     });
 
-    // Invalidare expresă pentru contorul de mesaje necitite
-    markConversationAsRead(conversation.requestId, conversation.userId);
+    // Mark conversation as read when selected
+    await markConversationAsRead(conversation.requestId, conversation.userId);
+
+    // Invalidate unread messages count
     queryClient.invalidateQueries({ 
       queryKey: ["unreadConversationsCount"],
       exact: true
     });
-
-    // Forțează o revalidare imediată
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-    }, 500);
   };
 
   const handleSendMessage = async () => {
@@ -77,8 +76,6 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
     try {
       await sendMessage(messageToSend);
       setMessageToSend('');
-
-      // Invalidare pentru a actualiza contorul după trimiterea unui mesaj
       queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -94,12 +91,15 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
           </div>
           <div className="flex-1 overflow-auto p-2">
             {isLoadingConversations ? (
-              <div className="p-4 text-center text-muted-foreground">Încărcare conversații...</div>
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+                <p className="text-muted-foreground ml-2">Se încarcă conversațiile...</p>
+              </div>
             ) : conversations.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">Nu aveți conversații active</div>
             ) : (
               <>
-                <div className="flex justify-between items-center mb-4 px-2">
+                <div className="flex justify-between items-center mb-4">
                   <div className="text-sm text-gray-500">
                     Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalItems)} din {totalItems} conversații
                   </div>
@@ -120,9 +120,9 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                 </div>
 
                 {conversations.map((conversation) => (
-                  <div
+                  <Card
                     key={`${conversation.requestId}-${conversation.userId}`}
-                    className={`mb-2 cursor-pointer rounded-lg p-3 transition-colors ${
+                    className={`mb-2 cursor-pointer p-3 transition-colors ${
                       activeConversation?.requestId === conversation.requestId &&
                       activeConversation?.userId === conversation.userId
                         ? 'bg-accent/30'
@@ -139,7 +139,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                         {conversation.unreadCount} mesaje necitite
                       </div>
                     )}
-                  </div>
+                  </Card>
                 ))}
 
                 {totalPages > 1 && (
@@ -188,14 +188,20 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
         </div>
       </div>
       <div className="col-span-5 h-full lg:col-span-4">
-        <MessagesView
-          messages={messages}
-          isLoading={isLoadingMessages}
-          activeConversation={activeConversation}
-          messageToSend={messageToSend}
-          setMessageToSend={setMessageToSend}
-          handleSendMessage={handleSendMessage}
-        />
+        {activeConversation ? (
+          <MessagesView
+            messages={messages}
+            isLoading={isLoadingMessages}
+            activeConversation={activeConversation}
+            messageToSend={messageToSend}
+            setMessageToSend={setMessageToSend}
+            handleSendMessage={handleSendMessage}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-muted-foreground">Selectează o conversație pentru a începe</p>
+          </div>
+        )}
       </div>
     </div>
   );
