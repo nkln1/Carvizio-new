@@ -190,9 +190,9 @@ export default function ServiceDashboard() {
     id: id as TabId,
     label,
     count: id === "cereri" ? newRequestsCount :
-           id === "oferte-acceptate" ? newAcceptedOffersCount :
-           id === "mesaje" ? unreadConversationsCount :
-           0
+      id === "oferte-acceptate" ? newAcceptedOffersCount :
+        id === "mesaje" ? unreadConversationsCount :
+          0
   }));
 
   return (
@@ -208,11 +208,14 @@ export default function ServiceDashboard() {
                   size="sm"
                   className="hidden md:flex items-center gap-2 text-[#00aff5]"
                   onClick={() => {
-                    const serviceSlug = userProfile.companyName
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-+|-+$/g, '');
-                    setLocation(`/service/${serviceSlug}`);
+                    if (userProfile.companyName) {
+                      const serviceSlug = userProfile.companyName
+                        .toLowerCase()
+                        .trim()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                      window.location.href = `/service/${serviceSlug}`;
+                    }
                   }}
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -253,11 +256,14 @@ export default function ServiceDashboard() {
                         variant="outline"
                         className="w-full justify-start text-left text-[#00aff5]"
                         onClick={() => {
-                          const serviceSlug = userProfile.companyName
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]+/g, '-')
-                            .replace(/^-+|-+$/g, '');
-                          setLocation(`/service/${serviceSlug}`);
+                          if (userProfile.companyName) {
+                            const serviceSlug = userProfile.companyName
+                              .toLowerCase()
+                              .trim()
+                              .replace(/[^a-z0-9]+/g, '-')
+                              .replace(/^-+|-+$/g, '');
+                            window.location.href = `/service/${serviceSlug}`;
+                          }
                           setIsMenuOpen(false);
                         }}
                       >
