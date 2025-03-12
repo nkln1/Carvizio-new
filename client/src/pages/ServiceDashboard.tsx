@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ export interface ConversationInfo {
 }
 
 export default function ServiceDashboard() {
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,7 +59,6 @@ export default function ServiceDashboard() {
 
   const unreadConversationsCount = conversations.filter(conv => conv.unreadCount > 0).length;
 
-
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
     retry: 1,
@@ -69,11 +68,11 @@ export default function ServiceDashboard() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        navigate("/");
+        setLocation("/");
       }
     });
     return () => unsubscribe();
-  }, [navigate]);
+  }, [setLocation]);
 
   // Query to fetch viewed requests
   const { data: viewedRequestIds = [] } = useQuery<number[]>({
@@ -148,13 +147,21 @@ export default function ServiceDashboard() {
 
   const handleProfileClick = () => {
     if (userProfile && 'companyName' in userProfile) {
-      const serviceSlug = userProfile.companyName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      console.log('Navigating to service profile:', `/service/${serviceSlug}`);
-      navigate(`/service/${serviceSlug}`);
-      setIsMenuOpen(false);
+      try {
+        const serviceSlug = userProfile.companyName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        console.log('Navigating to service profile:', `/service/${serviceSlug}`);
+        window.location.href = `/service/${serviceSlug}`;
+      } catch (error) {
+        console.error('Navigation error:', error);
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Nu s-au putut încărca datele profilului.",
+        });
+      }
     } else {
       toast({
         variant: "destructive",
