@@ -89,6 +89,7 @@ export interface IStorage {
   markAcceptedOfferAsViewed(serviceProviderId: number, offerId: number): Promise<ViewedAcceptedOffer>;
   getViewedAcceptedOffersByServiceProvider(serviceProviderId: number): Promise<ViewedAcceptedOffer[]>;
   getMessagesByRequest(requestId: number): Promise<Message[]>;
+  markConversationAsRead(requestId: number, userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -556,6 +557,7 @@ export class DatabaseStorage implements IStorage {
         content,
         offerId: offerId || null,
         isRead: false,
+        isNew: true,
         createdAt: new Date()
       }).returning();
       return message;
@@ -580,7 +582,6 @@ export class DatabaseStorage implements IStorage {
 
   async getUserMessages(userId: number, userRole: "client" | "service", requestId?: number): Promise<Message[]> {
     try {
-      // Base query conditions
       const conditions = [
         or(
           and(
@@ -594,13 +595,24 @@ export class DatabaseStorage implements IStorage {
         )
       ];
 
-      // Add requestId filter if provided
       if (requestId) {
         conditions.push(eq(messagesTable.requestId, requestId));
       }
 
       const messageResults = await db
-        .select()
+        .select({
+          id: messagesTable.id,
+          requestId: messagesTable.requestId,
+          offerId: messagesTable.offerId,
+          senderId: messagesTable.senderId,
+          senderRole: messagesTable.senderRole,
+          receiverId: messagesTable.receiverId,
+          receiverRole: messagesTable.receiverRole,
+          content: messagesTable.content,
+          isRead: messagesTable.isRead,
+          isNew: messagesTable.isNew,
+          createdAt: messagesTable.createdAt
+        })
         .from(messagesTable)
         .where(and(...conditions))
         .orderBy(desc(messagesTable.createdAt));
@@ -870,6 +882,30 @@ export class DatabaseStorage implements IStorage {
       return enrichedMessages;
     } catch (error) {
       console.error('Error in getMessagesByRequest:', error);
+      throw error;
+    }
+  }
+
+    async markConversationAsRead(requestId: number, userId: number): Promise<void> {
+    try {
+      await db
+        .update(messagesTable)
+        .set({
+          isRead: true,
+          isNew: false
+        })
+        .where(
+          and(
+            eq(messagesTable.requestId, requestId),
+            eq(messagesTable.receiverId, userId),
+            or(
+              eq(messagesTable.isRead, false),
+              eq(messagesTable.isNew, true)
+            )
+          )
+        );
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
       throw error;
     }
   }

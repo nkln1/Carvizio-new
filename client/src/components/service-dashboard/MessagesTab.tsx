@@ -40,6 +40,74 @@ const safeFormatDate = (date: any, formatStr: string = "dd.MM.yyyy"): string => 
   }
 };
 
+// Assuming Conversation type is defined elsewhere, or adjust as needed.
+interface Conversation extends ConversationInfo {
+  hasNewMessages: boolean;
+  lastMessageDate: string;
+  unreadCount: number;
+}
+
+
+export function ConversationList({ 
+  conversations, 
+  isLoading, 
+  onSelectConversation,
+  onDeleteConversation 
+}: {
+  conversations: Conversation[];
+  isLoading: boolean;
+  onSelectConversation: (conv: ConversationInfo) => void;
+  onDeleteConversation: (requestId: number, userId: number) => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {conversations.map((conv) => (
+        <Card key={`${conv.requestId}-${conv.userId}`} className="cursor-pointer hover:border-[#00aff5]/40">
+          <CardContent 
+            className="flex justify-between items-start pt-6"
+            onClick={() => onSelectConversation(conv)}
+          >
+            <div className="space-y-2 flex-grow">
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium">{conv.userName}</h3>
+                {conv.hasNewMessages && (
+                  <span className="px-2 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
+                    Nou
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 truncate">{conv.lastMessage}</p>
+              {conv.requestTitle && (
+                <p className="text-xs text-gray-400">
+                  Re: {conv.requestTitle}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <span className="text-xs text-gray-400">
+                {safeFormatDate(conv.lastMessageDate, "dd.MM.yyyy")}
+              </span>
+              {conv.unreadCount > 0 && (
+                <span className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                  {conv.unreadCount}
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function MessagesTab({
   initialConversation = null,
   onConversationClear,
@@ -150,6 +218,30 @@ export default function MessagesTab({
     }
   };
 
+  // Added markConversationAsRead function -  needs implementation based on your backend API
+  const markConversationAsRead = async (requestId: number, userId: number) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      await fetch(`/api/service/conversations/${requestId}/mark-read`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      // Invalidate conversations query to update unread counts
+      queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+      toast({ variant: "destructive", title: "Eroare", description: "Nu s-a putut marca conversația ca citită." });
+    }
+  };
+
+
   const handleConversationSelect = async (conv: {
     userId: number;
     userName: string;
@@ -162,25 +254,8 @@ export default function MessagesTab({
       onConversationClear();
     }
 
-    // Mark conversation as read
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      await fetch(`/api/service/conversations/${conv.requestId}/mark-read`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId: conv.userId })
-      });
-
-      // Invalidate conversations query to update unread counts
-      queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
-    }
+    // Folosim noul hook pentru a marca conversația ca citită
+    await markConversationAsRead(conv.requestId, conv.userId);
   };
 
   const handleViewDetails = async () => {
@@ -343,7 +418,7 @@ export default function MessagesTab({
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
             <ConversationList 
-              conversations={filteredConversations}
+              conversations={filteredConversations as Conversation[]} // Type assertion added
               isLoading={isLoadingConversations}
               onSelectConversation={handleConversationSelect}
               onDeleteConversation={handleDeleteConversation}

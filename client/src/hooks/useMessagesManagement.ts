@@ -26,7 +26,30 @@ export function useMessagesManagement(
   // Define base endpoints based on user type
   const baseEndpoint = isClient ? '/api/client' : '/api/service';
 
-  // Set initial conversation only once when the component mounts
+  // Mark conversation as read
+  const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      await fetch(`${baseEndpoint}/conversations/${requestId}/mark-read`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      // Invalidate queries to update UI
+      await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
+      await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/conversations`] });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  }, [baseEndpoint, queryClient]);
+
+  // Set initial conversation and mark as read if needed
   useEffect(() => {
     if (initialConversation && initialConversation.userId && initialConversation.requestId) {
       console.log('Setting initial conversation:', initialConversation);
@@ -36,8 +59,11 @@ export function useMessagesManagement(
         requestId: initialConversation.requestId,
         offerId: initialConversation.offerId
       });
+
+      // Mark as read when conversation is opened
+      markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
-  }, [initialConversation]);
+  }, [initialConversation, markConversationAsRead]);
 
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
@@ -161,6 +187,7 @@ export function useMessagesManagement(
     conversations,
     isLoadingMessages,
     isLoadingConversations,
-    sendMessage
+    sendMessage,
+    markConversationAsRead
   };
 }

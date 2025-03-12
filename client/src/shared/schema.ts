@@ -11,6 +11,8 @@ export interface Message {
   senderRole: "client" | "service";
   receiverRole: "client" | "service";
   requestId: number;
+  isRead: boolean;
+  isNew: boolean;
 }
 
 export interface Conversation {
@@ -21,4 +23,5 @@ export interface Conversation {
   lastMessageDate: string;
   requestTitle?: string;
   unreadCount: number;
+  hasNewMessages: boolean;
 }
