@@ -21,7 +21,7 @@ export function useUnreadMessagesCount() {
       }
 
       const data = await response.json();
-      return data.count || 0;
+      return data.conversationsCount || 0;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 10000, // Consider data stale after 10 seconds
