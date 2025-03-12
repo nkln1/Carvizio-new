@@ -31,7 +31,7 @@ export interface Conversation {
   userId: number;
   userName?: string;
   requestId: number;
-  offerId?: number;  // Adăugați această linie
+  offerId?: number;  
   lastMessage?: string;
   lastMessageDate?: string;
   lastMessageSenderId?: number;
@@ -80,13 +80,14 @@ export interface ServiceProviderUser extends BaseUser {
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   requestId: integer("request_id").notNull().references(() => requests.id),
-  offerId: integer("offer_id").references(() => sentOffers.id),  // New column
+  offerId: integer("offer_id").references(() => sentOffers.id),
   senderId: integer("sender_id").notNull(),
   senderRole: text("sender_role", { enum: ["client", "service"] }).notNull(),
   receiverId: integer("receiver_id").notNull(),
   receiverRole: text("receiver_role", { enum: ["client", "service"] }).notNull(),
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
+  isNew: boolean("is_new").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -96,7 +97,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     fields: [messages.requestId],
     references: [requests.id],
   }),
-  offer: one(sentOffers, {  // New relation
+  offer: one(sentOffers, {
     fields: [messages.offerId],
     references: [sentOffers.id],
   }),
@@ -407,6 +408,7 @@ export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   isRead: true,
+  isNew: true,
   createdAt: true
 });
 

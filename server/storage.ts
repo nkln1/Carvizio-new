@@ -600,19 +600,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       const messageResults = await db
-        .select({
-          id: messagesTable.id,
-          requestId: messagesTable.requestId,
-          offerId: messagesTable.offerId,
-          senderId: messagesTable.senderId,
-          senderRole: messagesTable.senderRole,
-          receiverId: messagesTable.receiverId,
-          receiverRole: messagesTable.receiverRole,
-          content: messagesTable.content,
-          isRead: messagesTable.isRead,
-          isNew: messagesTable.isNew,
-          createdAt: messagesTable.createdAt
-        })
+        .select()
         .from(messagesTable)
         .where(and(...conditions))
         .orderBy(desc(messagesTable.createdAt));
@@ -886,7 +874,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-    async markConversationAsRead(requestId: number, userId: number): Promise<void> {
+  async markConversationAsRead(requestId: number, userId: number): Promise<void> {
     try {
       await db
         .update(messagesTable)
