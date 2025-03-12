@@ -23,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCarManagement } from "@/hooks/useCarManagement";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 import { CarDialog } from "@/components/car/CarDialog";
+import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
@@ -36,14 +37,8 @@ export default function ClientDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Invalidare periodică pentru contorul de mesaje necitite
-  useEffect(() => {
-    const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-    }, 10000); // Verifică la fiecare 10 secunde
-    
-    return () => clearInterval(interval);
-  }, [queryClient]);
+  // Get unread messages count
+  const { data: unreadMessagesCount = 0 } = useUnreadMessagesCount();
 
   const {
     selectedCar,
@@ -96,6 +91,8 @@ export default function ClientDashboard() {
       } else if (data.type === 'NEW_MESSAGE') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/messages"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
+        // Also invalidate unread messages count
+        queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
       }
     };
 
@@ -109,7 +106,6 @@ export default function ClientDashboard() {
     }
   }, [activeTab]);
 
-  // Reset initial conversation when leaving messages tab
   useEffect(() => {
     if (activeTab !== "messages") {
       setInitialConversation(null);
@@ -241,6 +237,7 @@ export default function ClientDashboard() {
         setIsMenuOpen={setIsMenuOpen}
         onCreateRequest={() => setShowRequestDialog(true)}
         newOffersCount={newOffersCount}
+        newMessagesCount={unreadMessagesCount}
       />
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -257,6 +254,7 @@ export default function ClientDashboard() {
             setIsMenuOpen={setIsMenuOpen}
             onCreateRequest={() => setShowRequestDialog(true)}
             newOffersCount={newOffersCount}
+            newMessagesCount={unreadMessagesCount}
             isMobile={true}
           />
         </SheetContent>
