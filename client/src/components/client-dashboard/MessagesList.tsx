@@ -50,7 +50,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
     totalPages,
     totalItems,
     startIndex
-  } = useMessagesManagement({ initialConversation });
+  } = useMessagesManagement(initialConversation, true); // Set isClient to true
 
   const handleSelectConversation = async (conversation: any) => {
     setActiveConversation({
@@ -60,10 +60,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       offerId: conversation.offerId
     });
 
-    // Mark conversation as read when selected
     await markConversationAsRead(conversation.requestId, conversation.userId);
-
-    // Invalidate unread messages count
     queryClient.invalidateQueries({ 
       queryKey: ["unreadConversationsCount"],
       exact: true
