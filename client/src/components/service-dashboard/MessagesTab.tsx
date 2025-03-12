@@ -130,6 +130,7 @@ export default function MessagesTab({
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
+    markConversationAsRead
   } = useMessagesManagement(initialConversation);
 
   // Load request details function
@@ -218,43 +219,20 @@ export default function MessagesTab({
     }
   };
 
-  // Added markConversationAsRead function -  needs implementation based on your backend API
-  const markConversationAsRead = async (requestId: number, userId: number) => {
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      await fetch(`/api/service/conversations/${requestId}/mark-read`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId })
-      });
-
-      // Invalidate conversations query to update unread counts
-      queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
-      toast({ variant: "destructive", title: "Eroare", description: "Nu s-a putut marca conversația ca citită." });
-    }
-  };
-
 
   const handleConversationSelect = async (conv: {
     userId: number;
     userName: string;
     requestId: number;
-    offerId?: number;  // Asigurați-vă că this property exists
+    offerId?: number;  
     sourceTab?: string;
   }) => {
-    setActiveConversation(conv);  // Acum conv include offerId dacă există
+    setActiveConversation(conv);  
     if (initialConversation && onConversationClear) {
       onConversationClear();
     }
 
-    // Folosim noul hook pentru a marca conversația ca citită
+    // Folosim funcția din hook pentru a marca conversația ca citită
     await markConversationAsRead(conv.requestId, conv.userId);
   };
 
@@ -268,6 +246,7 @@ export default function MessagesTab({
     try {
       console.log("Loading details for conversation:", activeConversation);
       
+
       // Încărcăm detaliile cererii
       const request = await loadRequestDetails(activeConversation.requestId);
       setRequestData(request);
@@ -313,7 +292,7 @@ export default function MessagesTab({
         }
       } catch (offerError) {
         console.error("Error loading offer details:", offerError);
-        setOfferData(null); // Set offerData to null if error occurs
+        setOfferData(null); 
       }
 
       setShowDetailsDialog(true);
@@ -418,7 +397,7 @@ export default function MessagesTab({
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
             <ConversationList 
-              conversations={filteredConversations as Conversation[]} // Type assertion added
+              conversations={filteredConversations as Conversation[]} 
               isLoading={isLoadingConversations}
               onSelectConversation={handleConversationSelect}
               onDeleteConversation={handleDeleteConversation}

@@ -81,6 +81,7 @@ interface IStorage {
     getViewedAcceptedOffersByServiceProvider: any;
     markAcceptedOfferAsViewed: any;
     getSentOffersByRequest: any;
+    markConversationAsRead: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -875,7 +876,7 @@ export function registerRoutes(app: Express): Server {
       console.log("Fetching offers for Firebase UID:", req.firebaseUser!.uid);
 
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = awaitstorage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
 
       // If user is a service provider, return 403
       if (serviceProvider) {
@@ -1712,6 +1713,54 @@ export function registerRoutes(app: Express): Server {
         error: "Failed to send message",
         message: error instanceof Error ? error.message : "Unknown error occurred"
       });
+    }
+  });
+
+  // Add this endpoint after the other message-related endpoints
+  app.post("/api/service/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can mark conversations as read." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const { userId } = req.body;
+
+      if (!requestId || !userId) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      await storage.markConversationAsRead(requestId, provider.id);
+
+      res.status(200).json({ message: "Conversation marked as read successfully" });
+    } catch (error) {
+      console.error("Error marking conversation as read:", error);
+      res.status(500).json({ error: "Failed to mark conversation as read" });
+    }
+  });
+
+  // Add similar endpoint for client
+  app.post("/api/client/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can mark conversations as read." });
+      }
+
+      const requestId = parseInt(req.params.requestId);
+      const { userId } = req.body;
+
+      if (!requestId || !userId) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      await storage.markConversationAsRead(requestId, client.id);
+
+      res.status(200).json({ message: "Conversation marked as read successfully" });
+    } catch (error) {
+      console.error("Error marking conversation as read:", error);
+      res.status(500).json({ error: "Failed to mark conversation as read" });
     }
   });
 
