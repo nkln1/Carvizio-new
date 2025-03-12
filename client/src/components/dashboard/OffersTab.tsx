@@ -19,6 +19,8 @@ import {
   XCircle,
   Eye,
   RotateCcw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,18 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
@@ -48,6 +62,8 @@ export function OffersTab({
 }: OffersTabProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -213,21 +229,18 @@ export function OffersTab({
     }
   };
 
-  if (offers.length === 0) {
-    return (
-      <Card className="shadow-lg">
-        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-muted-foreground">Nu există oferte.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getFilteredOffers = (status: string) => {
+    return offers.filter((offer) => offer.status === status);
+  };
 
-  const pendingOffers = offers.filter((offer) => offer.status === "Pending");
-  const acceptedOffers = offers.filter((offer) => offer.status === "Accepted");
-  const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
+  const getPaginatedOffers = (filteredOffers: OfferWithProvider[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredOffers.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const renderOfferBox = (offer: OfferWithProvider) => {
     const isNew = !viewedOffers.has(offer.id);
@@ -364,6 +377,96 @@ export function OffersTab({
     );
   };
 
+  const renderPaginatedContent = (status: string) => {
+    const filteredOffers = getFilteredOffers(status);
+    const paginatedOffers = getPaginatedOffers(filteredOffers);
+    const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+
+    return (
+      <>
+        {filteredOffers.length > 0 && (
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm text-gray-500">
+              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredOffers.length)} din {filteredOffers.length} oferte
+            </div>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Număr de oferte" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 pe pagină</SelectItem>
+                <SelectItem value="10">10 pe pagină</SelectItem>
+                <SelectItem value="20">20 pe pagină</SelectItem>
+                <SelectItem value="50">50 pe pagină</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {paginatedOffers.map((offer) => renderOfferBox(offer))}
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination className="mt-6">
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <PaginationItem key={index}>
+                  <Button
+                    variant={currentPage === index + 1 ? "default" : "outline"}
+                    onClick={() => setCurrentPage(index + 1)}
+                    className="w-10"
+                  >
+                    {index + 1}
+                  </Button>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </>
+    );
+  };
+
+  if (offers.length === 0) {
+    return (
+      <Card className="shadow-lg">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-muted-foreground">Nu există oferte.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const pendingOffers = offers.filter((offer) => offer.status === "Pending");
+  const acceptedOffers = offers.filter((offer) => offer.status === "Accepted");
+  const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -404,39 +507,15 @@ export function OffersTab({
           </TabsList>
 
           <TabsContent value="pending">
-            {pendingOffers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                Nu există oferte în așteptare
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingOffers.map((offer) => renderOfferBox(offer))}
-              </div>
-            )}
+            {renderPaginatedContent("Pending")}
           </TabsContent>
 
           <TabsContent value="accepted">
-            {acceptedOffers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                Nu există oferte acceptate
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {acceptedOffers.map((offer) => renderOfferBox(offer))}
-              </div>
-            )}
+            {renderPaginatedContent("Accepted")}
           </TabsContent>
 
           <TabsContent value="rejected">
-            {rejectedOffers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                Nu există oferte respinse
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rejectedOffers.map((offer) => renderOfferBox(offer))}
-              </div>
-            )}
+            {renderPaginatedContent("Rejected")}
           </TabsContent>
         </Tabs>
       </CardContent>
