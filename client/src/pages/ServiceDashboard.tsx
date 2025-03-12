@@ -4,7 +4,7 @@ import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail, Menu } from "lucide-react";
-import type { User as UserType } from "@shared/schema";
+import type { User as UserType, Conversation } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,15 @@ export default function ServiceDashboard() {
 
   // Use the service offer management hook to get the new accepted offers count
   const { newAcceptedOffersCount } = useServiceOfferManagement();
+
+  // Query pentru conversații noi
+  const { data: conversations = [] } = useQuery<Conversation[]>({
+    queryKey: ['/api/service/conversations'],
+    refetchInterval: 10000, // Reîmprospătare la fiecare 10 secunde
+  });
+
+  // Calculăm numărul de conversații cu mesaje noi
+  const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
@@ -176,7 +185,10 @@ export default function ServiceDashboard() {
 
   const navigationItems = Object.entries(TAB_NAMES).map(([id, label]) => ({
     id: id as TabId,
-    label
+    label,
+    count: id === "cereri" ? newRequestsCount :
+           id === "oferte-acceptate" ? newAcceptedOffersCount :
+           id === "mesaje" ? newConversationsCount : 0
   }));
 
   return (
@@ -194,17 +206,12 @@ export default function ServiceDashboard() {
                   key={item.id}
                   variant={activeTab === item.id ? "default" : "ghost"}
                   onClick={() => handleTabChange(item.id)}
-                  className={activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}
+                  className={`relative ${activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}`}
                 >
                   {item.label}
-                  {item.id === "cereri" && newRequestsCount > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                      {newRequestsCount}
-                    </span>
-                  )}
-                  {item.id === "oferte-acceptate" && newAcceptedOffersCount > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                      {newAcceptedOffersCount}
+                  {item.count > 0 && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                      {item.count}
                     </span>
                   )}
                 </Button>
@@ -225,19 +232,14 @@ export default function ServiceDashboard() {
                         key={item.id}
                         variant={activeTab === item.id ? "default" : "ghost"}
                         onClick={() => handleTabChange(item.id)}
-                        className={`w-full justify-start text-left ${
+                        className={`w-full justify-start text-left relative ${
                           activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
                         }`}
                       >
                         {item.label}
-                        {item.id === "cereri" && newRequestsCount > 0 && (
-                          <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                            {newRequestsCount}
-                          </span>
-                        )}
-                        {item.id === "oferte-acceptate" && newAcceptedOffersCount > 0 && (
-                          <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                            {newAcceptedOffersCount}
+                        {item.count > 0 && (
+                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                            {item.count}
                           </span>
                         )}
                       </Button>
