@@ -321,43 +321,109 @@ export default function MessagesTab({ initialConversation, onConversationClear }
                 ))}
 
                 {totalPages > 1 && (
-                  <div className="flex justify-between items-center mt-4 px-2">
+                  <div className="flex justify-between items-center mt-4 p-4 border-t">
                     <div className="text-sm text-gray-500">
                       Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalConversations)} din {totalConversations} conversații
                     </div>
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <PaginationPrevious 
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                          >
-                            Anterior
-                          </Button>
+                            className={`cursor-pointer ${currentPage === 1 ? 'opacity-50 pointer-events-none' : ''}`}
+                          />
                         </PaginationItem>
-                        {Array.from({ length: totalPages }).map((_, index) => (
-                          <PaginationItem key={index}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentPage(index + 1)}
-                              className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
-                            >
-                              {index + 1}
-                            </Button>
-                          </PaginationItem>
-                        ))}
+                        
+                        {totalPages <= 5 ? (
+                          // Show all pages if 5 or fewer
+                          Array.from({ length: totalPages }).map((_, index) => (
+                            <PaginationItem key={`page-${index}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(index + 1)}
+                                className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
+                              >
+                                {index + 1}
+                              </Button>
+                            </PaginationItem>
+                          ))
+                        ) : (
+                          // Show limited pages with ellipsis for larger page counts
+                          <>
+                            {/* First page */}
+                            <PaginationItem key="page-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(1)}
+                                className={currentPage === 1 ? "bg-[#00aff5] text-white" : ""}
+                              >
+                                1
+                              </Button>
+                            </PaginationItem>
+                            
+                            {/* Ellipsis or page numbers */}
+                            {currentPage > 3 && (
+                              <PaginationItem key="ellipsis-1">
+                                <div className="px-2">...</div>
+                              </PaginationItem>
+                            )}
+                            
+                            {/* Pages around current */}
+                            {Array.from({ length: Math.min(3, totalPages - 2) }).map((_, i) => {
+                              let pageNum;
+                              if (currentPage <= 3) {
+                                pageNum = i + 2; // Show 2, 3, 4
+                              } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i; // Show last-4, last-3, last-2
+                              } else {
+                                pageNum = currentPage - 1 + i; // Show current-1, current, current+1
+                              }
+                              
+                              if (pageNum > 1 && pageNum < totalPages) {
+                                return (
+                                  <PaginationItem key={`page-${pageNum}`}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setCurrentPage(pageNum)}
+                                      className={currentPage === pageNum ? "bg-[#00aff5] text-white" : ""}
+                                    >
+                                      {pageNum}
+                                    </Button>
+                                  </PaginationItem>
+                                );
+                              }
+                              return null;
+                            })}
+                            
+                            {/* Ellipsis for later pages */}
+                            {currentPage < totalPages - 2 && (
+                              <PaginationItem key="ellipsis-2">
+                                <div className="px-2">...</div>
+                              </PaginationItem>
+                            )}
+                            
+                            {/* Last page */}
+                            <PaginationItem key={`page-${totalPages}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(totalPages)}
+                                className={currentPage === totalPages ? "bg-[#00aff5] text-white" : ""}
+                              >
+                                {totalPages}
+                              </Button>
+                            </PaginationItem>
+                          </>
+                        )}
+                        
                         <PaginationItem>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <PaginationNext 
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                          >
-                            Următor
-                          </Button>
+                            className={`cursor-pointer ${currentPage === totalPages ? 'opacity-50 pointer-events-none' : ''}`}
+                          />
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>
