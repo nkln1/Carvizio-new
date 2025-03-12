@@ -25,7 +25,6 @@ import Navigation from "@/components/layout/Navigation";
 import Footer from "@/components/layout/Footer";
 import { ServiceProviderUser } from "@shared/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 interface WorkingHours {
   monday: string;
@@ -38,9 +37,9 @@ interface WorkingHours {
 }
 
 interface Rating {
-  id: string;
-  serviceId: string;
-  clientId: string;
+  id: number;
+  serviceId: number;
+  clientId: number;
   rating: number;
   review?: string;
   createdAt: Date;
@@ -81,9 +80,9 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
 
   // Fetch service data
   const { data: serviceData, isLoading } = useQuery<ServiceProviderUser>({
-    queryKey: [`/api/service/profile/${slug}`],
+    queryKey: ['/api/auth/service-profile', slug],
     queryFn: async () => {
-      const response = await fetch(`/api/service/profile/${slug}`);
+      const response = await fetch(`/api/auth/service-profile/${slug}`);
       if (!response.ok) {
         throw new Error('Service not found');
       }
@@ -93,7 +92,7 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
 
   // Fetch ratings
   const { data: ratingsData } = useQuery({
-    queryKey: [`/api/service/ratings/${serviceData?.id}`],
+    queryKey: ['/api/service/ratings', serviceData?.id],
     enabled: !!serviceData?.id,
     queryFn: async () => {
       const response = await fetch(`/api/service/ratings/${serviceData?.id}`);
@@ -123,27 +122,39 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
 
   const isOwner = user?.id === serviceData?.id;
 
-  const handleSave = async () => {
-    if (!serviceData?.id || !isOwner) return;
-    try {
-      await apiRequest("PATCH", `/api/service/profile/${serviceData.id}`, {
-        workingHours,
+  const updateWorkingHoursMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/auth/service-profile/${serviceData?.id}/working-hours`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ workingHours }),
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/service/profile/${slug}`] });
+
+      if (!response.ok) {
+        throw new Error('Failed to update working hours');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/service-profile', slug] });
       toast({
         title: "Success",
         description: "Programul de funcționare a fost actualizat cu succes",
       });
       setEditing(false);
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Error updating working hours:", error);
       toast({
         variant: "destructive",
         title: "Eroare",
         description: "Nu am putut actualiza programul de funcționare",
       });
-    }
-  };
+    },
+  });
 
   const renderRatingStars = (rating: number) => {
     return (
@@ -164,8 +175,12 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <div className="flex-grow flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -268,19 +283,24 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
                   </div>
                   {editing && isOwner && (
                     <Button
-                      onClick={handleSave}
+                      onClick={() => updateWorkingHoursMutation.mutate()}
                       className="mt-4 w-full bg-[#00aff5] hover:bg-[#0099d6]"
+                      disabled={updateWorkingHoursMutation.isPending}
                     >
+                      {updateWorkingHoursMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : null}
                       Salvează modificările
                     </Button>
                   )}
                 </div>
               </div>
+
               <div>
                 <h3 className="font-medium mb-2">Locație</h3>
                 <div className="aspect-video bg-gray-100 rounded-lg">
                   <div className="w-full h-full flex items-center justify-center text-gray-500">
-                    Google Maps placeholder
+                    Google Maps va fi adăugat în curând
                   </div>
                 </div>
               </div>
