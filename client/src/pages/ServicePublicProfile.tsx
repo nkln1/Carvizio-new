@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import {
   Building2,
@@ -22,10 +21,9 @@ import {
   Loader2,
   Pen,
 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import Navigation from "@/components/layout/Navigation";
 import Footer from "@/components/layout/Footer";
-import { User as UserType } from "@shared/schema";
+import { ServiceProviderUser } from "@shared/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -82,10 +80,13 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
   });
 
   // Fetch service data
-  const { data: serviceData, isLoading } = useQuery({
+  const { data: serviceData, isLoading } = useQuery<ServiceProviderUser>({
     queryKey: [`/api/service/profile/${slug}`],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/service/profile/${slug}`);
+      const response = await fetch(`/api/service/profile/${slug}`);
+      if (!response.ok) {
+        throw new Error('Service not found');
+      }
       return response.json();
     }
   });
@@ -95,15 +96,22 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
     queryKey: [`/api/service/ratings/${serviceData?.id}`],
     enabled: !!serviceData?.id,
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/service/ratings/${serviceData?.id}`);
+      const response = await fetch(`/api/service/ratings/${serviceData?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch ratings');
+      }
       return response.json();
     }
   });
 
   useEffect(() => {
     if (ratingsData) {
-      setRatings(ratingsData.ratings);
-      setRatingStats(ratingsData.stats);
+      setRatings(ratingsData.ratings || []);
+      setRatingStats(ratingsData.stats || {
+        averageRating: 0,
+        totalRatings: 0,
+        ratingDistribution: {},
+      });
     }
   }, [ratingsData]);
 
@@ -164,8 +172,21 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
 
   if (!serviceData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Service not found</p>
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <div className="flex-grow flex items-center justify-center">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Service negăsit</h2>
+                <p className="text-gray-600">
+                  Ne pare rău, dar service-ul căutat nu a fost găsit.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
       </div>
     );
   }
