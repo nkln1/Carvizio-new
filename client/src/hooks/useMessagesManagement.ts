@@ -23,9 +23,15 @@ export function useMessagesManagement(
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Define base endpoints based on user type
   const baseEndpoint = isClient ? '/api/client' : '/api/service';
+
+  // Calculate pagination values
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const totalPages = messages => Math.ceil(messages.length / itemsPerPage);
 
   // Mark conversation as read
   const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
@@ -45,12 +51,11 @@ export function useMessagesManagement(
       // Invalidate queries to update UI
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/conversations`] });
-      
-      // Asigurăm invalidarea pentru contorul de mesaje necitite
-      console.log("Invalidating unread conversations count query");
+
+      // Ensure invalidation for unread messages count
       await queryClient.invalidateQueries({ 
         queryKey: ["unreadConversationsCount"],
-        exact: true // Exact match pentru a ne asigura că invalidăm doar acest query
+        exact: true
       });
     } catch (error) {
       console.error('Error marking conversation as read:', error);
@@ -60,7 +65,6 @@ export function useMessagesManagement(
   // Set initial conversation and mark as read if needed
   useEffect(() => {
     if (initialConversation && initialConversation.userId && initialConversation.requestId) {
-      console.log('Setting initial conversation:', initialConversation);
       setActiveConversation({
         userId: initialConversation.userId,
         userName: initialConversation.userName || 'Unknown User',
@@ -74,7 +78,7 @@ export function useMessagesManagement(
   }, [initialConversation, markConversationAsRead]);
 
   // Messages query
-  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
+  const { data: allMessages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation?.requestId) return [];
@@ -99,6 +103,10 @@ export function useMessagesManagement(
     staleTime: MESSAGES_STALE_TIME,
     refetchInterval: MESSAGES_STALE_TIME
   });
+
+  // Get paginated messages
+  const messages = allMessages.slice(startIndex, startIndex + itemsPerPage);
+  const totalMessagePages = totalPages(allMessages);
 
   // Conversations query
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery({
@@ -141,8 +149,6 @@ export function useMessagesManagement(
         requestId: activeConversation.requestId,
         offerId: activeConversation.offerId
       };
-
-      console.log('Sending message with payload:', messagePayload);
 
       const response = await fetch(`${baseEndpoint}/messages/send`, {
         method: 'POST',
@@ -196,6 +202,13 @@ export function useMessagesManagement(
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
-    markConversationAsRead
+    markConversationAsRead,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages: totalMessagePages,
+    totalMessages: allMessages.length,
+    startIndex
   };
 }

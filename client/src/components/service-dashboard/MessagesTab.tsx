@@ -114,9 +114,8 @@ export default function MessagesTab({
 }: MessagesTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [wsInitialized, setWsInitialized] = useState(false);
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
@@ -130,7 +129,14 @@ export default function MessagesTab({
     isLoadingMessages,
     isLoadingConversations,
     sendMessage,
-    markConversationAsRead
+    markConversationAsRead,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
+    totalMessages,
+    startIndex
   } = useMessagesManagement(initialConversation);
 
   // Load request details function
@@ -425,6 +431,13 @@ export default function MessagesTab({
                 onBack={handleBack}
                 onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                setItemsPerPage={setItemsPerPage}
+                totalPages={totalPages}
+                totalMessages={totalMessages}
+                startIndex={startIndex}
               />
             </Card>
           </div>
