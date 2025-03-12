@@ -10,18 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from "@/components/ui/pagination";
 
 interface ConversationViewProps {
   messages: Message[];
@@ -32,13 +20,6 @@ interface ConversationViewProps {
   onSendMessage: (content: string) => Promise<void>;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
-  currentPage: number;
-  setCurrentPage: (page: number) => void;
-  itemsPerPage: number;
-  setItemsPerPage: (items: number) => void;
-  totalPages: number;
-  totalMessages: number;
-  startIndex: number;
 }
 
 const MessagesLoading = () => (
@@ -64,13 +45,6 @@ export function ConversationView({
   onSendMessage,
   onViewDetails,
   showDetailsButton = false,
-  currentPage,
-  setCurrentPage,
-  itemsPerPage,
-  setItemsPerPage,
-  totalPages,
-  totalMessages,
-  startIndex
 }: ConversationViewProps) {
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
@@ -202,65 +176,6 @@ export function ConversationView({
         </CardContent>
 
         <div className="border-t p-4">
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-sm text-gray-500">
-                Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalMessages)} din {totalMessages} mesaje
-              </div>
-              <div className="flex items-center gap-4">
-                <Select 
-                  value={itemsPerPage.toString()} 
-                  onValueChange={(value) => setItemsPerPage(Number(value))}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selectează numărul de mesaje" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10 mesaje pe pagină</SelectItem>
-                    <SelectItem value="20">20 mesaje pe pagină</SelectItem>
-                    <SelectItem value="50">50 mesaje pe pagină</SelectItem>
-                    <SelectItem value="100">100 mesaje pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Anterior
-                      </Button>
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                      <PaginationItem key={index}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(index + 1)}
-                          className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
-                        >
-                          {index + 1}
-                        </Button>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Următor
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            </div>
-          )}
           <form
             onSubmit={handleSubmit}
             className="flex gap-2"

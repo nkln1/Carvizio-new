@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MessageSquare, Loader2, Search } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
@@ -11,16 +12,19 @@ import { ConversationInfo } from "@/pages/ServiceDashboard";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import type { Request } from "@shared/schema";
-import { Input } from "@/components/ui/input";
-import { auth } from "@/lib/firebase";
-
-interface MessagesTabProps {
-  initialConversation?: ConversationInfo | null;
-  onConversationClear?: () => void;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
 
 // Funcție utilitară pentru a verifica dacă o dată este validă
 const isValidDate = (date: any): boolean => {
@@ -47,6 +51,10 @@ interface Conversation extends ConversationInfo {
   unreadCount: number;
 }
 
+interface MessagesTabProps {
+  initialConversation?: ConversationInfo | null;
+  onConversationClear?: () => void;
+}
 
 export function ConversationList({ 
   conversations, 
@@ -135,7 +143,7 @@ export default function MessagesTab({
     itemsPerPage,
     setItemsPerPage,
     totalPages,
-    totalMessages,
+    totalItems,
     startIndex
   } = useMessagesManagement(initialConversation);
 
@@ -321,8 +329,7 @@ export default function MessagesTab({
     const searchLower = searchTerm.toLowerCase();
     return (
       (conv.userName && conv.userName.toLowerCase().includes(searchLower)) ||
-      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower)) ||
-      (conv.requestTitle && conv.requestTitle.toLowerCase().includes(searchLower))
+      (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower))
     );
   });
 
@@ -346,7 +353,7 @@ export default function MessagesTab({
       }
 
       // Invalidăm query-ul pentru a reîncărca lista de conversații
-      await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
+      //await queryClient.invalidateQueries({ queryKey: ['/api/service/conversations'] });
 
       // Dacă conversația ștearsă era cea activă, o resetăm
       if (activeConversation?.requestId === requestId && activeConversation?.userId === userId) {
@@ -383,7 +390,7 @@ export default function MessagesTab({
             <MessageSquare className="h-5 w-5" />
             Mesaje
           </CardTitle>
-          {!activeConversation && (
+          {!activeConversation && filteredConversations.length > 0 && (
             <div className="relative w-[300px]">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -402,12 +409,89 @@ export default function MessagesTab({
       <CardContent>
         {!activeConversation ? (
           <div className="flex flex-col gap-4 w-full">
-            <ConversationList 
-              conversations={filteredConversations as Conversation[]} 
-              isLoading={isLoadingConversations}
-              onSelectConversation={handleConversationSelect}
-              onDeleteConversation={handleDeleteConversation}
-            />
+            {isLoadingConversations ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+                <p className="text-muted-foreground ml-2">Se încarcă conversațiile...</p>
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Nu există conversații încă.</p>
+                <p className="text-sm mt-2">
+                  Conversațiile vor apărea aici după ce veți interacționa cu clienții.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-sm text-gray-500">
+                    Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalItems)} din {totalItems} conversații
+                  </div>
+                  <Select 
+                    value={itemsPerPage.toString()} 
+                    onValueChange={(value) => setItemsPerPage(Number(value))}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Selectează numărul de conversații" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 conversații pe pagină</SelectItem>
+                      <SelectItem value="10">10 conversații pe pagină</SelectItem>
+                      <SelectItem value="20">20 conversații pe pagină</SelectItem>
+                      <SelectItem value="50">50 conversații pe pagină</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <ConversationList 
+                  conversations={filteredConversations}
+                  isLoading={false}
+                  onSelectConversation={handleConversationSelect}
+                  onDeleteConversation={handleDeleteConversation}
+                />
+
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-4">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Anterior
+                          </Button>
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }).map((_, index) => (
+                          <PaginationItem key={index}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(index + 1)}
+                              className={currentPage === index + 1 ? "bg-[#00aff5] text-white" : ""}
+                            >
+                              {index + 1}
+                            </Button>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Următor
+                          </Button>
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -431,13 +515,6 @@ export default function MessagesTab({
                 onBack={handleBack}
                 onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                itemsPerPage={itemsPerPage}
-                setItemsPerPage={setItemsPerPage}
-                totalPages={totalPages}
-                totalMessages={totalMessages}
-                startIndex={startIndex}
               />
             </Card>
           </div>

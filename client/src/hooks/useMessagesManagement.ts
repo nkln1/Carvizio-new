@@ -31,7 +31,7 @@ export function useMessagesManagement(
 
   // Calculate pagination values
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const totalPages = messages => Math.ceil(messages.length / itemsPerPage);
+  const totalPages = items => Math.ceil(items.length / itemsPerPage);
 
   // Mark conversation as read
   const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
@@ -78,7 +78,7 @@ export function useMessagesManagement(
   }, [initialConversation, markConversationAsRead]);
 
   // Messages query
-  const { data: allMessages = [], isLoading: isLoadingMessages } = useQuery({
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     queryFn: async () => {
       if (!activeConversation?.requestId) return [];
@@ -104,12 +104,8 @@ export function useMessagesManagement(
     refetchInterval: MESSAGES_STALE_TIME
   });
 
-  // Get paginated messages
-  const messages = allMessages.slice(startIndex, startIndex + itemsPerPage);
-  const totalMessagePages = totalPages(allMessages);
-
   // Conversations query
-  const { data: conversations = [], isLoading: isLoadingConversations } = useQuery({
+  const { data: allConversations = [], isLoading: isLoadingConversations } = useQuery({
     queryKey: [`${baseEndpoint}/conversations`],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -131,6 +127,10 @@ export function useMessagesManagement(
     staleTime: CONVERSATIONS_STALE_TIME,
     refetchInterval: CONVERSATIONS_STALE_TIME
   });
+
+  // Get paginated conversations
+  const conversations = allConversations.slice(startIndex, startIndex + itemsPerPage);
+  const totalConversationPages = totalPages(allConversations);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!activeConversation) {
@@ -207,8 +207,8 @@ export function useMessagesManagement(
     setCurrentPage,
     itemsPerPage,
     setItemsPerPage,
-    totalPages: totalMessagePages,
-    totalMessages: allMessages.length,
+    totalPages: totalConversationPages,
+    totalItems: allConversations.length,
     startIndex
   };
 }
