@@ -63,7 +63,7 @@ export function OffersTab({
   const [selectedOffer, setSelectedOffer] = useState<OfferWithProvider | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
