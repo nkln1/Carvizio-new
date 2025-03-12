@@ -82,11 +82,14 @@ export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileP
   const { data: serviceData, isLoading } = useQuery<ServiceProviderUser>({
     queryKey: ['/api/auth/service-profile', slug],
     queryFn: async () => {
+      console.log('Fetching service profile for slug:', slug);
       const response = await fetch(`/api/auth/service-profile/${slug}`);
       if (!response.ok) {
         throw new Error('Service not found');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('Received service data:', data);
+      return data;
     }
   });
 

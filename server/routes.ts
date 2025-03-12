@@ -268,6 +268,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add new endpoint for public service profile after the existing /api/auth/me endpoint
+  app.get("/api/auth/service-profile/:slug", async (req, res) => {
+    try {
+      console.log('Fetching service profile for slug:', req.params.slug);
+
+      // Query all service providers
+      const serviceProviders = await db.query.serviceProviders.findMany();
+
+      // Find the service provider with matching slug
+      const serviceProvider = serviceProviders.find(provider => {
+        const providerSlug = provider.companyName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        return providerSlug === req.params.slug;
+      });
+
+      if (!serviceProvider) {
+        console.log('No service provider found for slug:', req.params.slug);
+        return res.status(404).json({ error: "Service not found" });
+      }
+
+      // Remove sensitive information
+      const { password, ...safeServiceProvider } = serviceProvider;
+
+      console.log('Found service provider:', { id: safeServiceProvider.id, companyName: safeServiceProvider.companyName });
+      res.json(safeServiceProvider);
+    } catch (error) {
+      console.error("Error fetching service profile:", error);
+      res.status(500).json({ error: "Failed to fetch service profile" });
+    }
+  });
+
   // Logout endpoint
   app.post("/api/auth/logout", (req, res) => {
     if (req.session) {
