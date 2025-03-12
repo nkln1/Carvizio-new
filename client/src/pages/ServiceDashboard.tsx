@@ -146,6 +146,10 @@ export default function ServiceDashboard() {
   };
 
   const handleProfileClick = () => {
+    if (userProfile?.companyName) {
+      const slug = userProfile.companyName.toLowerCase().replace(/\s+/g, '-');
+      window.location.href = `/service/${slug}`;
+    }
     if (userProfile && 'companyName' in userProfile) {
       try {
         const serviceSlug = userProfile.companyName

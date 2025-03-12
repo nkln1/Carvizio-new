@@ -27,8 +27,6 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import type { ServiceData, Rating, ServiceRatingStats } from "@/types/service";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
 import { decodeSlug } from "@/lib/utils";
 
 interface WorkingHours {
@@ -271,7 +269,6 @@ export function ServicePublicProfile({ params }: ServicePublicProfileProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           <Card>
@@ -437,7 +434,6 @@ export function ServicePublicProfile({ params }: ServicePublicProfileProps) {
           </Card>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
