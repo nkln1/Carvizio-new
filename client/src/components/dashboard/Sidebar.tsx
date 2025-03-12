@@ -45,18 +45,18 @@ export function Sidebar() {
           location.pathname === "/messages" && "bg-accent/10"
         )}
       >
-        <div className="flex items-center">
+        <div className="flex items-center relative">
             <MessageSquare className="mr-2 h-4 w-4" />
             <span>Mesaje</span>
             {unreadConversationsCount > 0 && (
               <Badge 
                 variant="default" 
-                className="ml-2 bg-[#00aff5]"
+                className="ml-2 bg-[#00aff5] text-white font-medium"
               >
                 {unreadConversationsCount}
               </Badge>
             )}
-          </div>
+        </div>
       </Link>
       <Link
         to="/profile"

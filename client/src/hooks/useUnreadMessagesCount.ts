@@ -9,21 +9,29 @@ export function useUnreadMessagesCount() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) return 0;
 
-      const response = await fetch("/api/messages/unread/conversations", {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+      try {
+        const response = await fetch("/api/messages/unread/conversations", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch unread conversations count", response.status);
+          return 0;
         }
-      });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch unread conversations count");
+        const data = await response.json();
+        console.log("Unread conversations count data:", data);
+        return data.conversationsCount || 0;
+      } catch (error) {
+        console.error("Error fetching unread conversations:", error);
+        return 0;
       }
-
-      const data = await response.json();
-      return data.conversationsCount || 0;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
-    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchInterval: 15000, // Refetch every 15 seconds pentru actualizări mai frecvente
+    staleTime: 5000, // Consider data stale after 5 seconds
+    retry: 3, // Retry 3 times if the query fails
   });
 }

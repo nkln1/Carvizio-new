@@ -45,7 +45,13 @@ export function useMessagesManagement(
       // Invalidate queries to update UI
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/conversations`] });
-      await queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
+      
+      // Asigurăm invalidarea pentru contorul de mesaje necitite
+      console.log("Invalidating unread conversations count query");
+      await queryClient.invalidateQueries({ 
+        queryKey: ["unreadConversationsCount"],
+        exact: true // Exact match pentru a ne asigura că invalidăm doar acest query
+      });
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
