@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, Loader2, Search } from "lucide-react"; 
+import { MessageSquare, Loader2, Search, FileText } from "lucide-react"; 
+import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
@@ -9,7 +11,6 @@ import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import { ConversationView } from "./messages/ConversationView";
 import { ConversationList } from "./messages/ConversationList";
 import { ConversationInfo } from "@/pages/ServiceDashboard";
-import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import websocketService from "@/lib/websocket";
 import { useToast } from "@/hooks/use-toast";
@@ -259,7 +260,7 @@ export default function MessagesTab({
 
     try {
       console.log("Loading details for conversation:", activeConversation);
-      
+
 
       // Încărcăm detaliile cererii
       const request = await loadRequestDetails(activeConversation.requestId);
