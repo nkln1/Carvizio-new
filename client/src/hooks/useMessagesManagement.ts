@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
 
 const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
+const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
 const CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
 
 export interface ConversationInfo {

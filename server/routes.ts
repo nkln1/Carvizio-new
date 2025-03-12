@@ -1252,6 +1252,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add endpoint to get unread conversations count
+  app.get("/api/messages/unread/conversations", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      if (!client && !serviceProvider) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const userId = client ? client.id : serviceProvider!.id;
+      const userRole = client ? "client" : "service";
+
+      // Get all messages for this user
+      const messages = await storage.getUserMessages(userId, userRole, null);
+
+      // Group messages by requestId to count distinct conversations with unread messages
+      const conversationsWithUnreadMessages = messages.reduce((acc: Set<string>, message: any) => {
+        // If this message is unread and was sent to the current user
+        if (message.receiverId === userId && message.receiverRole === userRole && !message.isRead) {
+          acc.add(message.requestId);
+        }
+        return acc;
+      }, new Set<string>());
+
+      const conversationsCount = conversationsWithUnreadMessages.size;
+      
+      res.json({ conversationsCount });
+    } catch (error: any) {
+      console.error("Error fetching unread conversations count:", error);
+      res.status(500).json({ error: "Failed to fetch unread conversations count" });
+    }
+  });
+
   // Add this endpoint after the existing /api/messages GET endpoint
   app.post("/api/service/messages/send", validateFirebaseToken, async (req, res) => {
     try {

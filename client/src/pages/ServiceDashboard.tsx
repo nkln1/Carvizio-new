@@ -57,6 +57,9 @@ export default function ServiceDashboard() {
   // Calculăm numărul de conversații cu mesaje noi
   const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
 
+  const unreadConversationsCount = conversations.filter(conv => conv.unreadCount > 0).length;
+
+
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
     retry: 1,
@@ -188,7 +191,8 @@ export default function ServiceDashboard() {
     label,
     count: id === "cereri" ? newRequestsCount :
            id === "oferte-acceptate" ? newAcceptedOffersCount :
-           id === "mesaje" ? newConversationsCount : 0
+           id === "mesaje" ? unreadConversationsCount : 
+           0
   }));
 
   return (
