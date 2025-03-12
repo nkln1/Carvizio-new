@@ -55,10 +55,12 @@ interface ServiceRatingStats {
 }
 
 interface ServicePublicProfileProps {
-  slug: string;
+  params: {
+    slug: string;
+  };
 }
 
-export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
+export function ServicePublicProfile({ params: { slug } }: ServicePublicProfileProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -80,7 +82,7 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   });
 
   // Fetch service data
-  const { data: serviceData, isLoading } = useQuery<UserType>({
+  const { data: serviceData, isLoading } = useQuery({
     queryKey: [`/api/service/profile/${slug}`],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/service/profile/${slug}`);
@@ -89,7 +91,7 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   });
 
   // Fetch ratings
-  const { data: ratingsData } = useQuery<{ ratings: Rating[], stats: ServiceRatingStats }>({
+  const { data: ratingsData } = useQuery({
     queryKey: [`/api/service/ratings/${serviceData?.id}`],
     enabled: !!serviceData?.id,
     queryFn: async () => {
@@ -107,11 +109,11 @@ export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
 
   useEffect(() => {
     if (serviceData?.workingHours) {
-      setWorkingHours(serviceData.workingHours as WorkingHours);
+      setWorkingHours(serviceData.workingHours);
     }
   }, [serviceData]);
 
-  const isOwner = user?.uid === serviceData?.id;
+  const isOwner = user?.id === serviceData?.id;
 
   const handleSave = async () => {
     if (!serviceData?.id || !isOwner) return;
