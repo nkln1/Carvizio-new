@@ -49,7 +49,7 @@ export default function ServiceDashboard() {
   const { newAcceptedOffersCount } = useServiceOfferManagement();
 
   // Query pentru conversații noi
-  const { data: conversations = [] } = useQuery<Conversation[]>({
+  const { data: conversations = [] } = useQuery<any[]>({
     queryKey: ['/api/service/conversations'],
     refetchInterval: 10000, // Reîmprospătare la fiecare 10 secunde
   });
@@ -154,8 +154,8 @@ export default function ServiceDashboard() {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
-        // Navigate to service profile page
-        window.location.href = `/service/${serviceSlug}`;
+        // Navigate to service profile page using window.location to force full page load
+        window.open(`/service/${serviceSlug}`, '_blank');
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
