@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Clock, Star } from "lucide-react";
-import { ServiceProvider, Review, WorkingHour } from "@shared/schema";
+import { Loader2, Clock } from "lucide-react";
+import { ServiceProvider, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+
+// Helper function to get day name in Romanian
+const getDayName = (dayOfWeek: number): string => {
+  const days = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+  return days[dayOfWeek] || `Ziua ${dayOfWeek}`;
+};
 
 export default function ServicePublicProfile() {
   const { slug } = useParams();
@@ -25,13 +31,16 @@ export default function ServicePublicProfile() {
   });
 
   // Fetch working hours
-  const { data: workingHours, isLoading: isLoadingWorkingHours } = useQuery({
-    queryKey: ['workingHours'],
+  const { data: workingHours, isLoading: isLoadingWorkingHours } = useQuery<WorkingHour[]>({
+    queryKey: [`/api/service/${serviceProfile?.id}/working-hours`],
     queryFn: async () => {
-      // This will be implemented when working hours API is ready
-      return [];
+      const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
+      if (!response.ok) {
+        return []; // Handle error gracefully
+      }
+      return response.json();
     },
-    enabled: false // Disable this query until API is ready
+    enabled: !!serviceProfile?.id
   });
 
   // Fetch reviews
@@ -41,7 +50,7 @@ export default function ServicePublicProfile() {
   });
 
   useEffect(() => {
-    if (!isLoadingProfile && !isLoadingWorkingHours && !isLoadingReviews) {
+    if (!isLoadingProfile && !isLoadingWorkingHours && !reviews) {
       setLoading(false);
     }
   }, [isLoadingProfile, isLoadingWorkingHours, reviews]);
@@ -122,11 +131,15 @@ export default function ServicePublicProfile() {
                   Program de Funcționare
                 </h2>
                 <div className="bg-gray-50 p-4 rounded-md">
-                  {workingHours.length > 0 ? (
+                  {isLoadingWorkingHours ? (
+                    <div className="flex justify-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-[#00aff5]" />
+                    </div>
+                  ) : workingHours && workingHours.length > 0 ? (
                     <div className="space-y-2">
                       {workingHours.map((schedule) => (
-                        <div key={schedule.dayOfWeek} className="flex justify-between items-center">
-                          <span className="font-medium">{schedule.dayOfWeek}</span>
+                        <div key={schedule.id} className="flex justify-between items-center">
+                          <span className="font-medium">{getDayName(schedule.dayOfWeek)}</span>
                           <span className="text-gray-600">
                             {schedule.isClosed ? 'Închis' : `${schedule.openTime} - ${schedule.closeTime}`}
                           </span>
@@ -135,7 +148,7 @@ export default function ServicePublicProfile() {
                     </div>
                   ) : (
                     <p className="text-gray-500 italic text-sm">
-                      Programul de funcționare nu este disponibil momentan.
+                      Programul de funcționare nu este disponibil.
                     </p>
                   )}
                 </div>
