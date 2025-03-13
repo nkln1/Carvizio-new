@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
-import { ServiceProvider } from "@shared/schema";
+import { Loader2, Clock, Star } from "lucide-react";
+import { ServiceProvider, Review, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function ServicePublicProfile() {
@@ -11,7 +10,7 @@ export default function ServicePublicProfile() {
   const [loading, setLoading] = useState(true);
 
   // Fetch service provider data
-  const { data: serviceProfile, isLoading } = useQuery<ServiceProvider>({
+  const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider>({
     queryKey: [`/api/auth/service-profile/${slug}`],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/auth/service-profile/${slug}`);
@@ -25,11 +24,23 @@ export default function ServicePublicProfile() {
     enabled: !!slug
   });
 
+  // Fetch working hours
+  const { data: workingHours = [] } = useQuery<WorkingHour[]>({
+    queryKey: [`/api/service/${serviceProfile?.id}/working-hours`],
+    enabled: !!serviceProfile?.id
+  });
+
+  // Fetch reviews
+  const { data: reviews = [] } = useQuery<Review[]>({
+    queryKey: [`/api/service/${serviceProfile?.id}/reviews`],
+    enabled: !!serviceProfile?.id
+  });
+
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoadingProfile && !isLoadingWorkingHours && !isLoadingReviews) {
       setLoading(false);
     }
-  }, [isLoading]);
+  }, [isLoadingProfile, workingHours, reviews]);
 
   if (loading) {
     return (
@@ -52,6 +63,11 @@ export default function ServicePublicProfile() {
     );
   }
 
+  // Calculate average rating
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+    : 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Main Content */}
@@ -62,7 +78,7 @@ export default function ServicePublicProfile() {
             <h1 className="text-2xl font-bold">{serviceProfile.companyName}</h1>
             <p className="text-white/80">{serviceProfile.representativeName}</p>
           </div>
-          
+
           {/* Service Details */}
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -95,26 +111,73 @@ export default function ServicePublicProfile() {
                   </li>
                 </ul>
               </div>
-              
+
               <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Program de Funcționare</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-[#00aff5]" />
+                  Program de Funcționare
+                </h2>
                 <div className="bg-gray-50 p-4 rounded-md">
-                  <p className="text-gray-500 italic text-sm">
-                    Programul de funcționare va fi disponibil în curând.
-                  </p>
-                  {/* Future working hours will be displayed here */}
+                  {workingHours.length > 0 ? (
+                    <div className="space-y-2">
+                      {workingHours.map((schedule) => (
+                        <div key={schedule.dayOfWeek} className="flex justify-between items-center">
+                          <span className="font-medium">{schedule.dayOfWeek}</span>
+                          <span className="text-gray-600">
+                            {schedule.isClosed ? 'Închis' : `${schedule.openTime} - ${schedule.closeTime}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 italic text-sm">
+                      Programul de funcționare nu este disponibil momentan.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-            
+
             {/* Recenzii */}
             <div className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Recenzii</h2>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p className="text-gray-500 italic text-sm">
-                  Recenziile vor fi disponibile în curând.
-                </p>
-                {/* Future reviews will be displayed here */}
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Star className="h-5 w-5 text-[#00aff5]" />
+                Recenzii
+                {reviews.length > 0 && (
+                  <span className="ml-2 text-sm text-gray-600">
+                    ({averageRating.toFixed(1)} / 5 - {reviews.length} recenzii)
+                  </span>
+                )}
+              </h2>
+              <div className="space-y-4">
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
+                    <div key={review.id} className="bg-gray-50 p-4 rounded-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          {Array.from({ length: 5 }).map((_, index) => (
+                            <Star
+                              key={index}
+                              className={`h-4 w-4 ${
+                                index < review.rating
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm text-gray-600">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-gray-700">{review.comment}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 italic text-sm">
+                    Nu există recenzii momentan.
+                  </p>
+                )}
               </div>
             </div>
           </div>
