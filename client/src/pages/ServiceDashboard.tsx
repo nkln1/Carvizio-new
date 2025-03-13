@@ -146,15 +146,11 @@ export default function ServiceDashboard() {
   };
 
   const handleProfileClick = () => {
-    if (userProfile?.companyName) {
-      const slug = userProfile.companyName.toLowerCase().replace(/\s+/g, '-');
-      window.location.href = `/service/${slug}`;
-    }
     if (userProfile && 'companyName' in userProfile) {
       try {
         const serviceSlug = userProfile.companyName
           .toLowerCase()
-          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
         console.log('Navigating to service profile:', `/service/${serviceSlug}`);
         window.location.href = `/service/${serviceSlug}`;
