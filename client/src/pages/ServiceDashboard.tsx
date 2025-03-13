@@ -146,20 +146,18 @@ export default function ServiceDashboard() {
 
   // Direct navigation to service profile
   const handleProfileClick = () => {
-    if (userProfile && 'companyName' in userProfile) {
+    if (userProfile && userProfile.companyName) {
       try {
-        const serviceSlug = encodeURIComponent(userProfile.companyName
+        const serviceSlug = userProfile.companyName
           .toLowerCase()
           .replace(/\s+/g, '-')
           .replace(/[^a-z0-9-]/g, '') // Remove any characters that aren't lowercase letters, numbers, or hyphens
-          .replace(/^-+|-+$/g, '')); // Remove leading and trailing hyphens
+          .replace(/^-+|-+$/g, ''); // Remove leading and trailing hyphens
 
-        console.log('Navigating to service profile:', `/service/${serviceSlug}`);
+        console.log("Navigating to service profile:", `/service/${serviceSlug}`);
 
-        // First update the URL
-        window.history.pushState({}, '', `/service/${serviceSlug}`);
-        // Then use wouter's setLocation
-        setLocation(`/service/${serviceSlug}`);
+        // Use direct navigation with window.location.href
+        window.location.href = `/service/${serviceSlug}`;
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
@@ -232,8 +230,7 @@ export default function ServiceDashboard() {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-[#00aff5]">Auto Service App</h1>
-              {/*This section was moved to the right side of the nav bar, as per the client dashboard example*/}
+              <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
               {userProfile && (
                 <Button
                   variant="outline"
@@ -263,9 +260,6 @@ export default function ServiceDashboard() {
                   )}
                 </Button>
               ))}
-              <Button variant="outline" onClick={() => auth.signOut()}>
-                Logout
-              </Button>
             </div>
 
             <div className="md:hidden">
