@@ -1,20 +1,30 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Clock, Star } from "lucide-react";
-import { ServiceProvider, WorkingHour } from "@shared/schema";
+import { Loader2, Mail, MapPin, Phone } from "lucide-react";
+import { ServiceProvider, Review, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { WorkingHoursEditor } from "@/components/service-dashboard/WorkingHoursEditor";
+import { useAuth } from "@/context/AuthContext";
 
-// Helper function to get day name in Romanian
+// Helper function to get day name in English
 const getDayName = (dayOfWeek: number): string => {
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const romDays = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
-  return romDays[dayOfWeek] || `Ziua ${dayOfWeek}`;
+  const days = [
+    "Sunday",    // 0
+    "Monday",    // 1
+    "Tuesday",   // 2
+    "Wednesday", // 3
+    "Thursday",  // 4
+    "Friday",    // 5
+    "Saturday"   // 6
+  ];
+  return days[dayOfWeek];
 };
 
 export default function ServicePublicProfile() {
   const { slug } = useParams();
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   // Fetch service provider data
   const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider>({
@@ -32,62 +42,57 @@ export default function ServicePublicProfile() {
   });
 
   // Fetch working hours
-  const { data: workingHours, isLoading: isLoadingWorkingHours } = useQuery<WorkingHour[]>({
+  const { data: workingHours = [] } = useQuery<WorkingHour[]>({
     queryKey: [`/api/service/${serviceProfile?.id}/working-hours`],
     queryFn: async () => {
       try {
         const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
         if (!response.ok) {
-          // Return default working hours
           return [
-            { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "18:00", isClosed: false },
-            { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "18:00", isClosed: false },
-            { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "18:00", isClosed: false },
-            { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "18:00", isClosed: false },
-            { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "18:00", isClosed: false },
-            { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: false },
-            { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "18:00", isClosed: true }
+            { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
+            { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
+            { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
+            { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
+            { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
+            { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
+            { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
           ];
         }
-        
+
         const fetchedHours = await response.json();
         return fetchedHours.length > 0 ? fetchedHours : [
-          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: false },
-          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "18:00", isClosed: true }
+          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
+          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
         ];
       } catch (error) {
         console.error("Error fetching working hours:", error);
-        // Return default working hours on error
         return [
-          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "18:00", isClosed: false },
-          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: false },
-          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "18:00", isClosed: true }
+          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
+          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
+          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
         ];
       }
     },
     enabled: !!serviceProfile?.id
   });
 
-  // Fetch reviews
-  const { data: reviews = [] } = useQuery({
-    queryKey: [`/api/service/${serviceProfile?.id}/reviews`],
-    enabled: !!serviceProfile?.id
-  });
-
   useEffect(() => {
-    if (!isLoadingProfile && !isLoadingWorkingHours) {
+    if (!isLoadingProfile) {
       setLoading(false);
     }
-  }, [isLoadingProfile, isLoadingWorkingHours]);
+  }, [isLoadingProfile]);
+
+  // Check if the logged-in user owns this service profile
+  const isOwner = user && serviceProfile && user.id === serviceProfile.id;
 
   if (loading) {
     return (
@@ -110,96 +115,84 @@ export default function ServicePublicProfile() {
     );
   }
 
-  // Calculate average rating
+  const reviews = serviceProfile.reviews || [];
   const averageRating = reviews.length > 0
     ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
     : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Header Section */}
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-[#00aff5] text-2xl font-semibold">{serviceProfile.companyName}</h1>
+          <p className="text-gray-600">Service Auto Autorizat</p>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-[#00aff5] p-6 text-white">
-            <h1 className="text-2xl font-bold">{serviceProfile.companyName}</h1>
-            <p className="text-white/80">{serviceProfile.representativeName}</p>
-          </div>
-
-          {/* Service Details */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-sm">
           <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Informații Contact</h2>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <span className="font-medium text-gray-700 w-24">Adresă:</span>
-                    <span className="text-gray-600">{serviceProfile.address}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-gray-700 w-24">Locație:</span>
-                    <span className="text-gray-600">{serviceProfile.city}, {serviceProfile.county}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-gray-700 w-24">Telefon:</span>
-                    <span className="text-gray-600">{serviceProfile.phone}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-gray-700 w-24">Email:</span>
-                    <span className="text-gray-600">{serviceProfile.email}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-gray-700 w-24">CUI:</span>
-                    <span className="text-gray-600">{serviceProfile.cui}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-gray-700 w-24">Nr. Reg. Com.:</span>
-                    <span className="text-gray-600">{serviceProfile.tradeRegNumber}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-[#00aff5]" />
-                  Program de Funcționare
-                </h2>
-                <div className="bg-gray-50 p-4 rounded-md">
-                  {isLoadingWorkingHours ? (
-                    <div className="flex justify-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-[#00aff5]" />
-                    </div>
-                  ) : workingHours && workingHours.length > 0 ? (
-                    <div className="space-y-2">
-                      {/* Sort by weekday, starting with Monday */}
-                      {[...workingHours]
-                        .sort((a, b) => {
-                          // Adjust so Monday is first (1), Sunday is last (7)
-                          const adjustDay = (day: number) => day === 0 ? 7 : day;
-                          return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
-                        })
-                        .map((schedule) => (
-                          <div key={schedule.id} className="flex justify-between items-center">
-                            <span className="font-medium mr-4">{getDayName(schedule.dayOfWeek)}:</span>
-                            <span className="text-gray-600 text-right ml-auto">
-                              {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 italic text-sm">
-                      Programul de funcționare nu este disponibil.
-                    </p>
-                  )}
+            {/* Contact Information */}
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <MapPin className="h-5 w-5 text-gray-500 mr-3" />
+                <div>
+                  <span className="text-gray-900">{serviceProfile.address}</span>
+                  <span className="text-gray-600 block">{serviceProfile.city}, {serviceProfile.county}</span>
                 </div>
+              </div>
+              <div className="flex items-center">
+                <Phone className="h-5 w-5 text-gray-500 mr-3" />
+                <span className="text-gray-900">{serviceProfile.phone}</span>
+              </div>
+              <div className="flex items-center">
+                <Mail className="h-5 w-5 text-gray-500 mr-3" />
+                <span className="text-gray-900">{serviceProfile.email}</span>
+              </div>
+            </div>
+
+            {/* Locație */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Locație</h2>
+              <div className="h-[300px] w-full bg-gray-200 rounded-lg">
+                {/* Map placeholder */}
+              </div>
+            </div>
+
+            {/* Working Hours */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Program de funcționare</h2>
+              <div className="space-y-2">
+                {[...workingHours]
+                  .sort((a, b) => {
+                    const adjustDay = (day: number) => day === 0 ? 7 : day;
+                    return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
+                  })
+                  .map((schedule) => (
+                    isOwner ? (
+                      <WorkingHoursEditor
+                        key={schedule.id}
+                        schedule={schedule}
+                        onCancel={() => {}}
+                      />
+                    ) : (
+                      <div key={schedule.id} className="flex justify-between items-center py-2">
+                        <span className="font-medium">{getDayName(schedule.dayOfWeek)}:</span>
+                        <span className="text-gray-600">
+                          {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
+                        </span>
+                      </div>
+                    )
+                  ))}
               </div>
             </div>
 
             {/* Recenzii */}
             <div className="mt-8">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Star className="h-5 w-5 text-[#00aff5]" />
+                <span className="text-[#00aff5]">★</span>
                 Recenzii
                 {reviews.length > 0 && (
                   <span className="ml-2 text-sm text-gray-600">
@@ -214,14 +207,9 @@ export default function ServicePublicProfile() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
                           {Array.from({ length: 5 }).map((_, index) => (
-                            <Star
-                              key={index}
-                              className={`h-4 w-4 ${
-                                index < review.rating
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-gray-300"
-                              }`}
-                            />
+                            <span key={index} className={index < review.rating ? "text-yellow-400" : "text-gray-300"}>
+                              ★
+                            </span>
                           ))}
                           <span className="ml-2 text-sm text-gray-600">
                             {new Date(review.createdAt).toLocaleDateString()}
