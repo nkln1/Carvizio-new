@@ -233,6 +233,7 @@ export default function ServiceDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-[#00aff5]">Auto Service App</h1>
+              {/*This section was moved to the right side of the nav bar, as per the client dashboard example*/}
               {userProfile && (
                 <Button
                   variant="outline"
@@ -264,7 +265,7 @@ export default function ServiceDashboard() {
               ))}
               <Button variant="outline" onClick={() => auth.signOut()}>
                 Logout
-              </Button>}
+              </Button>
             </div>
 
             <div className="md:hidden">
