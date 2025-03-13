@@ -50,10 +50,10 @@ export default function ServicePublicProfile() {
   });
 
   useEffect(() => {
-    if (!isLoadingProfile && !isLoadingWorkingHours && !reviews) {
+    if (!isLoadingProfile && !isLoadingWorkingHours) {
       setLoading(false);
     }
-  }, [isLoadingProfile, isLoadingWorkingHours, reviews]);
+  }, [isLoadingProfile, isLoadingWorkingHours]);
 
   if (loading) {
     return (
