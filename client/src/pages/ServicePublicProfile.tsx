@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { ServiceProviderUser, WorkingHour, Review } from "@shared/schema";
 import Footer from "@/components/layout/Footer";
+import Navigation from "@/components/layout/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Clock, Star, MapPin, Phone, Mail } from "lucide-react";
@@ -44,9 +45,12 @@ export default function ServicePublicProfile({ params }: ServicePublicProfilePro
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
+  // Decode the slug before querying
+  const decodedSlug = decodeURIComponent(slug);
+
   // Fetch service provider data
   const { data: serviceProvider, isLoading } = useQuery<ServiceProviderUser>({
-    queryKey: [`/api/service/profile/${slug}`],
+    queryKey: [`/api/service/profile/${decodedSlug}`],
   });
 
   // Fetch working hours
@@ -164,6 +168,7 @@ export default function ServicePublicProfile({ params }: ServicePublicProfilePro
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <Navigation />
       <div className="container mx-auto p-4 sm:p-6 flex-grow">
         <Card className="mb-6">
           <CardHeader>
