@@ -525,11 +525,9 @@ export class DatabaseStorage implements IStorage {
           requestPreferredDate: sentOffers.requestPreferredDate,
           requestCounty: sentOffers.requestCounty,
           requestCities: sentOffers.requestCities,
-          serviceProviderName: serviceProviders.companyName,
-          serviceProviderPhone: serviceProviders.phone,
-          serviceProviderAddress: serviceProviders.address,
-          serviceProviderCounty: serviceProviders.county,
-          serviceProviderCity: serviceProviders.city
+          requestUserId: sentOffers.requestUserId,
+          requestUserName: sentOffers.requestUserName,
+          serviceProviderName: serviceProviders.companyName
         })
         .from(sentOffers)
         .leftJoin(
@@ -538,16 +536,6 @@ export class DatabaseStorage implements IStorage {
         )
         .where(inArray(sentOffers.requestId, requestIds))
         .orderBy(desc(sentOffers.createdAt));
-
-      console.log('Retrieved offers:', offers.map(o => ({
-        id: o.id,
-        title: o.title,
-        serviceProviderName: o.serviceProviderName,
-        status: o.status,
-        availableDates: o.availableDates,
-        price: o.price,
-        details: o.details ? o.details.substring(0, 50) + '...' : 'No details'
-      })));
 
       return offers;
     } catch (error) {
@@ -860,7 +848,7 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      // Get all messages for this request with proper aliases for the messages table
+      // Get all messages for this request with proper aliases
       const messageResults = await db
         .select({
           id: messagesTable.id,
@@ -872,13 +860,12 @@ export class DatabaseStorage implements IStorage {
           receiverRole: messagesTable.receiverRole,
           content: messagesTable.content,
           isRead: messagesTable.isRead,
+          isNew: messagesTable.isNew,
           createdAt: messagesTable.createdAt
         })
         .from(messagesTable)
         .where(eq(messagesTable.requestId, requestId))
         .orderBy(desc(messagesTable.createdAt));
-
-      console.log('Raw messages found:', messageResults.length);
 
       // Enrich messages with sender information
       const enrichedMessages = await Promise.all(
@@ -900,7 +887,6 @@ export class DatabaseStorage implements IStorage {
         })
       );
 
-      console.log('Successfully enriched messages:', enrichedMessages.length);
       return enrichedMessages;
     } catch (error) {
       console.error('Error in getMessagesByRequest:', error);
@@ -1015,7 +1001,7 @@ export class DatabaseStorage implements IStorage {
       const [newReview] = await db
         .insert(reviews)
         .values(review)
-                .returning();
+        .returning();
       return newReview;
     } catch (error) {
       console.error('Error creating review:', error);
@@ -1030,8 +1016,7 @@ export class DatabaseStorage implements IStorage {
         .set(reviewData)
         .where(eq(reviews.id, id))
         .returning();
-      return updatedReview;
-    } catch (error) {
+      return updatedReview;    } catch (error) {
       console.error('Error updating review:', error);
       throw error;
     }
@@ -1049,13 +1034,13 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
     try {
       const result = await db
-        .select({
-          averageRating: sql`ROUND(AVG(${reviews.rating}), 1)`
+        .select({ 
+          averageRating: sql<number>`COALESCE(ROUND(AVG(${reviews.rating}::numeric), 1), 0)`
         })
         .from(reviews)
         .where(eq(reviews.serviceProviderId, serviceProviderId));
 
-      return result[0]?.averageRating || 0;
+      return result[0]?.averageRating ?? 0;
     } catch (error) {
       console.error('Error calculating average rating:', error);
       return 0;

@@ -4,7 +4,7 @@ import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail, Menu, ExternalLink } from "lucide-react";
-import type { User as UserType, Conversation } from "@shared/schema";
+import type { User as UserType, ServiceProviderUser } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ export default function ServiceDashboard() {
 
   const unreadConversationsCount = conversations.filter(conv => conv.unreadCount > 0).length;
 
-  const { data: userProfile, isLoading } = useQuery<UserType>({
+  const { data: userProfile, isLoading } = useQuery<ServiceProviderUser>({
     queryKey: ['/api/auth/me'],
     retry: 1,
     refetchOnWindowFocus: false,
@@ -146,13 +146,15 @@ export default function ServiceDashboard() {
   };
 
   const handleProfileClick = () => {
-    if (userProfile && 'companyName' in userProfile) {
+    if (userProfile?.companyName) {
       try {
+        // Create slug from company name
         const serviceSlug = userProfile.companyName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
-        console.log('Navigating to service profile:', `/service/${serviceSlug}`);
+
+        // Navigate to service profile page
         window.location.href = `/service/${serviceSlug}`;
       } catch (error) {
         console.error('Navigation error:', error);
@@ -219,19 +221,6 @@ export default function ServiceDashboard() {
            id === "mesaje" ? unreadConversationsCount :
            0
   }));
-
-  const handleProfileClick = () => {
-    if (userProfile) {
-      // Create slug from company name
-      const slug = userProfile.companyName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      
-      // Navigate to service profile page
-      window.location.href = `/service/${slug}`;
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
