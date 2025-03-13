@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Clock } from "lucide-react";
+import { Loader2, Clock, Star } from "lucide-react";
 import { ServiceProvider, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -44,7 +44,7 @@ export default function ServicePublicProfile() {
   });
 
   // Fetch reviews
-  const { data: reviews = [] } = useQuery<Review[]>({
+  const { data: reviews = [] } = useQuery({
     queryKey: [`/api/service/${serviceProfile?.id}/reviews`],
     enabled: !!serviceProfile?.id
   });
