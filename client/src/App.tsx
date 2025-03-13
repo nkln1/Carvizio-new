@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
@@ -18,9 +19,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/service-dashboard" component={ServiceDashboard} />
-      <Route path="/service/:slug">
-        {params => <ServicePublicProfile params={params} />}
-      </Route>
+      <Route path="/service/:slug" component={ServicePublicProfile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -31,6 +30,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <Navigation />
           <Router />
           <Toaster />
         </AuthProvider>

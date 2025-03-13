@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, updateDoc, doc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -27,6 +26,8 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import type { ServiceData, Rating, ServiceRatingStats } from "@/types/service";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { decodeSlug } from "@/lib/utils";
 
 interface WorkingHours {
@@ -40,9 +41,7 @@ interface WorkingHours {
 }
 
 interface ServicePublicProfileProps {
-  params: {
-    slug: string;
-  };
+  slug: string;
 }
 
 const normalizeCompanyName = (companyName: string | undefined): string => {
@@ -50,8 +49,7 @@ const normalizeCompanyName = (companyName: string | undefined): string => {
   return companyName.toLowerCase().trim();
 };
 
-export function ServicePublicProfile({ params }: ServicePublicProfileProps) {
-  const { slug } = params;
+export function ServicePublicProfile({ slug }: ServicePublicProfileProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [serviceData, setServiceData] = useState<ServiceData | null>(null);
@@ -269,6 +267,7 @@ export function ServicePublicProfile({ params }: ServicePublicProfileProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navigation />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           <Card>
@@ -434,6 +433,7 @@ export function ServicePublicProfile({ params }: ServicePublicProfileProps) {
           </Card>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
