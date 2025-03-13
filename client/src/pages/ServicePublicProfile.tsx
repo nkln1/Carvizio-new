@@ -25,9 +25,13 @@ export default function ServicePublicProfile() {
   });
 
   // Fetch working hours
-  const { data: workingHours = [] } = useQuery<WorkingHour[]>({
-    queryKey: [`/api/service/${serviceProfile?.id}/working-hours`],
-    enabled: !!serviceProfile?.id
+  const { data: workingHours, isLoading: isLoadingWorkingHours } = useQuery({
+    queryKey: ['workingHours'],
+    queryFn: async () => {
+      // This will be implemented when working hours API is ready
+      return [];
+    },
+    enabled: false // Disable this query until API is ready
   });
 
   // Fetch reviews
@@ -40,7 +44,7 @@ export default function ServicePublicProfile() {
     if (!isLoadingProfile && !isLoadingWorkingHours && !isLoadingReviews) {
       setLoading(false);
     }
-  }, [isLoadingProfile, workingHours, reviews]);
+  }, [isLoadingProfile, isLoadingWorkingHours, reviews]);
 
   if (loading) {
     return (
