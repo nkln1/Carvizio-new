@@ -48,9 +48,17 @@ export default function ServicePublicProfile({ params }: ServicePublicProfilePro
   // Decode the slug before querying
   const decodedSlug = decodeURIComponent(slug);
 
-  // Fetch service provider data
-  const { data: serviceProvider, isLoading } = useQuery<ServiceProviderUser>({
+  // Fetch service provider data with error handling
+  const { data: serviceProvider, isLoading, error } = useQuery<ServiceProviderUser>({
     queryKey: [`/api/service/profile/${decodedSlug}`],
+    queryFn: async () => {
+      const response = await fetch(`/api/service/profile/${decodedSlug}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch service provider');
+      }
+      return response.json();
+    },
+    retry: 1
   });
 
   // Fetch working hours
@@ -145,15 +153,20 @@ export default function ServicePublicProfile({ params }: ServicePublicProfilePro
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Navigation />
+        <div className="flex items-center justify-center flex-grow">
+          <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+        </div>
+        <Footer />
       </div>
     );
   }
 
-  if (!serviceProvider) {
+  if (error || !serviceProvider) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
+        <Navigation />
         <div className="container mx-auto p-4 flex-grow">
           <Card>
             <CardContent className="p-6">
