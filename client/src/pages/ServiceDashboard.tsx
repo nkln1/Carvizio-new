@@ -145,8 +145,9 @@ export default function ServiceDashboard() {
     });
   };
 
-  const handleProfileClick = () => {
-    if (userProfile?.companyName) {
+  const handleProfileClick = async () => {
+    // Get user profile data
+    if (userProfile) {
       try {
         // Create slug from company name
         const serviceSlug = userProfile.companyName
@@ -154,8 +155,8 @@ export default function ServiceDashboard() {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
-        // Navigate to service profile page using window.location to force full page load
-        window.open(`/service/${serviceSlug}`, '_blank');
+        // Navigate to service profile page
+        setLocation(`/service/${serviceSlug}`);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
