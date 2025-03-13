@@ -146,7 +146,7 @@ export default function ServiceDashboard() {
 
   // Direct navigation to service profile
   const handleProfileClick = () => {
-    if (userProfile && userProfile.companyName) {
+    if (userProfile && 'companyName' in userProfile) {
       try {
         const serviceSlug = encodeURIComponent(userProfile.companyName
           .toLowerCase()
@@ -154,7 +154,11 @@ export default function ServiceDashboard() {
           .replace(/[^a-z0-9-]/g, '') // Remove any characters that aren't lowercase letters, numbers, or hyphens
           .replace(/^-+|-+$/g, '')); // Remove leading and trailing hyphens
 
-        // Use wouter's setLocation instead of direct window.location
+        console.log('Navigating to service profile:', `/service/${serviceSlug}`);
+
+        // First update the URL
+        window.history.pushState({}, '', `/service/${serviceSlug}`);
+        // Then use wouter's setLocation
         setLocation(`/service/${serviceSlug}`);
       } catch (error) {
         console.error('Navigation error:', error);
