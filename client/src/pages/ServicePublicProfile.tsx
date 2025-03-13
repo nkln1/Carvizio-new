@@ -25,6 +25,7 @@ export default function ServicePublicProfile() {
   const { slug } = useParams();
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const [editingDay, setEditingDay] = useState<number | null>(null);
 
   // Fetch service provider data
   const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider>({
@@ -45,42 +46,8 @@ export default function ServicePublicProfile() {
   const { data: workingHours = [] } = useQuery<WorkingHour[]>({
     queryKey: [`/api/service/${serviceProfile?.id}/working-hours`],
     queryFn: async () => {
-      try {
-        const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
-        if (!response.ok) {
-          return [
-            { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
-            { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
-            { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
-            { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
-            { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
-            { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
-            { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
-          ];
-        }
-
-        const fetchedHours = await response.json();
-        return fetchedHours.length > 0 ? fetchedHours : [
-          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
-          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
-        ];
-      } catch (error) {
-        console.error("Error fetching working hours:", error);
-        return [
-          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
-          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
-          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
-        ];
-      }
+      const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
+      return response.json();
     },
     enabled: !!serviceProfile?.id
   });
@@ -153,14 +120,6 @@ export default function ServicePublicProfile() {
               </div>
             </div>
 
-            {/* Locație */}
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Locație</h2>
-              <div className="h-[300px] w-full bg-gray-200 rounded-lg">
-                {/* Map placeholder */}
-              </div>
-            </div>
-
             {/* Working Hours */}
             <div className="mt-8">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Program de funcționare</h2>
@@ -171,25 +130,34 @@ export default function ServicePublicProfile() {
                     return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
                   })
                   .map((schedule) => (
-                    isOwner ? (
-                      <WorkingHoursEditor
-                        key={schedule.id}
-                        schedule={schedule}
-                        onCancel={() => {}}
-                      />
-                    ) : (
-                      <div key={schedule.id} className="flex justify-between items-center py-2">
-                        <span className="font-medium">{getDayName(schedule.dayOfWeek)}:</span>
-                        <span className="text-gray-600">
-                          {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
-                        </span>
-                      </div>
-                    )
+                    <div key={schedule.id} className="flex justify-between items-center py-2">
+                      <span className="font-medium">{getDayName(schedule.dayOfWeek)}:</span>
+                      {isOwner && editingDay === schedule.dayOfWeek ? (
+                        <WorkingHoursEditor
+                          schedule={schedule}
+                          onCancel={() => setEditingDay(null)}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-4">
+                          <span className="text-gray-600">
+                            {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
+                          </span>
+                          {isOwner && (
+                            <button
+                              onClick={() => setEditingDay(schedule.dayOfWeek)}
+                              className="text-sm text-[#00aff5] hover:text-[#0090d0]"
+                            >
+                              Modifică
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ))}
               </div>
             </div>
 
-            {/* Recenzii */}
+            {/* Reviews */}
             <div className="mt-8">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="text-[#00aff5]">★</span>
