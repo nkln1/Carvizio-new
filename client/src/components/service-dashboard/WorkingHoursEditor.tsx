@@ -40,19 +40,30 @@ export function WorkingHoursEditor({ schedule, onCancel }: WorkingHoursEditorPro
   const form = useForm<WorkingHourFormValues>({
     resolver: zodResolver(workingHourSchema),
     defaultValues: {
-      openTime: schedule.openTime,
-      closeTime: schedule.closeTime,
-      isClosed: schedule.isClosed,
+      openTime: schedule.openTime || "09:00",
+      closeTime: schedule.closeTime || "17:00",
+      isClosed: schedule.isClosed || false,
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (values: WorkingHourFormValues) => {
+      // Construim obiectul pentru update, incluzând și dayOfWeek
+      const updateData = {
+        ...values,
+        dayOfWeek: schedule.dayOfWeek
+      };
+
       const response = await apiRequest(
-        "PATCH",
-        `/api/service/working-hours/${schedule.id}`,
-        values
+        "PUT", // Folosim PUT în loc de PATCH pentru înlocuire completă
+        `/api/service/working-hours/${schedule.dayOfWeek}`, // Folosim dayOfWeek ca identificator
+        updateData
       );
+
+      if (!response.ok) {
+        throw new Error('Failed to update working hours');
+      }
+
       return response.json();
     },
     onSuccess: () => {
@@ -82,7 +93,7 @@ export function WorkingHoursEditor({ schedule, onCancel }: WorkingHoursEditorPro
         <span className="font-medium">
           {schedule.isClosed
             ? "Închis"
-            : `${schedule.openTime} - ${schedule.closeTime}`}
+            : `${schedule.openTime}-${schedule.closeTime}`}
         </span>
         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
           Modifică

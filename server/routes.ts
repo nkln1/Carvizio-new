@@ -82,6 +82,12 @@ interface IStorage {
     markAcceptedOfferAsViewed: any;
     getSentOffersByRequest: any;
     markConversationAsRead: any;
+    getServiceProviderWorkingHours: any;
+    createWorkingHour: any;
+    updateWorkingHours: any;
+    deleteWorkingHour: any;
+    getWorkingHours: any;
+
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -1625,70 +1631,62 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+
   // Working Hours endpoints
-  app.get("/api/service/:serviceId/working-hours", async (req, res) => {
+  app.get("/api/service/:serviceId/working-hours", validateFirebaseToken, async (req, res) => {
     try {
-      const serviceId = parseInt(req.params.serviceId);
-      if (isNaN(serviceId)) {
-        return res.status(400).json({ error: "Invalid service ID" });
+      // Return default working hours for all services
+      const defaultHours = [
+        { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false },
+        { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false },
+        { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false },
+        { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false },
+        { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false },
+        { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: true },
+        { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true }
+      ];
+
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(403).json({ error: "Access denied" });
       }
-      
-      const workingHours = await storage.getServiceProviderWorkingHours(serviceId);
-      res.json(workingHours);
+
+      // Get custom hours if they exist
+      const customHours = await storage.getWorkingHours(parseInt(req.params.serviceId));
+
+      // Return custom hours if they exist, otherwise return default hours
+      res.json(customHours.length > 0 ? customHours : defaultHours);
     } catch (error) {
       console.error("Error getting working hours:", error);
       res.status(500).json({ error: "Failed to get working hours" });
     }
   });
-  
-  app.post("/api/service/working-hours", validateFirebaseToken, async (req, res) => {
+
+  app.put("/api/service/working-hours/:dayOfWeek", validateFirebaseToken, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
       if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
+        return res.status(403).json({ error: "Access denied" });
       }
-      
-      const workingHourData = {
-        ...req.body,
-        serviceProviderId: provider.id
-      };
-      
-      const workingHour = await storage.createWorkingHour(workingHourData);
-      res.status(201).json(workingHour);
+
+      const { openTime, closeTime, isClosed } = req.body;
+      const dayOfWeek = parseInt(req.params.dayOfWeek);
+
+      // Save working hours
+      const updatedHours = await storage.updateWorkingHours(provider.id, {
+        dayOfWeek,
+        openTime,
+        closeTime,
+        isClosed
+      });
+
+      res.json(updatedHours);
     } catch (error) {
-      console.error("Error creating working hour:", error);
-      res.status(500).json({ error: "Failed to create working hour" });
+      console.error("Error updating working hours:", error);
+      res.status(500).json({ error: "Failed to update working hours" });
     }
   });
-  
-  app.put("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
-      }
-      
-      const hourId = parseInt(req.params.id);
-      if (isNaN(hourId)) {
-        return res.status(400).json({ error: "Invalid working hour ID" });
-      }
-      
-      // Get current working hour to verify ownership
-      const workingHours = await storage.getServiceProviderWorkingHours(provider.id);
-      const hourExists = workingHours.some(h => h.id === hourId);
-      
-      if (!hourExists) {
-        return res.status(404).json({ error: "Working hour not found or not owned by this service provider" });
-      }
-      
-      const updatedWorkingHour = await storage.updateWorkingHour(hourId, req.body);
-      res.json(updatedWorkingHour);
-    } catch (error) {
-      console.error("Error updating working hour:", error);
-      res.status(500).json({ error: "Failed to update working hour" });
-    }
-  });
-  
+
   app.delete("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
@@ -1716,7 +1714,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to delete working hour" });
     }
   });
-
+  
   // Add endpoint to get client conversations
   app.get("/api/client/conversations", validateFirebaseToken, async (req, res) => {
     try {
@@ -1724,10 +1722,10 @@ export function registerRoutes(app: Express): Server {
       if (!client) {
         return res.status(401).json({ error: "Client not found" });
       }
-
+      
       // Get all messages for this client
       const messages = await storage.getUserMessages(client.id, "client", null);
-
+      
       // Group messages by requestId
       const conversationsByRequest = messages.reduce((acc, message) => {
         if (!acc[message.requestId]) {
@@ -1738,18 +1736,18 @@ export function registerRoutes(app: Express): Server {
         }
         return acc;
       }, {});
-
+      
       // Get service provider information and request details for each conversation
       const conversations = await Promise.all(
         Object.values(conversationsByRequest).map(async (message) => {
           const request = await storage.getRequest(message.requestId);
           if (!request) return null;
-
+          
           // Find the service provider who sent or received messages
           const serviceProviderId = message.senderRole === "service" ? message.senderId : message.receiverId;
           const serviceProvider = await storage.getServiceProvider(serviceProviderId);
           if (!serviceProvider) return null;
-
+          
           // Get unread count
           const unreadMessages = messages.filter(m =>
             m.requestId === message.requestId &&
@@ -1757,7 +1755,7 @@ export function registerRoutes(app: Express): Server {
             m.receiverRole === "client" &&
             !m.isRead
           );
-
+          
           return {
             userId: serviceProvider.id,
             userName: serviceProvider.companyName,
@@ -1770,21 +1768,21 @@ export function registerRoutes(app: Express): Server {
           };
         })
       );
-
+      
       // Filter out null values and sort by date (most recent first)
       const validConversations = conversations
         .filter(conv => conv !== null)
         .sort((a, b) =>
           new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
         );
-
+      
       res.json(validConversations);
     } catch (error) {
       console.error("Error fetching client conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
     }
   });
-
+  
   // Client message endpoints
   app.get("/api/client/messages/:requestId", validateFirebaseToken, async (req, res) => {
     try {
@@ -1792,32 +1790,32 @@ export function registerRoutes(app: Express): Server {
         firebaseUid: req.firebaseUser!.uid,
         requestId: req.params.requestId
       });
-
+      
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         console.log('Client not found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(403).json({ error: "Access denied. Only clients can view messages." });
       }
-
+      
       const requestId = parseInt(req.params.requestId);
       if (isNaN(requestId)) {
         console.log('Invalid request ID:', req.params.requestId);
         return res.status(400).json({ error: "Invalid request ID" });
       }
-
+      
       // Verify the client owns this request
       const request = await storage.getRequest(requestId);
       console.log('Found request:', request);
-
+      
       if (!request || request.clientId !== client.id) {
         console.log('Request not found or unauthorized:', { requestId, clientId: client.id });
         return res.status(403).json({ error: "Not authorized to view these messages" });
       }
-
+      
       // Get messages with enriched sender information
       const messages = await storage.getMessagesByRequest(requestId);
       console.log('Retrieved messages count:', messages.length);
-
+      
       // Set proper content type and send response
       res.setHeader('Content-Type', 'application/json');
       return res.json(messages);
@@ -1829,19 +1827,19 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
+  
   app.post("/api/client/messages/send", validateFirebaseToken, async (req, res) => {
     try {
       console.log('POST /api/client/messages/send - Start', req.body);
-
+      
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         console.log('Client not found for Firebase UID:', req.firebaseUser!.uid);
         return res.status(403).json({ error: "Access denied. Only clients can send messages." });
       }
-
+      
       const { content, receiverId, receiverRole, requestId, offerId } = req.body;
-
+      
       // Validate required fields
       if (!content || !receiverId || !requestId) {
         console.log('Missing required fields:', { content, receiverId, requestId });
@@ -1850,16 +1848,16 @@ export function registerRoutes(app: Express): Server {
           message: "Content, receiverId and requestId are required"
         });
       }
-
+      
       // Verify the client owns this request
       const request = await storage.getRequest(requestId);
       console.log('Found request:', request);
-
+      
       if (!request || request.clientId !== client.id) {
         console.log('Request not found or unauthorized:', { requestId, clientId: client.id });
         return res.status(403).json({ error: "Not authorized to send messages for this request" });
       }
-
+      
       // Create message
       const message = await storage.createMessage({
         senderId: client.id,
@@ -1870,22 +1868,22 @@ export function registerRoutes(app: Express): Server {
         requestId,
         offerId: offerId || null
       });
-
+      
       // Enrich message with sender name for response
       const enrichedMessage = {
         ...message,
         senderName: client.name
       };
-
+      
       // Send real-time notification through WebSocket
       const messageNotification = {
         type: 'NEW_MESSAGE',
         payload: enrichedMessage,
         timestamp: new Date().toISOString()
       };
-
+      
       console.log('Broadcasting message notification:', messageNotification);
-
+      
       wss.clients.forEach((wsClient) => {
         if (wsClient.readyState === WebSocket.OPEN) {
           try {
@@ -1895,7 +1893,7 @@ export function registerRoutes(app: Express): Server {
           }
         }
       });
-
+      
       // Set proper content type and send response
       res.setHeader('Content-Type', 'application/json');
       return res.status(201).json(enrichedMessage);
@@ -1907,7 +1905,7 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
+  
   // Add this endpoint after the other message-related endpoints
   app.post("/api/service/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
     try {
@@ -1915,23 +1913,23 @@ export function registerRoutes(app: Express): Server {
       if (!provider) {
         return res.status(403).json({ error: "Access denied. Only service providers can mark conversations as read." });
       }
-
+      
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
-
+      
       if (!requestId || !userId) {
         return res.status(400).json({ error: "Missing required parameters" });
       }
-
+      
       await storage.markConversationAsRead(requestId, provider.id);
-
+      
       res.status(200).json({ message: "Conversation marked as read successfully" });
     } catch (error) {
       console.error("Error marking conversation as read:", error);
       res.status(500).json({ error: "Failed to mark conversation as read" });
     }
   });
-
+  
   // Add similar endpoint for client
   app.post("/api/client/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
     try {
@@ -1939,35 +1937,35 @@ export function registerRoutes(app: Express): Server {
       if (!client) {
         return res.status(403).json({ error: "Access denied. Only clients can mark conversations as read." });
       }
-
+      
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
-
+      
       if (!requestId || !userId) {
         return res.status(400).json({ error: "Missing required parameters" });
       }
-
+      
       await storage.markConversationAsRead(requestId, client.id);
-
+      
       res.status(200).json({ message: "Conversation marked as read successfully" });
     } catch (error) {
       console.error("Error marking conversation as read:", error);
       res.status(500).json({ error: "Failed to mark conversation as read" });
     }
   });
-
+  
   const httpServer = createServer(app);
-
+  
   // Initialize WebSocket server with the correct path to match client
   const wss = new WebSocketServer({
     server: httpServer,
     path: '/api/ws'  // Match the client's WebSocket path
   });
-
+  
   // WebSocket connection handler with improved error handling
   wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
-
+    
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
@@ -1993,15 +1991,15 @@ export function registerRoutes(app: Express): Server {
         console.error('Error processing WebSocket message:', error);
       }
     });
-
+    
     ws.on('error', (error) => {
       console.error('WebSocket error:', error);
     });
-
+    
     ws.on('close', () => {
       console.log('Client disconnected');
     });
   });
-
+  
   return httpServer;
 }

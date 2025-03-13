@@ -116,6 +116,14 @@ export interface IStorage {
   createWorkingHour(workingHour: InsertWorkingHour): Promise<WorkingHour>;
   updateWorkingHour(id: number, workingHourData: Partial<WorkingHour>): Promise<WorkingHour>;
   deleteWorkingHour(id: number): Promise<void>;
+  getWorkingHours(serviceProviderId: number): Promise<WorkingHour[]>;
+  updateWorkingHours(serviceProviderId: number, workingHourData: {
+    dayOfWeek: number;
+    openTime: string;
+    closeTime: string;
+    isClosed: boolean;
+  }): Promise<WorkingHour>;
+
 
   // Reviews management
   getServiceProviderReviews(serviceProviderId: number): Promise<Review[]>;
@@ -956,6 +964,79 @@ export class DatabaseStorage implements IStorage {
       return updatedWorkingHour;
     } catch (error) {
       console.error('Error updating working hour:', error);
+      throw error;
+    }
+  }
+
+  async deleteWorkingHour(id: number): Promise<void> {
+    try {
+      await db.delete(workingHours).where(eq(workingHours.id, id));
+    } catch (error) {
+      console.error('Error deleting working hour:', error);
+      throw error;
+    }
+  }
+
+  async getWorkingHours(serviceProviderId: number): Promise<WorkingHour[]> {
+    try {
+      return await db
+        .select()
+        .from(workingHours)
+        .where(eq(workingHours.serviceProviderId, serviceProviderId))
+        .orderBy(workingHours.dayOfWeek);
+    } catch (error) {
+      console.error('Error getting working hours:', error);
+      return [];
+    }
+  }
+
+  async updateWorkingHours(serviceProviderId: number, workingHourData: {
+    dayOfWeek: number;
+    openTime: string;
+    closeTime: string;
+    isClosed: boolean;
+  }): Promise<WorkingHour> {
+    try {
+      // First try to find if there's an existing record
+      const [existingHour] = await db
+        .select()
+        .from(workingHours)
+        .where(
+          and(
+            eq(workingHours.serviceProviderId, serviceProviderId),
+            eq(workingHours.dayOfWeek, workingHourData.dayOfWeek)
+          )
+        );
+
+      if (existingHour) {
+        // Update existing record
+        const [updatedHour] = await db
+          .update(workingHours)
+          .set({
+            openTime: workingHourData.openTime,
+            closeTime: workingHourData.closeTime,
+            isClosed: workingHourData.isClosed
+          })
+          .where(eq(workingHours.id, existingHour.id))
+          .returning();
+        return updatedHour;
+      } else {
+        // Create new record
+        const [newHour] = await db
+          .insert(workingHours)
+          .values({
+            serviceProviderId,
+            dayOfWeek: workingHourData.dayOfWeek,
+            openTime: workingHourData.openTime,
+            closeTime: workingHourData.closeTime,
+            isClosed: workingHourData.isClosed,
+            createdAt: new Date()
+          })
+          .returning();
+        return newHour;
+      }
+    } catch (error) {
+      console.error('Error updating working hours:', error);
       throw error;
     }
   }
