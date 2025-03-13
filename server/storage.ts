@@ -979,11 +979,34 @@ export class DatabaseStorage implements IStorage {
 
   async getWorkingHours(serviceProviderId: number): Promise<WorkingHour[]> {
     try {
-      return await db
+      // Definim programul implicit
+      const defaultHours: WorkingHour[] = [
+        { id: 1, serviceProviderId, dayOfWeek: 1, openTime: "09:00", closeTime: "17:00", isClosed: false, createdAt: new Date() },
+        { id: 2, serviceProviderId, dayOfWeek: 2, openTime: "09:00", closeTime: "17:00", isClosed: false, createdAt: new Date() },
+        { id: 3, serviceProviderId, dayOfWeek: 3, openTime: "09:00", closeTime: "17:00", isClosed: false, createdAt: new Date() },
+        { id: 4, serviceProviderId, dayOfWeek: 4, openTime: "09:00", closeTime: "17:00", isClosed: false, createdAt: new Date() },
+        { id: 5, serviceProviderId, dayOfWeek: 5, openTime: "09:00", closeTime: "17:00", isClosed: false, createdAt: new Date() },
+        { id: 6, serviceProviderId, dayOfWeek: 6, openTime: "09:00", closeTime: "17:00", isClosed: true, createdAt: new Date() },
+        { id: 7, serviceProviderId, dayOfWeek: 0, openTime: "09:00", closeTime: "17:00", isClosed: true, createdAt: new Date() }
+      ];
+
+      // Obținem programul personalizat din baza de date
+      const customHours = await db
         .select()
         .from(workingHours)
         .where(eq(workingHours.serviceProviderId, serviceProviderId))
         .orderBy(workingHours.dayOfWeek);
+
+      // Dacă nu există înregistrări personalizate, returnăm programul implicit
+      if (!customHours.length) {
+        return defaultHours;
+      }
+
+      // Combinăm programul implicit cu cel personalizat
+      return defaultHours.map(defaultHour => {
+        const customHour = customHours.find(ch => ch.dayOfWeek === defaultHour.dayOfWeek);
+        return customHour || defaultHour;
+      });
     } catch (error) {
       console.error('Error getting working hours:', error);
       return [];
