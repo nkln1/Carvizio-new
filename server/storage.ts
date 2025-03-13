@@ -997,6 +997,11 @@ export class DatabaseStorage implements IStorage {
     isClosed: boolean;
   }): Promise<WorkingHour> {
     try {
+      // Validate dayOfWeek
+      if (workingHourData.dayOfWeek < 0 || workingHourData.dayOfWeek > 6) {
+        throw new Error('Invalid day of week');
+      }
+
       // First try to find if there's an existing record
       const [existingHour] = await db
         .select()
@@ -1010,8 +1015,7 @@ export class DatabaseStorage implements IStorage {
 
       if (existingHour) {
         // Update existing record
-        const [updatedHour] = await db
-          .update(workingHours)
+        const [updatedHour] = await db          .update(workingHours)
           .set({
             openTime: workingHourData.openTime,
             closeTime: workingHourData.closeTime,
@@ -1037,15 +1041,6 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error updating working hours:', error);
-      throw error;
-    }
-  }
-
-  async deleteWorkingHour(id: number): Promise<void> {
-    try {
-      await db.delete(workingHours).where(eq(workingHours.id, id));
-    } catch (error) {
-      console.error('Error deleting working hour:', error);
       throw error;
     }
   }
