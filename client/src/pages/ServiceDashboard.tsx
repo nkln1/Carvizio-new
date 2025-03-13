@@ -55,8 +55,6 @@ export default function ServiceDashboard() {
   });
 
   // Calculăm numărul de conversații cu mesaje noi
-  const newConversationsCount = conversations.filter(conv => conv.hasNewMessages).length;
-
   const unreadConversationsCount = conversations.filter(conv => conv.unreadCount > 0).length;
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
@@ -137,7 +135,8 @@ export default function ServiceDashboard() {
     handleTabChange("mesaje");
   };
 
-  const handleTabError = () => {
+  const handleTabError = (error: Error) => {
+    console.error("Tab error:", error);
     toast({
       variant: "destructive",
       title: "Eroare",
@@ -145,25 +144,26 @@ export default function ServiceDashboard() {
     });
   };
 
+  // Direct navigation to service profile
   const handleProfileClick = () => {
-    if (userProfile?.companyName) {
-      const slug = userProfile.companyName.toLowerCase().replace(/\s+/g, '-');
-      window.location.href = `/service/${slug}`;
-    }
-    if (userProfile && 'companyName' in userProfile) {
+    if (userProfile && userProfile.companyName) {
       try {
         const serviceSlug = userProfile.companyName
           .toLowerCase()
           .replace(/\s+/g, '-')
-          .replace(/^-+|-+$/g, '');
-        console.log('Navigating to service profile:', `/service/${serviceSlug}`);
+          .replace(/[^a-z0-9-]/g, '') // Remove any characters that aren't lowercase letters, numbers, or hyphens
+          .replace(/^-+|-+$/g, ''); // Remove leading and trailing hyphens
+
+        console.log("Navigating to service profile:", `/service/${serviceSlug}`);
+
+        // Use direct navigation with window.location.href
         window.location.href = `/service/${serviceSlug}`;
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
           variant: "destructive",
           title: "Eroare",
-          description: "Nu s-au putut încărca datele profilului.",
+          description: "Nu s-a putut naviga către profilul public.",
         });
       }
     } else {
