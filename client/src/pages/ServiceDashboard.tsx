@@ -232,7 +232,7 @@ export default function ServiceDashboard() {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
+              <h1 className="text-xl font-semibold text-[#00aff5]">Auto Service App</h1>
               {userProfile && (
                 <Button
                   variant="outline"
@@ -262,6 +262,9 @@ export default function ServiceDashboard() {
                   )}
                 </Button>
               ))}
+              <Button variant="outline" onClick={() => auth.signOut()}>
+                Logout
+              </Button>}
             </div>
 
             <div className="md:hidden">
