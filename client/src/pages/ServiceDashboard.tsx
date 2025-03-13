@@ -220,6 +220,19 @@ export default function ServiceDashboard() {
            0
   }));
 
+  const handleProfileClick = () => {
+    if (userProfile) {
+      // Create slug from company name
+      const slug = userProfile.companyName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      
+      // Navigate to service profile page
+      window.location.href = `/service/${slug}`;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <nav className="bg-white border-b sticky top-0 z-50">
