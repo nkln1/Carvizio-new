@@ -5,13 +5,33 @@ import {
   requests,
   sentOffers,
   messages as messagesTable,
-  type Message,
   viewedRequests,
   viewedOffers,
   viewedAcceptedOffers,
+  workingHours,
+  reviews,
+  type Message,
+  type Client,
+  type InsertClient,
+  type ServiceProvider,
+  type InsertServiceProvider,
+  type Car,
+  type InsertCar,
+  type Request,
+  type InsertRequest,
+  type SentOffer,
+  type InsertSentOffer,
+  type InsertMessage,
+  type ViewedRequest,
+  type ViewedOffer,
+  type ViewedAcceptedOffer,
+  type WorkingHour,
+  type InsertWorkingHour,
+  type Review,
+  type InsertReview
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, or, and, inArray } from "drizzle-orm";
+import { eq, desc, or, and, inArray, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -90,6 +110,20 @@ export interface IStorage {
   getViewedAcceptedOffersByServiceProvider(serviceProviderId: number): Promise<ViewedAcceptedOffer[]>;
   getMessagesByRequest(requestId: number): Promise<Message[]>;
   markConversationAsRead(requestId: number, userId: number): Promise<void>;
+
+  // Working Hours management
+  getServiceProviderWorkingHours(serviceProviderId: number): Promise<WorkingHour[]>;
+  createWorkingHour(workingHour: InsertWorkingHour): Promise<WorkingHour>;
+  updateWorkingHour(id: number, workingHourData: Partial<WorkingHour>): Promise<WorkingHour>;
+  deleteWorkingHour(id: number): Promise<void>;
+
+  // Reviews management
+  getServiceProviderReviews(serviceProviderId: number): Promise<Review[]>;
+  getClientReviews(clientId: number): Promise<Review[]>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: number, reviewData: Partial<Review>): Promise<Review>;
+  deleteReview(id: number): Promise<void>;
+  getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -895,6 +929,136 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error marking conversation as read:', error);
       throw error;
+    }
+  }
+
+
+  // Working Hours methods
+  async getServiceProviderWorkingHours(serviceProviderId: number): Promise<WorkingHour[]> {
+    try {
+      return await db
+        .select()
+        .from(workingHours)
+        .where(eq(workingHours.serviceProviderId, serviceProviderId))
+        .orderBy(workingHours.dayOfWeek);
+    } catch (error) {
+      console.error('Error getting service provider working hours:', error);
+      return [];
+    }
+  }
+
+  async createWorkingHour(workingHour: InsertWorkingHour): Promise<WorkingHour> {
+    try {
+      const [newWorkingHour] = await db
+        .insert(workingHours)
+        .values(workingHour)
+        .returning();
+      return newWorkingHour;
+    } catch (error) {
+      console.error('Error creating working hour:', error);
+      throw error;
+    }
+  }
+
+  async updateWorkingHour(id: number, workingHourData: Partial<WorkingHour>): Promise<WorkingHour> {
+    try {
+      const [updatedWorkingHour] = await db
+        .update(workingHours)
+        .set(workingHourData)
+        .where(eq(workingHours.id, id))
+        .returning();
+      return updatedWorkingHour;
+    } catch (error) {
+      console.error('Error updating working hour:', error);
+      throw error;
+    }
+  }
+
+  async deleteWorkingHour(id: number): Promise<void> {
+    try {
+      await db.delete(workingHours).where(eq(workingHours.id, id));
+    } catch (error) {
+      console.error('Error deleting working hour:', error);
+      throw error;
+    }
+  }
+
+  // Reviews methods
+  async getServiceProviderReviews(serviceProviderId: number): Promise<Review[]> {
+    try {
+      return await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.serviceProviderId, serviceProviderId))
+        .orderBy(desc(reviews.createdAt));
+    } catch (error) {
+      console.error('Error getting service provider reviews:', error);
+      return [];
+    }
+  }
+
+  async getClientReviews(clientId: number): Promise<Review[]> {
+    try {
+      return await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.clientId, clientId))
+        .orderBy(desc(reviews.createdAt));
+    } catch (error) {
+      console.error('Error getting client reviews:', error);
+      return [];
+    }
+  }
+
+  async createReview(review: InsertReview): Promise<Review> {
+    try {
+      const [newReview] = await db
+        .insert(reviews)
+        .values(review)
+                .returning();
+      return newReview;
+    } catch (error) {
+      console.error('Error creating review:', error);
+      throw error;
+    }
+  }
+
+  async updateReview(id: number, reviewData: Partial<Review>): Promise<Review> {
+    try {
+      const [updatedReview] = await db
+        .update(reviews)
+        .set(reviewData)
+        .where(eq(reviews.id, id))
+        .returning();
+      return updatedReview;
+    } catch (error) {
+      console.error('Error updating review:', error);
+      throw error;
+    }
+  }
+
+  async deleteReview(id: number): Promise<void> {
+    try {
+      await db.delete(reviews).where(eq(reviews.id, id));
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      throw error;
+    }
+  }
+
+  async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
+    try {
+      const result = await db
+        .select({
+          averageRating: sql`ROUND(AVG(${reviews.rating}), 1)`
+        })
+        .from(reviews)
+        .where(eq(reviews.serviceProviderId, serviceProviderId));
+
+      return result[0]?.averageRating || 0;
+    } catch (error) {
+      console.error('Error calculating average rating:', error);
+      return 0;
     }
   }
 }

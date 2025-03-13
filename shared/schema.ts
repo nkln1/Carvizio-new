@@ -255,6 +255,48 @@ export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
 }));
 
 
+// Working Hours table definition
+export const workingHours = pgTable("working_hours", {
+  id: serial("id").primaryKey(),
+  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
+  dayOfWeek: text("day_of_week", {
+    enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  }).notNull(),
+  openTime: text("open_time").notNull(),
+  closeTime: text("close_time").notNull(),
+  isClosed: boolean("is_closed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Reviews table definition
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Add relations for working hours and reviews
+export const workingHoursRelations = relations(workingHours, ({ one }) => ({
+  serviceProvider: one(serviceProviders, {
+    fields: [workingHours.serviceProviderId],
+    references: [serviceProviders.id],
+  })
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  serviceProvider: one(serviceProviders, {
+    fields: [reviews.serviceProviderId],
+    references: [serviceProviders.id],
+  }),
+  client: one(clients, {
+    fields: [reviews.clientId],
+    references: [clients.id],
+  })
+}));
+
 // Add viewed requests table definition
 export const viewedRequests = pgTable("viewed_requests", {
   id: serial("id").primaryKey(),
@@ -330,12 +372,25 @@ export const viewedAcceptedOffersRelations = relations(viewedAcceptedOffers, ({ 
   }),
 }));
 
-// Update service providers relations to include viewed accepted offers
+// Update service providers relations to include working hours and reviews
 export const serviceProvidersRelations = relations(serviceProviders, ({ many }) => ({
   viewedRequests: many(viewedRequests),
   sentOffers: many(sentOffers),
-  viewedAcceptedOffers: many(viewedAcceptedOffers)
+  viewedAcceptedOffers: many(viewedAcceptedOffers),
+  workingHours: many(workingHours),
+  reviews: many(reviews)
 }));
+
+// Add schemas for inserting working hours and reviews
+export const insertWorkingHourSchema = createInsertSchema(workingHours).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true
+});
 
 // Add viewed accepted offers schemas
 export const insertViewedAcceptedOfferSchema = createInsertSchema(viewedAcceptedOffers).omit({
@@ -357,6 +412,12 @@ export const insertViewedRequestSchema = createInsertSchema(viewedRequests).omit
 export type InsertViewedRequest = z.infer<typeof insertViewedRequestSchema>;
 export type ViewedRequest = typeof viewedRequests.$inferSelect;
 
+
+// Add type exports for working hours and reviews
+export type InsertWorkingHour = z.infer<typeof insertWorkingHourSchema>;
+export type WorkingHour = typeof workingHours.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
 
 // Define a type for accepted offer with client details
 export type AcceptedOfferWithClient = SentOffer & {
