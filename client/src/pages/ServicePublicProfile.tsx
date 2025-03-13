@@ -10,6 +10,18 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
 // Helper function to get day name in Romanian
+function getDayName(dayOfWeek: number): string {
+  const days = [
+    "Duminică",
+    "Luni",
+    "Marți", 
+    "Miercuri",
+    "Joi",
+    "Vineri",
+    "Sâmbătă"
+  ];
+  return days[dayOfWeek];
+}
 const getDayName = (dayOfWeek: number): string => {
   const days = [
     "Sunday",    // 0
@@ -180,7 +192,7 @@ export default function ServicePublicProfile() {
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-1">
                   {sortedWorkingHours.map((schedule) => (
                     <div key={schedule.id} className="flex justify-between text-sm border-b border-gray-100 py-1.5">
                       <span className="font-medium">{getDayName(schedule.dayOfWeek)}:</span>
