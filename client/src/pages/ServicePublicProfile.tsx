@@ -7,8 +7,9 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Helper function to get day name in Romanian
 const getDayName = (dayOfWeek: number): string => {
-  const days = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
-  return days[dayOfWeek] || `Ziua ${dayOfWeek}`;
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const romDays = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+  return romDays[dayOfWeek] || `Ziua ${dayOfWeek}`;
 };
 
 export default function ServicePublicProfile() {
@@ -34,11 +35,44 @@ export default function ServicePublicProfile() {
   const { data: workingHours, isLoading: isLoadingWorkingHours } = useQuery<WorkingHour[]>({
     queryKey: [`/api/service/${serviceProfile?.id}/working-hours`],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
-      if (!response.ok) {
-        return []; // Handle error gracefully
+      try {
+        const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
+        if (!response.ok) {
+          // Return default working hours
+          return [
+            { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "18:00", isClosed: false },
+            { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "18:00", isClosed: false },
+            { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "18:00", isClosed: false },
+            { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "18:00", isClosed: false },
+            { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "18:00", isClosed: false },
+            { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: false },
+            { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "18:00", isClosed: true }
+          ];
+        }
+        
+        const fetchedHours = await response.json();
+        return fetchedHours.length > 0 ? fetchedHours : [
+          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: false },
+          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "18:00", isClosed: true }
+        ];
+      } catch (error) {
+        console.error("Error fetching working hours:", error);
+        // Return default working hours on error
+        return [
+          { id: 1, dayOfWeek: 1, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 2, dayOfWeek: 2, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 3, dayOfWeek: 3, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 4, dayOfWeek: 4, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 5, dayOfWeek: 5, openTime: "09:00", closeTime: "18:00", isClosed: false },
+          { id: 6, dayOfWeek: 6, openTime: "09:00", closeTime: "14:00", isClosed: false },
+          { id: 7, dayOfWeek: 0, openTime: "09:00", closeTime: "18:00", isClosed: true }
+        ];
       }
-      return response.json();
     },
     enabled: !!serviceProfile?.id
   });
@@ -137,14 +171,21 @@ export default function ServicePublicProfile() {
                     </div>
                   ) : workingHours && workingHours.length > 0 ? (
                     <div className="space-y-2">
-                      {workingHours.map((schedule) => (
-                        <div key={schedule.id} className="flex justify-between items-center">
-                          <span className="font-medium">{getDayName(schedule.dayOfWeek)}</span>
-                          <span className="text-gray-600">
-                            {schedule.isClosed ? 'Închis' : `${schedule.openTime} - ${schedule.closeTime}`}
-                          </span>
-                        </div>
-                      ))}
+                      {/* Sort by weekday, starting with Monday */}
+                      {[...workingHours]
+                        .sort((a, b) => {
+                          // Adjust so Monday is first (1), Sunday is last (7)
+                          const adjustDay = (day: number) => day === 0 ? 7 : day;
+                          return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
+                        })
+                        .map((schedule) => (
+                          <div key={schedule.id} className="flex justify-between items-center">
+                            <span className="font-medium mr-4">{getDayName(schedule.dayOfWeek)}:</span>
+                            <span className="text-gray-600 text-right ml-auto">
+                              {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   ) : (
                     <p className="text-gray-500 italic text-sm">

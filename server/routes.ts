@@ -1624,6 +1624,98 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to mark accepted offer as viewed" });
     }
   });
+  
+  // Working Hours endpoints
+  app.get("/api/service/:serviceId/working-hours", async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Invalid service ID" });
+      }
+      
+      const workingHours = await storage.getServiceProviderWorkingHours(serviceId);
+      res.json(workingHours);
+    } catch (error) {
+      console.error("Error getting working hours:", error);
+      res.status(500).json({ error: "Failed to get working hours" });
+    }
+  });
+  
+  app.post("/api/service/working-hours", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
+      }
+      
+      const workingHourData = {
+        ...req.body,
+        serviceProviderId: provider.id
+      };
+      
+      const workingHour = await storage.createWorkingHour(workingHourData);
+      res.status(201).json(workingHour);
+    } catch (error) {
+      console.error("Error creating working hour:", error);
+      res.status(500).json({ error: "Failed to create working hour" });
+    }
+  });
+  
+  app.put("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
+      }
+      
+      const hourId = parseInt(req.params.id);
+      if (isNaN(hourId)) {
+        return res.status(400).json({ error: "Invalid working hour ID" });
+      }
+      
+      // Get current working hour to verify ownership
+      const workingHours = await storage.getServiceProviderWorkingHours(provider.id);
+      const hourExists = workingHours.some(h => h.id === hourId);
+      
+      if (!hourExists) {
+        return res.status(404).json({ error: "Working hour not found or not owned by this service provider" });
+      }
+      
+      const updatedWorkingHour = await storage.updateWorkingHour(hourId, req.body);
+      res.json(updatedWorkingHour);
+    } catch (error) {
+      console.error("Error updating working hour:", error);
+      res.status(500).json({ error: "Failed to update working hour" });
+    }
+  });
+  
+  app.delete("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
+      }
+      
+      const hourId = parseInt(req.params.id);
+      if (isNaN(hourId)) {
+        return res.status(400).json({ error: "Invalid working hour ID" });
+      }
+      
+      // Get current working hour to verify ownership
+      const workingHours = await storage.getServiceProviderWorkingHours(provider.id);
+      const hourExists = workingHours.some(h => h.id === hourId);
+      
+      if (!hourExists) {
+        return res.status(404).json({ error: "Working hour not found or not owned by this service provider" });
+      }
+      
+      await storage.deleteWorkingHour(hourId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting working hour:", error);
+      res.status(500).json({ error: "Failed to delete working hour" });
+    }
+  });
 
   // Add endpoint to get client conversations
   app.get("/api/client/conversations", validateFirebaseToken, async (req, res) => {
