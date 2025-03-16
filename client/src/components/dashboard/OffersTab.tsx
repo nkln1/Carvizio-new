@@ -44,6 +44,7 @@ import {
   PaginationContent,
   PaginationItem,
 } from "@/components/ui/pagination";
+import { Link } from "wouter";
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
@@ -285,9 +286,14 @@ export function OffersTab({
             <h4 className="text-sm font-medium flex items-center gap-1">
               <User className="w-3 h-3 text-blue-500" />
               <span className="text-xs text-gray-700">Service Auto:</span>
-              <span className="text-xs font-normal line-clamp-1">
+              <a
+                href={`/service/${offer.serviceProviderId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-normal line-clamp-1 text-blue-500 hover:text-blue-700 hover:underline"
+              >
                 {offer.serviceProviderName}
-              </span>
+              </a>
             </h4>
           </div>
 
@@ -535,7 +541,14 @@ export function OffersTab({
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
                     Service Auto
                   </h3>
-                  <p className="text-sm text-gray-600">{selectedOffer.serviceProviderName}</p>
+                  <a
+                    href={`/service/${selectedOffer.serviceProviderId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
+                  >
+                    {selectedOffer.serviceProviderName}
+                  </a>
                 </div>
 
                 <div>

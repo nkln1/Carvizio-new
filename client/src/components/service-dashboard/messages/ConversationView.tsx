@@ -20,6 +20,7 @@ interface ConversationViewProps {
   onSendMessage: (content: string) => Promise<void>;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
+  serviceId?: number;
 }
 
 const MessagesLoading = () => (
@@ -45,6 +46,7 @@ export function ConversationView({
   onSendMessage,
   onViewDetails,
   showDetailsButton = false,
+  serviceId,
 }: ConversationViewProps) {
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
@@ -59,7 +61,6 @@ export function ConversationView({
     }
   };
 
-  // Only scroll on initial load and when messages length changes
   useEffect(() => {
     if (!isLoading && !hasScrolled && messages.length > 0) {
       scrollToBottom();
@@ -67,7 +68,6 @@ export function ConversationView({
     }
   }, [isLoading, messages.length, hasScrolled]);
 
-  // Initialize WebSocket connection
   useEffect(() => {
     let mounted = true;
     let retryCount = 0;
@@ -138,7 +138,20 @@ export function ConversationView({
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <CardTitle>{userName}</CardTitle>
+              <CardTitle>
+                {serviceId ? (
+                  <a
+                    href={`/service/${serviceId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:text-blue-700 hover:underline"
+                  >
+                    {userName}
+                  </a>
+                ) : (
+                  userName
+                )}
+              </CardTitle>
             </div>
             {showDetailsButton && onViewDetails && (
               <Button
@@ -187,8 +200,8 @@ export function ConversationView({
               className="flex-1"
               disabled={isSending}
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!newMessage.trim() || isSending}
               className="bg-[#00aff5] hover:bg-[#0099d6]"
             >

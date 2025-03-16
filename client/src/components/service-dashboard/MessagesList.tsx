@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMessagesManagement } from '@/hooks/useMessagesManagement';
@@ -26,6 +25,7 @@ interface MessagesListProps {
     userName?: string;
     requestId: string;
     offerId?: string;
+    serviceId?: number;  // Add serviceId
   } | null;
 }
 
@@ -56,7 +56,8 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       userId: conversation.userId,
       userName: conversation.userName,
       requestId: conversation.requestId,
-      offerId: conversation.offerId
+      offerId: conversation.offerId,
+      serviceId: conversation.serviceId // Add serviceId to activeConversation
     });
 
     await markConversationAsRead(conversation.requestId, conversation.userId);
@@ -126,7 +127,21 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                     }`}
                     onClick={() => handleSelectConversation(conversation)}
                   >
-                    <div className="font-medium">{conversation.userName}</div>
+                    <div className="font-medium">
+                      {conversation.serviceId ? (
+                        <a
+                          href={`/service/${conversation.serviceId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-700 hover:underline"
+                          onClick={(e) => e.stopPropagation()}  // Prevent triggering conversation select
+                        >
+                          {conversation.userName}
+                        </a>
+                      ) : (
+                        conversation.userName
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground truncate">
                       {conversation.lastMessage || "Fără mesaje"}
                     </div>

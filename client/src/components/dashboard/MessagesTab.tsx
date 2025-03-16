@@ -30,6 +30,7 @@ export interface InitialConversationProps {
   userName: string;
   requestId: number;
   offerId?: number;
+  serviceId?: number; // Added serviceId to InitialConversationProps
 }
 
 interface MessagesTabProps {
@@ -75,13 +76,14 @@ export function MessagesTab({
         userId: initialConversation.userId,
         userName: initialConversation.userName,
         requestId: initialConversation.requestId,
-        offerId: initialConversation.offerId
+        offerId: initialConversation.offerId,
+        serviceId: initialConversation.serviceId // Added serviceId to setActiveConversation
       });
 
       // Mark conversation as read when opened directly
       markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
-  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead]);
+  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead, initialConversation?.serviceId]); // Added initialConversation?.serviceId
 
   // WebSocket initialization
   useEffect(() => {
@@ -120,6 +122,7 @@ export function MessagesTab({
     userName: string;
     requestId: number;
     offerId?: number;
+    serviceId?: number; // Added serviceId
   }) => {
     setActiveConversation(conv);
     if (onConversationClear) {
@@ -261,13 +264,11 @@ export function MessagesTab({
                     </SelectContent>
                   </Select>
                 </div>
-              
                 <ConversationList 
                   conversations={filteredConversations}
                   isLoading={false}
                   onSelectConversation={handleConversationSelect}
                 />
-                
                 {totalPages > 1 && (
                   <Pagination className="mt-4">
                     <PaginationContent>
@@ -281,7 +282,6 @@ export function MessagesTab({
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
                       </PaginationItem>
-                      
                       {Array.from({ length: totalPages }).map((_, index) => (
                         <PaginationItem key={index}>
                           <Button
@@ -293,7 +293,6 @@ export function MessagesTab({
                           </Button>
                         </PaginationItem>
                       ))}
-                      
                       <PaginationItem>
                         <Button
                           variant="outline"
@@ -322,18 +321,21 @@ export function MessagesTab({
               </Button>
             </div>
 
-            <Card className="fixed-height-card overflow-hidden">
-              <ConversationView
-                messages={messages}
-                userName={activeConversation.userName}
-                currentUserId={user.id}
-                isLoading={isLoadingMessages}
-                onSendMessage={sendMessage}
-                onBack={handleBack}
-                onViewDetails={handleViewDetails}
-                showDetailsButton={!!activeConversation.requestId}
-              />
-            </Card>
+            {activeConversation && (
+              <Card className="fixed-height-card overflow-hidden">
+                <ConversationView
+                  messages={messages}
+                  userName={activeConversation.userName}
+                  currentUserId={user.id}
+                  isLoading={isLoadingMessages}
+                  onSendMessage={sendMessage}
+                  onBack={handleBack}
+                  onViewDetails={handleViewDetails}
+                  showDetailsButton={!!activeConversation.requestId}
+                  serviceId={activeConversation.serviceId}  // Add serviceId
+                />
+              </Card>
+            )}
           </div>
         )}
 
