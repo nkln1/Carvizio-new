@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -24,17 +23,17 @@ const getDayName = (dayOfWeek: number): string => {
 };
 
 export default function ServicePublicProfile() {
-  const { slug } = useParams();
+  const { username } = useParams(); // Changed from slug to username
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const [editingDay, setEditingDay] = useState<number | null>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch service provider data
+  // Fetch service provider data using username
   const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider>({
-    queryKey: [`/api/auth/service-profile/${slug}`],
+    queryKey: [`/api/auth/service-profile/${username}`], // Updated to use username
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/auth/service-profile/${slug}`);
+      const response = await apiRequest("GET", `/api/auth/service-profile/${username}`);
       if (!response.ok) {
         throw new Error("Service not found");
       }
@@ -42,7 +41,7 @@ export default function ServicePublicProfile() {
     },
     retry: 1,
     refetchOnWindowFocus: false,
-    enabled: !!slug
+    enabled: !!username
   });
 
   // Fetch working hours

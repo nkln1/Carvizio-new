@@ -61,6 +61,7 @@ export interface IStorage {
   getServiceProviderByFirebaseUid(firebaseUid: string): Promise<ServiceProvider | undefined>;
   createServiceProvider(provider: InsertServiceProvider & { firebaseUid: string }): Promise<ServiceProvider>;
   updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
+  getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined>;
 
   // Car management
   getClientCars(clientId: number): Promise<Car[]>;
@@ -86,7 +87,7 @@ export interface IStorage {
   getSentOffersByServiceProvider(serviceProviderId: number): Promise<SentOffer[]>;
   getSentOffersByRequest(requestId: number): Promise<SentOffer[]>;
   updateSentOfferStatus(id: number, status: "Pending" | "Accepted" | "Rejected"): Promise<SentOffer>;
-  getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string })[]>;
+  getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string; serviceProviderUsername: string })[]>;
 
   // Add message-related methods
   createMessage(message: InsertMessage): Promise<Message>;
@@ -322,6 +323,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined> {
+    try {
+      const [provider] = await db
+        .select()
+        .from(serviceProviders)
+        .where(eq(serviceProviders.username, username));
+      return provider;
+    } catch (error) {
+      console.error('Error getting service provider by username:', error);
+      return undefined;
+    }
+  }
+
   // Car methods
   async getClientCars(clientId: number): Promise<Car[]> {
     try {
@@ -551,7 +565,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  async getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string })[]> {
+  async getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string; serviceProviderUsername: string })[]> {
     try {
       console.log('Getting offers for client:', clientId);
 
@@ -587,7 +601,8 @@ export class DatabaseStorage implements IStorage {
           requestCities: sentOffers.requestCities,
           requestUserId: sentOffers.requestUserId,
           requestUserName: sentOffers.requestUserName,
-          serviceProviderName: serviceProviders.companyName
+          serviceProviderName: serviceProviders.companyName,
+          serviceProviderUsername: serviceProviders.username // Add username to the result
         })
         .from(sentOffers)
         .leftJoin(
