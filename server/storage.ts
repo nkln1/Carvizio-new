@@ -135,7 +135,6 @@ export interface IStorage {
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
 }
 
-// Add utility function to generate unique username
 async function generateUniqueUsername(companyName: string, db: typeof import('./db').db): Promise<string> {
   // Generate base slug
   let baseSlug = slugify(companyName, {
@@ -243,7 +242,25 @@ export class DatabaseStorage implements IStorage {
   // Service Provider methods
   async getServiceProviderById(id: number): Promise<ServiceProvider | undefined> {
     try {
-      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id));
+      const [provider] = await db
+        .select({
+          id: serviceProviders.id,
+          email: serviceProviders.email,
+          firebaseUid: serviceProviders.firebaseUid,
+          companyName: serviceProviders.companyName,
+          representativeName: serviceProviders.representativeName,
+          phone: serviceProviders.phone,
+          cui: serviceProviders.cui,
+          tradeRegNumber: serviceProviders.tradeRegNumber,
+          address: serviceProviders.address,
+          county: serviceProviders.county,
+          city: serviceProviders.city,
+          username: serviceProviders.username,
+          verified: serviceProviders.verified,
+          createdAt: serviceProviders.createdAt
+        })
+        .from(serviceProviders)
+        .where(eq(serviceProviders.id, id));
       return provider;
     } catch (error) {
       console.error('Error getting service provider by ID:', error);
@@ -253,7 +270,25 @@ export class DatabaseStorage implements IStorage {
 
   async getServiceProviderByEmail(email: string): Promise<ServiceProvider | undefined> {
     try {
-      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.email, email));
+      const [provider] = await db
+        .select({
+          id: serviceProviders.id,
+          email: serviceProviders.email,
+          firebaseUid: serviceProviders.firebaseUid,
+          companyName: serviceProviders.companyName,
+          representativeName: serviceProviders.representativeName,
+          phone: serviceProviders.phone,
+          cui: serviceProviders.cui,
+          tradeRegNumber: serviceProviders.tradeRegNumber,
+          address: serviceProviders.address,
+          county: serviceProviders.county,
+          city: serviceProviders.city,
+          username: serviceProviders.username,
+          verified: serviceProviders.verified,
+          createdAt: serviceProviders.createdAt
+        })
+        .from(serviceProviders)
+        .where(eq(serviceProviders.email, email));
       return provider;
     } catch (error) {
       console.error('Error getting service provider by email:', error);
@@ -263,7 +298,25 @@ export class DatabaseStorage implements IStorage {
 
   async getServiceProviderByFirebaseUid(firebaseUid: string): Promise<ServiceProvider | undefined> {
     try {
-      const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.firebaseUid, firebaseUid));
+      const [provider] = await db
+        .select({
+          id: serviceProviders.id,
+          email: serviceProviders.email,
+          firebaseUid: serviceProviders.firebaseUid,
+          companyName: serviceProviders.companyName,
+          representativeName: serviceProviders.representativeName,
+          phone: serviceProviders.phone,
+          cui: serviceProviders.cui,
+          tradeRegNumber: serviceProviders.tradeRegNumber,
+          address: serviceProviders.address,
+          county: serviceProviders.county,
+          city: serviceProviders.city,
+          username: serviceProviders.username,
+          verified: serviceProviders.verified,
+          createdAt: serviceProviders.createdAt
+        })
+        .from(serviceProviders)
+        .where(eq(serviceProviders.firebaseUid, firebaseUid));
       return provider;
     } catch (error) {
       console.error('Error getting service provider by Firebase UID:', error);
@@ -959,7 +1012,8 @@ export class DatabaseStorage implements IStorage {
             eq(messagesTable.requestId, requestId),
             eq(messagesTable.receiverId, userId),
             or(
-              eq(messagesTable.isRead, false),
+              eq(messagesTable.replit_final_file>
+          isRead, false),
               eq(messagesTable.isNew, true)
             )
           )
