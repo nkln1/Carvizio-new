@@ -30,7 +30,7 @@ export default function ServicePublicProfile() {
   const reviewsRef = useRef<HTMLDivElement>(null);
 
   // Fetch service provider data using username
-  const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider>({
+  const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider & { workingHours: WorkingHour[] }>({
     queryKey: ['/api/auth/service-profile', username],
     queryFn: async () => {
       console.log('Fetching service profile for username:', username);
@@ -45,16 +45,6 @@ export default function ServicePublicProfile() {
     retry: 1,
     refetchOnWindowFocus: false,
     enabled: !!username
-  });
-
-  // Fetch working hours
-  const { data: workingHours = [] } = useQuery<WorkingHour[]>({
-    queryKey: ['/api/service/working-hours', serviceProfile?.id],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/service/${serviceProfile?.id}/working-hours`);
-      return response.json();
-    },
-    enabled: !!serviceProfile?.id
   });
 
   useEffect(() => {
@@ -93,10 +83,11 @@ export default function ServicePublicProfile() {
 
   const reviews = serviceProfile.reviews || [];
   const averageRating = reviews.length > 0
-    ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+    ? reviews.reduce((acc: number, review: Review) => acc + review.rating, 0) / reviews.length
     : 0;
 
-  const sortedWorkingHours = [...workingHours].sort((a, b) => {
+  const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
+    // Adjust Sunday from 0 to 7 for proper sorting
     const adjustDay = (day: number) => day === 0 ? 7 : day;
     return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
   });
@@ -161,11 +152,6 @@ export default function ServicePublicProfile() {
                     <Clock className="h-5 w-5 text-gray-500 mr-2" />
                     <h2 className="text-lg font-semibold text-gray-800">Program de funcționare</h2>
                   </div>
-                  {isOwner && (
-                    <Button variant="outline" size="sm" className="text-[#00aff5]">
-                      Editează
-                    </Button>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 gap-2">
                   {sortedWorkingHours.map((schedule) => (
@@ -197,14 +183,6 @@ export default function ServicePublicProfile() {
               </div>
             </div>
 
-            {/* Map Section */}
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Locație</h2>
-              <div className="bg-gray-100 h-64 rounded-md flex items-center justify-center">
-                <span className="text-gray-500">Harta va fi disponibilă în curând</span>
-              </div>
-            </div>
-
             {/* Reviews Section */}
             <div className="mt-8" ref={reviewsRef}>
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -218,7 +196,7 @@ export default function ServicePublicProfile() {
               </h2>
               <div className="space-y-4">
                 {reviews.length > 0 ? (
-                  reviews.map((review) => (
+                  reviews.map((review: Review) => (
                     <div key={review.id} className="bg-gray-50 p-4 rounded-md">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
