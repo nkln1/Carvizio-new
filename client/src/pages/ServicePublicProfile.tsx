@@ -12,13 +12,13 @@ import { Button } from "@/components/ui/button";
 // Helper function to get day name in Romanian
 const getDayName = (dayOfWeek: number): string => {
   const days = [
-    "Sunday",    // 0
-    "Monday",    // 1
-    "Tuesday",   // 2
-    "Wednesday", // 3
-    "Thursday",  // 4
-    "Friday",    // 5
-    "Saturday"   // 6
+    "Duminică",  // 0
+    "Luni",      // 1
+    "Marți",     // 2
+    "Miercuri",  // 3
+    "Joi",       // 4
+    "Vineri",    // 5
+    "Sâmbătă"    // 6
   ];
   return days[dayOfWeek];
 };
