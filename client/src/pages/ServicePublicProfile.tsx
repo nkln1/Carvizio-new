@@ -30,11 +30,14 @@ export default function ServicePublicProfile() {
   const reviewsRef = useRef<HTMLDivElement>(null);
 
   // Fetch service provider data using username
-  const { data: serviceProfile, isLoading: isLoadingProfile } = useQuery<ServiceProvider & { workingHours: WorkingHour[] }>({
+  const { data: serviceProfile, isLoading: isLoadingProfile, error } = useQuery<ServiceProvider & { workingHours: WorkingHour[] }>({
     queryKey: ['/api/auth/service-profile', username],
     queryFn: async () => {
+      if (!username) {
+        throw new Error("Username is required");
+      }
       console.log('Fetching service profile for username:', username);
-      const response = await apiRequest("GET", `/api/auth/service-profile/${username}`);
+      const response = await fetch(`/api/auth/service-profile/${username}`);
       if (!response.ok) {
         throw new Error("Service not found");
       }
@@ -52,6 +55,8 @@ export default function ServicePublicProfile() {
       setLoading(false);
     }
   }, [isLoadingProfile]);
+
+  console.log('Service profile state:', { loading, error, serviceProfile });
 
   // Check if the logged-in user owns this service profile
   const isOwner = user && serviceProfile && user.id === serviceProfile.id;
