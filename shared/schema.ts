@@ -162,7 +162,7 @@ export const serviceProviders = pgTable("service_providers", {
   address: text("address").notNull(),
   county: text("county").notNull(),
   city: text("city").notNull(),
-  username: text("username").notNull().unique(), // Add username column with unique constraint
+  username: text("username").notNull().unique(),
   verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });

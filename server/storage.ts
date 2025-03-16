@@ -243,22 +243,7 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderById(id: number): Promise<ServiceProvider | undefined> {
     try {
       const [provider] = await db
-        .select({
-          id: serviceProviders.id,
-          email: serviceProviders.email,
-          firebaseUid: serviceProviders.firebaseUid,
-          companyName: serviceProviders.companyName,
-          representativeName: serviceProviders.representativeName,
-          phone: serviceProviders.phone,
-          cui: serviceProviders.cui,
-          tradeRegNumber: serviceProviders.tradeRegNumber,
-          address: serviceProviders.address,
-          county: serviceProviders.county,
-          city: serviceProviders.city,
-          username: serviceProviders.username,
-          verified: serviceProviders.verified,
-          createdAt: serviceProviders.createdAt
-        })
+        .select()
         .from(serviceProviders)
         .where(eq(serviceProviders.id, id));
       return provider;
@@ -271,22 +256,7 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderByEmail(email: string): Promise<ServiceProvider | undefined> {
     try {
       const [provider] = await db
-        .select({
-          id: serviceProviders.id,
-          email: serviceProviders.email,
-          firebaseUid: serviceProviders.firebaseUid,
-          companyName: serviceProviders.companyName,
-          representativeName: serviceProviders.representativeName,
-          phone: serviceProviders.phone,
-          cui: serviceProviders.cui,
-          tradeRegNumber: serviceProviders.tradeRegNumber,
-          address: serviceProviders.address,
-          county: serviceProviders.county,
-          city: serviceProviders.city,
-          username: serviceProviders.username,
-          verified: serviceProviders.verified,
-          createdAt: serviceProviders.createdAt
-        })
+        .select()
         .from(serviceProviders)
         .where(eq(serviceProviders.email, email));
       return provider;
@@ -299,22 +269,7 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderByFirebaseUid(firebaseUid: string): Promise<ServiceProvider | undefined> {
     try {
       const [provider] = await db
-        .select({
-          id: serviceProviders.id,
-          email: serviceProviders.email,
-          firebaseUid: serviceProviders.firebaseUid,
-          companyName: serviceProviders.companyName,
-          representativeName: serviceProviders.representativeName,
-          phone: serviceProviders.phone,
-          cui: serviceProviders.cui,
-          tradeRegNumber: serviceProviders.tradeRegNumber,
-          address: serviceProviders.address,
-          county: serviceProviders.county,
-          city: serviceProviders.city,
-          username: serviceProviders.username,
-          verified: serviceProviders.verified,
-          createdAt: serviceProviders.createdAt
-        })
+        .select()
         .from(serviceProviders)
         .where(eq(serviceProviders.firebaseUid, firebaseUid));
       return provider;
@@ -1012,8 +967,7 @@ export class DatabaseStorage implements IStorage {
             eq(messagesTable.requestId, requestId),
             eq(messagesTable.receiverId, userId),
             or(
-              eq(messagesTable.replit_final_file>
-          isRead, false),
+              eq(messagesTable.isRead, false),
               eq(messagesTable.isNew, true)
             )
           )

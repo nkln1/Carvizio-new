@@ -1,0 +1,168 @@
+hmr-disable.ts:95 
+            
+            
+           POST https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/auth/login 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+onSubmit @ LoginForm.tsx:65
+await in onSubmit
+(anonymous) @ chunk-YABUFNLM.js?v=26d5f725:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=26d5f725:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=26d5f725:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=26d5f725:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=26d5f725:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=26d5f725:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=26d5f725:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=26d5f725:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=26d5f725:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=26d5f725:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=26d5f725:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=26d5f725:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=26d5f725:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=26d5f725:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=26d5f725:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=26d5f725:5449
+LoginForm.tsx:97 Login error: Error: Failed to authenticate with backend
+    at onSubmit (LoginForm.tsx:75:15)
+    at async chunk-YABUFNLM.js?v=26d5f725:1675:9
+onSubmit @ LoginForm.tsx:97
+await in onSubmit
+(anonymous) @ chunk-YABUFNLM.js?v=26d5f725:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=26d5f725:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=26d5f725:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=26d5f725:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=26d5f725:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=26d5f725:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=26d5f725:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=26d5f725:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=26d5f725:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=26d5f725:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=26d5f725:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=26d5f725:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=26d5f725:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=26d5f725:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=26d5f725:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=26d5f725:5449
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/auth/me 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+(anonymous) @ AuthContext.tsx:47
+await in (anonymous)
+(anonymous) @ chunk-KSKBEU2Q.js?v=26d5f725:535
+(anonymous) @ chunk-KSKBEU2Q.js?v=26d5f725:627
+Promise.then
+sendOne @ chunk-KSKBEU2Q.js?v=26d5f725:624
+forEachObserver @ chunk-KSKBEU2Q.js?v=26d5f725:617
+next @ chunk-KSKBEU2Q.js?v=26d5f725:534
+notifyAuthListeners @ firebase_auth.js?v=26d5f725:2676
+(anonymous) @ firebase_auth.js?v=26d5f725:2488
+Promise.then
+queue @ firebase_auth.js?v=26d5f725:2733
+_updateCurrentUser @ firebase_auth.js?v=26d5f725:2486
+await in _updateCurrentUser
+_signInWithCredential @ firebase_auth.js?v=26d5f725:4569
+await in _signInWithCredential
+signInWithCredential @ firebase_auth.js?v=26d5f725:4574
+signInWithEmailAndPassword @ firebase_auth.js?v=26d5f725:4809
+onSubmit @ LoginForm.tsx:55
+(anonymous) @ chunk-YABUFNLM.js?v=26d5f725:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=26d5f725:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=26d5f725:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=26d5f725:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=26d5f725:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=26d5f725:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=26d5f725:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=26d5f725:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=26d5f725:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=26d5f725:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=26d5f725:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=26d5f725:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=26d5f725:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=26d5f725:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=26d5f725:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=26d5f725:5449
+AuthContext.tsx:61 Failed to get user data from backend: {"error":"Not authenticated"}
+(anonymous) @ AuthContext.tsx:61
+await in (anonymous)
+(anonymous) @ chunk-KSKBEU2Q.js?v=26d5f725:535
+(anonymous) @ chunk-KSKBEU2Q.js?v=26d5f725:627
+Promise.then
+sendOne @ chunk-KSKBEU2Q.js?v=26d5f725:624
+forEachObserver @ chunk-KSKBEU2Q.js?v=26d5f725:617
+next @ chunk-KSKBEU2Q.js?v=26d5f725:534
+notifyAuthListeners @ firebase_auth.js?v=26d5f725:2676
+(anonymous) @ firebase_auth.js?v=26d5f725:2488
+Promise.then
+queue @ firebase_auth.js?v=26d5f725:2733
+_updateCurrentUser @ firebase_auth.js?v=26d5f725:2486
+await in _updateCurrentUser
+_signInWithCredential @ firebase_auth.js?v=26d5f725:4569
+await in _signInWithCredential
+signInWithCredential @ firebase_auth.js?v=26d5f725:4574
+signInWithEmailAndPassword @ firebase_auth.js?v=26d5f725:4809
+onSubmit @ LoginForm.tsx:55
+(anonymous) @ chunk-YABUFNLM.js?v=26d5f725:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=26d5f725:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=26d5f725:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=26d5f725:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=26d5f725:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=26d5f725:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=26d5f725:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=26d5f725:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=26d5f725:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=26d5f725:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=26d5f725:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=26d5f725:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=26d5f725:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=26d5f725:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=26d5f725:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=26d5f725:5449
+firebase.ts:27 Firebase auth state: Logged out
+2AuthContext.tsx:66 User is signed out
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/auth/me 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+(anonymous) @ AuthContext.tsx:47
+await in (anonymous)
+(anonymous) @ chunk-KSKBEU2Q.js?v=26d5f725:535
+(anonymous) @ chunk-KSKBEU2Q.js?v=26d5f725:627
+Promise.then
+sendOne @ chunk-KSKBEU2Q.js?v=26d5f725:624
+forEachObserver @ chunk-KSKBEU2Q.js?v=26d5f725:617
+next @ chunk-KSKBEU2Q.js?v=26d5f725:534
+notifyAuthListeners @ firebase_auth.js?v=26d5f725:2676
+(anonymous) @ firebase_auth.js?v=26d5f725:2488
+Promise.then
+queue @ firebase_auth.js?v=26d5f725:2733
+_updateCurrentUser @ firebase_auth.js?v=26d5f725:2486
+await in _updateCurrentUser
+_signInWithCredential @ firebase_auth.js?v=26d5f725:4569
+await in _signInWithCredential
+signInWithCredential @ firebase_auth.js?v=26d5f725:4574
+signInWithEmailAndPassword @ firebase_auth.js?v=26d5f725:4809
+onSubmit @ LoginForm.tsx:55
+(anonymous) @ chunk-YABUFNLM.js?v=26d5f725:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=26d5f725:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=26d5f725:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=26d5f725:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=26d5f725:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=26d5f725:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=26d5f725:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=26d5f725:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=26d5f725:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=26d5f725:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=26d5f725:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=26d5f725:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=26d5f725:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=26d5f725:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=26d5f725:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=26d5f725:5449
+AuthContext.tsx:61 Failed to get user data from backend: {"error":"Not authenticated"}
