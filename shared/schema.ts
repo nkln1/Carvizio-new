@@ -31,7 +31,7 @@ export interface Conversation {
   userId: number;
   userName: string;
   requestId: number;
-  offerId?: number;  
+  offerId?: number;
   lastMessage: string;
   lastMessageDate: string;
   lastMessageSenderId?: number;
@@ -76,6 +76,7 @@ export interface ServiceProviderUser extends BaseUser {
   cui: string;
   tradeRegNumber: string;
   address: string;
+  username: string; // Add username field
 }
 
 // Messages table definition
@@ -161,6 +162,7 @@ export const serviceProviders = pgTable("service_providers", {
   address: text("address").notNull(),
   county: text("county").notNull(),
   city: text("city").notNull(),
+  username: text("username").notNull().unique(), // Add username column with unique constraint
   verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
@@ -439,7 +441,8 @@ export const insertServiceProviderSchema = createInsertSchema(serviceProviders).
   id: true,
   verified: true,
   createdAt: true,
-  firebaseUid: true
+  firebaseUid: true,
+  username: true // Omit username as it will be generated automatically
 });
 
 // Car and request schemas remain the same

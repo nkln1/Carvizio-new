@@ -10,7 +10,14 @@ interface ConversationListProps {
   isLoading: boolean;
   activeConversationId?: number;
   activeRequestId?: number;
-  onSelectConversation: (conv: { userId: number; userName: string; requestId: number; offerId?: number; sourceTab?: string }) => void;
+  onSelectConversation: (conv: { 
+    userId: number; 
+    userName: string; 
+    requestId: number; 
+    offerId?: number; 
+    sourceTab?: string;
+    serviceProviderUsername?: string; // Add this property
+  }) => void;
   onDeleteConversation?: (requestId: number, userId: number) => Promise<void>;
 }
 
@@ -52,8 +59,9 @@ export function ConversationList({
               userId: conv.userId,
               userName: conv.userName || `Client ${conv.userId}`,
               requestId: conv.requestId,
-              offerId: conv.offerId,  // Adăugați această linie
-              sourceTab: conv.sourceTab
+              offerId: conv.offerId,
+              sourceTab: conv.sourceTab,
+              serviceProviderUsername: conv.serviceProviderUsername // Add this line
             })
           }
         >
@@ -65,7 +73,23 @@ export function ConversationList({
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start">
               <p className="font-medium">
-                {conv.userName || `Client ${conv.userId}`}
+                {conv.serviceProviderUsername ? (
+                  <a
+                    href={`/service/${conv.serviceProviderUsername}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${
+                      activeConversationId === conv.userId && activeRequestId === conv.requestId
+                        ? "text-white hover:text-blue-100"
+                        : "text-blue-500 hover:text-blue-700"
+                    } hover:underline`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {conv.userName || `Client ${conv.userId}`}
+                  </a>
+                ) : (
+                  conv.userName || `Client ${conv.userId}`
+                )}
               </p>
               <span className={`text-xs ${
                 activeConversationId === conv.userId && activeRequestId === conv.requestId

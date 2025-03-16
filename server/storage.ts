@@ -35,6 +35,7 @@ import { eq, desc, or, and, inArray, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
+import slugify from 'slugify';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -132,6 +133,38 @@ export interface IStorage {
   updateReview(id: number, reviewData: Partial<Review>): Promise<Review>;
   deleteReview(id: number): Promise<void>;
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
+}
+
+// Add utility function to generate unique username
+async function generateUniqueUsername(companyName: string, db: typeof import('./db').db): Promise<string> {
+  // Generate base slug
+  let baseSlug = slugify(companyName, {
+    lower: true,
+    strict: true,
+    trim: true
+  });
+
+  // Check if the base slug exists
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await db
+      .select()
+      .from(serviceProviders)
+      .where(eq(serviceProviders.username, slug))
+      .limit(1);
+
+    if (existing.length === 0) {
+      break;
+    }
+
+    // If exists, append counter and try again
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return slug;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -240,11 +273,15 @@ export class DatabaseStorage implements IStorage {
 
   async createServiceProvider(insertProvider: InsertServiceProvider & { firebaseUid: string }): Promise<ServiceProvider> {
     try {
+      // Generate username from company name
+      const username = await generateUniqueUsername(insertProvider.companyName, db);
+
       const [provider] = await db
         .insert(serviceProviders)
         .values({
           ...insertProvider,
           firebaseUid: insertProvider.firebaseUid,
+          username, // Add generated username
           verified: false,
           createdAt: new Date(),
         })
@@ -258,9 +295,16 @@ export class DatabaseStorage implements IStorage {
 
   async updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider> {
     try {
+      // If company name is being updated, generate new username
+      let updateData = { ...providerData };
+      if (providerData.companyName) {
+        const username = await generateUniqueUsername(providerData.companyName, db);
+        updateData.username = username;
+      }
+
       const [updatedProvider] = await db
         .update(serviceProviders)
-        .set(providerData)
+        .set(updateData)
         .where(eq(serviceProviders.id, id))
         .returning();
       return updatedProvider;

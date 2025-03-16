@@ -516,6 +516,7 @@ export default function MessagesTab({
                 onBack={handleBack}
                 onViewDetails={handleViewDetails}
                 showDetailsButton={!!activeConversation.requestId}
+                serviceProviderUsername={activeConversation.serviceProviderUsername} // Added serviceProviderUsername prop
               />
             </Card>
           </div>
