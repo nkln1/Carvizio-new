@@ -87,7 +87,7 @@ interface IStorage {
     updateWorkingHours: any;
     deleteWorkingHour: any;
     getWorkingHours: any;
-
+    getServiceProviderByUsername: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -274,25 +274,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add new endpoint for public service profile after the existing /api/auth/me endpoint
-  app.get("/api/auth/service-profile/:slug", async (req, res) => {
+  // Replace the existing service profile endpoint with username-based lookup
+  app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
-      console.log('Fetching service profile for slug:', req.params.slug);
+      console.log('Fetching service profile for username:', req.params.username);
 
-      // Query all service providers
-      const serviceProviders = await db.query.serviceProviders.findMany();
-
-      // Find the service provider with matching slug
-      const serviceProvider = serviceProviders.find(provider => {
-        const providerSlug = provider.companyName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-        return providerSlug === req.params.slug;
-      });
+      // Get the service provider directly by username
+      const serviceProvider = await storage.getServiceProviderByUsername(req.params.username);
 
       if (!serviceProvider) {
-        console.log('No service provider found for slug:', req.params.slug);
+        console.log('No service provider found for username:', req.params.username);
         return res.status(404).json({ error: "Service not found" });
       }
 
@@ -307,38 +298,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add new endpoint for public service profile after the existing /api/auth/me endpoint
-  app.get("/api/auth/service-profile/:slug", async (req, res) => {
-    try {
-      console.log('Fetching service profile for slug:', req.params.slug);
-
-      // Query all service providers
-      const serviceProviders = await db.query.serviceProviders.findMany();
-
-      // Find the service provider with matching slug
-      const serviceProvider = serviceProviders.find(provider => {
-        const providerSlug = provider.companyName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-        return providerSlug === req.params.slug;
-      });
-
-      if (!serviceProvider) {
-        console.log('No service provider found for slug:', req.params.slug);
-        return res.status(404).json({ error: "Service not found" });
-      }
-
-      // Remove sensitive information
-      const { password, ...safeServiceProvider } = serviceProvider;
-
-      console.log('Found service provider:', { id: safeServiceProvider.id, companyName: safeServiceProvider.companyName });
-      res.json(safeServiceProvider);
-    } catch (error) {
-      console.error("Error fetching service profile:", error);
-      res.status(500).json({ error: "Failed to fetch service profile" });
-    }
-  });
 
   // Logout endpoint
   app.post("/api/auth/logout", (req, res) => {
@@ -1759,7 +1718,7 @@ export function registerRoutes(app: Express): Server {
       // Filter out null values and sort by date (most recent first)
       const validConversations = conversations
         .filter(conv => conv !== null)
-        .sort((a, b) =>
+                .sort((a, b) =>
           new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
         );
 

@@ -149,14 +149,8 @@ export default function ServiceDashboard() {
     // Get user profile data
     if (userProfile) {
       try {
-        // Create slug from company name
-        const serviceSlug = userProfile.companyName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-
-        // Navigate to service profile page
-        setLocation(`/service/${serviceSlug}`);
+        // Navigate to service profile page using username
+        setLocation(`/service/${userProfile.username}`);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
