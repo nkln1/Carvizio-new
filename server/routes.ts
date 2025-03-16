@@ -290,8 +290,22 @@ export function registerRoutes(app: Express): Server {
       // Remove sensitive information
       const { password, ...safeServiceProvider } = serviceProvider;
 
-      console.log('Found service provider:', { id: safeServiceProvider.id, companyName: safeServiceProvider.companyName });
-      res.json(safeServiceProvider);
+      // Get working hours
+      const workingHours = await storage.getServiceProviderWorkingHours(serviceProvider.id);
+
+      // Add working hours to the response
+      const serviceProviderWithHours = {
+        ...safeServiceProvider,
+        workingHours
+      };
+
+      console.log('Found service provider:', { 
+        id: safeServiceProvider.id, 
+        companyName: safeServiceProvider.companyName,
+        username: safeServiceProvider.username 
+      });
+
+      res.json(serviceProviderWithHours);
     } catch (error) {
       console.error("Error fetching service profile:", error);
       res.status(500).json({ error: "Failed to fetch service profile" });
@@ -1718,7 +1732,7 @@ export function registerRoutes(app: Express): Server {
       // Filter out null values and sort by date (most recent first)
       const validConversations = conversations
         .filter(conv => conv !== null)
-                .sort((a, b) =>
+        .sort((a, b) =>
           new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
         );
 
