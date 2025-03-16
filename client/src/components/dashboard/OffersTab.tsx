@@ -286,20 +286,14 @@ export function OffersTab({
             <h4 className="text-sm font-medium flex items-center gap-1">
               <User className="w-3 h-3 text-blue-500" />
               <span className="text-xs text-gray-700">Service Auto:</span>
-              {offer.serviceProviderUsername ? (
-                <a
-                  href={`/service/${offer.serviceProviderUsername}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-normal line-clamp-1 text-blue-500 hover:text-blue-700 hover:underline"
-                >
-                  {offer.serviceProviderName}
-                </a>
-              ) : (
-                <span className="text-xs font-normal line-clamp-1">
-                  {offer.serviceProviderName}
-                </span>
-              )}
+              <a
+                href={`/service/${offer.serviceProviderUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-normal line-clamp-1 text-blue-500 hover:text-blue-700 hover:underline"
+              >
+                {offer.serviceProviderName}
+              </a>
             </h4>
           </div>
 
