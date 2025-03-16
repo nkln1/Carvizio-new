@@ -39,15 +39,20 @@ export default function ServicePublicProfile() {
       console.log('Fetching service profile for username:', username);
       const response = await fetch(`/api/auth/service-profile/${username}`);
       if (!response.ok) {
-        throw new Error("Service not found");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Service not found");
       }
       const data = await response.json();
+      if (!data) {
+        throw new Error("No data received from server");
+      }
       console.log('Received service profile data:', data);
       return data;
     },
     retry: 1,
     refetchOnWindowFocus: false,
-    enabled: !!username
+    enabled: !!username,
+    staleTime: 30000
   });
 
   useEffect(() => {
@@ -65,10 +70,23 @@ export default function ServicePublicProfile() {
     reviewsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  if (loading) {
+  if (isLoadingProfile || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
+          <p className="mt-2 text-gray-600">
+            {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului."}
+          </p>
+        </div>
       </div>
     );
   }
