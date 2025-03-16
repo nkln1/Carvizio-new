@@ -8,7 +8,7 @@ import session from "express-session";
 import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
-import { eq } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
 
@@ -89,6 +89,7 @@ interface IStorage {
     getWorkingHours: any;
     getServiceProviderByUsername: any;
 }
+
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
   try {
@@ -277,13 +278,19 @@ export function registerRoutes(app: Express): Server {
   // Replace the existing service profile endpoint with username-based lookup
   app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
-      console.log('Fetching service profile for username:', req.params.username);
+      const username = req.params.username;
+      console.log('Fetching service profile for username:', username);
 
       // Get the service provider directly by username
-      const serviceProvider = await storage.getServiceProviderByUsername(req.params.username);
+      const serviceProvider = await storage.getServiceProviderByUsername(username);
+      console.log('Service provider found:', serviceProvider ? {
+        id: serviceProvider.id,
+        username: serviceProvider.username,
+        companyName: serviceProvider.companyName
+      } : 'No provider found');
 
       if (!serviceProvider) {
-        console.log('No service provider found for username:', req.params.username);
+        console.log('No service provider found for username:', username);
         return res.status(404).json({ error: "Service not found" });
       }
 
@@ -291,16 +298,23 @@ export function registerRoutes(app: Express): Server {
       const { password, ...safeServiceProvider } = serviceProvider;
 
       // Get working hours
-      const workingHours = await storage.getServiceProviderWorkingHours(serviceProvider.id);
+      const workingHours = await storage.getWorkingHours(serviceProvider.id);
+      console.log('Working hours found:', workingHours.length);
 
-      // Add working hours to the response
+      // Add working hours and empty reviews array to the response
       const serviceProviderWithHours = {
         ...safeServiceProvider,
         workingHours,
-        reviews: [] // Adăugăm un array gol pentru reviews deocamdată
+        reviews: [] // Empty array for reviews until implemented
       };
 
-      console.log('Sending service provider data:', serviceProviderWithHours);
+      console.log('Sending service provider data:', {
+        id: serviceProviderWithHours.id,
+        username: serviceProviderWithHours.username,
+        companyName: serviceProviderWithHours.companyName,
+        workingHoursCount: workingHours.length
+      });
+
       res.json(serviceProviderWithHours);
     } catch (error) {
       console.error("Error fetching service profile:", error);
@@ -1704,8 +1718,7 @@ export function registerRoutes(app: Express): Server {
           const serviceProvider = await storage.getServiceProvider(serviceProviderId);
           if (!serviceProvider) return null;
 
-          // Get unread count
-          const unreadMessages = messages.filter(m =>
+          // Get unread count          const unreadMessages = messages.filter(m =>
             m.requestId === message.requestId &&
             m.receiverId === client.id &&
             m.receiverRole === "client" &&
@@ -1959,3 +1972,128 @@ export function registerRoutes(app: Express): Server {
 
   return httpServer;
 }
+
+
+// Reparăm erorile de sintaxă din funcția markConversationAsRead
+async function markConversationAsRead(requestId: number, userId: number): Promise<void> {
+  try {
+    await db
+      .update(messagesTable)
+      .set({
+        isRead: true,
+        isNew: false
+      })
+      .where(
+        and(
+          eq(messagesTable.requestId, requestId),
+          eq(messagesTable.receiverId, userId),
+          or(
+            eq(messagesTable.isRead, false),
+            eq(messagesTable.isNew, true)
+          )
+        )
+      );
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    throw error;
+  }
+}
+
+// Add working hours methods
+async function getWorkingHours(serviceProviderId: number): Promise<WorkingHour[]> {
+  return this.getServiceProviderWorkingHours(serviceProviderId);
+}
+
+async function updateWorkingHours(
+  serviceProviderId: number,
+  workingHourData: {
+    dayOfWeek: number;
+    openTime: string;
+    closeTime: string;
+    isClosed: boolean;
+  }
+): Promise<WorkingHour> {
+  try {
+    const [existingHour] = await db
+      .select()
+      .from(workingHours)
+      .where(
+        and(
+          eq(workingHours.serviceProviderId, serviceProviderId),
+          eq(workingHours.dayOfWeek, workingHourData.dayOfWeek)
+        )
+      );
+
+    if (existingHour) {
+      const [updatedHour] = await db
+        .update(workingHours)
+        .set(workingHourData)
+        .where(eq(workingHours.id, existingHour.id))
+        .returning();
+      return updatedHour;
+    } else {
+      const [newHour] = await db
+        .insert(workingHours)
+        .values({
+          ...workingHourData,
+          serviceProviderId
+        })
+        .returning();
+      return newHour;
+    }
+  } catch (error) {
+    console.error('Error updating working hours:', error);
+    throw error;
+  }
+}
+
+//This section needs more information to be completed correctly.  The edited snippet mentions a `DatabaseStorage` class but doesn't provide its definition.  Without knowing the structure and methods of `DatabaseStorage`, I cannot create a complete and accurate implementation.  The following is a placeholder.  Replace this with the actual `DatabaseStorage` class definition and implementation.
+
+class DatabaseStorage implements IStorage {
+  // ...  Implementation for all IStorage methods.  These will need to be implemented using drizzle-orm queries against your database.
+  createClient = async () => {throw new Error("Not implemented")};
+  createServiceProvider = async () => {throw new Error("Not implemented")};
+  getClientByFirebaseUid = async () => {throw new Error("Not implemented")};
+  getServiceProviderByFirebaseUid = async () => {throw new Error("Not implemented")};
+  getClient = async () => {throw new Error("Not implemented")};
+  getServiceProvider = async () => {throw new Error("Not implemented")};
+  getClientCars = async () => {throw new Error("Not implemented")};
+  createCar = async () => {throw new Error("Not implemented")};
+  getCar = async () => {throw new Error("Not implemented")};
+  updateCar = async () => {throw new Error("Not implemented")};
+  deleteCar = async () => {throw new Error("Not implemented")};
+  createRequest = async () => {throw new Error("Not implemented")};
+  getClientRequests = async () => {throw new Error("Not implemented")};
+  getRequest = async () => {throw new Error("Not implemented")};
+  updateRequest = async () => {throw new Error("Not implemented")};
+  getRequestsByLocation = async () => {throw new Error("Not implemented")};
+  getSentOffersByServiceProvider = async () => {throw new Error("Not implemented")};
+  createSentOffer = async () => {throw new Error("Not implemented")};
+  updateSentOfferStatus = async () => {throw new Error("Not implemented")};
+  getOffersForClient = async () => {throw new Error("Not implemented")};
+  getClientByPhone = async () => {throw new Error("Not implemented")};
+  getServiceProviderByPhone = async () => {throw new Error("Not implemented")};
+  updateClient = async () => {throw new Error("Not implemented")};
+  updateServiceProvider = async () => {throw new Error("Not implemented")};
+  createMessage = async () => {throw new Error("Not implemented")};
+  getUserMessages = async () => {throw new Error("Not implemented")};
+  getMessage = async () => {throw new Error("Not implemented")};
+  markMessageAsRead = async () => {throw new Error("Not implemented")};
+  getUnreadMessagesCount = async () => {throw new Error("Not implemented")};
+  getMessagesByRequest = async () => {throw new Error("Not implemented")};
+  markRequestAsViewed = async () => {throw new Error("Not implemented")};
+  getViewedRequestsByServiceProvider = async () => {throw new Error("Not implemented")};
+  isRequestViewedByProvider = async () => {throw new Error("Not implemented")};
+  markOfferAsViewed = async () => {throw new Error("Not implemented")};
+  getViewedOffersByClient = async () => {throw new Error("Not implemented")};
+  getViewedAcceptedOffersByServiceProvider = async () => {throw new Error("Not implemented")};
+  markAcceptedOfferAsViewed = async () => {throw new Error("Not implemented")};
+  getSentOffersByRequest = async () => {throw new Error("Not implemented")};
+  getServiceProviderWorkingHours = async () => {throw new Error("Not implemented")};
+  createWorkingHour = async () => {throw new Error("Not implemented")};
+  deleteWorkingHour = async () => {throw new Error("Not implemented")};
+  getServiceProviderByUsername = async () => {throw new Error("Not implemented")};
+  sessionStore: any = {};
+}
+
+export const storage = new DatabaseStorage();

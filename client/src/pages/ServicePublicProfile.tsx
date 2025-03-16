@@ -30,7 +30,6 @@ export default function ServicePublicProfile() {
   const { username } = useParams();
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const [editingDay, setEditingDay] = useState<number | null>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
   // Fetch service provider data using username
@@ -41,9 +40,10 @@ export default function ServicePublicProfile() {
         throw new Error("Username is required");
       }
       console.log('Fetching service profile for username:', username);
-      const response = await fetch(`/api/auth/service-profile/${username}`);
+      const response = await apiRequest("GET", `/api/auth/service-profile/${username}`);
       if (!response.ok) {
-        throw new Error("Service not found");
+        const errorData = await response.json().catch(() => ({ error: "Service not found" }));
+        throw new Error(errorData.error || "Service not found");
       }
       const data = await response.json();
       console.log('Received service profile data:', data);
@@ -72,9 +72,9 @@ export default function ServicePublicProfile() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Serviciu negăsit</h1>
           <p className="mt-2 text-gray-600">
-            {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului."}
+            Ne pare rău, dar serviciul pe care îl căutați nu există.
           </p>
         </div>
       </div>
