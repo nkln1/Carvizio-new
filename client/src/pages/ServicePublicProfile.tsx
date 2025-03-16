@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Star } from "lucide-react";
 import { ServiceProvider, Review, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { WorkingHoursEditor } from "@/components/service-dashboard/WorkingHoursEditor";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +21,11 @@ const getDayName = (dayOfWeek: number): string => {
   return days[dayOfWeek];
 };
 
+interface ServiceProfileData extends ServiceProvider {
+  workingHours: WorkingHour[];
+  reviews: Review[];
+}
+
 export default function ServicePublicProfile() {
   const { username } = useParams();
   const [loading, setLoading] = useState(true);
@@ -30,7 +34,7 @@ export default function ServicePublicProfile() {
   const reviewsRef = useRef<HTMLDivElement>(null);
 
   // Fetch service provider data using username
-  const { data: serviceProfile, isLoading: isLoadingProfile, error } = useQuery<ServiceProvider & { workingHours: WorkingHour[] }>({
+  const { data: serviceProfile, isLoading: isLoadingProfile, error } = useQuery<ServiceProfileData>({
     queryKey: ['/api/auth/service-profile', username],
     queryFn: async () => {
       if (!username) {
@@ -39,20 +43,15 @@ export default function ServicePublicProfile() {
       console.log('Fetching service profile for username:', username);
       const response = await fetch(`/api/auth/service-profile/${username}`);
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Service not found");
+        throw new Error("Service not found");
       }
       const data = await response.json();
-      if (!data) {
-        throw new Error("No data received from server");
-      }
       console.log('Received service profile data:', data);
       return data;
     },
     retry: 1,
     refetchOnWindowFocus: false,
-    enabled: !!username,
-    staleTime: 30000
+    enabled: !!username
   });
 
   useEffect(() => {
@@ -61,16 +60,7 @@ export default function ServicePublicProfile() {
     }
   }, [isLoadingProfile]);
 
-  console.log('Service profile state:', { loading, error, serviceProfile });
-
-  // Check if the logged-in user owns this service profile
-  const isOwner = user && serviceProfile && user.id === serviceProfile.id;
-
-  const scrollToReviews = () => {
-    reviewsRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  if (isLoadingProfile || loading) {
+  if (loading || isLoadingProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -78,26 +68,13 @@ export default function ServicePublicProfile() {
     );
   }
 
-  if (error) {
+  if (error || !serviceProfile) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
           <p className="mt-2 text-gray-600">
             {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului."}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!serviceProfile) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">Serviciu negăsit</h1>
-          <p className="mt-2 text-gray-600">
-            Ne pare rău, dar serviciul pe care îl căutați nu există.
           </p>
         </div>
       </div>
@@ -131,14 +108,6 @@ export default function ServicePublicProfile() {
                 <span className="ml-1 text-gray-700">{averageRating.toFixed(1)}/5</span>
                 <span className="ml-1 text-gray-500 text-sm">({reviews.length})</span>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={scrollToReviews}
-                className="text-[#00aff5]"
-              >
-                Vezi recenzii
-              </Button>
             </div>
           </div>
         </div>
@@ -179,27 +148,10 @@ export default function ServicePublicProfile() {
                 <div className="grid grid-cols-1 gap-2">
                   {sortedWorkingHours.map((schedule) => (
                     <div key={schedule.id} className="flex justify-between text-sm border-b border-gray-100 py-1.5">
-                      <span className="font-medium">{getDayName(schedule.dayOfWeek)}:</span>
-                      {isOwner && editingDay === schedule.dayOfWeek ? (
-                        <WorkingHoursEditor
-                          schedule={schedule}
-                          onCancel={() => setEditingDay(null)}
-                        />
-                      ) : (
-                        <div className="flex items-center">
-                          <span className="text-gray-600">
-                            {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
-                          </span>
-                          {isOwner && (
-                            <button
-                              onClick={() => setEditingDay(schedule.dayOfWeek)}
-                              className="text-xs text-[#00aff5] hover:text-[#0090d0] ml-2"
-                            >
-                              Modifică
-                            </button>
-                          )}
-                        </div>
-                      )}
+                      <span className="font-medium">{getDayName(schedule.dayOfWeek)}</span>
+                      <span className="text-gray-600">
+                        {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
+                      </span>
                     </div>
                   ))}
                 </div>

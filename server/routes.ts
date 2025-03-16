@@ -296,15 +296,11 @@ export function registerRoutes(app: Express): Server {
       // Add working hours to the response
       const serviceProviderWithHours = {
         ...safeServiceProvider,
-        workingHours
+        workingHours,
+        reviews: [] // Adăugăm un array gol pentru reviews deocamdată
       };
 
-      console.log('Found service provider:', { 
-        id: safeServiceProvider.id, 
-        companyName: safeServiceProvider.companyName,
-        username: safeServiceProvider.username 
-      });
-
+      console.log('Sending service provider data:', serviceProviderWithHours);
       res.json(serviceProviderWithHours);
     } catch (error) {
       console.error("Error fetching service profile:", error);
