@@ -30,7 +30,7 @@ export interface InitialConversationProps {
   userName: string;
   requestId: number;
   offerId?: number;
-  serviceId?: number; // Added serviceId to InitialConversationProps
+  serviceProviderUsername?: string; // Add this field
 }
 
 interface MessagesTabProps {
@@ -77,13 +77,13 @@ export function MessagesTab({
         userName: initialConversation.userName,
         requestId: initialConversation.requestId,
         offerId: initialConversation.offerId,
-        serviceId: initialConversation.serviceId // Added serviceId to setActiveConversation
+        serviceProviderUsername: initialConversation.serviceProviderUsername // Add this field
       });
 
       // Mark conversation as read when opened directly
       markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
-  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead, initialConversation?.serviceId]); // Added initialConversation?.serviceId
+  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead, initialConversation?.serviceProviderUsername]);
 
   // WebSocket initialization
   useEffect(() => {
@@ -122,7 +122,7 @@ export function MessagesTab({
     userName: string;
     requestId: number;
     offerId?: number;
-    serviceId?: number; // Added serviceId
+    serviceProviderUsername?: string; // Added serviceProviderUsername
   }) => {
     setActiveConversation(conv);
     if (onConversationClear) {
@@ -332,7 +332,7 @@ export function MessagesTab({
                   onBack={handleBack}
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
-                  serviceId={activeConversation.serviceId}  // Add serviceId
+                  serviceProviderUsername={activeConversation.serviceProviderUsername} // Added serviceProviderUsername prop
                 />
               </Card>
             )}

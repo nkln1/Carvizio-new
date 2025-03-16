@@ -39,6 +39,7 @@ export interface Conversation {
   requestTitle?: string;
   sourceTab?: string;
   hasNewMessages: boolean;
+  serviceProviderUsername?: string; // Add this field for service profile links
 }
 
 const MessageRole = z.enum(["client", "service"]);
@@ -514,4 +515,5 @@ export type ViewedOffer = typeof viewedOffers.$inferSelect;
 export type OfferWithProvider = SentOffer & {
   serviceProviderName: string;
   serviceProviderId: number;
+  serviceProviderUsername: string; // Add username for profile URL
 };

@@ -20,7 +20,7 @@ interface ConversationViewProps {
   onSendMessage: (content: string) => Promise<void>;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
-  serviceId?: number;
+  serviceProviderUsername?: string;
 }
 
 const MessagesLoading = () => (
@@ -46,7 +46,7 @@ export function ConversationView({
   onSendMessage,
   onViewDetails,
   showDetailsButton = false,
-  serviceId,
+  serviceProviderUsername,
 }: ConversationViewProps) {
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
@@ -139,9 +139,9 @@ export function ConversationView({
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <CardTitle>
-                {serviceId ? (
+                {serviceProviderUsername ? (
                   <a
-                    href={`/service/${serviceId}`}
+                    href={`/service/${serviceProviderUsername}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:text-blue-700 hover:underline"
