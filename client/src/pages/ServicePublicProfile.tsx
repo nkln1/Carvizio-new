@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Star } from "lucide-react";
@@ -26,7 +26,6 @@ interface ServiceProfileData extends ServiceProvider {
 
 export default function ServicePublicProfile() {
   const { username } = useParams();
-  const reviewsRef = useRef<HTMLDivElement>(null);
 
   const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
@@ -161,7 +160,7 @@ export default function ServicePublicProfile() {
               </div>
             </div>
 
-            <div className="mt-8" ref={reviewsRef}>
+            <div className="mt-8">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <Star className="h-5 w-5 text-yellow-400 fill-current" />
                 Recenzii
