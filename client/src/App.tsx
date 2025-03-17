@@ -19,7 +19,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/service-dashboard" component={ServiceDashboard} />
-      <Route path="/service/:slug" component={ServicePublicProfile} />
+      <Route path="/service/:username" element={<ServicePublicProfile />} />
       <Route component={NotFound} />
     </Switch>
   );

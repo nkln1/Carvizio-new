@@ -151,6 +151,7 @@ export default function ServiceDashboard() {
       try {
         // Navigate to service profile page using username
         setLocation(`/service/${userProfile.username}`);
+console.log('Navigating to service profile with username:', userProfile.username);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({

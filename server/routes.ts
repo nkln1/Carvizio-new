@@ -277,6 +277,8 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.get("/api/auth/service-profile/:username", async (req, res) => {
+    console.log("Received request for service profile:", req.params.username);
+
     try {
       if (!req.params.username) {
         console.log('Username parameter is missing');
@@ -285,6 +287,7 @@ export function registerRoutes(app: Express): Server {
 
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
+console.log('Fetching service profile for username:', username);
 
       // First get service provider data
       const serviceProvider = await db.query.serviceProviders.findFirst({
@@ -307,6 +310,7 @@ export function registerRoutes(app: Express): Server {
 
       if (!serviceProvider) {
         console.log('No service found with username:', username);
+console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 

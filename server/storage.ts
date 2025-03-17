@@ -324,6 +324,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined> {
+    console.log("Database query: Searching for username:", username);
+
+console.log('Querying database for service provider with username:', username);
     try {
       const [provider] = await db
         .select()
@@ -332,6 +335,7 @@ export class DatabaseStorage implements IStorage {
       return provider;
     } catch (error) {
       console.error('Error getting service provider by username:', error);
+console.error('Error getting service provider by username:', error);
       return undefined;
     }
   }
