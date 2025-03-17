@@ -34,20 +34,30 @@ export default function ServicePublicProfile() {
       if (!username) {
         throw new Error("Username is required");
       }
+
+      console.log('Fetching service profile for username:', username);
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
 
       if (!response.ok) {
-        throw new Error("Service-ul nu a fost găsit");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Service-ul nu a fost găsit");
       }
 
       const data = await response.json();
+      console.log('Received service profile data:', data);
+
       if (!data) {
         throw new Error("Nu s-au putut încărca datele profilului");
       }
 
+      // Ensure workingHours is an array
+      if (!Array.isArray(data.workingHours)) {
+        data.workingHours = [];
+      }
+
       return data;
     },
-    retry: 2,
+    retry: 1,
     retryDelay: 1000,
     refetchOnWindowFocus: false,
     enabled: !!username
@@ -67,7 +77,7 @@ export default function ServicePublicProfile() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
           <p className="mt-2 text-gray-600">
-            A apărut o eroare la încărcarea profilului. Vă rugăm încercați din nou.
+            {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului. Vă rugăm încercați din nou."}
           </p>
         </div>
       </div>

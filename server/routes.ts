@@ -287,36 +287,62 @@ export function registerRoutes(app: Express): Server {
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
 
-      // First get the service provider
-      const serviceProvider = await db.query.serviceProviders.findFirst({
-        where: eq(serviceProviders.username, username)
-      });
+      // First get the service provider using raw SQL for debugging
+      const result = await db.execute(sql`
+        SELECT 
+          sp.id, sp.email, sp.company_name, sp.representative_name,
+          sp.phone, sp.address, sp.county, sp.city, sp.username,
+          sp.verified,
+          JSON_AGG(
+            CASE WHEN wh.id IS NOT NULL THEN
+              JSON_BUILD_OBJECT(
+                'id', wh.id,
+                'serviceProviderId', wh.service_provider_id,
+                'dayOfWeek', wh.day_of_week::text,
+                'openTime', wh.open_time,
+                'closeTime', wh.close_time,
+                'isClosed', wh.is_closed
+              )
+            ELSE NULL
+            END
+          ) FILTER (WHERE wh.id IS NOT NULL) as working_hours
+        FROM service_providers sp
+        LEFT JOIN working_hours wh ON wh.service_provider_id = sp.id
+        WHERE sp.username = ${username}
+        GROUP BY sp.id;
+      `);
 
-      if (!serviceProvider) {
+      console.log('Raw database result:', JSON.stringify(result.rows, null, 2));
+
+      if (!result.rows || result.rows.length === 0) {
         console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
-      // Then get working hours
-      const workingHoursResult = await db.query.workingHours.findMany({
-        where: eq(workingHours.serviceProviderId, serviceProvider.id)
+      // Transform the data to match the expected format
+      const serviceData = result.rows[0];
+      console.log('Service data:', {
+        id: serviceData.id,
+        username: serviceData.username,
+        workingHoursCount: serviceData.working_hours ? serviceData.working_hours.length : 0
       });
-
-      console.log('Service Provider:', {
-        id: serviceProvider.id,
-        username: serviceProvider.username,
-        workingHoursCount: workingHoursResult.length
-      });
-
-      // Remove sensitive data
-      const { password, firebaseUid, ...safeServiceProvider } = serviceProvider;
 
       const responseData = {
-        ...safeServiceProvider,
-        workingHours: workingHoursResult,
+        id: serviceData.id,
+        email: serviceData.email,
+        companyName: serviceData.company_name,
+        representativeName: serviceData.representative_name,
+        phone: serviceData.phone,
+        address: serviceData.address,
+        county: serviceData.county,
+        city: serviceData.city,
+        username: serviceData.username,
+        verified: serviceData.verified,
+        workingHours: serviceData.working_hours || [], // Ensure we always return an array
         reviews: [] // Empty array for now as reviews are not implemented yet
       };
 
+      console.log('Final response data:', JSON.stringify(responseData, null, 2));
       res.json(responseData);
 
     } catch (error) {
@@ -849,8 +875,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       let user;
-      if (userType === "client") {
-        const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (userType === "client"){
+        const client = await storage.getClientByFirebaseUid(req.uid);
         if (!client) {
           return res.status(404).json({ error: "Client not found" });
         }
@@ -913,14 +939,7 @@ export function registerRoutes(app: Express): Server {
       res.json(user);
     } catch (error) {
       console.error("Profile update error:", error);
-      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
-        // Handle unique constraint violation
-        return res.status(400).json({
-          error: "Phone number already in use",
-          field: "phone"
-        });
-      }
-      res.status(500).json({ error: "Could not update profile" });
+      res.status(500).json({ error: "Failed to update profile" });
     }
   });
 
@@ -1692,8 +1711,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add endpoint to get client conversations
-  app.get("/api/client/conversations", validateFirebaseToken, async (req, res) => {
-    try {
+  app.get("/api/client/conversations", validateFirebaseToken, async(req, res) => {    try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(401).json({ error: "Client not found" });
