@@ -19,13 +19,13 @@ const defaultHours: Partial<WorkingHour>[] = [
   { dayOfWeek: "3", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "4", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "5", openTime: "09:00", closeTime: "17:00", isClosed: false },
-  { dayOfWeek: "6", openTime: "09:00", closeTime: "17:00", isClosed: true },
+  { dayOfWeek: "6", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "0", openTime: "09:00", closeTime: "17:00", isClosed: true }
 ];
 
 const getDayName = (dayOfWeek: string): string => {
-  const days = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
-  return days[dayOfWeek === "0" ? 7 : parseInt(dayOfWeek)];
+  const days = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
+  return days[parseInt(dayOfWeek) - 1] || "Duminică";
 };
 
 const reorderDays = (hours: Partial<WorkingHour>[]): Partial<WorkingHour>[] => {
