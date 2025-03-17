@@ -287,64 +287,57 @@ export function registerRoutes(app: Express): Server {
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
 
-      // First get the service provider using raw SQL for debugging
-      const result = await db.execute(sql`
-        SELECT 
-          sp.id, sp.email, sp.company_name, sp.representative_name,
-          sp.phone, sp.address, sp.county, sp.city, sp.username,
-          sp.verified,
-          COALESCE(
-            (
-              SELECT json_agg(
-                json_build_object(
-                  'id', wh.id,
-                  'serviceProviderId', wh.service_provider_id,
-                  'dayOfWeek', wh.day_of_week::text,
-                  'openTime', wh.open_time,
-                  'closeTime', wh.close_time,
-                  'isClosed', wh.is_closed
-                )
-              )
-              FROM working_hours wh
-              WHERE wh.service_provider_id = sp.id
-            ),
-            '[]'::json
-          ) as working_hours
-        FROM service_providers sp
-        WHERE sp.username = ${username};
-      `);
+      // First get service provider data
+      const serviceProvider = await db.query.serviceProviders.findFirst({
+        where: eq(serviceProviders.username, username),
+        columns: {
+          id: true,
+          email: true,
+          companyName: true,
+          representativeName: true,
+          phone: true,
+          address: true,
+          county: true,
+          city: true,
+          username: true,
+          verified: true,
+          // Exclude sensitive fields
+          password: false,
+          firebaseUid: false,
+          cui: false,
+          tradeRegNumber: false,
+        }
+      });
 
-      console.log('Raw database result:', JSON.stringify(result.rows, null, 2));
-
-      if (!result.rows || result.rows.length === 0) {
+      if (!serviceProvider) {
         console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
-      // Transform the data to match the expected format
-      const serviceData = result.rows[0];
-      console.log('Service data:', {
-        id: serviceData.id,
-        username: serviceData.username,
-        workingHoursCount: serviceData.working_hours ? serviceData.working_hours.length : 0
+      console.log('Found service provider:', serviceProvider);
+
+      // Then get working hours
+      const workingHoursList = await db.query.workingHours.findMany({
+        where: eq(workingHours.serviceProviderId, serviceProvider.id)
       });
 
+      console.log('Found working hours:', workingHoursList);
+
+      // Construct the response
       const responseData = {
-        id: serviceData.id,
-        email: serviceData.email,
-        companyName: serviceData.company_name,
-        representativeName: serviceData.representative_name,
-        phone: serviceData.phone,
-        address: serviceData.address,
-        county: serviceData.county,
-        city: serviceData.city,
-        username: serviceData.username,
-        verified: serviceData.verified,
-        workingHours: serviceData.working_hours || [],
-        reviews: [] // Empty array for now as reviews are not implemented yet
+        ...serviceProvider,
+        workingHours: workingHoursList.map(wh => ({
+          id: wh.id,
+          serviceProviderId: wh.serviceProviderId,
+          dayOfWeek: wh.dayOfWeek.toString(),
+          openTime: wh.openTime,
+          closeTime: wh.closeTime,
+          isClosed: wh.isClosed
+        })),
+        reviews: [] // Empty array for now
       };
 
-      console.log('Final response data:', JSON.stringify(responseData, null, 2));
+      console.log('Sending response:', responseData);
       res.json(responseData);
 
     } catch (error) {
@@ -879,7 +872,7 @@ export function registerRoutes(app: Express): Server {
 
       let user;
       if (userType === "client"){
-        const client = await storage.getClientByFirebaseUid(req.uid);
+        const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
         if (!client) {
           return res.status(404).json({ error: "Client not found" });
         }
@@ -1474,7 +1467,6 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add this endpoint to get service conversations
-  
 
   app.get("/api/service/conversations", validateFirebaseToken, async (req, res) => {
     try {
@@ -1518,7 +1510,7 @@ export function registerRoutes(app: Express): Server {
             userId: client.id,
             userName: client.name,
             requestId: message.requestId,
-            requestTitle: request.title, // Include request title
+            requestTitle: request.title, 
             lastMessage: message.content,
             lastMessageDate: message.createdAt,
             unreadCount: unreadMessages.length
