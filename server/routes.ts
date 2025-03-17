@@ -9,6 +9,8 @@ import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { serviceProviders, workingHours } from '@shared/schema';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
 
@@ -277,7 +279,6 @@ export function registerRoutes(app: Express): Server {
   // Înlocuiți complet endpoint-ul existent din routes.ts pentru a verifica problema
   app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
-      // Verificare parametru username
       if (!req.params.username) {
         console.log('Username parameter is missing');
         return res.status(400).json({ error: "Username is required" });
@@ -286,41 +287,25 @@ export function registerRoutes(app: Express): Server {
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
 
-      // Implementare directă pentru a evita dependența de storage
-      // Acest cod va bypassa orice problemă potențială din obiectul storage
       const serviceProvider = await db.query.serviceProviders.findFirst({
-        where: eq(serviceProviders.username, username)
+        where: eq(serviceProviders.username, username),
+        with: {
+          workingHours: true
+        }
       });
 
-      // Log detaliat pentru depanare
       console.log('Query result:', serviceProvider ? 'Service found' : 'Service NOT found');
 
-      if (serviceProvider) {
-        console.log('Found service with ID:', serviceProvider.id, 'Name:', serviceProvider.companyName);
-      } else {
+      if (!serviceProvider) {
         console.log('No service found with username:', username);
-
-        // Încearcă o căutare mai flexibilă
-        console.log('Trying flexible search for:', username);
-        const formattedSearch = username.replace(/-/g, ' ');
-
-        const flexibleSearch = await db.query.serviceProviders.findFirst({
-          where: sql`LOWER(${serviceProviders.companyName}) = LOWER(${formattedSearch})`
-        });
-
-        if (flexibleSearch) {
-          console.log('Found service using flexible search:', flexibleSearch.id, flexibleSearch.companyName);
-          // Dacă găsim service-ul prin căutare flexibilă, îl folosim
-          const serviceProviderWithHours = await processServiceProvider(flexibleSearch);
-          return res.json(serviceProviderWithHours);
-        }
-
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
-      // Process the service provider found
-      const serviceProviderWithHours = await processServiceProvider(serviceProvider);
-      res.json(serviceProviderWithHours);
+      console.log('Found service with ID:', serviceProvider.id, 'Name:', serviceProvider.companyName);
+
+      // Process and return the service provider data
+      const processedData = await processServiceProvider(serviceProvider);
+      res.json(processedData);
 
     } catch (error) {
       console.error("Error fetching service profile:", error);
@@ -331,29 +316,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Funcție auxiliară pentru procesarea datelor service provider-ului
-  async function processServiceProvider(serviceProvider) {
+  async function processServiceProvider(serviceProvider: any) {
     // Remove sensitive information
     const { password, firebaseUid, ...safeServiceProvider } = serviceProvider;
 
-    // Get working hours - folosește direct query-ul pentru a evita probleme cu storage
-    let workingHours = [];
-    try {
-      workingHours = await db.query.workingHours.findMany({
-        where: eq(workingHours.serviceProviderId, serviceProvider.id)
-      });
-      console.log('Found working hours count:', workingHours.length);
-    } catch (error) {
-      console.error('Error fetching working hours:', error);
-    }
+    // Get working hours - folosim direct datele din relația "with"
+    const workingHours = serviceProvider.workingHours || [];
+    console.log('Found working hours count:', workingHours.length);
 
     // Pentru moment, recenziile sunt un array gol
-    const reviews = [];
+    const reviews: any[] = [];
 
     return {
       ...safeServiceProvider,
-      workingHours: workingHours || [],
-      reviews: reviews
+      workingHours,
+      reviews
     };
   }
 

@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +36,7 @@ export default function ServicePublicProfile() {
         throw new Error("Username is required");
       }
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
-      
+
       if (!response.ok) {
         throw new Error("Service-ul nu a fost găsit");
       }
@@ -88,8 +87,11 @@ export default function ServicePublicProfile() {
     : 0;
 
   const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
+    // Convert string to number if necessary
+    const dayA = typeof a.dayOfWeek === 'string' ? parseInt(a.dayOfWeek) : a.dayOfWeek;
+    const dayB = typeof b.dayOfWeek === 'string' ? parseInt(b.dayOfWeek) : b.dayOfWeek;
     const adjustDay = (day: number) => day === 0 ? 7 : day;
-    return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
+    return adjustDay(dayA) - adjustDay(dayB);
   });
 
   return (
@@ -144,7 +146,10 @@ export default function ServicePublicProfile() {
                 <div className="grid grid-cols-1 gap-2">
                   {sortedWorkingHours.map((schedule) => (
                     <div key={schedule.id} className="flex justify-between text-sm border-b border-gray-100 py-1.5">
-                      <span className="font-medium">{getDayName(schedule.dayOfWeek)}</span>
+                      <span className="font-medium">
+                        {getDayName(typeof schedule.dayOfWeek === 'string' ? 
+                          parseInt(schedule.dayOfWeek) : schedule.dayOfWeek)}
+                      </span>
                       <span className="text-gray-600">
                         {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
                       </span>
