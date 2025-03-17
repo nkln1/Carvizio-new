@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import Link from 'next/link'; // Added import for Link component
 
 interface MessagesListProps {
   setActiveTab?: (tab: string) => void;
@@ -26,7 +25,7 @@ interface MessagesListProps {
     userName?: string;
     requestId: string;
     offerId?: string;
-    serviceId?: number;  // Add serviceId
+    serviceUsername?: string;  // Add serviceUsername
   } | null;
 }
 
@@ -50,7 +49,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
     totalPages,
     totalItems,
     startIndex
-  } = useMessagesManagement(initialConversation, true); // Set isClient to true
+  } = useMessagesManagement(initialConversation, true); 
 
   const handleSelectConversation = async (conversation: any) => {
     setActiveConversation({
@@ -58,7 +57,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       userName: conversation.userName,
       requestId: conversation.requestId,
       offerId: conversation.offerId,
-      serviceId: conversation.serviceId // Add serviceId to activeConversation
+      serviceUsername: conversation.serviceUsername // Add serviceUsername to activeConversation
     });
 
     await markConversationAsRead(conversation.requestId, conversation.userId);
@@ -129,16 +128,16 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                     onClick={() => handleSelectConversation(conversation)}
                   >
                     <div className="font-medium">
-                      {conversation.serviceId ? (
-                        <Link
-                          href={`/service/${conversation.serviceId}`}
+                      {conversation.serviceUsername ? (
+                        <a
+                          href={`/service/${conversation.serviceUsername}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 hover:text-blue-700 hover:underline"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {conversation.userName}
-                        </Link>
+                        </a>
                       ) : (
                         conversation.userName
                       )}
