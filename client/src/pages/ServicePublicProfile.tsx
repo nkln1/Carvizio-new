@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail, MapPin, Phone, Clock, Star, ChevronDown } from "lucide-react";
+import { Loader2, Mail, MapPin, Phone, Clock, Star, ChevronDown, Pencil } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ServiceProvider, WorkingHour, Review } from "@shared/schema";
+import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEditor";
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
@@ -34,6 +35,7 @@ export default function ServicePublicProfile() {
   const { toast } = useToast();
   const reviewsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const [isEditingHours, setIsEditingHours] = useState(false);
 
   const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
@@ -68,35 +70,6 @@ export default function ServicePublicProfile() {
     enabled: !!username
   });
 
-  // Mutation for updating working hours
-  const updateWorkingHoursMutation = useMutation({
-    mutationFn: async (workingHour: Partial<WorkingHour>) => {
-      const response = await apiRequest(
-        'PATCH',
-        `/api/service/working-hours/${workingHour.id}`,
-        workingHour
-      );
-      if (!response.ok) {
-        throw new Error("Nu s-a putut actualiza programul");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['service-profile', username] });
-      toast({
-        title: "Succes",
-        description: "Programul a fost actualizat cu succes",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Eroare",
-        description: error instanceof Error ? error.message : "Nu s-a putut actualiza programul",
-        variant: "destructive",
-      });
-    },
-  });
-
   const scrollToReviews = () => {
     reviewsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -129,17 +102,6 @@ export default function ServicePublicProfile() {
 
   const isOwner = user?.role === 'service' && user?.username === serviceProfile.username;
 
-  const handleWorkingHourUpdate = async (workingHour: WorkingHour, changes: Partial<WorkingHour>) => {
-    try {
-      await updateWorkingHoursMutation.mutateAsync({
-        id: workingHour.id,
-        ...changes,
-      });
-    } catch (error) {
-      console.error('Error updating working hours:', error);
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -165,54 +127,46 @@ export default function ServicePublicProfile() {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold mb-3">Program de Lucru</h2>
-            <div className="space-y-2">
-              {[0, 1, 2, 3, 4, 5, 6].map((day) => {
-                const workingHour = serviceProfile.workingHours?.find(
-                  (wh) => Number(wh.dayOfWeek) === day
-                );
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold">Program de Lucru</h2>
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingHours(!isEditingHours)}
+                  className="flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  {isEditingHours ? "Anulează" : "Editează"}
+                </Button>
+              )}
+            </div>
 
-                return (
-                  <div key={day} className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-gray-500" />
-                    <span className="font-medium w-24">{getDayName(day)}:</span>
-                    {isOwner ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="time"
-                          value={workingHour?.openTime || "09:00"}
-                          onChange={(e) => workingHour && handleWorkingHourUpdate(workingHour, {
-                            openTime: e.target.value
-                          })}
-                          disabled={workingHour?.isClosed}
-                          className="w-24"
-                        />
-                        <span>-</span>
-                        <Input
-                          type="time"
-                          value={workingHour?.closeTime || "18:00"}
-                          onChange={(e) => workingHour && handleWorkingHourUpdate(workingHour, {
-                            closeTime: e.target.value
-                          })}
-                          disabled={workingHour?.isClosed}
-                          className="w-24"
-                        />
-                        <Switch
-                          checked={!workingHour?.isClosed}
-                          onCheckedChange={(checked) => workingHour && handleWorkingHourUpdate(workingHour, {
-                            isClosed: !checked
-                          })}
-                        />
-                      </div>
-                    ) : (
+            {isOwner && isEditingHours ? (
+              <WorkingHoursEditor 
+                serviceId={serviceProfile.id}
+                workingHours={serviceProfile.workingHours}
+                onClose={() => setIsEditingHours(false)}
+              />
+            ) : (
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4, 5, 6].map((day) => {
+                  const workingHour = serviceProfile.workingHours?.find(
+                    (wh) => Number(wh.dayOfWeek) === day
+                  );
+
+                  return (
+                    <div key={day} className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-gray-500" />
+                      <span className="font-medium w-24">{getDayName(day)}:</span>
                       <span>
                         {workingHour?.isClosed ? "Închis" : `${workingHour?.openTime || "09:00"} - ${workingHour?.closeTime || "18:00"}`}
                       </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
