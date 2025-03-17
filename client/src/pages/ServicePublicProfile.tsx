@@ -4,6 +4,16 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
+const days = {
+  '1': 'Luni',
+  '2': 'Marți',
+  '3': 'Miercuri',
+  '4': 'Joi',
+  '5': 'Vineri',
+  '6': 'Sâmbătă',
+  '7': 'Duminică'
+};
+
 const ServicePublicProfile = () => {
   const { username } = useParams();
 
@@ -38,16 +48,7 @@ const ServicePublicProfile = () => {
   }
 
   const getDayName = (day: string) => {
-    const days = {
-      '1': 'Luni',
-      '2': 'Marți',
-      '3': 'Miercuri',
-      '4': 'Joi',
-      '5': 'Vineri',
-      '6': 'Sâmbătă',
-      '7': 'Duminică'
-    };
-    return days[day] || day;
+    return days[day as keyof typeof days] || day;ay;
   };
 
   return (
