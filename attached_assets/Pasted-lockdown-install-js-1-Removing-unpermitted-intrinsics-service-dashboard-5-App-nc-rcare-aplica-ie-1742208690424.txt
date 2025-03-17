@@ -1,0 +1,45 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+service-dashboard:5 [App] Încărcare aplicație...
+hmr-disable.ts:161 [Mod Dezvoltare] HMR dezactivat - refresh manual necesar
+hmr-disable.ts:163 Toate conexiunile pentru Hot Module Replacement au fost blocate pentru stabilitate.
+chunk-RPCDYKBN.js?v=bc1f29f2:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+websocket.ts:26 Initializing WebSocket service...
+websocket.ts:50 WebSocket URL: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/ws
+websocket.ts:64 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/ws
+websocket.ts:69 WebSocket connection established
+websocket.ts:79 Received WebSocket message: 
+{type: 'CONNECTED', message: 'WebSocket connection established successfully'}
+firebase.ts:27 Firebase auth state: Logged in
+firebase.ts:29 Email verified: true
+firebase.ts:19 Firebase persistence set to LOCAL
+2
+AuthContext.tsx:40 Firebase persistence set to LOCAL
+ServiceDashboard.tsx:154 Navigating to service profile with username: nkln-service
+@tanstack_react-query.js?v=bc1f29f2:3039 Uncaught Error: Bad argument type. Starting with v5, only the "Object" form is allowed when calling query related functions. Please use the error stack to find the culprit call. More info here: https://tanstack.com/query/latest/docs/react/guides/migrating-to-v5#supports-a-single-signature-one-object
+    at ServicePublicProfile (ServicePublicProfile.tsx:25:38)
+@tanstack_react-query.js?v=bc1f29f2:3039 Uncaught Error: Bad argument type. Starting with v5, only the "Object" form is allowed when calling query related functions. Please use the error stack to find the culprit call. More info here: https://tanstack.com/query/latest/docs/react/guides/migrating-to-v5#supports-a-single-signature-one-object
+    at ServicePublicProfile (ServicePublicProfile.tsx:25:38)
+chunk-RPCDYKBN.js?v=bc1f29f2:14032 The above error occurred in the <ServicePublicProfile> component:
+
+    at ServicePublicProfile (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/pages/ServicePublicProfile.tsx:16:18)
+    at Route (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bc1f29f2:323:16)
+    at Switch (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bc1f29f2:379:17)
+    at Router
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:13:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bc1f29f2:2848:3)
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ErrorBoundary.tsx:5:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+ErrorBoundary.tsx:21 Error caught by boundary: Error: Bad argument type. Starting with v5, only the "Object" form is allowed when calling query related functions. Please use the error stack to find the culprit call. More info here: https://tanstack.com/query/latest/docs/react/guides/migrating-to-v5#supports-a-single-signature-one-object
+    at ServicePublicProfile (ServicePublicProfile.tsx:25:38)
+ 
+{componentStack: '\n    at ServicePublicProfile (https://1becfc92-d03…/src/components/ErrorBoundary.tsx:5:5)\n    at App'}
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+4
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+﻿
+
