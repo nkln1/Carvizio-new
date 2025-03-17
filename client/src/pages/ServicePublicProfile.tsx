@@ -86,10 +86,11 @@ export default function ServicePublicProfile() {
     ? reviews.reduce((acc: number, review: Review) => acc + review.rating, 0) / reviews.length
     : 0;
 
+  // Adjust the sorting of working hours
   const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
     // Adjust Sunday from 0 to 7 for proper sorting
     const adjustDay = (day: number) => day === 0 ? 7 : day;
-    return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
+    return adjustDay(Number(a.dayOfWeek)) - adjustDay(Number(b.dayOfWeek));
   });
 
   return (
@@ -148,7 +149,7 @@ export default function ServicePublicProfile() {
                 <div className="grid grid-cols-1 gap-2">
                   {sortedWorkingHours.map((schedule) => (
                     <div key={schedule.id} className="flex justify-between text-sm border-b border-gray-100 py-1.5">
-                      <span className="font-medium">{getDayName(schedule.dayOfWeek)}</span>
+                      <span className="font-medium">{getDayName(Number(schedule.dayOfWeek))}</span>
                       <span className="text-gray-600">
                         {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
                       </span>

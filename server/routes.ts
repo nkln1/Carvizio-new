@@ -5,12 +5,27 @@ import { storage } from "./storage";
 import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
+import pg from 'pg';
+import { Pool } from "pg";
 import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq, and, or } from 'drizzle-orm';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
+
+// Create PostgreSQL pool for session store
+const pgPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+// Initialize session store
+const PostgresqlStore = pgSession(session);
+const sessionStore = new PostgresqlStore({
+  pool: pgPool,
+  createTableIfMissing: true
+});
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -107,9 +122,10 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 };
 
 export function registerRoutes(app: Express): Server {
-  // Configure session middleware
+  // Configure session middleware with proper store
   app.use(
     session({
+      store: sessionStore,
       secret: process.env.REPL_ID || 'your-secret-key',
       resave: false,
       saveUninitialized: false,
@@ -117,8 +133,7 @@ export function registerRoutes(app: Express): Server {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      },
-      store: storage.sessionStore
+      }
     })
   );
 
@@ -869,7 +884,7 @@ export function registerRoutes(app: Express): Server {
           city: req.body.city,
         });
 
-        const { password, ...clientWithoutPassword } = updatedClient;
+        const { password, ...clientWithoutPassword} = updatedClient;
         user = { ...clientWithoutPassword, role: "client" };
 
       } else if (userType === "service") {
@@ -1484,7 +1499,7 @@ export function registerRoutes(app: Express): Server {
             m.receiverId === serviceProvider.id &&
             m.receiverRole === "service" &&
             !m.isRead
-          );
+          ).length;
 
           return {
             userId: client.id,
@@ -1493,7 +1508,7 @@ export function registerRoutes(app: Express): Server {
             requestTitle: request.title, // Include request title
             lastMessage: message.content,
             lastMessageDate: message.createdAt,
-            unreadCount: unreadMessages.length
+            unreadCount: unreadMessages,
           };
         })
       );
@@ -1700,9 +1715,9 @@ export function registerRoutes(app: Express): Server {
       const conversationsByRequest = messages.reduce((acc, message) => {
         if (!acc[message.requestId]) {
           acc[message.requestId] = message;
-        } else if (new Date(message.createdAt) > new Date(acc[message.requestId].createdAt)) {
+        } else if (new Date(message.createdAt) > new Date(acc[message.requestId].createdAt).getTime()) {
           // Keep the most recent message for this request
-          acc[message.requestId] = message;
+          acc[message.requestId]= message;
         }
         return acc;
       }, {});
@@ -1718,12 +1733,13 @@ export function registerRoutes(app: Express): Server {
           const serviceProvider = await storage.getServiceProvider(serviceProviderId);
           if (!serviceProvider) return null;
 
-          // Get unread count          const unreadMessages = messages.filter(m =>
+          // Get unread count
+          const unreadMessages = messages.filter(m =>
             m.requestId === message.requestId &&
             m.receiverId === client.id &&
             m.receiverRole === "client" &&
             !m.isRead
-          );
+          ).length;
 
           return {
             userId: serviceProvider.id,
@@ -1732,7 +1748,7 @@ export function registerRoutes(app: Express): Server {
             requestTitle: request.title,
             lastMessage: message.content,
             lastMessageDate: message.createdAt,
-            unreadCount: unreadMessages.length,
+            unreadCount: unreadMessages,
             offerId: message.offerId
           };
         })
