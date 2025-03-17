@@ -15,11 +15,11 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/dashboard" component={ClientDashboard} />
-      <Route path="/service-dashboard" component={ServiceDashboard} />
       <Route path="/service/:username" component={ServicePublicProfile} />
+      <Route path="/service-dashboard" component={ServiceDashboard} />
+      <Route path="/dashboard" component={ClientDashboard} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
   );
