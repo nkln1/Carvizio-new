@@ -47,13 +47,19 @@ export default function ServicePublicProfile() {
     enabled: !!username
   });
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" /></div>;
+  // Remove the user check since public profile should be accessible without auth
+  if (isLoading || !serviceProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      </div>
+    );
   }
 
-  if (error || !serviceProfile) {
+  if (error) {
     return <div className="container mx-auto px-4 py-8 text-center"><h1 className="text-2xl font-bold text-gray-800">Eroare</h1><p className="mt-2 text-gray-600">Nu s-au putut încărca datele service-ului.</p></div>;
   }
+
 
   const isOwner = user?.role === 'service' && user?.username === serviceProfile.username;
 
