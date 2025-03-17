@@ -328,7 +328,7 @@ export function MessagesTab({
                   messages={messages}
                   userName={
                     <Link 
-                      href={`/service/${activeConversation.serviceProviderUsername}`}
+                      href={`/service/${activeConversation.serviceProviderUsername || 'undefined'}`}  {/* Added check for undefined */}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-700 hover:underline"
