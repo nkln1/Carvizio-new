@@ -44,7 +44,6 @@ import {
   PaginationContent,
   PaginationItem,
 } from "@/components/ui/pagination";
-// import { Link } from "wouter"; //Removed as per intention
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
@@ -288,7 +287,7 @@ export function OffersTab({
               <User className="w-3 h-3 text-blue-500" />
               <span className="text-xs text-gray-700">Service Auto:</span>
               <a
-                href={`/service/${offer.serviceProviderUsername}`}
+                href={window.location.origin + `/service/${offer.serviceProviderUsername}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-normal line-clamp-1 text-blue-500 hover:text-blue-700 hover:underline"
@@ -544,7 +543,7 @@ export function OffersTab({
                     Service Auto
                   </h3>
                   <a
-                    href={`/service/${selectedOffer.serviceProviderUsername}`}
+                    href={window.location.origin + `/service/${selectedOffer.serviceProviderUsername}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
