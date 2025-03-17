@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import Link from 'next/link'; // Added import for Link component
 
 interface MessagesListProps {
   setActiveTab?: (tab: string) => void;
@@ -129,15 +130,15 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                   >
                     <div className="font-medium">
                       {conversation.serviceId ? (
-                        <a
+                        <Link
                           href={`/service/${conversation.serviceId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 hover:text-blue-700 hover:underline"
-                          onClick={(e) => e.stopPropagation()}  // Prevent triggering conversation select
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {conversation.userName}
-                        </a>
+                        </Link>
                       ) : (
                         conversation.userName
                       )}
