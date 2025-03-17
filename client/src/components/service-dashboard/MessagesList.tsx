@@ -25,7 +25,7 @@ interface MessagesListProps {
     userName?: string;
     requestId: string;
     offerId?: string;
-    serviceUsername?: string;  // Add serviceUsername
+    serviceId?: number;  // Add serviceId
   } | null;
 }
 
@@ -49,7 +49,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
     totalPages,
     totalItems,
     startIndex
-  } = useMessagesManagement(initialConversation, true); 
+  } = useMessagesManagement(initialConversation, true); // Set isClient to true
 
   const handleSelectConversation = async (conversation: any) => {
     setActiveConversation({
@@ -57,7 +57,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       userName: conversation.userName,
       requestId: conversation.requestId,
       offerId: conversation.offerId,
-      serviceUsername: conversation.serviceUsername // Add serviceUsername to activeConversation
+      serviceId: conversation.serviceId // Add serviceId to activeConversation
     });
 
     await markConversationAsRead(conversation.requestId, conversation.userId);
@@ -128,13 +128,13 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                     onClick={() => handleSelectConversation(conversation)}
                   >
                     <div className="font-medium">
-                      {conversation.serviceUsername ? (
+                      {conversation.serviceId ? (
                         <a
-                          href={`/service/${conversation.serviceUsername}`}
+                          href={`/service/${conversation.serviceId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 hover:text-blue-700 hover:underline"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}  // Prevent triggering conversation select
                         >
                           {conversation.userName}
                         </a>

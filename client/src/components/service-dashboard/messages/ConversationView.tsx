@@ -15,7 +15,7 @@ interface ConversationViewProps {
   onBack?: () => void;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
-  serviceProviderUsername?: string;
+  serviceProviderUsername?: string; // Add this property
 }
 
 export function ConversationView({
@@ -27,7 +27,7 @@ export function ConversationView({
   onBack,
   onViewDetails,
   showDetailsButton = false,
-  serviceProviderUsername
+  serviceProviderUsername // Add to destructuring
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -35,6 +35,7 @@ export function ConversationView({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    // Scroll to bottom when messages change
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
@@ -48,6 +49,7 @@ export function ConversationView({
       await onSendMessage(newMessage);
       setNewMessage('');
 
+      // Focus back on textarea after sending
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
@@ -66,12 +68,7 @@ export function ConversationView({
   };
 
   const renderMessageTime = (timestamp: string) => {
-    try {
-      return format(new Date(timestamp), 'dd.MM.yyyy HH:mm');
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return timestamp;
-    }
+    return format(new Date(timestamp), 'dd.MM.yyyy HH:mm');
   };
 
   return (
@@ -83,7 +80,7 @@ export function ConversationView({
           </Avatar>
           {serviceProviderUsername ? (
             <a
-              href={window.location.origin + `/service/${serviceProviderUsername}`}
+              href={`/service/${serviceProviderUsername}`}
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium hover:text-blue-600 hover:underline"
