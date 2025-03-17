@@ -29,6 +29,11 @@ export default function ServicePublicProfile() {
   const queryClient = useQueryClient();
   const [isEditingHours, setIsEditingHours] = useState(false);
 
+  // Force remount on username change
+  useEffect(() => {
+    queryClient.invalidateQueries(['service-profile', username]);
+  }, [username, queryClient]);
+
   const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
     queryFn: async () => {
