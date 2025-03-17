@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,25 +14,17 @@ interface WorkingHoursEditorProps {
 }
 
 const defaultHours: Partial<WorkingHour>[] = [
-  { dayOfWeek: "1", openTime: "09:00", closeTime: "17:00", isClosed: false }, // Luni
+  { dayOfWeek: "1", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "2", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "3", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "4", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "5", openTime: "09:00", closeTime: "17:00", isClosed: false },
   { dayOfWeek: "6", openTime: "09:00", closeTime: "17:00", isClosed: true },
-  { dayOfWeek: "0", openTime: "09:00", closeTime: "17:00", isClosed: true }  // Duminica
+  { dayOfWeek: "0", openTime: "09:00", closeTime: "17:00", isClosed: true }
 ];
 
 const getDayName = (dayOfWeek: string): string => {
-  const days = [
-    "Duminică",
-    "Luni",
-    "Marți",
-    "Miercuri",
-    "Joi",
-    "Vineri",
-    "Sâmbătă"
-  ];
+  const days = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
   return days[parseInt(dayOfWeek)];
 };
 
@@ -73,7 +64,7 @@ export default function WorkingHoursEditor({ serviceId, workingHours, onClose }:
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-profile'] });
       toast({
-        title: 'Success',
+        title: 'Succes',
         description: 'Program actualizat cu succes',
       });
       onClose();
@@ -81,7 +72,7 @@ export default function WorkingHoursEditor({ serviceId, workingHours, onClose }:
     onError: () => {
       toast({
         variant: "destructive",
-        title: 'Error',
+        title: 'Eroare',
         description: 'Nu s-a putut actualiza programul',
       });
     }
@@ -104,40 +95,37 @@ export default function WorkingHoursEditor({ serviceId, workingHours, onClose }:
   };
 
   return (
-    <div className="space-y-4 border rounded-lg p-4">
-      <h3 className="font-semibold mb-4">Program de Lucru</h3>
-      <div className="space-y-3">
+    <div className="space-y-3 border rounded-lg p-4">
+      <h3 className="font-semibold mb-3">Program de Lucru</h3>
+      <div className="divide-y">
         {hours.map((hour, index) => (
-          <div key={index} className="grid grid-cols-[150px_100px_1fr] gap-4 items-center p-2 hover:bg-gray-50 rounded">
-            <span className="font-medium">{getDayName(hour.dayOfWeek!)}</span>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={hour.isClosed}
-                onCheckedChange={(checked) => handleClosedChange(index, checked)}
-              />
-              <span className="text-sm text-gray-600">Închis</span>
-            </div>
+          <div key={index} className="flex items-center justify-between py-2">
+            <span className="font-medium w-20">{getDayName(hour.dayOfWeek!)}</span>
+            <Switch
+              checked={hour.isClosed}
+              onCheckedChange={(checked) => handleClosedChange(index, checked)}
+            />
             {!hour.isClosed && (
               <div className="flex items-center gap-2">
                 <Input
                   type="time"
                   value={hour.openTime}
                   onChange={(e) => handleTimeChange(index, 'openTime', e.target.value)}
-                  className="w-32"
+                  className="w-24"
                 />
                 <span>-</span>
                 <Input
                   type="time"
                   value={hour.closeTime}
                   onChange={(e) => handleTimeChange(index, 'closeTime', e.target.value)}
-                  className="w-32"
+                  className="w-24"
                 />
               </div>
             )}
           </div>
         ))}
       </div>
-      <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+      <div className="flex justify-end gap-2 mt-4 border-t pt-4">
         <Button variant="outline" onClick={onClose}>Anulează</Button>
         <Button onClick={handleSave}>Salvează</Button>
       </div>
