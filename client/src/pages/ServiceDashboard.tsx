@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +38,7 @@ export interface ConversationInfo {
 
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -150,8 +151,7 @@ export default function ServiceDashboard() {
     if (userProfile) {
       try {
         // Navigate to service profile page using username
-        setLocation(`/service/${userProfile.username}`);
-console.log('Navigating to service profile with username:', userProfile.username);
+        navigate(`/service/${userProfile.username}`, { state: { fromDashboard: true } });
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
@@ -230,7 +230,7 @@ console.log('Navigating to service profile with username:', userProfile.username
                   variant="outline"
                   size="sm"
                   className="hidden md:flex items-center gap-2 text-[#00aff5]"
-                  onClick={handleProfileClick}
+                  onClick={() => navigate(`/service/${userProfile.username}`, { state: { fromDashboard: true } })}
                 >
                   <ExternalLink className="h-4 w-4" />
                   Vezi Profil public
@@ -269,7 +269,7 @@ console.log('Navigating to service profile with username:', userProfile.username
                       <Button
                         variant="outline"
                         className="w-full justify-start text-left text-[#00aff5]"
-                        onClick={handleProfileClick}
+                        onClick={() => navigate(`/service/${userProfile.username}`, { state: { fromDashboard: true } })}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Vezi Profil public
