@@ -22,11 +22,11 @@ const ServicePublicProfile = () => {
   const params = useParams<Params>();
   const username = params?.username;
 
-  const { data, error, isLoading } = useQuery(
-    ['service-profile', username],
-    () => apiRequest('GET', `/api/auth/service-profile/${username}`),
-    { enabled: !!username }
-  );
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['service-profile', username],
+    queryFn: () => apiRequest('GET', `/api/auth/service-profile/${username}`),
+    enabled: !!username
+  });
 
   if (isLoading) {
     return (
