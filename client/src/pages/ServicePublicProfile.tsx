@@ -1,11 +1,10 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Star } from "lucide-react";
 import { ServiceProvider, Review, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
 
 // Helper function to get day name in Romanian
 const getDayName = (dayOfWeek: number): string => {
@@ -29,37 +28,25 @@ interface ServiceProfileData extends ServiceProvider {
 export default function ServicePublicProfile() {
   const { username } = useParams();
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const [editingDay, setEditingDay] = useState<number | null>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch service provider data using username
   const { data: serviceProfile, isLoading: isLoadingProfile, error } = useQuery<ServiceProfileData>({
-    queryKey: ['/api/auth/service-profile', username],
+    queryKey: ['service-profile', username],
     queryFn: async () => {
       if (!username) {
         throw new Error("Username is required");
       }
-      console.log('Fetching service profile for username:', username);
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       
       if (!response.ok) {
-        const text = await response.text();
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(text);
-          errorMessage = errorData.error;
-        } catch (e) {
-          errorMessage = text;
-        }
-        throw new Error(errorMessage || "Service-ul nu a fost găsit");
+        throw new Error("Service-ul nu a fost găsit");
       }
 
       const data = await response.json();
-      if (!data || typeof data !== 'object') {
-        throw new Error("Invalid response data");
+      if (!data) {
+        throw new Error("Nu s-au putut încărca datele profilului");
       }
-      console.log('Received service profile data:', data);
+
       return data;
     },
     retry: 2,
@@ -88,7 +75,7 @@ export default function ServicePublicProfile() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
           <p className="mt-2 text-gray-600">
-            {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului."}
+            A apărut o eroare la încărcarea profilului. Vă rugăm încercați din nou.
           </p>
         </div>
       </div>
@@ -101,14 +88,12 @@ export default function ServicePublicProfile() {
     : 0;
 
   const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
-    // Adjust Sunday from 0 to 7 for proper sorting
     const adjustDay = (day: number) => day === 0 ? 7 : day;
     return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
   });
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header Section */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-start">
@@ -127,12 +112,10 @@ export default function ServicePublicProfile() {
         </div>
       </div>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm">
           <div className="p-6">
             <div className="flex flex-col md:flex-row justify-between gap-8">
-              {/* Left Column - Contact Information */}
               <div className="md:w-1/2 space-y-4">
                 <div className="flex items-start">
                   <MapPin className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
@@ -151,7 +134,6 @@ export default function ServicePublicProfile() {
                 </div>
               </div>
 
-              {/* Right Column - Working Hours */}
               <div className="md:w-1/2">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
@@ -172,7 +154,6 @@ export default function ServicePublicProfile() {
               </div>
             </div>
 
-            {/* Reviews Section */}
             <div className="mt-8" ref={reviewsRef}>
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <Star className="h-5 w-5 text-yellow-400 fill-current" />
