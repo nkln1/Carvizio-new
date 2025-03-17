@@ -309,23 +309,32 @@ export function registerRoutes(app: Express): Server {
         }
       });
 
+      console.log('Service Provider raw data:', serviceProvider);
+
       if (!serviceProvider) {
         console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
-
-      console.log('Found service provider:', serviceProvider);
 
       // Then get working hours
       const workingHoursList = await db.query.workingHours.findMany({
         where: eq(workingHours.serviceProviderId, serviceProvider.id)
       });
 
-      console.log('Found working hours:', workingHoursList);
+      console.log('Working hours raw data:', workingHoursList);
 
       // Construct the response
       const responseData = {
-        ...serviceProvider,
+        id: serviceProvider.id,
+        email: serviceProvider.email,
+        companyName: serviceProvider.companyName,
+        representativeName: serviceProvider.representativeName,
+        phone: serviceProvider.phone,
+        address: serviceProvider.address,
+        county: serviceProvider.county,
+        city: serviceProvider.city,
+        username: serviceProvider.username,
+        verified: serviceProvider.verified,
         workingHours: workingHoursList.map(wh => ({
           id: wh.id,
           serviceProviderId: wh.serviceProviderId,
@@ -337,7 +346,7 @@ export function registerRoutes(app: Express): Server {
         reviews: [] // Empty array for now
       };
 
-      console.log('Sending response:', responseData);
+      console.log('Final response data:', JSON.stringify(responseData, null, 2));
       res.json(responseData);
 
     } catch (error) {
