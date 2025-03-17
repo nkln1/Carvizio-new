@@ -287,24 +287,53 @@ export function registerRoutes(app: Express): Server {
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
 
-      const serviceProvider = await db.query.serviceProviders.findFirst({
-        where: eq(serviceProviders.username, username),
-        with: {
-          workingHours: true
-        }
-      });
+      // Modificăm query-ul pentru a include explicit toate coloanele necesare
+      const result = await db.select({
+        id: serviceProviders.id,
+        email: serviceProviders.email,
+        companyName: serviceProviders.companyName,
+        representativeName: serviceProviders.representativeName,
+        phone: serviceProviders.phone,
+        address: serviceProviders.address,
+        county: serviceProviders.county,
+        city: serviceProviders.city,
+        username: serviceProviders.username,
+        verified: serviceProviders.verified,
+        workingHours: workingHours
+      })
+      .from(serviceProviders)
+      .leftJoin(workingHours, eq(workingHours.serviceProviderId, serviceProviders.id))
+      .where(eq(serviceProviders.username, username));
 
-      console.log('Query result:', serviceProvider ? 'Service found' : 'Service NOT found');
+      console.log('Raw query result:', JSON.stringify(result, null, 2));
 
-      if (!serviceProvider) {
+      if (!result || result.length === 0) {
         console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
-      console.log('Found service with ID:', serviceProvider.id, 'Name:', serviceProvider.companyName);
+      // Process the results to group working hours
+      const serviceProvider = result[0];
+      const processedWorkingHours = result
+        .filter(row => row.workingHours)
+        .map(row => row.workingHours);
 
-      // Process and return the service provider data
-      const processedData = await processServiceProvider(serviceProvider);
+      const processedData = {
+        id: serviceProvider.id,
+        email: serviceProvider.email,
+        companyName: serviceProvider.companyName,
+        representativeName: serviceProvider.representativeName,
+        phone: serviceProvider.phone,
+        address: serviceProvider.address,
+        county: serviceProvider.county,
+        city: serviceProvider.city,
+        username: serviceProvider.username,
+        verified: serviceProvider.verified,
+        workingHours: processedWorkingHours,
+        reviews: [] // Empty array for now as reviews are not implemented yet
+      };
+
+      console.log('Processed service provider data:', JSON.stringify(processedData, null, 2));
       res.json(processedData);
 
     } catch (error) {
@@ -315,25 +344,6 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
-  async function processServiceProvider(serviceProvider: any) {
-    // Remove sensitive information
-    const { password, firebaseUid, ...safeServiceProvider } = serviceProvider;
-
-    // Get working hours - folosim direct datele din relația "with"
-    const workingHours = serviceProvider.workingHours || [];
-    console.log('Found working hours count:', workingHours.length);
-
-    // Pentru moment, recenziile sunt un array gol
-    const reviews: any[] = [];
-
-    return {
-      ...safeServiceProvider,
-      workingHours,
-      reviews
-    };
-  }
-
 
   // Logout endpoint
   app.post("/api/auth/logout", (req, res) => {
