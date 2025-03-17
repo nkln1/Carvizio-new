@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
-import { useParams } from "wouter";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { ServiceProvider, WorkingHour, Review } from "@shared/schema";
 import { Loader2, Mail, MapPin, Phone, Clock, Star } from "lucide-react";
-import { ServiceProvider, Review, WorkingHour } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
-// Helper function to get day name in Romanian
+interface ServiceProfileData extends ServiceProvider {
+  workingHours: WorkingHour[];
+  reviews: Review[];
+}
+
+// Helper function to get day name in Romanian (retained from original)
 const getDayName = (dayOfWeek: number): string => {
   const days = [
     "Duminică",  // 0
@@ -18,11 +22,6 @@ const getDayName = (dayOfWeek: number): string => {
   ];
   return days[dayOfWeek];
 };
-
-interface ServiceProfileData extends ServiceProvider {
-  workingHours: WorkingHour[];
-  reviews: Review[];
-}
 
 export default function ServicePublicProfile() {
   const { username } = useParams();
@@ -45,22 +44,6 @@ export default function ServicePublicProfile() {
 
       const data = await response.json();
       console.log('Received service profile data:', data);
-
-      if (!data) {
-        throw new Error("Nu s-au putut încărca datele profilului");
-      }
-
-      // Ensure workingHours is an array
-      if (!Array.isArray(data.workingHours)) {
-        console.warn('Working hours is not an array:', data.workingHours);
-        data.workingHours = [];
-      }
-
-      // Ensure reviews is an array
-      if (!Array.isArray(data.reviews)) {
-        data.reviews = [];
-      }
-
       return data;
     },
     retry: false,
@@ -91,120 +74,71 @@ export default function ServicePublicProfile() {
 
   const reviews = serviceProfile.reviews || [];
   const averageRating = reviews.length > 0
-    ? reviews.reduce((acc: number, review: Review) => acc + review.rating, 0) / reviews.length
+    ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
     : 0;
 
   const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
-    const dayA = typeof a.dayOfWeek === 'string' ? parseInt(a.dayOfWeek) : a.dayOfWeek;
-    const dayB = typeof b.dayOfWeek === 'string' ? parseInt(b.dayOfWeek) : b.dayOfWeek;
-    const adjustDay = (day: number) => day === 0 ? 7 : day;
-    return adjustDay(dayA) - adjustDay(dayB);
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    return days.indexOf(a.dayOfWeek) - days.indexOf(b.dayOfWeek);
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-[#00aff5] text-2xl font-semibold">{serviceProfile.companyName}</h1>
-              <p className="text-gray-600">Service Auto Autorizat</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                <span className="ml-1 text-gray-700">{averageRating.toFixed(1)}/5</span>
-                <span className="ml-1 text-gray-500 text-sm">({reviews.length})</span>
-              </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">{serviceProfile.companyName}</h1>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-3">Informații Service</h2>
+            <div className="space-y-2">
+              <p><span className="font-medium">Reprezentant:</span> {serviceProfile.representativeName}</p>
+              <p><span className="font-medium">Adresă:</span> {serviceProfile.address}</p>
+              <p><span className="font-medium">Județ:</span> {serviceProfile.county}</p>
+              <p><span className="font-medium">Oraș:</span> {serviceProfile.city}</p>
+              <p><span className="font-medium">Telefon:</span> {serviceProfile.phone}</p>
+              <p><span className="font-medium">Email:</span> {serviceProfile.email}</p>
             </div>
           </div>
+
+          <div>
+            <h2 className="text-xl font-semibold mb-3">Program de Lucru</h2>
+            <div className="space-y-2">
+              {sortedWorkingHours.map((hours) => (
+                <div key={hours.dayOfWeek} className="flex justify-between">
+                  <span className="font-medium">{hours.dayOfWeek}:</span>
+                  <span>{hours.isClosed ? "Închis" : `${hours.openTime} - ${hours.closeTime}`}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-3">Recenzii</h2>
+          {reviews.length > 0 ? (
+            <div>
+              <p className="mb-4">
+                <span className="font-medium">Rating mediu:</span> {averageRating.toFixed(1)} / 5
+              </p>
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border-b pb-4">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Rating: {review.rating}/5</span>
+                      <span className="text-gray-500">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {review.comment && <p className="mt-2">{review.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-500">Nu există recenzii momentan.</p>
+          )}
         </div>
       </div>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row justify-between gap-8">
-              <div className="md:w-1/2 space-y-4">
-                <div className="flex items-start">
-                  <MapPin className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <span className="text-gray-900">{serviceProfile.address}</span>
-                    <span className="text-gray-600 block">{serviceProfile.city}, {serviceProfile.county}</span>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="h-5 w-5 text-gray-500 mr-3" />
-                  <span className="text-gray-900">{serviceProfile.phone}</span>
-                </div>
-                <div className="flex items-center">
-                  <Mail className="h-5 w-5 text-gray-500 mr-3" />
-                  <span className="text-gray-900">{serviceProfile.email}</span>
-                </div>
-              </div>
-
-              <div className="md:w-1/2">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-gray-500 mr-2" />
-                    <h2 className="text-lg font-semibold text-gray-800">Program de funcționare</h2>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-2">
-                  {sortedWorkingHours.map((schedule) => (
-                    <div key={schedule.id} className="flex justify-between text-sm border-b border-gray-100 py-1.5">
-                      <span className="font-medium">
-                        {getDayName(typeof schedule.dayOfWeek === 'string' ? 
-                          parseInt(schedule.dayOfWeek) : schedule.dayOfWeek)}
-                      </span>
-                      <span className="text-gray-600">
-                        {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                Recenzii
-                {reviews.length > 0 && (
-                  <span className="ml-2 text-sm text-gray-600">
-                    ({averageRating.toFixed(1)}/5 - {reviews.length} recenzii)
-                  </span>
-                )}
-              </h2>
-              <div className="space-y-4">
-                {reviews.length > 0 ? (
-                  reviews.map((review: Review) => (
-                    <div key={review.id} className="bg-gray-50 p-4 rounded-md">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                          {Array.from({ length: 5 }).map((_, index) => (
-                            <span key={index} className={index < review.rating ? "text-yellow-400" : "text-gray-300"}>
-                              ★
-                            </span>
-                          ))}
-                          <span className="ml-2 text-sm text-gray-600">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">{review.comment}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 italic text-sm">
-                    Nu există recenzii momentan.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
     </div>
   );
 }
