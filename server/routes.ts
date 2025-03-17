@@ -277,6 +277,10 @@ export function registerRoutes(app: Express): Server {
   // Replace the existing service profile endpoint with username-based lookup
   app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
+      if (!req.params.username) {
+        return res.status(400).json({ error: "Username is required" });
+      }
+
       console.log('Fetching service profile for username:', req.params.username);
 
       // Get the service provider directly by username
@@ -284,27 +288,31 @@ export function registerRoutes(app: Express): Server {
 
       if (!serviceProvider) {
         console.log('No service provider found for username:', req.params.username);
-        return res.status(404).json({ error: "Service not found" });
+        return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
       // Remove sensitive information
-      const { password, ...safeServiceProvider } = serviceProvider;
+      const { password, firebaseUid, ...safeServiceProvider } = serviceProvider;
 
       // Get working hours
       const workingHours = await storage.getServiceProviderWorkingHours(serviceProvider.id);
+      
+      if (!workingHours) {
+        console.log('No working hours found for service provider:', serviceProvider.id);
+      }
 
       // Add working hours to the response
       const serviceProviderWithHours = {
         ...safeServiceProvider,
-        workingHours,
-        reviews: [] // Adăugăm un array gol pentru reviews deocamdată
+        workingHours: workingHours || [],
+        reviews: [] // We'll implement reviews later
       };
 
       console.log('Sending service provider data:', serviceProviderWithHours);
       res.json(serviceProviderWithHours);
     } catch (error) {
       console.error("Error fetching service profile:", error);
-      res.status(500).json({ error: "Failed to fetch service profile" });
+      res.status(500).json({ error: "A apărut o eroare la încărcarea profilului" });
     }
   });
 
