@@ -546,7 +546,8 @@ export function OffersTab({
                   <Link
                     href={`/service/${selectedOffer.serviceProviderUsername}`}
                     className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
-                    onClick={(e) => e.stopPropagation()}
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     {selectedOffer.serviceProviderName}
                   </Link>
