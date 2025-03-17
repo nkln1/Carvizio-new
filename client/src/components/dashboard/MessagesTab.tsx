@@ -327,7 +327,15 @@ export function MessagesTab({
                 <ConversationView
                   messages={messages}
                   userName={
-                    activeConversation.userName
+                    <Link 
+                      href={`/service/${activeConversation?.serviceProviderUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {activeConversation?.userName}
+                    </Link>
                   }
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}
