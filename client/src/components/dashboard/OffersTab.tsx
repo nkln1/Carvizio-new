@@ -44,7 +44,6 @@ import {
   PaginationContent,
   PaginationItem,
 } from "@/components/ui/pagination";
-import { Link } from "wouter";
 
 interface OffersTabProps {
   offers: OfferWithProvider[];
@@ -243,6 +242,12 @@ export function OffersTab({
     setCurrentPage(1);
   }, [activeTab]);
 
+  const handleServiceClick = (e: React.MouseEvent, username: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = `/service/${username}`;
+  };
+
   const renderOfferBox = (offer: OfferWithProvider) => {
     const isNew = !viewedOffers.has(offer.id);
 
@@ -291,6 +296,7 @@ export function OffersTab({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-normal line-clamp-1 text-blue-500 hover:text-blue-700 hover:underline"
+                onClick={(e) => handleServiceClick(e, offer.serviceProviderUsername)}
               >
                 {offer.serviceProviderName}
               </a>
