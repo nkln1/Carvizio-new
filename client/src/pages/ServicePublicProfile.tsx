@@ -41,7 +41,7 @@ export default function ServicePublicProfile() {
         throw new Error("Username is required");
       }
       console.log('Fetching service profile for username:', username);
-      const response = await fetch(`/api/auth/service-profile/${username}`);
+      const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       
       if (!response.ok) {
         const text = await response.text();
