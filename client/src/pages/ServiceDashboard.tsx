@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -38,7 +38,6 @@ export interface ConversationInfo {
 
 export default function ServiceDashboard() {
   const [, setLocation] = useLocation();
-  const navigate = useNavigate();
   const { user, resendVerificationEmail } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("cereri");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -151,7 +150,7 @@ export default function ServiceDashboard() {
     if (userProfile) {
       try {
         // Navigate to service profile page using username
-        navigate(`/service/${userProfile.username}`, { state: { fromDashboard: true } });
+        setLocation(`/service/${userProfile.username}`);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
