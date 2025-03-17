@@ -125,14 +125,7 @@ export function MessagesTab({
     offerId?: number;
     serviceProviderUsername?: string;
   }) => {
-    setActiveConversation({
-      userId: conv.userId,
-      userName: conv.userName,
-      requestId: conv.requestId,
-      offerId: conv.offerId,
-      serviceProviderUsername: conv.serviceProviderUsername
-    });
-
+    setActiveConversation(conv);
     if (onConversationClear) {
       onConversationClear();
     }
@@ -272,44 +265,11 @@ export function MessagesTab({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-4">
-                  {filteredConversations.map((conv) => (
-                    <Card
-                      key={`${conv.requestId}-${conv.userId}`}
-                      className={`mb-2 cursor-pointer p-3 transition-colors ${
-                        activeConversation?.requestId === conv.requestId &&
-                        activeConversation?.userId === conv.userId
-                          ? 'bg-accent/30'
-                          : 'hover:bg-accent/10'
-                      }`}
-                      onClick={() => handleConversationSelect(conv)}
-                    >
-                      <div className="font-medium">
-                        {conv.serviceProviderUsername ? (
-                          <Link
-                            href={`/service/${conv.serviceProviderUsername}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:text-blue-700 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {conv.userName}
-                          </Link>
-                        ) : (
-                          conv.userName
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {conv.lastMessage || "Fără mesaje"}
-                      </div>
-                      {conv.unreadCount > 0 && (
-                        <div className="mt-1 text-xs font-medium text-[#00aff5]">
-                          {conv.unreadCount} mesaje necitite
-                        </div>
-                      )}
-                    </Card>
-                  ))}
-                </div>
+                <ConversationList 
+                  conversations={filteredConversations}
+                  isLoading={false}
+                  onSelectConversation={handleConversationSelect}
+                />
                 {totalPages > 1 && (
                   <Pagination className="mt-4">
                     <PaginationContent>
@@ -367,18 +327,15 @@ export function MessagesTab({
                 <ConversationView
                   messages={messages}
                   userName={
-                    activeConversation.serviceProviderUsername ? (
-                      <Link 
-                        href={`/service/${activeConversation.serviceProviderUsername}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-700 hover:underline"
-                      >
-                        {activeConversation.userName}
-                      </Link>
-                    ) : (
-                      activeConversation.userName
-                    )
+                    <Link 
+                      href={`/service/${activeConversation?.serviceProviderUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {activeConversation?.userName}
+                    </Link>
                   }
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}
