@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
+type Params = {
+  username: string;
+};
+
 const days = {
   '1': 'Luni',
   '2': 'Marți',
@@ -15,7 +19,8 @@ const days = {
 };
 
 const ServicePublicProfile = () => {
-  const { username } = useParams();
+  const params = useParams<Params>();
+  const username = params?.username;
 
   const { data, error, isLoading } = useQuery(
     ['service-profile', username],
