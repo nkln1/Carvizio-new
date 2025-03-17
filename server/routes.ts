@@ -293,23 +293,25 @@ export function registerRoutes(app: Express): Server {
           sp.id, sp.email, sp.company_name, sp.representative_name,
           sp.phone, sp.address, sp.county, sp.city, sp.username,
           sp.verified,
-          JSON_AGG(
-            CASE WHEN wh.id IS NOT NULL THEN
-              JSON_BUILD_OBJECT(
-                'id', wh.id,
-                'serviceProviderId', wh.service_provider_id,
-                'dayOfWeek', wh.day_of_week::text,
-                'openTime', wh.open_time,
-                'closeTime', wh.close_time,
-                'isClosed', wh.is_closed
+          COALESCE(
+            (
+              SELECT json_agg(
+                json_build_object(
+                  'id', wh.id,
+                  'serviceProviderId', wh.service_provider_id,
+                  'dayOfWeek', wh.day_of_week::text,
+                  'openTime', wh.open_time,
+                  'closeTime', wh.close_time,
+                  'isClosed', wh.is_closed
+                )
               )
-            ELSE NULL
-            END
-          ) FILTER (WHERE wh.id IS NOT NULL) as working_hours
+              FROM working_hours wh
+              WHERE wh.service_provider_id = sp.id
+            ),
+            '[]'::json
+          ) as working_hours
         FROM service_providers sp
-        LEFT JOIN working_hours wh ON wh.service_provider_id = sp.id
-        WHERE sp.username = ${username}
-        GROUP BY sp.id;
+        WHERE sp.username = ${username};
       `);
 
       console.log('Raw database result:', JSON.stringify(result.rows, null, 2));
@@ -338,7 +340,7 @@ export function registerRoutes(app: Express): Server {
         city: serviceData.city,
         username: serviceData.username,
         verified: serviceData.verified,
-        workingHours: serviceData.working_hours || [], // Ensure we always return an array
+        workingHours: serviceData.working_hours || [],
         reviews: [] // Empty array for now as reviews are not implemented yet
       };
 
@@ -347,9 +349,10 @@ export function registerRoutes(app: Express): Server {
 
     } catch (error) {
       console.error("Error fetching service profile:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace available');
       res.status(500).json({ 
         error: "A apărut o eroare la încărcarea profilului.",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined
       });
     }
   });
@@ -1712,7 +1715,7 @@ export function registerRoutes(app: Express): Server {
 
   // Add endpoint to get client conversations
   app.get("/api/client/conversations", validateFirebaseToken, async(req, res) => {    try {
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const client =await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(401).json({ error: "Client not found" });
       }
