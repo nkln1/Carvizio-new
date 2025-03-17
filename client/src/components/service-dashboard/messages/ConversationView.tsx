@@ -9,13 +9,13 @@ import type { Message } from "@shared/schema";
 interface ConversationViewProps {
   messages: Message[];
   currentUserId: number;
-  userName: string;
+  userName: React.ReactNode;
   isLoading: boolean;
   onSendMessage: (content: string) => Promise<void>;
   onBack?: () => void;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
-  serviceProviderUsername?: string; // Add this property
+  serviceProviderUsername?: string;
 }
 
 export function ConversationView({
@@ -27,7 +27,7 @@ export function ConversationView({
   onBack,
   onViewDetails,
   showDetailsButton = false,
-  serviceProviderUsername // Add to destructuring
+  serviceProviderUsername
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -35,7 +35,6 @@ export function ConversationView({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
@@ -49,7 +48,6 @@ export function ConversationView({
       await onSendMessage(newMessage);
       setNewMessage('');
 
-      // Focus back on textarea after sending
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
@@ -76,20 +74,15 @@ export function ConversationView({
       <div className="flex items-center justify-between p-3 border-b">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <span>{userName.substring(0, 2).toUpperCase()}</span>
+            <span>
+              {typeof userName === 'string' 
+                ? userName.substring(0, 2).toUpperCase()
+                : 'US'}
+            </span>
           </Avatar>
-          {serviceProviderUsername ? (
-            <a
-              href={`/service/${serviceProviderUsername}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium hover:text-blue-600 hover:underline"
-            >
-              {userName}
-            </a>
-          ) : (
-            <span className="font-medium">{userName}</span>
-          )}
+          <div className="font-medium">
+            {userName}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {showDetailsButton && (

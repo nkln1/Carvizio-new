@@ -24,13 +24,14 @@ import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
 import { auth } from "@/lib/firebase";
 import type { Message, Conversation } from "@shared/schema";
+import { Link } from "wouter";
 
 export interface InitialConversationProps {
   userId: number;
   userName: string;
   requestId: number;
   offerId?: number;
-  serviceProviderUsername?: string; // Add this field
+  serviceProviderUsername?: string;
 }
 
 interface MessagesTabProps {
@@ -77,7 +78,7 @@ export function MessagesTab({
         userName: initialConversation.userName,
         requestId: initialConversation.requestId,
         offerId: initialConversation.offerId,
-        serviceProviderUsername: initialConversation.serviceProviderUsername // Add this field
+        serviceProviderUsername: initialConversation.serviceProviderUsername
       });
 
       // Mark conversation as read when opened directly
@@ -122,7 +123,7 @@ export function MessagesTab({
     userName: string;
     requestId: number;
     offerId?: number;
-    serviceProviderUsername?: string; // Added serviceProviderUsername
+    serviceProviderUsername?: string;
   }) => {
     setActiveConversation(conv);
     if (onConversationClear) {
@@ -325,14 +326,24 @@ export function MessagesTab({
               <Card className="fixed-height-card overflow-hidden">
                 <ConversationView
                   messages={messages}
-                  userName={activeConversation.userName}
+                  userName={
+                    <Link 
+                      href={`/service/${activeConversation.serviceProviderUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {activeConversation.userName}
+                    </Link>
+                  }
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}
                   onSendMessage={sendMessage}
                   onBack={handleBack}
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
-                  serviceProviderUsername={activeConversation.serviceProviderUsername} // Added serviceProviderUsername prop
+                  serviceProviderUsername={activeConversation.serviceProviderUsername}
                 />
               </Card>
             )}
