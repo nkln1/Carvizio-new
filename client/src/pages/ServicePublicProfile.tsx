@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Star, ChevronDown, Pencil, Building2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -41,12 +41,12 @@ export default function ServicePublicProfile() {
     queryKey: ['service-profile', username],
     queryFn: async () => {
       if (!username) throw new Error("Username is required");
-      
+
       // Only check auth when accessing from dashboard
       if (isFromDashboard && !user) {
         throw new Error("Autentificare necesară");
       }
-      
+
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       if (!response.ok) throw new Error("Service-ul nu a fost găsit");
       const data = await response.json();
