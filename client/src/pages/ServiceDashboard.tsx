@@ -151,6 +151,7 @@ export default function ServiceDashboard() {
       try {
         // Navigate to service profile page using username
         setLocation(`/service/${userProfile.username}`);
+console.log('Navigating to service profile with username:', userProfile.username);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
@@ -229,7 +230,7 @@ export default function ServiceDashboard() {
                   variant="outline"
                   size="sm"
                   className="hidden md:flex items-center gap-2 text-[#00aff5]"
-                  onClick={() => navigate(`/service/${userProfile.username}`, { state: { fromDashboard: true } })}
+                  onClick={handleProfileClick}
                 >
                   <ExternalLink className="h-4 w-4" />
                   Vezi Profil public
@@ -268,7 +269,7 @@ export default function ServiceDashboard() {
                       <Button
                         variant="outline"
                         className="w-full justify-start text-left text-[#00aff5]"
-                        onClick={() => navigate(`/service/${userProfile.username}`, { state: { fromDashboard: true } })}
+                        onClick={handleProfileClick}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Vezi Profil public

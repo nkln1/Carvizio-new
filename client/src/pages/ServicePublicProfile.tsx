@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Star, ChevronDown, Pencil, Building2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -34,19 +34,10 @@ export default function ServicePublicProfile() {
     queryClient.invalidateQueries(['service-profile', username]);
   }, [username, queryClient]);
 
-  const location = useLocation();
-  const isFromDashboard = location.state?.fromDashboard;
-
   const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
     queryFn: async () => {
       if (!username) throw new Error("Username is required");
-
-      // Only check auth when accessing from dashboard
-      if (isFromDashboard && !user) {
-        throw new Error("Autentificare necesară");
-      }
-
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       if (!response.ok) throw new Error("Service-ul nu a fost găsit");
       const data = await response.json();
@@ -64,7 +55,7 @@ export default function ServicePublicProfile() {
     return <div className="container mx-auto px-4 py-8 text-center"><h1 className="text-2xl font-bold text-gray-800">Eroare</h1><p className="mt-2 text-gray-600">Nu s-au putut încărca datele service-ului.</p></div>;
   }
 
-  const isOwner = isFromDashboard && user?.role === 'service' && user?.username === serviceProfile.username;
+  const isOwner = user?.role === 'service' && user?.username === serviceProfile.username;
 
   return (
     <div className="container mx-auto px-4 py-8">
