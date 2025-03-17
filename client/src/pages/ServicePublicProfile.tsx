@@ -30,6 +30,7 @@ export default function ServicePublicProfile() {
   const { username } = useParams();
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const [editingDay, setEditingDay] = useState<number | null>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
   // Fetch service provider data using username
@@ -40,10 +41,9 @@ export default function ServicePublicProfile() {
         throw new Error("Username is required");
       }
       console.log('Fetching service profile for username:', username);
-      const response = await apiRequest("GET", `/api/auth/service-profile/${username}`);
+      const response = await fetch(`/api/auth/service-profile/${username}`);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Service not found" }));
-        throw new Error(errorData.error || "Service not found");
+        throw new Error("Service not found");
       }
       const data = await response.json();
       console.log('Received service profile data:', data);
@@ -72,9 +72,9 @@ export default function ServicePublicProfile() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">Serviciu negăsit</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
           <p className="mt-2 text-gray-600">
-            Ne pare rău, dar serviciul pe care îl căutați nu există.
+            {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului."}
           </p>
         </div>
       </div>
@@ -86,11 +86,10 @@ export default function ServicePublicProfile() {
     ? reviews.reduce((acc: number, review: Review) => acc + review.rating, 0) / reviews.length
     : 0;
 
-  // Adjust the sorting of working hours
   const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
     // Adjust Sunday from 0 to 7 for proper sorting
     const adjustDay = (day: number) => day === 0 ? 7 : day;
-    return adjustDay(Number(a.dayOfWeek)) - adjustDay(Number(b.dayOfWeek));
+    return adjustDay(a.dayOfWeek) - adjustDay(b.dayOfWeek);
   });
 
   return (
@@ -149,7 +148,7 @@ export default function ServicePublicProfile() {
                 <div className="grid grid-cols-1 gap-2">
                   {sortedWorkingHours.map((schedule) => (
                     <div key={schedule.id} className="flex justify-between text-sm border-b border-gray-100 py-1.5">
-                      <span className="font-medium">{getDayName(Number(schedule.dayOfWeek))}</span>
+                      <span className="font-medium">{getDayName(schedule.dayOfWeek)}</span>
                       <span className="text-gray-600">
                         {schedule.isClosed ? 'Închis' : `${schedule.openTime}-${schedule.closeTime}`}
                       </span>
