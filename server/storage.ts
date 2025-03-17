@@ -2,12 +2,55 @@ import {
   serviceProviders,
   workingHours,
   type ServiceProvider,
-  type WorkingHour
+  type WorkingHour,
+  clients
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
 export class DatabaseStorage {
+  async getClientByFirebaseUid(firebaseUid: string) {
+    try {
+      console.log('Searching for client with Firebase UID:', firebaseUid);
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.firebaseUid, firebaseUid))
+        .limit(1);
+
+      console.log('Found client:', client ? {
+        id: client.id,
+        email: client.email
+      } : 'No client found');
+
+      return client;
+    } catch (error) {
+      console.error('Error getting client by Firebase UID:', error);
+      return undefined;
+    }
+  }
+
+  async getServiceProviderByFirebaseUid(firebaseUid: string) {
+    try {
+      console.log('Searching for service provider with Firebase UID:', firebaseUid);
+      const [provider] = await db
+        .select()
+        .from(serviceProviders)
+        .where(eq(serviceProviders.firebaseUid, firebaseUid))
+        .limit(1);
+
+      console.log('Found service provider:', provider ? {
+        id: provider.id,
+        email: provider.email
+      } : 'No provider found');
+
+      return provider;
+    } catch (error) {
+      console.error('Error getting service provider by Firebase UID:', error);
+      return undefined;
+    }
+  }
+
   async getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined> {
     try {
       console.log('Searching for service provider with username:', username);
