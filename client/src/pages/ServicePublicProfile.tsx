@@ -41,19 +41,23 @@ export default function ServicePublicProfile() {
         throw new Error("Username is required");
       }
       console.log('Fetching service profile for username:', username);
-      try {
-        const response = await fetch(`/api/auth/service-profile/${username}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Service not found");
+      const response = await fetch(`/api/auth/service-profile/${username}`);
+      
+      if (!response.ok) {
+        const text = await response.text();
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.error;
+        } catch (e) {
+          errorMessage = text;
         }
-        const data = await response.json();
-        console.log('Received service profile data:', data);
-        return data;
-      } catch (err) {
-        console.error('Error fetching service profile:', err);
-        throw err;
+        throw new Error(errorMessage || "Service-ul nu a fost găsit");
       }
+
+      const data = await response.json();
+      console.log('Received service profile data:', data);
+      return data;
     },
     retry: 1,
     refetchOnWindowFocus: false,

@@ -274,7 +274,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Replace the existing service profile endpoint with username-based lookup
+  // Replace the existing service profile endpoint with username-based lookup and improved error handling
   app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
       if (!req.params.username) {
@@ -283,7 +283,6 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Fetching service profile for username:', req.params.username);
 
-      // Get the service provider directly by username
       const serviceProvider = await storage.getServiceProviderByUsername(req.params.username);
 
       if (!serviceProvider) {
@@ -296,7 +295,7 @@ export function registerRoutes(app: Express): Server {
 
       // Get working hours
       const workingHours = await storage.getServiceProviderWorkingHours(serviceProvider.id);
-      
+
       if (!workingHours) {
         console.log('No working hours found for service provider:', serviceProvider.id);
       }
@@ -312,7 +311,7 @@ export function registerRoutes(app: Express): Server {
       res.json(serviceProviderWithHours);
     } catch (error) {
       console.error("Error fetching service profile:", error);
-      res.status(500).json({ error: "A apărut o eroare la încărcarea profilului" });
+      res.status(500).json({ error: "A apărut o eroare la încărcarea profilului." }); //Improved error message
     }
   });
 
