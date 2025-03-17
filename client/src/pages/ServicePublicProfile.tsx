@@ -39,6 +39,7 @@ export default function ServicePublicProfile() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('Error response:', errorData);
         throw new Error(errorData.error || "Service-ul nu a fost găsit");
       }
 
@@ -51,13 +52,18 @@ export default function ServicePublicProfile() {
 
       // Ensure workingHours is an array
       if (!Array.isArray(data.workingHours)) {
+        console.warn('Working hours is not an array:', data.workingHours);
         data.workingHours = [];
+      }
+
+      // Ensure reviews is an array
+      if (!Array.isArray(data.reviews)) {
+        data.reviews = [];
       }
 
       return data;
     },
-    retry: 1,
-    retryDelay: 1000,
+    retry: false,
     refetchOnWindowFocus: false,
     enabled: !!username
   });

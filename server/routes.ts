@@ -276,7 +276,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Replaced completely the existing endpoint from routes.ts to check the issue
   app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
       if (!req.params.username) {
@@ -301,11 +300,6 @@ export function registerRoutes(app: Express): Server {
           city: true,
           username: true,
           verified: true,
-          // Exclude sensitive fields
-          password: false,
-          firebaseUid: false,
-          cui: false,
-          tradeRegNumber: false,
         }
       });
 
