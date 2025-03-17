@@ -137,7 +137,7 @@ export default function ServicePublicProfile() {
                   className="flex items-center gap-2"
                 >
                   <Pencil className="h-4 w-4" />
-                  {isEditingHours ? "Anulează" : "Editează"}
+                  {isEditingHours ? "Anulează" : "Editează"} 
                 </Button>
               )}
             </div>
@@ -145,7 +145,7 @@ export default function ServicePublicProfile() {
             {isOwner && isEditingHours ? (
               <WorkingHoursEditor 
                 serviceId={serviceProfile.id}
-                workingHours={serviceProfile.workingHours}
+                workingHours={serviceProfile.workingHours || []}
                 onClose={() => setIsEditingHours(false)}
               />
             ) : (

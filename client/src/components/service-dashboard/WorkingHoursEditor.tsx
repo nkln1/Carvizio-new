@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { WorkingHour } from '@shared/schema';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { WorkingHour } from "@shared/schema";
 
 interface WorkingHoursEditorProps {
   serviceId: number;
@@ -13,15 +14,49 @@ interface WorkingHoursEditorProps {
   onClose: () => void;
 }
 
+const defaultHours: Partial<WorkingHour>[] = [
+  { dayOfWeek: "0", openTime: "09:00", closeTime: "17:00", isClosed: true },
+  { dayOfWeek: "1", openTime: "09:00", closeTime: "17:00", isClosed: false },
+  { dayOfWeek: "2", openTime: "09:00", closeTime: "17:00", isClosed: false },
+  { dayOfWeek: "3", openTime: "09:00", closeTime: "17:00", isClosed: false },
+  { dayOfWeek: "4", openTime: "09:00", closeTime: "17:00", isClosed: false },
+  { dayOfWeek: "5", openTime: "09:00", closeTime: "17:00", isClosed: false },
+  { dayOfWeek: "6", openTime: "09:00", closeTime: "17:00", isClosed: true }
+];
+
+const getDayName = (dayOfWeek: string): string => {
+  const days = [
+    "Duminică",
+    "Luni",
+    "Marți",
+    "Miercuri",
+    "Joi",
+    "Vineri",
+    "Sâmbătă"
+  ];
+  return days[parseInt(dayOfWeek)];
+};
+
 export default function WorkingHoursEditor({ serviceId, workingHours, onClose }: WorkingHoursEditorProps) {
-  const [hours, setHours] = useState<WorkingHour[]>(workingHours);
+  const [hours, setHours] = useState<Partial<WorkingHour>[]>(() => {
+    // Initialize with custom hours or defaults
+    const initialHours = [...defaultHours];
+    workingHours.forEach(customHour => {
+      const index = parseInt(customHour.dayOfWeek);
+      initialHours[index] = { ...customHour };
+    });
+    return initialHours;
+  });
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const updateWorkingHoursMutation = useMutation({
-    mutationFn: async (updatedHours: WorkingHour[]) => {
-      const response = await apiRequest('PUT', `/api/service/working-hours/${serviceId}`, {
-        workingHours: updatedHours
+    mutationFn: async (dayData: Partial<WorkingHour>) => {
+      const response = await apiRequest('PUT', `/api/service/working-hours/${dayData.dayOfWeek}`, {
+        openTime: dayData.openTime,
+        closeTime: dayData.closeTime,
+        isClosed: dayData.isClosed
       });
       if (!response.ok) {
         throw new Error('Failed to update working hours');
@@ -57,14 +92,22 @@ export default function WorkingHoursEditor({ serviceId, workingHours, onClose }:
     setHours(newHours);
   };
 
-  const handleSave = () => {
-    updateWorkingHoursMutation.mutate(hours);
+  const handleSave = async () => {
+    try {
+      // Update each day
+      for (const hour of hours) {
+        await updateWorkingHoursMutation.mutateAsync(hour);
+      }
+    } catch (error) {
+      console.error('Error saving working hours:', error);
+    }
   };
 
   return (
     <div className="space-y-4">
       {hours.map((hour, index) => (
         <div key={index} className="flex items-center gap-4">
+          <span className="w-24 font-medium">{getDayName(index.toString())}</span>
           <div className="flex items-center gap-2">
             <Switch
               checked={hour.isClosed}
