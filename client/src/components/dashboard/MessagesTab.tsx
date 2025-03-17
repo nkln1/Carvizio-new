@@ -125,7 +125,14 @@ export function MessagesTab({
     offerId?: number;
     serviceProviderUsername?: string;
   }) => {
-    setActiveConversation(conv);
+    setActiveConversation({
+      userId: conv.userId,
+      userName: conv.userName,
+      requestId: conv.requestId,
+      offerId: conv.offerId,
+      serviceProviderUsername: conv.serviceProviderUsername
+    });
+
     if (onConversationClear) {
       onConversationClear();
     }
@@ -327,15 +334,19 @@ export function MessagesTab({
                 <ConversationView
                   messages={messages}
                   userName={
-                    <Link 
-                      href={`/service/${activeConversation?.serviceProviderUsername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-700 hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {activeConversation?.userName}
-                    </Link>
+                    activeConversation.serviceProviderUsername ? (
+                      <Link 
+                        href={`/service/${activeConversation.serviceProviderUsername}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-700 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {activeConversation.userName}
+                      </Link>
+                    ) : (
+                      activeConversation.userName
+                    )
                   }
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}

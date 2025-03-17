@@ -13,6 +13,7 @@ export interface ConversationInfo {
   userName: string;
   requestId: number;
   offerId?: number;
+  serviceProviderUsername?: string;
   sourceTab?: string;
 }
 
@@ -31,7 +32,23 @@ export function useMessagesManagement(
 
   // Calculate pagination values
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const totalPages = items => Math.ceil(items.length / itemsPerPage);
+  const totalPages = (items: any[]) => Math.ceil(items.length / itemsPerPage);
+
+  // Effect for handling initialConversation updates
+  useEffect(() => {
+    if (initialConversation?.userId && initialConversation?.requestId) {
+      setActiveConversation({
+        userId: initialConversation.userId,
+        userName: initialConversation.userName,
+        requestId: initialConversation.requestId,
+        offerId: initialConversation.offerId,
+        serviceProviderUsername: initialConversation.serviceProviderUsername
+      });
+
+      // Mark as read when conversation is opened
+      markConversationAsRead(initialConversation.requestId, initialConversation.userId);
+    }
+  }, [initialConversation]);
 
   // Mark conversation as read
   const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
@@ -61,21 +78,6 @@ export function useMessagesManagement(
       console.error('Error marking conversation as read:', error);
     }
   }, [baseEndpoint, queryClient]);
-
-  // Set initial conversation and mark as read if needed
-  useEffect(() => {
-    if (initialConversation && initialConversation.userId && initialConversation.requestId) {
-      setActiveConversation({
-        userId: initialConversation.userId,
-        userName: initialConversation.userName || 'Unknown User',
-        requestId: initialConversation.requestId,
-        offerId: initialConversation.offerId
-      });
-
-      // Mark as read when conversation is opened
-      markConversationAsRead(initialConversation.requestId, initialConversation.userId);
-    }
-  }, [initialConversation, markConversationAsRead]);
 
   // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
@@ -122,7 +124,12 @@ export function useMessagesManagement(
         throw new Error(`Failed to fetch conversations: ${response.status}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      // Ensure serviceProviderUsername is included in the conversation data
+      return data.map((conv: any) => ({
+        ...conv,
+        serviceProviderUsername: conv.serviceProviderUsername || conv.username // Fallback to username if serviceProviderUsername is not available
+      }));
     },
     staleTime: CONVERSATIONS_STALE_TIME,
     refetchInterval: CONVERSATIONS_STALE_TIME
