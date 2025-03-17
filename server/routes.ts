@@ -5,7 +5,6 @@ import { storage } from "./storage";
 import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
-import pgSession from "connect-pg-simple";
 import pg from 'pg';
 import { Pool } from "pg";
 import { db } from "./db";
@@ -14,18 +13,6 @@ import admin from "firebase-admin";
 import { eq, and, or } from 'drizzle-orm';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
-
-// Create PostgreSQL pool for session store
-const pgPool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL
-});
-
-// Initialize session store
-const PostgresqlStore = pgSession(session);
-const sessionStore = new PostgresqlStore({
-  pool: pgPool,
-  createTableIfMissing: true
-});
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -122,10 +109,9 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 };
 
 export function registerRoutes(app: Express): Server {
-  // Configure session middleware with proper store
+  // Configure session middleware
   app.use(
     session({
-      store: sessionStore,
       secret: process.env.REPL_ID || 'your-secret-key',
       resave: false,
       saveUninitialized: false,
