@@ -18,15 +18,16 @@ interface ServiceProfileData extends ServiceProvider {
 
 const getDayName = (dayOfWeek: number): string => {
   const days = [
-    "Duminică",
+    "",
     "Luni",
     "Marți",
     "Miercuri",
     "Joi",
     "Vineri",
-    "Sâmbătă"
+    "Sâmbătă",
+    "Duminică"
   ];
-  return days[dayOfWeek];
+  return days[dayOfWeek === 0 ? 7 : dayOfWeek];
 };
 
 export default function ServicePublicProfile() {

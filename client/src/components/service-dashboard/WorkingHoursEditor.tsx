@@ -24,8 +24,8 @@ const defaultHours: Partial<WorkingHour>[] = [
 ];
 
 const getDayName = (dayOfWeek: string): string => {
-  const days = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
-  return days[parseInt(dayOfWeek)];
+  const days = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
+  return days[dayOfWeek === "0" ? 7 : parseInt(dayOfWeek)];
 };
 
 const reorderDays = (hours: Partial<WorkingHour>[]): Partial<WorkingHour>[] => {
