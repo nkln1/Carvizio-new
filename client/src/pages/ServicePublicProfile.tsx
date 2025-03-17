@@ -56,10 +56,14 @@ export default function ServicePublicProfile() {
       }
 
       const data = await response.json();
+      if (!data || typeof data !== 'object') {
+        throw new Error("Invalid response data");
+      }
       console.log('Received service profile data:', data);
       return data;
     },
-    retry: 1,
+    retry: 2,
+    retryDelay: 1000,
     refetchOnWindowFocus: false,
     enabled: !!username
   });
