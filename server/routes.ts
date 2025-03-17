@@ -276,7 +276,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Înlocuiți complet endpoint-ul existent din routes.ts pentru a verifica problema
+  // Replaced completely the existing endpoint from routes.ts to check the issue
   app.get("/api/auth/service-profile/:username", async (req, res) => {
     try {
       if (!req.params.username) {
@@ -287,54 +287,37 @@ export function registerRoutes(app: Express): Server {
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
 
-      // Modificăm query-ul pentru a include explicit toate coloanele necesare
-      const result = await db.select({
-        id: serviceProviders.id,
-        email: serviceProviders.email,
-        companyName: serviceProviders.companyName,
-        representativeName: serviceProviders.representativeName,
-        phone: serviceProviders.phone,
-        address: serviceProviders.address,
-        county: serviceProviders.county,
-        city: serviceProviders.city,
-        username: serviceProviders.username,
-        verified: serviceProviders.verified,
-        workingHours: workingHours
-      })
-      .from(serviceProviders)
-      .leftJoin(workingHours, eq(workingHours.serviceProviderId, serviceProviders.id))
-      .where(eq(serviceProviders.username, username));
+      // First get the service provider
+      const serviceProvider = await db.query.serviceProviders.findFirst({
+        where: eq(serviceProviders.username, username)
+      });
 
-      console.log('Raw query result:', JSON.stringify(result, null, 2));
-
-      if (!result || result.length === 0) {
+      if (!serviceProvider) {
         console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
-      // Process the results to group working hours
-      const serviceProvider = result[0];
-      const processedWorkingHours = result
-        .filter(row => row.workingHours)
-        .map(row => row.workingHours);
+      // Then get working hours
+      const workingHoursResult = await db.query.workingHours.findMany({
+        where: eq(workingHours.serviceProviderId, serviceProvider.id)
+      });
 
-      const processedData = {
+      console.log('Service Provider:', {
         id: serviceProvider.id,
-        email: serviceProvider.email,
-        companyName: serviceProvider.companyName,
-        representativeName: serviceProvider.representativeName,
-        phone: serviceProvider.phone,
-        address: serviceProvider.address,
-        county: serviceProvider.county,
-        city: serviceProvider.city,
         username: serviceProvider.username,
-        verified: serviceProvider.verified,
-        workingHours: processedWorkingHours,
+        workingHoursCount: workingHoursResult.length
+      });
+
+      // Remove sensitive data
+      const { password, firebaseUid, ...safeServiceProvider } = serviceProvider;
+
+      const responseData = {
+        ...safeServiceProvider,
+        workingHours: workingHoursResult,
         reviews: [] // Empty array for now as reviews are not implemented yet
       };
 
-      console.log('Processed service provider data:', JSON.stringify(processedData, null, 2));
-      res.json(processedData);
+      res.json(responseData);
 
     } catch (error) {
       console.error("Error fetching service profile:", error);
@@ -1469,6 +1452,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add this endpoint to get service conversations
+  
 
   app.get("/api/service/conversations", validateFirebaseToken, async (req, res) => {
     try {

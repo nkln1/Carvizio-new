@@ -26,10 +26,9 @@ interface ServiceProfileData extends ServiceProvider {
 
 export default function ServicePublicProfile() {
   const { username } = useParams();
-  const [loading, setLoading] = useState(true);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
-  const { data: serviceProfile, isLoading: isLoadingProfile, error } = useQuery<ServiceProfileData>({
+  const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
     queryFn: async () => {
       if (!username) {
@@ -54,13 +53,7 @@ export default function ServicePublicProfile() {
     enabled: !!username
   });
 
-  useEffect(() => {
-    if (!isLoadingProfile) {
-      setLoading(false);
-    }
-  }, [isLoadingProfile]);
-
-  if (loading || isLoadingProfile) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -87,7 +80,6 @@ export default function ServicePublicProfile() {
     : 0;
 
   const sortedWorkingHours = [...(serviceProfile.workingHours || [])].sort((a, b) => {
-    // Convert string to number if necessary
     const dayA = typeof a.dayOfWeek === 'string' ? parseInt(a.dayOfWeek) : a.dayOfWeek;
     const dayB = typeof b.dayOfWeek === 'string' ? parseInt(b.dayOfWeek) : b.dayOfWeek;
     const adjustDay = (day: number) => day === 0 ? 7 : day;
