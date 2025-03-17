@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ServiceProvider, WorkingHour, Review } from "@shared/schema";
@@ -9,22 +10,21 @@ interface ServiceProfileData extends ServiceProvider {
   reviews: Review[];
 }
 
-// Helper function to get day name in Romanian (retained from original)
 const getDayName = (dayOfWeek: number): string => {
   const days = [
-    "Duminică",  // 0
-    "Luni",      // 1
-    "Marți",     // 2
-    "Miercuri",  // 3
-    "Joi",       // 4
-    "Vineri",    // 5
-    "Sâmbătă"    // 6
+    "Duminică",
+    "Luni",
+    "Marți",
+    "Miercuri",
+    "Joi",
+    "Vineri",
+    "Sâmbătă"
   ];
   return days[dayOfWeek];
 };
 
 export default function ServicePublicProfile() {
-  const { username } = useParams();
+  const { username } = useParams<{ username: string }>();
 
   const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
@@ -33,21 +33,13 @@ export default function ServicePublicProfile() {
         throw new Error("Username is required");
       }
 
-      console.log('Fetching service profile for username:', username);
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error response:', errorData);
-        throw new Error(errorData.error || "Service-ul nu a fost găsit");
+        throw new Error("Service-ul nu a fost găsit");
       }
 
-      const data = await response.json();
-      console.log('Received service profile data:', data);
-      return data;
+      return response.json();
     },
-    retry: false,
-    refetchOnWindowFocus: false,
     enabled: !!username
   });
 
@@ -65,7 +57,7 @@ export default function ServicePublicProfile() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
           <p className="mt-2 text-gray-600">
-            {error instanceof Error ? error.message : "A apărut o eroare la încărcarea profilului. Vă rugăm încercați din nou."}
+            A apărut o eroare la încărcarea profilului. Vă rugăm încercați din nou.
           </p>
         </div>
       </div>
