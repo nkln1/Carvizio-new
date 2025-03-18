@@ -246,6 +246,20 @@ export const sentOffers = pgTable("sent_offers", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+// Add the insertSentOfferSchema
+export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+  // These fields will be filled automatically from the request
+  requestTitle: true,
+  requestDescription: true,
+  requestPreferredDate: true,
+  requestCounty: true,
+  requestCities: true,
+  completedAt: true //Corrected: keep completedAt optional in insert schema
+});
+
 // Relations remain unchanged
 export const sentOffersRelations = relations(sentOffers, ({ one }) => ({
   serviceProvider: one(serviceProviders, {
@@ -507,20 +521,6 @@ export const insertRequestSchema = createInsertSchema(requests).omit({
   id: true,
   status: true,
   createdAt: true
-});
-
-// Add the insertSentOfferSchema
-export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
-  id: true,
-  status: true,
-  createdAt: true,
-  // These fields will be filled automatically from the request
-  requestTitle: true,
-  requestDescription: true,
-  requestPreferredDate: true,
-  requestCounty: true,
-  requestCities: true,
-  completedAt: true //Corrected: keep completedAt optional in insert schema
 });
 
 // Message schemas
