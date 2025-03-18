@@ -136,8 +136,8 @@ export function ReviewSection({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Only check canReview flag - if the user can review, show the form */}
-        {canReview && (
+        {/* Show form if user can review and there's an eligible offer */}
+        {canReview && offerId && requestId && (
           <Form {...reviewForm}>
             <form onSubmit={reviewForm.handleSubmit(onSubmit)} className="space-y-4 mb-8">
               <FormField

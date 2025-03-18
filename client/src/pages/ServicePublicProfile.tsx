@@ -70,12 +70,13 @@ export default function ServicePublicProfile() {
   );
 
   // Get the most recent eligible offer for the review form
-  const latestEligibleOffer = serviceProfile.completedOffers?.find(
-    offer => offer.status === "Accepted" && 
-    !serviceProfile.reviews?.some(
-      review => review.offerId === offer.id && review.clientId === user?.id
-    )
-  );
+  const latestEligibleOffer = user?.role === 'client' ? 
+    serviceProfile.completedOffers?.find(
+      offer => offer.status === "Accepted" && 
+      !serviceProfile.reviews?.some(
+        review => review.offerId === offer.id && review.clientId === user?.id
+      )
+    ) : null;
 
   const isOwner = user?.role === 'service' && user?.username === username;
 
