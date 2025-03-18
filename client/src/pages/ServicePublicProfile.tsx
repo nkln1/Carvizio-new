@@ -12,6 +12,7 @@ import { ServiceProvider, WorkingHour, Review } from "@shared/schema";
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
   reviews: Review[];
+  serviceProviderUsername?: string; // Added serviceProviderUsername
 }
 
 const getDayName = (dayOfWeek: number): string => {
@@ -22,16 +23,16 @@ const getDayName = (dayOfWeek: number): string => {
 };
 
 export default function ServicePublicProfile() {
-  const { username } = useParams();
+  const { username } = useParams<{ username: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
-  const reviewsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const [isEditingHours, setIsEditingHours] = useState(false);
 
-  // Force remount on username change
   useEffect(() => {
-    queryClient.invalidateQueries(['service-profile', username]);
+    if (username) {
+      queryClient.invalidateQueries({ queryKey: ['service-profile', username] });
+    }
   }, [username, queryClient]);
 
   const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
