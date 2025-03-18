@@ -67,7 +67,7 @@ export function ConversationView({
     }
   };
 
-  const renderMessageTime = (createdAt: string) => {
+  const renderMessageTime = (createdAt: Date | string) => {
     return format(new Date(createdAt), 'dd.MM.yyyy HH:mm');
   };
 
