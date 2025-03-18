@@ -100,10 +100,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   const port = parseInt(process.env.PORT || '5000');
-  const host = process.env.NODE_ENV === 'development' ? '0.0.0.0' : 'localhost';
-  
-  server.listen(port, host, () => {
-    console.log(`Server running on ${host}:${port}`);
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
   });
 })();
 
