@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, InfoIcon, Send } from "lucide-react";
 import { format } from "date-fns";
 import type { Message } from "@shared/schema";
+import { Link } from "wouter";
 
 interface ConversationViewProps {
   messages: Message[];
@@ -33,10 +34,11 @@ export function ConversationView({
   const [isSending, setIsSending] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (endOfMessagesRef.current) {
-      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (endOfMessagesRef.current && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = endOfMessagesRef.current.offsetTop;
     }
   }, [messages]);
 
@@ -65,13 +67,13 @@ export function ConversationView({
     }
   };
 
-  const renderMessageTime = (timestamp: string) => {
-    return format(new Date(timestamp), 'dd.MM.yyyy HH:mm');
+  const renderMessageTime = (createdAt: string) => {
+    return format(new Date(createdAt), 'dd.MM.yyyy HH:mm');
   };
 
   return (
     <div className="flex flex-col h-[70vh]">
-      <div className="flex items-center justify-between p-3 border-b">
+      <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
             <span>
@@ -81,7 +83,16 @@ export function ConversationView({
             </span>
           </Avatar>
           <div className="font-medium">
-            {userName}
+            {serviceProviderUsername ? (
+              <Link 
+                href={`/service/${serviceProviderUsername}`}
+                className="text-blue-500 hover:text-blue-700 hover:underline"
+              >
+                {typeof userName === 'string' ? userName : 'Service Provider'}
+              </Link>
+            ) : (
+              userName
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -99,7 +110,7 @@ export function ConversationView({
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+      <div className="flex-1 p-4 overflow-y-auto bg-gray-50" ref={messagesContainerRef}>
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
