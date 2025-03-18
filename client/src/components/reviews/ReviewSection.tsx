@@ -1,162 +1,88 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { Star, Flag } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import * as z from "zod";
+import { Star } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { insertReviewSchema, type Review } from "@shared/schema";
-import type { z } from "zod";
+import { Button } from "@/components/ui/button";
+
+const reviewSchema = z.object({
+  rating: z.number().min(1).max(5),
+  comment: z.string().min(10).max(500),
+});
+
+type ReviewFormValues = z.infer<typeof reviewSchema>;
 
 interface ReviewSectionProps {
-  serviceProviderId: number;
-  reviews: Review[];
   canReview: boolean;
-  requestId?: number;
   offerId?: number;
-  offerCompletedAt?: Date;
+  requestId?: number;
+  onSubmitReview: (data: ReviewFormValues) => void;
+  reviews: any[];
 }
 
-type ReviewFormValues = z.infer<typeof insertReviewSchema>;
-type ReportFormValues = {
-  reason: string;
-};
-
-export function ReviewSection({
-  serviceProviderId,
-  reviews,
+export default function ReviewSection({
   canReview,
-  requestId,
   offerId,
-  offerCompletedAt
+  requestId,
+  onSubmitReview,
+  reviews,
 }: ReviewSectionProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
 
   const reviewForm = useForm<ReviewFormValues>({
-    resolver: zodResolver(insertReviewSchema),
+    resolver: zodResolver(reviewSchema),
     defaultValues: {
-      serviceProviderId,
-      rating: 5,
+      rating: 0,
       comment: "",
-      requestId,
-      offerId,
-      offerCompletedAt: offerCompletedAt || new Date(),
-      clientId: user?.id
-    }
+    },
   });
 
-  const reportForm = useForm<ReportFormValues>({
-    defaultValues: {
-      reason: ""
-    }
-  });
-
-  const submitReview = useMutation({
-    mutationFn: async (values: ReviewFormValues) => {
-      const response = await apiRequest("POST", "/api/reviews", values);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to submit review");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['service-profile'] });
-      toast({
-        title: "Recenzie trimisă",
-        description: "Vă mulțumim pentru feedback!"
-      });
-      reviewForm.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: error.message || "Nu am putut trimite recenzia. Vă rugăm să încercați din nou."
-      });
-    }
-  });
-
-  const reportReview = useMutation({
-    mutationFn: async ({ reviewId, reason }: { reviewId: number; reason: string }) => {
-      const response = await apiRequest("POST", `/api/reviews/${reviewId}/report`, { reason });
-      if (!response.ok) {
-        throw new Error("Failed to report review");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      setIsReportDialogOpen(false);
-      toast({
-        title: "Recenzie raportată",
-        description: "Vă mulțumim pentru raportare. O vom investiga."
-      });
-      reportForm.reset();
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu am putut raporta recenzia. Vă rugăm să încercați din nou."
-      });
-    }
-  });
-
-  function onSubmit(values: ReviewFormValues) {
-    submitReview.mutate(values);
-  }
+  const onSubmit = (data: ReviewFormValues) => {
+    onSubmitReview(data);
+    reviewForm.reset();
+    setRating(0);
+  };
 
   return (
-    <Card className="mt-8 border-[#00aff5]/20">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <Star className="h-5 w-5" />
-          Recenzii
-        </CardTitle>
         <CardDescription>
-          {canReview ? "Lasă o recenzie pentru acest service" : "Recenziile clienților pentru acest service"}
+          Reviews and Ratings
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...reviewForm}>
+        {canReview && (
+          <Form {...reviewForm}>
             <form onSubmit={reviewForm.handleSubmit(onSubmit)} className="space-y-4 mb-8">
               <FormField
                 control={reviewForm.control}
                 name="rating"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
-                    <FormLabel>Rating</FormLabel>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <Button
-                          key={rating}
-                          type="button"
-                          variant={field.value >= rating ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => field.onChange(rating)}
-                        >
-                          <Star className={field.value >= rating ? "fill-current" : ""} />
-                        </Button>
-                      ))}
-                    </div>
+                    <FormControl>
+                      <div className="flex space-x-1">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <Star
+                            key={value}
+                            className={`h-6 w-6 cursor-pointer ${
+                              (hoveredRating || rating) >= value
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                            onMouseEnter={() => setHoveredRating(value)}
+                            onMouseLeave={() => setHoveredRating(0)}
+                            onClick={() => {
+                              setRating(value);
+                              reviewForm.setValue("rating", value);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -167,11 +93,11 @@ export function ReviewSection({
                 name="comment"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Recenzia ta</FormLabel>
                     <FormControl>
                       <Textarea
+                        placeholder="Write your review here..."
+                        className="resize-none"
                         {...field}
-                        placeholder="Împărtășește experiența ta cu acest service..."
                       />
                     </FormControl>
                     <FormMessage />
@@ -179,84 +105,33 @@ export function ReviewSection({
                 )}
               />
 
-              <Button type="submit" disabled={submitReview.isPending}>
-                {submitReview.isPending ? "Se trimite..." : "Trimite recenzia"}
+              <Button type="submit" className="w-full">
+                Submit Review
               </Button>
             </form>
           </Form>
         )}
 
         <div className="space-y-4">
-          {reviews.map((review) => (
-            <div key={review.id} className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex gap-1 mb-2">
-                    {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 whitespace-pre-wrap">{review.comment}</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {format(new Date(review.createdAt), "dd.MM.yyyy")}
-                  </p>
+          {reviews.map((review, index) => (
+            <Card key={index}>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-1 mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-4 w-4 ${
+                        star <= review.rating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
                 </div>
-
-                <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedReviewId(review.id)}
-                    >
-                      <Flag className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Raportează recenzia</DialogTitle>
-                    </DialogHeader>
-                    <Form {...reportForm}>
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          if (selectedReviewId) {
-                            const values = reportForm.getValues();
-                            reportReview.mutate({ reviewId: selectedReviewId, reason: values.reason });
-                          }
-                        }}
-                        className="space-y-4"
-                      >
-                        <FormField
-                          control={reportForm.control}
-                          name="reason"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Motivul raportării</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  {...field}
-                                  placeholder="Te rugăm să explici motivul pentru care raportezi această recenzie..."
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button type="submit" disabled={reportReview.isPending}>
-                          {reportReview.isPending ? "Se trimite..." : "Trimite raportarea"}
-                        </Button>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
+                <p className="text-sm text-gray-600">{review.comment}</p>
+              </CardContent>
+            </Card>
           ))}
-
-          {reviews.length === 0 && (
-            <p className="text-muted-foreground">Nu există recenzii încă</p>
-          )}
         </div>
       </CardContent>
     </Card>
