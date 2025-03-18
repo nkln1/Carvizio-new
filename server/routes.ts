@@ -2131,57 +2131,25 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add the reviews endpoint inside the registerRoutes function
-  app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
+  app.post("/api/reviews", async (req, res) => {
     try {
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(401).json({ error: "Not authorized" });
-      }
+      const { rating, comment, serviceProviderId } = req.body;
 
-      // Get the offer to verify completion status and date
-      const offer = await storage.getSentOffersByRequest(req.body.requestId);
-      if (!offer || !offer.length) {
-        return res.status(404).json({ error: "Offer not found" });
-      }
-
-      const targetOffer = offer.find(o => o.id === req.body.offerId);
-      if (!targetOffer) {
-        return res.status(404).json({ error: "Specific offer not found" });
-      }
-
-      if (targetOffer.status !== "Completed") {
-        return res.status(400).json({ error: "Can only review completed offers" });
-      }
-
-      // Check if user has already reviewed this offer
-      const existingReview = await db.query.reviews.findFirst({
-        where: (reviews, { and, eq }) => and(
-          eq(reviews.clientId, client.id),
-          eq(reviews.offerId, req.body.offerId)
-        )
+      // Create the review using storage
+      const review = await storage.createReview({
+        serviceProviderId,
+        clientId: 0, // For public reviews, use a default client ID
+        requestId: 0, // Not tied to a specific request
+        offerId: 0, // Not tied to a specific offer
+        rating,
+        comment,
+        offerCompletedAt: new Date() // Current date for public reviews
       });
-
-      if (existingReview) {
-        return res.status(400).json({ error: "You have already reviewed this service" });
-      }
-
-      // Create the review using db directly since it's a new table
-      const [review] = await db.insert(reviews)
-        .values({
-          serviceProviderId: req.body.serviceProviderId,
-          clientId: client.id,
-          requestId: req.body.requestId,
-          offerId: req.body.offerId,
-          rating: req.body.rating,
-          comment: req.body.comment,
-          offerCompletedAt: targetOffer.completedAt || new Date()
-        })
-        .returning();
 
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
-      res.status(500).json({ error: "Failed to create review" });
+      res.status(500).json({ error: "Failed to create review", details: error instanceof Error ? error.message : undefined });
     }
   });
 

@@ -317,16 +317,9 @@ export const insertReviewSchema = createInsertSchema(reviews)
     createdAt: true,
   })
   .extend({
-    comment: z.string().min(20, "Review must be at least 20 characters long"),
+    comment: z.string().min(5, "Review must be at least 5 characters long"),
     rating: z.number().min(1).max(5),
-    offerCompletedAt: z.date().transform((date) => {
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-      if (date < fourteenDaysAgo) {
-        throw new Error("Reviews can only be submitted within 14 days of service completion");
-      }
-      return date;
-    })
+    offerCompletedAt: z.date()
   });
 
 // Review relations remain unchanged
