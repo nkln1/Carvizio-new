@@ -83,16 +83,15 @@ export function ConversationView({
             </span>
           </Avatar>
           <div className="font-medium">
-            {serviceProviderUsername ? (
-              <Link 
-                href={`/service/${serviceProviderUsername}`}
-                className="text-blue-500 hover:text-blue-700 hover:underline"
-              >
-                {typeof userName === 'string' ? userName : 'Service Provider'}
-              </Link>
-            ) : (
-              userName
-            )}
+            <Link 
+              href={`/service/${serviceProviderUsername}`}
+              className="text-blue-500 hover:text-blue-700 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {typeof userName === 'string' ? userName : 'Service Provider'}
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-2">
