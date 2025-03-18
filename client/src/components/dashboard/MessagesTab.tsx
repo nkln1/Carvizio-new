@@ -328,13 +328,13 @@ export function MessagesTab({
                   messages={messages}
                   userName={
                     <Link 
-                      href={`/service/${activeConversation?.serviceProviderUsername}`}
+                      href={`/service/${activeConversation.serviceProviderUsername}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-700 hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {activeConversation?.userName}
+                      {activeConversation.userName}
                     </Link>
                   }
                   currentUserId={user.id}
