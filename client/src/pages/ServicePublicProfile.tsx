@@ -9,6 +9,7 @@ import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEdito
 import { ReviewSection } from "@/components/reviews/ReviewSection";
 import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/schema";
 import { getAuth } from 'firebase/auth'; // Added Firebase import
+import { queryClient } from "@/lib/queryClient";
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
@@ -142,36 +143,25 @@ export default function ServicePublicProfile() {
           offerId={latestEligibleOffer?.id}
           onSubmitReview={async (data) => {
             try {
-              const auth = getAuth();
-              const user = auth.currentUser;
-              const token = user?.accessToken; // Get token from Firebase
-              if (!token) {
-                throw new Error('Authentication token not found');
-              }
-
-              const response = await fetch('/api/reviews', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  rating: data.rating,
-                  comment: data.comment,
-                  offerId: latestEligibleOffer?.id,
-                  requestId: latestEligibleOffer?.requestId,
-                  serviceProviderId: serviceProfile.id
-                })
+              const response = await apiRequest('POST', '/api/reviews', {
+                rating: data.rating,
+                comment: data.comment,
+                offerId: latestEligibleOffer?.id,
+                requestId: latestEligibleOffer?.requestId,
+                serviceProviderId: serviceProfile.id
               });
 
               if (!response.ok) {
-                throw new Error('Failed to submit review');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit review');
               }
 
-              // Refresh just the reviews section
-              //queryClient.invalidateQueries(['serviceProfile', username]); // Commented out as queryClient is not imported
+              // Refresh the reviews section
+              queryClient.invalidateQueries(['service-profile', username]);
             } catch (error) {
               console.error('Error submitting review:', error);
+              // Re-throw the error so the ReviewSection component can handle it
+              throw error;
             }
           }}
         />

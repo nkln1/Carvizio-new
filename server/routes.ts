@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients } from "@shared/schema";
+import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -288,7 +288,7 @@ export function registerRoutes(app: Express): Server {
 
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
-console.log('Fetching service profile for username:', username);
+      console.log('Fetching service profile for username:', username);
 
       // First get service provider data
       const serviceProvider = await db.query.serviceProviders.findFirst({
@@ -311,7 +311,7 @@ console.log('Fetching service profile for username:', username);
 
       if (!serviceProvider) {
         console.log('No service found with username:', username);
-console.log('No service found with username:', username);
+        console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
@@ -351,7 +351,7 @@ console.log('No service found with username:', username);
     } catch (error) {
       console.error("Error fetching service profile:", error);
       console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace available');
-      res.status(500).json({ 
+      res.status(500).json({
         error: "A apărut o eroare la încărcarea profilului.",
         details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined
       });
@@ -1518,7 +1518,7 @@ console.log('No service found with username:', username);
             userId: client.id,
             userName: client.name,
             requestId: message.requestId,
-            requestTitle: request.title, 
+            requestTitle: request.title,
             lastMessage: message.content,
             lastMessageDate: message.createdAt,
             unreadCount: unreadMessages.length
@@ -1720,7 +1720,7 @@ console.log('No service found with username:', username);
         return res.status(401).json({ error: "Client not found" });
       }
 
-      // Get all messages for this client
+      // Get all messagesfor this client
       const messages = await storage.getUserMessages(client.id, "client", null);
 
       // Group messages by requestId
