@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { FileText, Loader2 } from "lucide-react";
 import type { Conversation } from "@shared/schema";
+import Link from 'next/link'; //Import Link component
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -74,7 +75,7 @@ export function ConversationList({
             <div className="flex justify-between items-start">
               <p className="font-medium">
                 {conv.serviceProviderUsername ? (
-                  <a
+                  <Link
                     href={`/service/${conv.serviceProviderUsername}`}
                     className={`${
                       activeConversationId === conv.userId && activeRequestId === conv.requestId
@@ -84,7 +85,7 @@ export function ConversationList({
                     onClick={(e) => e.stopPropagation()}
                   >
                     {conv.userName || `Client ${conv.userId}`}
-                  </a>
+                  </Link>
                 ) : (
                   conv.userName || `Client ${conv.userId}`
                 )}
