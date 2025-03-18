@@ -77,18 +77,9 @@ export default function ServicePublicProfile() {
   );
 
   // Get the most recent eligible offer for the review form
-  const latestEligibleOffer = serviceProfile.completedOffers?.find(
-    offer => {
-      if (offer.status === "Accepted") {
-        // Check if user hasn't already reviewed
-        const hasReviewed = serviceProfile.reviews?.some(
-          review => review.offerId === offer.id && review.clientId === user?.id
-        );
-        return !hasReviewed;
-      }
-      return false;
-    }
-  );
+  const latestEligibleOffer = user?.role === 'client' ? serviceProfile.completedOffers?.find(
+    offer => offer.status === "Accepted"
+  ) : null;
 
   const isOwner = user?.role === 'service' && user?.username === username;
 
