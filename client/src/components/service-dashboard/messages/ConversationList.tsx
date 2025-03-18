@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { FileText, Loader2 } from "lucide-react";
 import type { Conversation } from "@shared/schema";
-import Link from 'next/link'; //Import Link component
+import { Link } from "wouter"; //Import Link component
 
 interface ConversationListProps {
   conversations: Conversation[];

@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
+import { setCustomMimeTypes } from "./mimeTypes";
 
 const app = express();
 const server = http.createServer(app);
@@ -92,6 +93,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 // Initialize routes
 (async () => {
   registerRoutes(app);
+  setCustomMimeTypes(app); // Add MIME type configuration
 
   if (app.get("env") === "development") {
     await setupVite(app, server);
