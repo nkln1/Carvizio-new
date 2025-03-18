@@ -135,11 +135,36 @@ export default function ServicePublicProfile() {
         {/* Review Section */}
         <ReviewSection
           serviceProviderId={serviceProfile.id}
-          reviews={serviceProfile.reviews}
+          reviews={serviceProfile.reviews || []}
           canReview={canReview}
           requestId={latestEligibleOffer?.requestId}
           offerId={latestEligibleOffer?.id}
-          offerCompletedAt={new Date()} // Use current date for accepted offers
+          onSubmitReview={async (data) => {
+            try {
+              const response = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  rating: data.rating,
+                  comment: data.comment,
+                  offerId: latestEligibleOffer?.id,
+                  requestId: latestEligibleOffer?.requestId,
+                  serviceProviderId: serviceProfile.id
+                })
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to submit review');
+              }
+              
+              // Refresh the page to show the new review
+              window.location.reload();
+            } catch (error) {
+              console.error('Error submitting review:', error);
+            }
+          }}
         />
       </div>
     </div>
