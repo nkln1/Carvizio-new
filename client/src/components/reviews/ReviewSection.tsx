@@ -58,7 +58,7 @@ export function ReviewSection({
       comment: "",
       requestId,
       offerId,
-      offerCompletedAt,
+      offerCompletedAt: offerCompletedAt || new Date(),
       clientId: user?.id
     }
   });
@@ -136,7 +136,8 @@ export function ReviewSection({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {canReview && requestId && offerId && offerCompletedAt && (
+        {/* Only check canReview flag - if the user can review, show the form */}
+        {canReview && (
           <Form {...reviewForm}>
             <form onSubmit={reviewForm.handleSubmit(onSubmit)} className="space-y-4 mb-8">
               <FormField
