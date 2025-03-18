@@ -120,6 +120,19 @@ export default function ClientDashboard() {
     }
   }, [locationState]);
 
+  useEffect(() => {
+    // Handle browser navigation state
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.previousConversation) {
+        setActiveTab("messages");
+        setInitialConversation(event.state.previousConversation);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
 
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -299,7 +312,15 @@ export default function ClientDashboard() {
             {activeTab === "messages" && (
               <MessagesTab
                 initialConversation={initialConversation}
-                onConversationClear={() => setInitialConversation(null)}
+                onConversationClear={() => {
+                  setInitialConversation(null);
+                  // Update browser history state when clearing conversation
+                  if (window && window.history && window.history.state) {
+                    const newState = { ...window.history.state };
+                    delete newState.previousConversation;
+                    window.history.replaceState(newState, '');
+                  }
+                }}
               />
             )}
 

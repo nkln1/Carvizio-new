@@ -127,6 +127,20 @@ export default function ServiceDashboard() {
     }
   }, [requests, viewedRequestIds]);
 
+  useEffect(() => {
+    // Handle browser navigation state
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.previousConversation) {
+        setActiveTab("mesaje");
+        setActiveConversation(event.state.previousConversation);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
     setIsMenuOpen(false);
@@ -151,7 +165,7 @@ export default function ServiceDashboard() {
       try {
         // Navigate to service profile page using username
         setLocation(`/service/${userProfile.username}`);
-console.log('Navigating to service profile with username:', userProfile.username);
+        console.log('Navigating to service profile with username:', userProfile.username);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
@@ -308,7 +322,15 @@ console.log('Navigating to service profile with username:', userProfile.username
                 return (
                   <MessagesTab
                     initialConversation={activeConversation}
-                    onConversationClear={() => setActiveConversation(null)}
+                    onConversationClear={() => {
+                      setActiveConversation(null);
+                      // Update browser history state when clearing conversation
+                      if (window && window.history && window.history.state) {
+                        const newState = { ...window.history.state };
+                        delete newState.previousConversation;
+                        window.history.replaceState(newState, '');
+                      }
+                    }}
                   />
                 );
               case "oferte-trimise":
