@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail, MapPin, Phone, Clock, Star, ChevronDown, Pencil, Building2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Mail, MapPin, Phone, Clock, Building2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEditor";
-import { ServiceProvider, WorkingHour, Review } from "@shared/schema";
+import { ReviewSection } from "@/components/reviews/ReviewSection";
+import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/schema";
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
   reviews: Review[];
-  serviceProviderUsername?: string; // Added serviceProviderUsername
+  completedOffers?: Array<SentOffer & { completedAt: string; status: 'Pending' | 'Accepted' | 'Rejected' | 'Completed' }>;
 }
 
 const getDayName = (dayOfWeek: number): string => {
@@ -25,36 +25,50 @@ const getDayName = (dayOfWeek: number): string => {
 export default function ServicePublicProfile() {
   const { username } = useParams<{ username: string }>();
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [isEditingHours, setIsEditingHours] = useState(false);
 
-  useEffect(() => {
-    if (username) {
-      queryClient.invalidateQueries({ queryKey: ['service-profile', username] });
-    }
-  }, [username, queryClient]);
-
-  const { data: serviceProfile, isLoading, error } = useQuery<ServiceProfileData>({
+  const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
     queryKey: ['service-profile', username],
     queryFn: async () => {
       if (!username) throw new Error("Username is required");
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       if (!response.ok) throw new Error("Service-ul nu a fost găsit");
       const data = await response.json();
-      return { ...data, workingHours: data.workingHours || [], reviews: data.reviews || [] };
+      return {
+        ...data,
+        workingHours: data.workingHours || [],
+        reviews: data.reviews || [],
+        completedOffers: data.completedOffers || []
+      };
     },
     retry: false,
     enabled: !!username
   });
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" /></div>;
+    return <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+    </div>;
   }
 
-  if (error || !serviceProfile) {
-    return <div className="container mx-auto px-4 py-8 text-center"><h1 className="text-2xl font-bold text-gray-800">Eroare</h1><p className="mt-2 text-gray-600">Nu s-au putut încărca datele service-ului.</p></div>;
+  if (!serviceProfile) {
+    return <div className="container mx-auto px-4 py-8 text-center">
+      <h1 className="text-2xl font-bold text-gray-800">Eroare</h1>
+      <p className="mt-2 text-gray-600">Nu s-au putut încărca datele service-ului.</p>
+    </div>;
   }
+
+  // Find if the current user can review this service provider
+  const canReview = Boolean(
+    user?.role === 'client' && 
+    serviceProfile.completedOffers?.some(
+      offer => offer.status === 'Completed' &&
+      new Date(offer.completedAt) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // Within 14 days
+    )
+  );
+
+  // Get the most recent completed offer for the review form
+  const latestCompletedOffer = serviceProfile.completedOffers?.[0];
 
   const isOwner = user?.role === 'service' && user?.username === serviceProfile.username;
 
@@ -71,19 +85,40 @@ export default function ServicePublicProfile() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Informații Service</h2>
             <div className="space-y-3">
-              <div className="flex items-center gap-2"><MapPin className="h-5 w-5 text-gray-500" /><p>{serviceProfile.address}, {serviceProfile.city}, {serviceProfile.county}</p></div>
-              <div className="flex items-center gap-2"><Phone className="h-5 w-5 text-gray-500" /><p>{serviceProfile.phone}</p></div>
-              <div className="flex items-center gap-2"><Mail className="h-5 w-5 text-gray-500" /><p>{serviceProfile.email}</p></div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-gray-500" />
+                <p>{serviceProfile.address}, {serviceProfile.city}, {serviceProfile.county}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-gray-500" />
+                <p>{serviceProfile.phone}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-gray-500" />
+                <p>{serviceProfile.email}</p>
+              </div>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold">Program de Lucru</h2>
-              {isOwner && <Button variant="outline" size="sm" onClick={() => setIsEditingHours(!isEditingHours)}><Pencil className="h-4 w-4" /> {isEditingHours ? "Anulează" : "Editează"}</Button>}
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingHours(!isEditingHours)}
+                >
+                  {isEditingHours ? "Anulează" : "Editează"}
+                </Button>
+              )}
             </div>
             {isOwner && isEditingHours ? (
-              <WorkingHoursEditor serviceId={serviceProfile.id} workingHours={serviceProfile.workingHours || []} onClose={() => setIsEditingHours(false)} />
+              <WorkingHoursEditor
+                serviceId={serviceProfile.id}
+                workingHours={serviceProfile.workingHours || []}
+                onClose={() => setIsEditingHours(false)}
+              />
             ) : (
               <div className="space-y-2">
                 {[1, 2, 3, 4, 5, 6, 0].map((day) => {
@@ -92,7 +127,11 @@ export default function ServicePublicProfile() {
                     <div key={day} className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-gray-500" />
                       <span className="font-medium w-24">{getDayName(day)}:</span>
-                      <span>{workingHour?.isClosed ? "Închis" : `${workingHour?.openTime || "09:00"} - ${workingHour?.closeTime || "18:00"}`}</span>
+                      <span>
+                        {workingHour?.isClosed
+                          ? "Închis"
+                          : `${workingHour?.openTime || "09:00"} - ${workingHour?.closeTime || "18:00"}`}
+                      </span>
                     </div>
                   );
                 })}
@@ -100,6 +139,18 @@ export default function ServicePublicProfile() {
             )}
           </div>
         </div>
+
+        {/* Review Section */}
+        {latestCompletedOffer && (
+          <ReviewSection
+            serviceProviderId={serviceProfile.id}
+            reviews={serviceProfile.reviews}
+            canReview={canReview}
+            requestId={latestCompletedOffer.requestId}
+            offerId={latestCompletedOffer.id}
+            offerCompletedAt={new Date(latestCompletedOffer.completedAt)}
+          />
+        )}
       </div>
     </div>
   );
