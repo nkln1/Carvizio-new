@@ -141,7 +141,11 @@ export default function ServicePublicProfile() {
           offerId={latestEligibleOffer?.id}
           onSubmitReview={async (data) => {
             try {
-              const token = localStorage.getItem('token');
+              const token = localStorage.getItem('auth_token');
+              if (!token) {
+                throw new Error('Authentication token not found');
+              }
+              
               const response = await fetch('/api/reviews', {
                 method: 'POST',
                 headers: {
