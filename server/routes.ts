@@ -2133,17 +2133,16 @@ export function registerRoutes(app: Express): Server {
   // Add the reviews endpoint inside the registerRoutes function
   app.post("/api/reviews", async (req, res) => {
     try {
-      const { rating, comment, serviceProviderId } = req.body;
+      const data = {
+        ...req.body,
+        clientId: 0, // Default for public reviews
+        requestId: 0, // Default for public reviews
+        offerId: null // Default for public reviews
+      };
 
       // Create the review using storage
       const review = await storage.createReview({
-        serviceProviderId,
-        clientId: 0, // For public reviews
-        requestId: 0, // For public reviews
-        offerId: null, // No offer for public reviews
-        rating,
-        comment,
-        offerCompletedAt: new Date(),
+        ...data,
         lastModified: new Date(),
         reported: false
       });
@@ -2151,7 +2150,10 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
-      res.status(500).json({ error: "Failed to create review" });
+      res.status(500).json({ 
+        error: "Failed to create review", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 

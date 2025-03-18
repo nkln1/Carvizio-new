@@ -308,19 +308,15 @@ export const reviews = pgTable("reviews", {
 });
 
 // Update review validation schema
-export const insertReviewSchema = createInsertSchema(reviews)
-  .omit({
-    id: true,
-    reported: true,
-    reportReason: true,
-    lastModified: true,
-    createdAt: true,
-  })
-  .extend({
-    comment: z.string().min(5, "Review must be at least 5 characters long"),
-    rating: z.number().min(1).max(5),
-    offerCompletedAt: z.date()
-  });
+export const insertReviewSchema = z.object({
+  serviceProviderId: z.number(),
+  clientId: z.number().optional(),
+  requestId: z.number().optional(),
+  offerId: z.number().optional().nullable(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().min(5, "Review must be at least 5 characters long"),
+  offerCompletedAt: z.date().optional().default(() => new Date())
+});
 
 // Review relations remain unchanged
 export const reviewsRelations = relations(reviews, ({ one }) => ({
