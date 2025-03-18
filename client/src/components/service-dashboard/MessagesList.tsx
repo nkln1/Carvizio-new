@@ -25,7 +25,8 @@ interface MessagesListProps {
     userName?: string;
     requestId: string;
     offerId?: string;
-    serviceId?: number;  // Add serviceId
+    serviceId?: number;
+    serviceProviderUsername?: string;  // Add this field
   } | null;
 }
 
@@ -57,7 +58,8 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       userName: conversation.userName,
       requestId: conversation.requestId,
       offerId: conversation.offerId,
-      serviceId: conversation.serviceId // Add serviceId to activeConversation
+      serviceId: conversation.serviceId,
+      serviceProviderUsername: conversation.serviceProviderUsername // Add serviceProviderUsername
     });
 
     await markConversationAsRead(conversation.requestId, conversation.userId);
@@ -128,9 +130,9 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                     onClick={() => handleSelectConversation(conversation)}
                   >
                     <div className="font-medium">
-                      {conversation.serviceId ? (
+                      {conversation.serviceProviderUsername ? (
                         <a
-                          href={`/service/${conversation.serviceId}`}
+                          href={`/service/${conversation.serviceProviderUsername}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 hover:text-blue-700 hover:underline"
@@ -207,6 +209,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
             messageToSend={messageToSend}
             setMessageToSend={setMessageToSend}
             handleSendMessage={handleSendMessage}
+            serviceProviderUsername={activeConversation.serviceProviderUsername}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
