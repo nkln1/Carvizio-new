@@ -141,10 +141,12 @@ export default function ServicePublicProfile() {
           offerId={latestEligibleOffer?.id}
           onSubmitReview={async (data) => {
             try {
+              const token = localStorage.getItem('token');
               const response = await fetch('/api/reviews', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                   rating: data.rating,
@@ -159,8 +161,8 @@ export default function ServicePublicProfile() {
                 throw new Error('Failed to submit review');
               }
               
-              // Refresh the page to show the new review
-              window.location.reload();
+              // Refresh just the reviews section
+              queryClient.invalidateQueries(['serviceProfile', username]);
             } catch (error) {
               console.error('Error submitting review:', error);
             }

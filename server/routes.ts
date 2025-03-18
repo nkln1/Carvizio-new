@@ -90,6 +90,7 @@ interface IStorage {
     deleteWorkingHour: any;
     getWorkingHours: any;
     getServiceProviderByUsername: any;
+    createReview: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -1723,8 +1724,7 @@ console.log('No service found with username:', username);
       const messages = await storage.getUserMessages(client.id, "client", null);
 
       // Group messages by requestId
-      const conversationsByRequest = messages.reduce((acc, message) => {
-        if (!acc[message.requestId]) {
+      const conversationsByRequest = messages.reduce((acc, message) => {        if (!acc[message.requestId]) {
           acc[message.requestId] = message;
         } else if (new Date(message.createdAt) > new Date(acc[message.requestId].createdAt)) {
           // Keep the most recent message for this request
@@ -1950,6 +1950,139 @@ console.log('No service found with username:', username);
       res.status(500).json({ error: "Failed to mark conversation as read" });
     }
   });
+
+  // Review endpoints
+  app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
+      }
+
+      const { rating, comment, offerId, requestId, serviceProviderId } = req.body;
+
+      // Create the review
+      const review = await storage.createReview({
+        clientId: client.id,
+        serviceProviderId,
+        requestId,
+        offerId,
+        rating,
+        comment,
+        offerCompletedAt: new Date()
+      });
+
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ error: "Failed to create review" });
+    }
+  });
+
+  // Working Hours endpoints
+  app.get("/api/service/:serviceId/working-hours", async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Invalid service ID" });
+      }
+
+      // Get custom hours if they exist
+      const workingHours = await storage.getWorkingHours(serviceId);
+      res.json(workingHours);
+    } catch (error) {
+      console.error("Error getting working hours:", error);
+      res.status(500).json({ error: "Failed to get working hours" });
+    }
+  });
+
+  app.put("/api/service/working-hours/:dayOfWeek", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const { openTime, closeTime, isClosed } = req.body;
+      const dayOfWeek = parseInt(req.params.dayOfWeek);
+
+      // Save working hours
+      const updatedHours = await storage.updateWorkingHours(provider.id, {
+        dayOfWeek,
+        openTime,
+        closeTime,
+        isClosed
+      });
+
+      res.json(updatedHours);
+    } catch (error) {
+      console.error("Error updating working hours:", error);
+      res.status(500).json({ error: "Failed to update working hours" });
+    }
+  });
+
+  app.delete("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
+      }
+
+      const hourId = parseInt(req.params.id);
+      if (isNaN(hourId)) {
+        return res.status(400).json({ error: "Invalid working hour ID" });
+      }
+
+      // Get current working hour to verify ownership
+      const workingHours = await storage.getServiceProviderWorkingHours(provider.id);
+      const hourExists = workingHours.some(h => h.id === hourId);
+
+      if (!hourExists) {
+        return res.status(404).json({ error: "Working hour not found or not owned by this service provider" });
+      }
+
+      await storage.deleteWorkingHour(hourId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting working hour:", error);
+      res.status(500).json({ error: "Failed to delete working hour" });
+    }
+  });
+
+  // Add endpoint to mark accepted offer as viewed
+  app.post("/api/service/mark-accepted-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log('Marking accepted offer as viewed - Request params:', req.params);
+
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        console.log('Service provider not found for Firebase UID:', req.firebaseUser!.uid);
+        return res.status(403).json({ error: "Access denied. Only service providers can mark offers as viewed." });
+      }
+      console.log('Service provider found:', { id: provider.id, email: provider.email });
+
+      const offerId = parseInt(req.params.offerId);
+      console.log('Attempting to mark accepted offer as viewed:', { providerId: provider.id, offerId });
+
+      // Verify the offer exists and belongs to this provider
+      const offers = await storage.getSentOffersByServiceProvider(provider.id);
+      const offerExists = offers.some(offer => offer.id === offerId && offer.status === "Accepted");
+
+      if (!offerExists) {
+        console.log('Accepted offer not found or not accessible to provider:', offerId);
+        return res.status(404).json({ error: "Accepted offer not found or not accessible" });
+      }
+
+      const viewedOffer = await storage.markAcceptedOfferAsViewed(provider.id, offerId);
+      console.log('Successfully marked accepted offer as viewed:', viewedOffer);
+
+      res.json(viewedOffer);
+    } catch (error) {
+      console.error("Error marking accepted offer as viewed:", error);
+      res.status(500).json({ error: "Failed to mark accepted offer as viewed" });
+    }
+  });
+
 
   const httpServer = createServer(app);
 
