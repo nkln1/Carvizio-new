@@ -326,7 +326,7 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined> {
     console.log("Database query: Searching for username:", username);
 
-console.log('Querying database for service provider with username:', username);
+    console.log('Querying database for service provider with username:', username);
     try {
       const [provider] = await db
         .select()
@@ -335,7 +335,7 @@ console.log('Querying database for service provider with username:', username);
       return provider;
     } catch (error) {
       console.error('Error getting service provider by username:', error);
-console.error('Error getting service provider by username:', error);
+      console.error('Error getting service provider by username:', error);
       return undefined;
     }
   }
@@ -950,6 +950,7 @@ console.error('Error getting service provider by username:', error);
       const enrichedMessages = await Promise.all(
         messageResults.map(async (msg) => {
           let senderName = '';
+          let senderUsername = undefined;
           try {
             if (msg.senderRole === 'client') {
               const sender = await this.getClientById(msg.senderId);
@@ -957,12 +958,13 @@ console.error('Error getting service provider by username:', error);
             } else {
               const sender = await this.getServiceProviderById(msg.senderId);
               senderName = sender?.companyName || 'Unknown Service Provider';
+              senderUsername = sender?.username; // Get the username for service providers
             }
           } catch (error) {
             console.error('Error getting sender info:', error);
             senderName = msg.senderRole === 'client' ? 'Unknown Client' : 'Unknown Service Provider';
           }
-          return { ...msg, senderName };
+          return { ...msg, senderName, serviceProviderUsername: senderUsername };
         })
       );
 
@@ -1018,7 +1020,7 @@ console.error('Error getting service provider by username:', error);
         .insert(workingHours)
         .values(workingHour)
         .returning();
-      return newWorkingHour;
+            return newWorkingHour;
     } catch (error) {
       console.error('Error creating working hour:', error);
       throw error;
