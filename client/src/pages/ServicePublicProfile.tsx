@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Star, ChevronDown, Pencil, Building2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -28,16 +28,6 @@ export default function ServicePublicProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditingHours, setIsEditingHours] = useState(false);
-  const location = useLocation();
-  const { state } = location;
-
-  const handleBack = () => {
-    if (state?.from) {
-      window.history.back();
-    } else {
-      window.location.href = '/dashboard';
-    }
-  };
 
   useEffect(() => {
     if (username) {
@@ -70,13 +60,6 @@ export default function ServicePublicProfile() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button
-        onClick={handleBack}
-        variant="ghost"
-        className="mb-4 hover:bg-gray-100"
-      >
-        ← Înapoi
-      </Button>
       <div className="bg-white rounded-lg shadow-md p-6">
         <h1 className="text-3xl font-bold text-[#00aff5] flex items-center gap-2">
           <Building2 className="h-6 w-6" />

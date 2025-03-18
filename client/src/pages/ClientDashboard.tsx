@@ -26,10 +26,9 @@ import { CarDialog } from "@/components/car/CarDialog";
 import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 
 export default function ClientDashboard() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
-  const locationState = location.state as { tab?: string } | null;
-  const [activeTab, setActiveTab] = useState(locationState?.tab || "profile");
+  const [activeTab, setActiveTab] = useState("profile");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
@@ -112,14 +111,6 @@ export default function ClientDashboard() {
       setInitialConversation(null);
     }
   }, [activeTab]);
-
-  useEffect(() => {
-    // Handle location state for tab selection
-    if (locationState?.tab) {
-      setActiveTab(locationState.tab);
-    }
-  }, [locationState]);
-
 
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -297,7 +288,7 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "messages" && (
-              <MessagesTab
+              <MessagesTab 
                 initialConversation={initialConversation}
                 onConversationClear={() => setInitialConversation(null)}
               />
