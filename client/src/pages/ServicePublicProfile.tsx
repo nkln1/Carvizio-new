@@ -62,15 +62,26 @@ export default function ServicePublicProfile() {
   const canReview = Boolean(
     user?.role === 'client' && 
     serviceProfile.completedOffers?.some(
-      offer => offer.status === 'Completed' &&
-      offer.completedAt &&
-      new Date(offer.completedAt) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // Within 14 days
+      offer => {
+        // Allow both "Accepted" and "Completed" offers
+        if (offer.status === "Accepted") return true;
+
+        // For completed offers, check the 14-day window
+        if (offer.status === "Completed" && offer.completedAt) {
+          const completedDate = new Date(offer.completedAt);
+          const fourteenDaysAgo = new Date();
+          fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+          return completedDate > fourteenDaysAgo;
+        }
+
+        return false;
+      }
     )
   );
 
-  // Get the most recent completed offer for the review form
-  const latestCompletedOffer = serviceProfile.completedOffers?.find(
-    offer => offer.status === 'Completed' && offer.completedAt
+  // Get the most recent eligible offer for the review form
+  const latestEligibleOffer = serviceProfile.completedOffers?.find(
+    offer => offer.status === "Accepted" || offer.status === "Completed"
   );
 
   const isOwner = user?.role === 'service' && user?.username === username;
@@ -148,9 +159,9 @@ export default function ServicePublicProfile() {
           serviceProviderId={serviceProfile.id}
           reviews={serviceProfile.reviews}
           canReview={canReview}
-          requestId={latestCompletedOffer?.requestId}
-          offerId={latestCompletedOffer?.id}
-          offerCompletedAt={latestCompletedOffer?.completedAt ? new Date(latestCompletedOffer.completedAt) : undefined}
+          requestId={latestEligibleOffer?.requestId}
+          offerId={latestEligibleOffer?.id}
+          offerCompletedAt={latestEligibleOffer?.completedAt ? new Date(latestEligibleOffer.completedAt) : new Date()} // Use current date as fallback for accepted offers
         />
       </div>
     </div>
