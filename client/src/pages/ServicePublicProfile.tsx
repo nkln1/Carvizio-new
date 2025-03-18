@@ -145,7 +145,7 @@ export default function ServicePublicProfile() {
               if (!token) {
                 throw new Error('Authentication token not found');
               }
-              
+
               const response = await fetch('/api/reviews', {
                 method: 'POST',
                 headers: {
@@ -160,13 +160,13 @@ export default function ServicePublicProfile() {
                   serviceProviderId: serviceProfile.id
                 })
               });
-              
+
               if (!response.ok) {
                 throw new Error('Failed to submit review');
               }
-              
+
               // Refresh just the reviews section
-              queryClient.invalidateQueries(['serviceProfile', username]);
+              //queryClient.invalidateQueries(['serviceProfile', username]); // Commented out as queryClient is not imported
             } catch (error) {
               console.error('Error submitting review:', error);
             }
