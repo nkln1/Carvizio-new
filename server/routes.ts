@@ -2131,29 +2131,29 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add the reviews endpoint inside the registerRoutes function
-  app.post("/api/reviews", async (req, res) => {
+  app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
     try {
-      const data = {
-        ...req.body,
-        clientId: 0, // Default for public reviews
-        requestId: 0, // Default for public reviews
-        offerId: null // Default for public reviews
-      };
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
+      }
 
-      // Create the review using storage
+      const { rating, comment, serviceProviderId, requestId, offerId } = req.body;
+
       const review = await storage.createReview({
-        ...data,
-        lastModified: new Date(),
-        reported: false
+        clientId: client.id,
+        serviceProviderId,
+        requestId,
+        offerId: offerId || null,
+        rating,
+        comment,
+        offerCompletedAt: new Date()
       });
 
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
-      res.status(500).json({ 
-        error: "Failed to create review", 
-        details: error instanceof Error ? error.message : "Unknown error" 
-      });
+      res.status(500).json({ error: "Failed to create review" });
     }
   });
 

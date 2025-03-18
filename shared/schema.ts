@@ -310,12 +310,12 @@ export const reviews = pgTable("reviews", {
 // Update review validation schema
 export const insertReviewSchema = z.object({
   serviceProviderId: z.number(),
-  clientId: z.number().optional(),
-  requestId: z.number().optional(),
+  clientId: z.number(),
+  requestId: z.number(),
   offerId: z.number().optional().nullable(),
   rating: z.number().min(1).max(5),
   comment: z.string().min(5, "Review must be at least 5 characters long"),
-  offerCompletedAt: z.date().optional().default(() => new Date())
+  offerCompletedAt: z.date().default(() => new Date())
 });
 
 // Review relations remain unchanged
