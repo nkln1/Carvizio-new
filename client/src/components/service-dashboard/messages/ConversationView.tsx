@@ -87,7 +87,6 @@ export function ConversationView({
               <Link 
                 href={`/service/${serviceProviderUsername}`}
                 className="text-blue-500 hover:text-blue-700 hover:underline"
-                onClick={(e) => e.stopPropagation()}
               >
                 {typeof userName === 'string' ? userName : 'Service Provider'}
               </Link>
