@@ -288,7 +288,7 @@ export function OffersTab({
               <User className="w-3 h-3 text-blue-500" />
               <span className="text-xs text-gray-700">Service Auto:</span>
               <Link
-                href={`/service/${offer.serviceProviderUsername}`}
+                href={`/service/${offer.serviceProvider?.username || ''}`}
                 className="text-xs font-normal line-clamp-1 text-blue-500 hover:text-blue-700 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -542,7 +542,7 @@ export function OffersTab({
                     Service Auto
                   </h3>
                   <Link
-                    href={`/service/${selectedOffer.serviceProviderUsername}`}
+                    href={`/service/${selectedOffer.serviceProvider?.username || ''}`}
                     className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
