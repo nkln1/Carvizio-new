@@ -25,9 +25,9 @@ interface ReviewSectionProps {
   serviceProviderId: number;
   reviews: Review[];
   canReview: boolean;
-  requestId: number;
-  offerId: number;
-  offerCompletedAt: Date;
+  requestId?: number;
+  offerId?: number;
+  offerCompletedAt?: Date;
 }
 
 type ReviewFormValues = z.infer<typeof insertReviewSchema>;
@@ -72,23 +72,24 @@ export function ReviewSection({
     mutationFn: async (values: ReviewFormValues) => {
       const response = await apiRequest("POST", "/api/reviews", values);
       if (!response.ok) {
-        throw new Error("Failed to submit review");
+        const error = await response.json();
+        throw new Error(error.message || "Failed to submit review");
       }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-profile'] });
       toast({
-        title: "Review submitted",
-        description: "Thank you for your feedback!"
+        title: "Recenzie trimisă",
+        description: "Vă mulțumim pentru feedback!"
       });
       reviewForm.reset();
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message
+        title: "Eroare",
+        description: error.message || "Nu am putut trimite recenzia. Vă rugăm să încercați din nou."
       });
     }
   });
@@ -104,15 +105,16 @@ export function ReviewSection({
     onSuccess: () => {
       setIsReportDialogOpen(false);
       toast({
-        title: "Review reported",
-        description: "Thank you for reporting this review. We will investigate it."
+        title: "Recenzie raportată",
+        description: "Vă mulțumim pentru raportare. O vom investiga."
       });
+      reportForm.reset();
     },
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to report review. Please try again."
+        title: "Eroare",
+        description: "Nu am putut raporta recenzia. Vă rugăm să încercați din nou."
       });
     }
   });
@@ -123,9 +125,9 @@ export function ReviewSection({
 
   return (
     <div className="mt-8">
-      <h2 className="text-2xl font-semibold mb-4">Reviews</h2>
+      <h2 className="text-2xl font-semibold mb-4">Recenzii</h2>
 
-      {canReview && (
+      {canReview && requestId && offerId && offerCompletedAt && (
         <Form {...reviewForm}>
           <form onSubmit={reviewForm.handleSubmit(onSubmit)} className="space-y-4 mb-8">
             <FormField
@@ -157,11 +159,11 @@ export function ReviewSection({
               name="comment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Review</FormLabel>
+                  <FormLabel>Recenzia ta</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Share your experience with this service provider..."
+                      placeholder="Împărtășește experiența ta cu acest service..."
                     />
                   </FormControl>
                   <FormMessage />
@@ -170,7 +172,7 @@ export function ReviewSection({
             />
 
             <Button type="submit" disabled={submitReview.isPending}>
-              {submitReview.isPending ? "Submitting..." : "Submit Review"}
+              {submitReview.isPending ? "Se trimite..." : "Trimite recenzia"}
             </Button>
           </form>
         </Form>
@@ -204,7 +206,7 @@ export function ReviewSection({
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Report Review</DialogTitle>
+                    <DialogTitle>Raportează recenzia</DialogTitle>
                   </DialogHeader>
                   <Form {...reportForm}>
                     <form
@@ -222,11 +224,11 @@ export function ReviewSection({
                         name="reason"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Reason for reporting</FormLabel>
+                            <FormLabel>Motivul raportării</FormLabel>
                             <FormControl>
                               <Textarea
                                 {...field}
-                                placeholder="Please explain why you're reporting this review..."
+                                placeholder="Te rugăm să explici motivul pentru care raportezi această recenzie..."
                               />
                             </FormControl>
                             <FormMessage />
@@ -234,7 +236,7 @@ export function ReviewSection({
                         )}
                       />
                       <Button type="submit" disabled={reportReview.isPending}>
-                        {reportReview.isPending ? "Submitting..." : "Submit Report"}
+                        {reportReview.isPending ? "Se trimite..." : "Trimite raportarea"}
                       </Button>
                     </form>
                   </Form>
@@ -245,7 +247,7 @@ export function ReviewSection({
         ))}
 
         {reviews.length === 0 && (
-          <p className="text-gray-500 text-center py-4">No reviews yet</p>
+          <p className="text-gray-500 text-center py-4">Nu există recenzii încă</p>
         )}
       </div>
     </div>
