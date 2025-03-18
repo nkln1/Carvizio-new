@@ -326,14 +326,15 @@ export function MessagesTab({
               <Card className="fixed-height-card overflow-hidden">
                 <ConversationView
                   messages={messages}
-                  userName={activeConversation.userName}
+                  userName={activeConversation?.userName}
+                  serviceProviderUsername={activeConversation?.serviceProviderUsername}
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}
                   onSendMessage={sendMessage}
                   onBack={handleBack}
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
-                  serviceProviderUsername={activeConversation.serviceProviderUsername}
+                  
                 />
               </Card>
             )}
