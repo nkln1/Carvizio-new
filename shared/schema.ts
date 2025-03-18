@@ -286,7 +286,7 @@ export const workingHours = pgTable("working_hours", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Update reviews table definition with new fields
+// Update reviews table definition with correct column names
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
@@ -307,7 +307,7 @@ export const reviews = pgTable("reviews", {
   };
 });
 
-// Review validation schema
+// Update review validation schema
 export const insertReviewSchema = createInsertSchema(reviews)
   .omit({
     id: true,
@@ -329,7 +329,7 @@ export const insertReviewSchema = createInsertSchema(reviews)
     })
   });
 
-// Review relations
+// Review relations remain unchanged
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   serviceProvider: one(serviceProviders, {
     fields: [reviews.serviceProviderId],
