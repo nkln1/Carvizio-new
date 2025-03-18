@@ -63,17 +63,14 @@ export default function ServicePublicProfile() {
     user?.role === 'client' && 
     serviceProfile.completedOffers?.some(
       offer => {
-        // Allow both "Accepted" and "Completed" offers
-        if (offer.status === "Accepted") return true;
-
-        // For completed offers, check the 14-day window
-        if (offer.status === "Completed" && offer.completedAt) {
-          const completedDate = new Date(offer.completedAt);
-          const fourteenDaysAgo = new Date();
-          fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-          return completedDate > fourteenDaysAgo;
+        // Only allow "Accepted" offers for now
+        if (offer.status === "Accepted") {
+          // Check if user hasn't already reviewed
+          const hasReviewed = serviceProfile.reviews?.some(
+            review => review.offerId === offer.id && review.clientId === user.id
+          );
+          return !hasReviewed;
         }
-
         return false;
       }
     )
@@ -81,7 +78,16 @@ export default function ServicePublicProfile() {
 
   // Get the most recent eligible offer for the review form
   const latestEligibleOffer = serviceProfile.completedOffers?.find(
-    offer => offer.status === "Accepted" || offer.status === "Completed"
+    offer => {
+      if (offer.status === "Accepted") {
+        // Check if user hasn't already reviewed
+        const hasReviewed = serviceProfile.reviews?.some(
+          review => review.offerId === offer.id && review.clientId === user?.id
+        );
+        return !hasReviewed;
+      }
+      return false;
+    }
   );
 
   const isOwner = user?.role === 'service' && user?.username === username;
