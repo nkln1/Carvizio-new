@@ -113,6 +113,14 @@ export default function ClientDashboard() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    // Handle location state for tab selection
+    if (locationState?.tab) {
+      setActiveTab(locationState.tab);
+    }
+  }, [locationState]);
+
+
   const createRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
@@ -289,7 +297,7 @@ export default function ClientDashboard() {
             )}
 
             {activeTab === "messages" && (
-              <MessagesTab 
+              <MessagesTab
                 initialConversation={initialConversation}
                 onConversationClear={() => setInitialConversation(null)}
               />

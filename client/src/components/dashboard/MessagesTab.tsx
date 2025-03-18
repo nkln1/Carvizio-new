@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
 import { auth } from "@/lib/firebase";
 import type { Message, Conversation } from "@shared/schema";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useNavigate } from "wouter";
 
 export interface InitialConversationProps {
   userId: number;
@@ -51,7 +51,7 @@ export function MessagesTab({
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
-  const [location, setLocation] = useLocation();
+  const [location, navigate] = useLocation();
 
   const {
     activeConversation,
@@ -202,6 +202,13 @@ export function MessagesTab({
     );
   });
 
+  const handleServiceClick = (serviceUsername: string) => {
+    navigate(`/service/${serviceUsername}`, { 
+      tab: "messages",
+      from: location
+    });
+  };
+
   if (!user) {
     return null;
   }
@@ -335,13 +342,9 @@ export function MessagesTab({
                   onBack={handleBack}
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
-                  serviceProviderUsername={activeConversation.serviceProviderUsername}
                   onServiceClick={() => {
                     if (activeConversation.serviceProviderUsername) {
-                      setLocation(`/service/${activeConversation.serviceProviderUsername}`, { 
-                        from: location,
-                        tab: "messages" 
-                      });
+                      handleServiceClick(activeConversation.serviceProviderUsername);
                     }
                   }}
                 />
