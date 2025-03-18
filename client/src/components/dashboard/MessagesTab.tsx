@@ -51,7 +51,7 @@ export function MessagesTab({
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
-  const location = useLocation();
+  const [location, setLocation] = useLocation();
 
   const {
     activeConversation,
@@ -336,6 +336,14 @@ export function MessagesTab({
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
                   serviceProviderUsername={activeConversation.serviceProviderUsername}
+                  onServiceClick={() => {
+                    if (activeConversation.serviceProviderUsername) {
+                      setLocation(`/service/${activeConversation.serviceProviderUsername}`, { 
+                        from: location,
+                        tab: "messages" 
+                      });
+                    }
+                  }}
                 />
               </Card>
             )}
