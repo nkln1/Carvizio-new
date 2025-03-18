@@ -240,8 +240,9 @@ export const sentOffers = pgTable("sent_offers", {
   requestUserId: integer("request_user_id").notNull(),
   requestUserName: text("request_user_name").notNull(),
   status: text("status", {
-    enum: ["Pending", "Accepted", "Rejected"]
+    enum: ["Pending", "Accepted", "Rejected", "Completed"]
   }).default("Pending").notNull(),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -518,7 +519,8 @@ export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
   requestDescription: true,
   requestPreferredDate: true,
   requestCounty: true,
-  requestCities: true
+  requestCities: true,
+  completedAt: true
 });
 
 // Message schemas

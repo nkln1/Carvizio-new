@@ -12,10 +12,7 @@ import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/sc
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
   reviews: Review[];
-  completedOffers?: Array<SentOffer & { 
-    completedAt: string; 
-    status: 'Pending' | 'Accepted' | 'Rejected' | 'Completed' 
-  }>;
+  completedOffers?: Array<SentOffer>;
 }
 
 const getDayName = (dayOfWeek: number): string => {
@@ -66,13 +63,14 @@ export default function ServicePublicProfile() {
     user?.role === 'client' && 
     serviceProfile.completedOffers?.some(
       offer => offer.status === 'Completed' &&
+      offer.completedAt &&
       new Date(offer.completedAt) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // Within 14 days
     )
   );
 
   // Get the most recent completed offer for the review form
   const latestCompletedOffer = serviceProfile.completedOffers?.find(
-    offer => offer.status === 'Completed'
+    offer => offer.status === 'Completed' && offer.completedAt
   );
 
   const isOwner = user?.role === 'service' && user?.username === username;
@@ -145,14 +143,14 @@ export default function ServicePublicProfile() {
           </div>
         </div>
 
-        {/* Review Section - Always show reviews */}
+        {/* Review Section */}
         <ReviewSection
           serviceProviderId={serviceProfile.id}
           reviews={serviceProfile.reviews}
           canReview={canReview}
           requestId={latestCompletedOffer?.requestId}
           offerId={latestCompletedOffer?.id}
-          offerCompletedAt={latestCompletedOffer ? new Date(latestCompletedOffer.completedAt) : undefined}
+          offerCompletedAt={latestCompletedOffer?.completedAt ? new Date(latestCompletedOffer.completedAt) : undefined}
         />
       </div>
     </div>
