@@ -53,7 +53,6 @@ export function MessagesTab({
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const {
-    initialConversation,
     setActiveConversation,
     messages,
     conversations,
