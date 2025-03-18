@@ -76,8 +76,6 @@ export function ConversationList({
                 {conv.serviceProviderUsername ? (
                   <a
                     href={`/service/${conv.serviceProviderUsername}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className={`${
                       activeConversationId === conv.userId && activeRequestId === conv.requestId
                         ? "text-white hover:text-blue-100"
