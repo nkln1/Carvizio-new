@@ -53,7 +53,7 @@ export function MessagesTab({
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const {
-    activeConversation,
+    initialConversation,
     setActiveConversation,
     messages,
     conversations,
@@ -135,7 +135,7 @@ export function MessagesTab({
   };
 
   const handleViewDetails = async () => {
-    if (!activeConversation?.requestId) return;
+    if (!initialConversation?.requestId) return;
 
     setIsLoadingData(true);
     setRequestData(null);
@@ -146,7 +146,7 @@ export function MessagesTab({
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/requests/${activeConversation.requestId}`, {
+      const response = await fetch(`/api/requests/${initialConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -163,8 +163,8 @@ export function MessagesTab({
       setRequestData(data);
 
       // Load offer details if available
-      if (activeConversation.offerId) {
-        const offerResponse = await fetch(`/api/client/offers/details/${activeConversation.offerId}`, {
+      if (initialConversation.offerId) {
+        const offerResponse = await fetch(`/api/client/offers/details/${initialConversation.offerId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -213,7 +213,7 @@ export function MessagesTab({
             <MessageSquare className="h-5 w-5" />
             Mesaje
           </CardTitle>
-          {!activeConversation && filteredConversations.length > 0 && (
+          {!initialConversation && filteredConversations.length > 0 && (
             <div className="relative w-[300px]">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -230,7 +230,7 @@ export function MessagesTab({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!activeConversation ? (
+        {!initialConversation ? (
           <div className="flex flex-col gap-4 w-full">
             {isLoadingConversations ? (
               <div className="flex justify-center items-center py-8">
@@ -322,19 +322,19 @@ export function MessagesTab({
               </Button>
             </div>
 
-            {activeConversation && (
+            {initialConversation && (
               <Card className="fixed-height-card overflow-hidden">
                 <ConversationView
                   messages={messages}
                   userName={
                     <Link 
-                      href={`/service/${activeConversation.serviceProviderUsername}`}
+                      href={`/service/${initialConversation.serviceProviderUsername}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-700 hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {activeConversation.userName}
+                      {initialConversation.userName}
                     </Link>
                   }
                   currentUserId={user.id}
@@ -342,8 +342,8 @@ export function MessagesTab({
                   onSendMessage={sendMessage}
                   onBack={handleBack}
                   onViewDetails={handleViewDetails}
-                  showDetailsButton={!!activeConversation.requestId}
-                  serviceProviderUsername={activeConversation.serviceProviderUsername}
+                  showDetailsButton={!!initialConversation.requestId}
+                  serviceProviderUsername={initialConversation.serviceProviderUsername}
                 />
               </Card>
             )}
