@@ -335,7 +335,6 @@ export function MessagesTab({
                   onBack={handleBack}
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
-                  serviceProviderUsername={activeConversation.serviceProviderUsername}
                 />
               </Card>
             )}
