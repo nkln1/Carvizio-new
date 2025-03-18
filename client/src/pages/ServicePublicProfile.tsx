@@ -161,7 +161,7 @@ export default function ServicePublicProfile() {
           canReview={canReview}
           requestId={latestEligibleOffer?.requestId}
           offerId={latestEligibleOffer?.id}
-          offerCompletedAt={new Date()} // Use current date since the offer is accepted
+          offerCompletedAt={new Date()} // Use current date for accepted offers
         />
       </div>
     </div>
