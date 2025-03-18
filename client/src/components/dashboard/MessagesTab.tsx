@@ -326,17 +326,8 @@ export function MessagesTab({
               <Card className="fixed-height-card overflow-hidden">
                 <ConversationView
                   messages={messages}
-                  userName={
-                    <Link 
-                      href={`/service/${activeConversation.serviceProviderUsername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-700 hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {activeConversation.userName}
-                    </Link>
-                  }
+                  userName={activeConversation.userName}
+                  serviceProviderUsername={activeConversation.serviceProviderUsername}
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}
                   onSendMessage={sendMessage}

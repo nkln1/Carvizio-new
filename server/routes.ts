@@ -1755,6 +1755,7 @@ console.log('No service found with username:', username);
           return {
             userId: serviceProvider.id,
             userName: serviceProvider.companyName,
+            serviceProviderUsername: serviceProvider.username,
             requestId: message.requestId,
             requestTitle: request.title,
             lastMessage: message.content,
