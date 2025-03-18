@@ -23,7 +23,7 @@ interface ReviewSectionProps {
   reviews: any[];
 }
 
-export default function ReviewSection({
+export function ReviewSection({
   canReview,
   offerId,
   requestId,
