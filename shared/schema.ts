@@ -520,7 +520,7 @@ export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
   requestPreferredDate: true,
   requestCounty: true,
   requestCities: true,
-  completedAt: true
+  completedAt: true //Corrected: keep completedAt optional in insert schema
 });
 
 // Message schemas
