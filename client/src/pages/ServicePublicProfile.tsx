@@ -59,17 +59,8 @@ export default function ServicePublicProfile() {
   }
 
   // Find if the current user can review this service provider
-  const canReview = Boolean(
-    user?.role === 'client' && 
-    serviceProfile.completedOffers?.some(
-      offer => offer.status === "Accepted"
-    )
-  );
-
-  // Get the most recent eligible offer for the review form
-  const latestEligibleOffer = serviceProfile.completedOffers?.find(
-    offer => offer.status === "Accepted"
-  );
+  const canReview = true;
+  const latestEligibleOffer = serviceProfile.completedOffers?.[0];
 
   const isOwner = user?.role === 'service' && user?.username === username;
 

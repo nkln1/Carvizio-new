@@ -136,9 +136,7 @@ export function ReviewSection({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Show form if user can review */}
-        {canReview && (
-          <Form {...reviewForm}>
+        <Form {...reviewForm}>
             <form onSubmit={reviewForm.handleSubmit(onSubmit)} className="space-y-4 mb-8">
               <FormField
                 control={reviewForm.control}
