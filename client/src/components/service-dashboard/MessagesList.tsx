@@ -17,17 +17,16 @@ import {
 } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { Link } from "wouter";
 
 interface MessagesListProps {
   setActiveTab?: (tab: string) => void;
   initialConversation?: {
-    userId: number;
+    userId: string;
     userName?: string;
-    requestId: number;
-    offerId?: number;
+    requestId: string;
+    offerId?: string;
     serviceId?: number;
-    serviceProviderUsername?: string;
+    serviceProviderUsername?: string;  // Add this field
   } | null;
 }
 
@@ -51,7 +50,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
     totalPages,
     totalItems,
     startIndex
-  } = useMessagesManagement(initialConversation, true);
+  } = useMessagesManagement(initialConversation, true); // Set isClient to true
 
   const handleSelectConversation = async (conversation: any) => {
     setActiveConversation({
@@ -60,7 +59,7 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       requestId: conversation.requestId,
       offerId: conversation.offerId,
       serviceId: conversation.serviceId,
-      serviceProviderUsername: conversation.serviceProviderUsername
+      serviceProviderUsername: conversation.serviceProviderUsername // Add serviceProviderUsername
     });
 
     await markConversationAsRead(conversation.requestId, conversation.userId);
@@ -132,30 +131,15 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
                   >
                     <div className="font-medium">
                       {conversation.serviceProviderUsername ? (
-                        <Link
+                        <a
                           href={`/service/${conversation.serviceProviderUsername}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-blue-500 hover:text-blue-700 hover:underline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window && window.history && window.history.state) {
-                              window.history.replaceState(
-                                {
-                                  ...window.history.state,
-                                  previousConversation: {
-                                    userId: conversation.userId,
-                                    userName: conversation.userName,
-                                    requestId: conversation.requestId,
-                                    offerId: conversation.offerId,
-                                    serviceProviderUsername: conversation.serviceProviderUsername
-                                  }
-                                },
-                                ''
-                              );
-                            }
-                          }}
+                          onClick={(e) => e.stopPropagation()}  // Prevent triggering conversation select
                         >
                           {conversation.userName}
-                        </Link>
+                        </a>
                       ) : (
                         conversation.userName
                       )}
