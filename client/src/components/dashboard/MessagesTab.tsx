@@ -70,7 +70,6 @@ export function MessagesTab({
     startIndex
   } = useMessagesManagement(initialConversation, true);
 
-  // Effect for handling initialConversation updates
   useEffect(() => {
     if (initialConversation?.userId && initialConversation?.requestId) {
       setActiveConversation({
@@ -81,7 +80,6 @@ export function MessagesTab({
         serviceProviderUsername: initialConversation.serviceProviderUsername
       });
 
-      // Mark conversation as read when opened directly
       markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
   }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead, initialConversation?.serviceProviderUsername]);
@@ -326,17 +324,7 @@ export function MessagesTab({
               <Card className="fixed-height-card overflow-hidden">
                 <ConversationView
                   messages={messages}
-                  userName={
-                    <Link 
-                      href={`/service/${activeConversation.serviceProviderUsername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-700 hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {activeConversation.userName}
-                    </Link>
-                  }
+                  userName={activeConversation.userName}
                   currentUserId={user.id}
                   isLoading={isLoadingMessages}
                   onSendMessage={sendMessage}
@@ -344,6 +332,7 @@ export function MessagesTab({
                   onViewDetails={handleViewDetails}
                   showDetailsButton={!!activeConversation.requestId}
                   serviceProviderUsername={activeConversation.serviceProviderUsername}
+                  userRole={user.role}
                 />
               </Card>
             )}

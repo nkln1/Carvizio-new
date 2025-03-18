@@ -887,8 +887,7 @@ console.log('No service found with username:', username);
         // Only update if phone number changed
         if (req.body.phone && req.body.phone !== client.phone) {
           // Check if phone is already taken by another user
-          const existingClientWithPhone = await storage.getClientByPhone(req.body.phone);
-          if (existingClientWithPhone && existingClientWithPhone.id !== client.id) {
+          const existingClientWithPhone = await storage.getClientByPhone(req.body.phone);if (existingClientWithPhone && existingClientWithPhone.id !== client.id) {
             return res.status(400).json({
               error: "Phone number already in use",
               field: "phone"
@@ -1520,7 +1519,8 @@ console.log('No service found with username:', username);
             requestTitle: request.title, 
             lastMessage: message.content,
             lastMessageDate: message.createdAt,
-            unreadCount: unreadMessages.length
+            unreadCount: unreadMessages.length,
+            serviceProviderUsername: serviceProvider.username
           };
         })
       );
@@ -1755,13 +1755,13 @@ console.log('No service found with username:', username);
           return {
             userId: serviceProvider.id,
             userName: serviceProvider.companyName,
-            serviceUsername: serviceProvider.username,
             requestId: message.requestId,
             requestTitle: request.title,
             lastMessage: message.content,
             lastMessageDate: message.createdAt,
             unreadCount: unreadMessages.length,
-            offerId: message.offerId
+            offerId: message.offerId,
+            serviceProviderUsername: serviceProvider.username
           };
         })
       );

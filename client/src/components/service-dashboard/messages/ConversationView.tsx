@@ -5,17 +5,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, InfoIcon, Send } from "lucide-react";
 import { format } from "date-fns";
 import type { Message } from "@shared/schema";
+import { Link } from "wouter";
 
 interface ConversationViewProps {
   messages: Message[];
   currentUserId: number;
-  userName: React.ReactNode;
+  userName: string;
   isLoading: boolean;
   onSendMessage: (content: string) => Promise<void>;
   onBack?: () => void;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
   serviceProviderUsername?: string;
+  userRole?: "client" | "service";
 }
 
 export function ConversationView({
@@ -27,7 +29,8 @@ export function ConversationView({
   onBack,
   onViewDetails,
   showDetailsButton = false,
-  serviceProviderUsername
+  serviceProviderUsername,
+  userRole
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -74,14 +77,24 @@ export function ConversationView({
       <div className="flex items-center justify-between p-3 border-b">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <span>
-              {typeof userName === 'string' 
-                ? userName.substring(0, 2).toUpperCase()
-                : 'US'}
-            </span>
+            <span>{userName.substring(0, 2).toUpperCase()}</span>
           </Avatar>
           <div className="font-medium">
-            {userName}
+            {userRole === 'client' && serviceProviderUsername ? (
+              <a
+                href={`/service/${serviceProviderUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-700 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {userName}
+              </a>
+            ) : (
+              userName
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
