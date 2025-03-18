@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import websocketService from "@/lib/websocket";
 import { auth } from "@/lib/firebase";
 import type { Message, Conversation } from "@shared/schema";
-import { Link } from "wouter";
+// import { Link } from "wouter"; // Removed Link import
 
 export interface InitialConversationProps {
   userId: number;
