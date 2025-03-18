@@ -2133,14 +2133,14 @@ export function registerRoutes(app: Express): Server {
   // Add the reviews endpoint inside the registerRoutes function
   app.post("/api/reviews", async (req, res) => {
     try {
-      const { rating, comment, serviceProviderId } = req.body;
+      const { rating, comment, serviceProviderId, offerId = null, requestId = null } = req.body;
 
       // Create the review using storage
       const review = await storage.createReview({
         serviceProviderId,
         clientId: 0, // For public reviews, use a default client ID
-        requestId: 0, // Not tied to a specific request
-        offerId: 0, // Not tied to a specific offer
+        requestId: requestId || 0, // Use provided requestId or default to 0
+        offerId: offerId || null, // Use provided offerId or null
         rating,
         comment,
         offerCompletedAt: new Date() // Current date for public reviews
