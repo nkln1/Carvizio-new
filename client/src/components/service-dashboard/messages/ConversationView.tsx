@@ -17,7 +17,6 @@ interface ConversationViewProps {
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
   serviceProviderUsername?: string;
-  isPreview?: boolean; // Added isPreview prop
 }
 
 export function ConversationView({
@@ -29,8 +28,7 @@ export function ConversationView({
   onBack,
   onViewDetails,
   showDetailsButton = false,
-  serviceProviderUsername,
-  isPreview = false, // Added default value for isPreview
+  serviceProviderUsername
 }: ConversationViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -85,7 +83,7 @@ export function ConversationView({
             </span>
           </Avatar>
           <div className="font-medium">
-            {serviceProviderUsername && !isPreview ? ( // Corrected isPreview usage
+            {serviceProviderUsername ? (
               <Link 
                 href={`/service/${serviceProviderUsername}`}
                 className="text-blue-500 hover:text-blue-700 hover:underline"
@@ -94,7 +92,7 @@ export function ConversationView({
                 {typeof userName === 'string' ? userName : 'Service Provider'}
               </Link>
             ) : (
-              <span>{typeof userName === 'string' ? userName : 'Service Provider'}</span>
+              userName
             )}
           </div>
         </div>

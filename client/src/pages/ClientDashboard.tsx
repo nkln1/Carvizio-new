@@ -26,9 +26,10 @@ import { CarDialog } from "@/components/car/CarDialog";
 import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 
 export default function ClientDashboard() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, resendVerificationEmail } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
+  const locationState = location.state as { tab?: string } | null;
+  const [activeTab, setActiveTab] = useState(locationState?.tab || "profile");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showCarDialog, setShowCarDialog] = useState(false);
   const [pendingRequestData, setPendingRequestData] = useState<any>(null);
