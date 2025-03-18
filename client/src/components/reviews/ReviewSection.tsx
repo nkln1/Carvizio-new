@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const reviewSchema = z.object({
-  rating: z.number().min(1).max(5),
-  comment: z.string().min(10).max(500),
+  rating: z.number().min(1, "Please select a rating").max(5),
+  comment: z.string().min(20, "Review must be at least 20 characters long").max(500),
 });
 
 type ReviewFormValues = z.infer<typeof reviewSchema>;
@@ -19,7 +20,7 @@ interface ReviewSectionProps {
   canReview: boolean;
   offerId?: number;
   requestId?: number;
-  onSubmitReview: (data: ReviewFormValues) => void;
+  onSubmitReview: (data: ReviewFormValues) => Promise<void>;
   reviews: any[];
 }
 
@@ -32,6 +33,8 @@ export function ReviewSection({
 }: ReviewSectionProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const reviewForm = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
@@ -41,10 +44,34 @@ export function ReviewSection({
     },
   });
 
-  const onSubmit = (data: ReviewFormValues) => {
-    onSubmitReview(data);
-    reviewForm.reset();
-    setRating(0);
+  const onSubmit = async (data: ReviewFormValues) => {
+    if (!offerId || !requestId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Missing required information for review submission",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onSubmitReview(data);
+      reviewForm.reset();
+      setRating(0);
+      toast({
+        title: "Success",
+        description: "Review submitted successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit review",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -95,7 +122,7 @@ export function ReviewSection({
                   <FormItem>
                     <FormControl>
                       <Textarea
-                        placeholder="Write your review here..."
+                        placeholder="Write your review here... (minimum 20 characters)"
                         className="resize-none"
                         {...field}
                       />
@@ -105,8 +132,8 @@ export function ReviewSection({
                 )}
               />
 
-              <Button type="submit" className="w-full">
-                Submit Review
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit Review"}
               </Button>
             </form>
           </Form>
