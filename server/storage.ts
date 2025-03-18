@@ -959,15 +959,21 @@ export class DatabaseStorage implements IStorage {
               const sender = await this.getServiceProviderById(msg.senderId);
               senderName = sender?.companyName || 'Unknown Service Provider';
               senderUsername = sender?.username; // Get the username for service providers
+              console.log('Service provider data:', { senderName, senderUsername, senderId: msg.senderId });
             }
           } catch (error) {
             console.error('Error getting sender info:', error);
             senderName = msg.senderRole === 'client' ? 'Unknown Client' : 'Unknown Service Provider';
           }
-          return { ...msg, senderName, serviceProviderUsername: senderUsername };
+          return { 
+            ...msg, 
+            senderName, 
+            serviceProviderUsername: senderUsername 
+          };
         })
       );
 
+      console.log('Enriched messages:', enrichedMessages);
       return enrichedMessages;
     } catch (error) {
       console.error('Error in getMessagesByRequest:', error);
