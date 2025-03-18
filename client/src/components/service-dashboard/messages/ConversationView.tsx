@@ -83,7 +83,7 @@ export function ConversationView({
             </span>
           </Avatar>
           <div className="font-medium">
-            {serviceProviderUsername ? (
+            {serviceProviderUsername && !isPreview ? (
               <Link 
                 href={`/service/${serviceProviderUsername}`}
                 className="text-blue-500 hover:text-blue-700 hover:underline"
@@ -92,7 +92,7 @@ export function ConversationView({
                 {typeof userName === 'string' ? userName : 'Service Provider'}
               </Link>
             ) : (
-              userName
+              <span>{typeof userName === 'string' ? userName : 'Service Provider'}</span>
             )}
           </div>
         </div>
