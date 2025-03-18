@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEditor";
 import { ReviewSection } from "@/components/reviews/ReviewSection";
 import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/schema";
+import { getAuth } from 'firebase/auth'; // Added Firebase import
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
@@ -141,7 +142,9 @@ export default function ServicePublicProfile() {
           offerId={latestEligibleOffer?.id}
           onSubmitReview={async (data) => {
             try {
-              const token = localStorage.getItem('auth_token');
+              const auth = getAuth();
+              const user = auth.currentUser;
+              const token = user?.accessToken; // Get token from Firebase
               if (!token) {
                 throw new Error('Authentication token not found');
               }
