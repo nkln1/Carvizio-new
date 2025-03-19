@@ -236,8 +236,8 @@ export default function ClientDashboard() {
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
         onCreateRequest={() => setShowRequestDialog(true)}
-        newOffersCount={newOffersCount}
-        unreadMessagesCount={unreadMessagesCount}
+        newOffersCount={newOffersCount > 0 ? newOffersCount : undefined}
+        unreadMessagesCount={unreadMessagesCount > 0 ? unreadMessagesCount : undefined}
       />
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
