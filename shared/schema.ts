@@ -291,7 +291,7 @@ export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
   clientId: integer("client_id").notNull().references(() => clients.id),
-  requestId: integer("request_id").notNull().references(() => requests.id),
+  requestId: integer("request_id").references(() => requests.id),
   offerId: integer("offer_id").references(() => sentOffers.id),
   rating: integer("rating").notNull(),
   comment: text("comment").notNull(),

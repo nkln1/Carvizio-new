@@ -965,10 +965,10 @@ export class DatabaseStorage implements IStorage {
             console.error('Error getting sender info:', error);
             senderName = msg.senderRole === 'client' ? 'Unknown Client' : 'Unknown Service Provider';
           }
-          return { 
-            ...msg, 
-            senderName, 
-            serviceProviderUsername: senderUsername 
+          return {
+            ...msg,
+            senderName,
+            serviceProviderUsername: senderUsername
           };
         })
       );
@@ -1015,7 +1015,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(workingHours.serviceProviderId, serviceProviderId))
         .orderBy(workingHours.dayOfWeek);
     } catch (error) {
-      console.error('Error getting service provider working hours:', error);
+      console.error('Errorgetting service provider working hours:', error);
       return [];
     }
   }
@@ -1026,7 +1026,7 @@ export class DatabaseStorage implements IStorage {
         .insert(workingHours)
         .values(workingHour)
         .returning();
-            return newWorkingHour;
+      return newWorkingHour;
     } catch (error) {
       console.error('Error creating working hour:', error);
       throw error;
@@ -1117,7 +1117,8 @@ export class DatabaseStorage implements IStorage {
 
       if (existingHour) {
         // Update existing record
-        const [updatedHour] = await db          .update(workingHours)
+        const [updatedHour] = await db
+          .update(workingHours)
           .set({
             openTime: workingHourData.openTime,
             closeTime: workingHourData.closeTime,
@@ -1178,7 +1179,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newReview] = await db
         .insert(reviews)
-        .values(review)
+        .values({
+          ...review,
+          reported: false,
+          lastModified: new Date(),
+          createdAt: new Date()
+        })
         .returning();
       return newReview;
     } catch (error) {
@@ -1194,7 +1200,8 @@ export class DatabaseStorage implements IStorage {
         .set(reviewData)
         .where(eq(reviews.id, id))
         .returning();
-      return updatedReview;    } catch (error) {
+      return updatedReview;
+    } catch (error) {
       console.error('Error updating review:', error);
       throw error;
     }
@@ -1212,7 +1219,7 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
     try {
       const result = await db
-        .select({ 
+        .select({
           averageRating: sql<number>`COALESCE(ROUND(AVG(${reviews.rating}::numeric), 1), 0)`
         })
         .from(reviews)
