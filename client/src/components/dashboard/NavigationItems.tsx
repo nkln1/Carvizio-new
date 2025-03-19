@@ -46,7 +46,7 @@ export function NavigationItems({
     { 
       id: "messages", 
       label: "Mesaje",
-      count: unreadMessagesCount 
+      count: unreadMessagesCount > 0 ? unreadMessagesCount : undefined
     },
     { id: "profile", label: "Cont" },
   ];
