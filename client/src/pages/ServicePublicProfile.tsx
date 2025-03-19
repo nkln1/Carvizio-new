@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Building2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,7 @@ import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEdito
 import { ReviewSection } from "@/components/reviews/ReviewSection";
 import type { ServiceProvider, WorkingHour, Review } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
@@ -25,10 +26,11 @@ const getDayName = (dayOfWeek: number): string => {
 export default function ServicePublicProfile() {
   const { username } = useParams<{ username: string }>();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isEditingHours, setIsEditingHours] = useState(false);
 
   const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
-    queryKey: ['service-profile', username],
+    queryKey: ['/api/service-profile', username],
     queryFn: async () => {
       if (!username) throw new Error("Username is required");
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
@@ -44,6 +46,37 @@ export default function ServicePublicProfile() {
     enabled: !!username
   });
 
+  // Review mutation
+  const reviewMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/reviews', {
+        ...data,
+        serviceProviderId: serviceProfile?.id
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit review');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-profile', username] });
+      toast({
+        title: "Succes",
+        description: "Recenzia a fost adăugată cu succes!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: error.message || "Nu s-a putut adăuga recenzia. Încercați din nou.",
+      });
+    }
+  });
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
       <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -57,8 +90,8 @@ export default function ServicePublicProfile() {
     </div>;
   }
 
-  // For now, we'll allow reviews for testing
-  const canReview = true;
+  // User can review if they are logged in and are not the service owner
+  const canReview = user && user.role === 'client' && user.username !== username;
 
   const isOwner = user?.role === 'service' && user?.username === username;
 
@@ -134,25 +167,10 @@ export default function ServicePublicProfile() {
         <div className="mt-8">
           <ReviewSection
             canReview={canReview}
-            requestId={1} // For testing, we'll use a fixed requestId
-            offerId={1} // For testing, we'll use a fixed offerId
             reviews={serviceProfile.reviews || []}
             onSubmitReview={async (data) => {
               try {
-                const response = await apiRequest('POST', '/api/reviews', {
-                  ...data,
-                  serviceProviderId: serviceProfile.id,
-                  requestId: 1, // Using fixed values for testing
-                  offerId: 1 // Using fixed values for testing
-                });
-
-                if (!response.ok) {
-                  const errorData = await response.json();
-                  throw new Error(errorData.error || 'Failed to submit review');
-                }
-
-                // Refresh the service profile to show the new review
-                queryClient.invalidateQueries(['service-profile', username]);
+                await reviewMutation.mutateAsync(data);
               } catch (error) {
                 console.error('Error submitting review:', error);
                 throw error;

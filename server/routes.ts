@@ -882,8 +882,7 @@ export function registerRoutes(app: Express): Server {
       if (userType === "client"){
         const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
         if (!client) {
-          return res.status(404).json({ error: "Client not found" });
-        }
+          return res.status(404).json({ error: "Client not found" });        }
 
         // Only update if phone number changed
         if (req.body.phone && req.body.phone !== client.phone) {
@@ -1475,7 +1474,6 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add this endpoint to get service conversations
-
   app.get("/api/service/conversations", validateFirebaseToken, async (req, res) => {    try {
       const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
       if (!serviceProvider) {
@@ -1719,7 +1717,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Client not found" });
       }
 
-      //      // Get all messagesfor this client
+      //      // Getall messagesfor this client
       const messages = await storage.getUserMessages(client.id, "client", null);
 
       // Group messages by requestId
@@ -1958,7 +1956,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
       }
 
-      const { rating, comment, offerId, requestId, serviceProviderId } = req.body;
+      const { rating, comment, offerId,  serviceProviderId } = req.body;
 
       // Verify serviceProvider exists
       const serviceProvider = await storage.getServiceProvider(serviceProviderId);
@@ -1966,7 +1964,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      const requestId = parseInt(req.params.requestId);
       // Find the offer to verify it belongs to this service provider
       const offers = await storage.getSentOffersByServiceProvider(serviceProviderId);
       const offer = offers.find(o => o.id === offerId);
