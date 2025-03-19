@@ -1966,21 +1966,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      // Verify offer exists if provided
-      if (offerId) {
-        const offers = await storage.getSentOffersByServiceProvider(serviceProviderId);
-        const offer = offers.find(o => o.id === offerId);
-        if (!offer) {
-          return res.status(400).json({ error: "Offer not found" });
-        }
+      // Find the offer to verify it belongs to this service provider
+      const offers = await storage.getSentOffersByServiceProvider(serviceProviderId);
+      const offer = offers.find(o => o.id === offerId);
+      
+      if (!offer) {
+        return res.status(400).json({ error: "Offer not found" });
       }
 
-      // Verify request exists if provided
-      if (requestId) {
-        const request = await storage.getRequest(requestId);
-        if (!request) {
-          return res.status(400).json({ error: "Request not found" });
-        }
+      // Use the request ID from the offer
+      const requestId = offer.requestId;
+      const request = await storage.getRequest(requestId);
+      if (!request) {
+        return res.status(400).json({ error: "Request not found" });
       }
 
       const review = await storage.createReview({
