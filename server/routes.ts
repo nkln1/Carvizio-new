@@ -888,7 +888,7 @@ export function registerRoutes(app: Express): Server {
         // Only update if phone number changed
         if (req.body.phone && req.body.phone !== client.phone) {
           // Check if phone is already taken by another user
-          const existingClientWithPhone = awaitstorage.getClientByPhone(req.body.phone);
+          const existingClientWithPhone = await storage.getClientByPhone(req.body.phone);
           if (existingClientWithPhone && existingClientWithPhone.id !== client.id) {
             return res.status(400).json({
               error: "Phone number already in use",
@@ -1966,17 +1966,17 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
+      const requestId = parseInt(req.params.requestId);
       // Find the offer to verify it belongs to this service provider
       const offers = await storage.getSentOffersByServiceProvider(serviceProviderId);
       const offer = offers.find(o => o.id === offerId);
-      
+
       if (!offer) {
         return res.status(400).json({ error: "Offer not found" });
       }
 
       // Use the request ID from the offer
-      const requestId = offer.requestId;
-      const request = await storage.getRequest(requestId);
+      const request = await storage.getRequest(offer.requestId);
       if (!request) {
         return res.status(400).json({ error: "Request not found" });
       }
@@ -1984,8 +1984,8 @@ export function registerRoutes(app: Express): Server {
       const review = await storage.createReview({
         clientId: client.id,
         serviceProviderId,
-        requestId: requestId || null,
-        offerId: offerId || null,
+        requestId: offer.requestId,
+        offerId: offerId,
         rating,
         comment,
         offerCompletedAt: new Date()
@@ -2155,7 +2155,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add the reviews endpoint inside the registerRoutes function
-  
+
 
   // Return the server at the end
   return httpServer;
