@@ -286,7 +286,7 @@ export const workingHours = pgTable("working_hours", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Update reviews table definition with correct column names
+// Update reviews table definition with optional offerCompletedAt
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
@@ -299,10 +299,10 @@ export const reviews = pgTable("reviews", {
   reportReason: text("report_reason"),
   lastModified: timestamp("last_modified").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  offerCompletedAt: timestamp("offer_completed_at").notNull()
+  offerCompletedAt: timestamp("offer_completed_at")
 }, (table) => {
   return {
-    // Ensure one review per client per offer
+    // Ensure one review per client per offer when offer exists
     uniqueClientOffer: unique().on(table.clientId, table.offerId)
   };
 });
@@ -315,7 +315,7 @@ export const insertReviewSchema = z.object({
   offerId: z.number().optional().nullable(),
   rating: z.number().min(1).max(5),
   comment: z.string().min(5, "Review must be at least 5 characters long"),
-  offerCompletedAt: z.date().default(() => new Date())
+  offerCompletedAt: z.date().optional().nullable()
 });
 
 // Review relations remain unchanged

@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews } from "@shared/schema";
+import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews, insertReviewSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -884,7 +884,7 @@ export function registerRoutes(app: Express): Server {
         if (!client) {
           return res.status(404).json({ error: "Client not found" });        }
 
-        // Only update if phone number changed
+                //        // Only update if phone number changed
         if (req.body.phone && req.body.phone !== client.phone) {
           // Check if phone is already taken by another user
           const existingClientWithPhone = await storage.getClientByPhone(req.body.phone);
@@ -1951,6 +1951,8 @@ export function registerRoutes(app: Express): Server {
   // Update the review endpoint to handle direct service reviews
   app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
     try {
+      console.log("Attempting to create review with data:", req.body);
+
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
@@ -1964,19 +1966,32 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      // Create the review
-      const review = await storage.createReview({
+      console.log("Creating review for service provider:", serviceProviderId, "by client:", client.id);
+
+      // Validate review data
+      const reviewData = insertReviewSchema.parse({
         serviceProviderId,
         clientId: client.id,
         rating,
-        comment,
-        offerCompletedAt: new Date()
+        comment
       });
 
+      // Create the review
+      const review = await storage.createReview(reviewData);
+
+      console.log("Review created successfully:", review);
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
-      res.status(500).json({ error: "Failed to create review" });
+      if (error instanceof Error) {
+        res.status(500).json({ 
+          error: "Failed to create review",
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      } else {
+        res.status(500).json({ error: "Failed to create review" });
+      }
     }
   });
 
