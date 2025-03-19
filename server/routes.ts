@@ -1960,6 +1960,28 @@ export function registerRoutes(app: Express): Server {
 
       const { rating, comment, offerId, requestId, serviceProviderId } = req.body;
 
+      // Verify serviceProvider exists
+      const serviceProvider = await storage.getServiceProvider(serviceProviderId);
+      if (!serviceProvider) {
+        return res.status(400).json({ error: "Service provider not found" });
+      }
+
+      // Verify offer exists if provided
+      if (offerId) {
+        const offer = await storage.getSentOffersByRequest(requestId);
+        if (!offer.length) {
+          return res.status(400).json({ error: "Offer not found" });
+        }
+      }
+
+      // Verify request exists if provided  
+      if (requestId) {
+        const request = await storage.getRequest(requestId);
+        if (!request) {
+          return res.status(400).json({ error: "Request not found" });
+        }
+      }
+
       const review = await storage.createReview({
         clientId: client.id,
         serviceProviderId,
