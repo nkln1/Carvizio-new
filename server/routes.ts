@@ -1948,7 +1948,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Review endpoints
+  // Update the review endpoint to handle direct service reviews
   app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
@@ -1956,7 +1956,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
       }
 
-      const { rating, comment, offerId,  serviceProviderId } = req.body;
+      const { rating, comment, serviceProviderId } = req.body;
 
       // Verify serviceProvider exists
       const serviceProvider = await storage.getServiceProvider(serviceProviderId);
@@ -1964,25 +1964,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      // Find the offer to verify it belongs to this service provider
-      const offers = await storage.getSentOffersByServiceProvider(serviceProviderId);
-      const offer = offers.find(o => o.id === offerId);
-
-      if (!offer) {
-        return res.status(400).json({ error: "Offer not found" });
-      }
-
-      // Use the request ID from the offer
-      const request = await storage.getRequest(offer.requestId);
-      if (!request) {
-        return res.status(400).json({ error: "Request not found" });
-      }
-
+      // Create the review
       const review = await storage.createReview({
-        clientId: client.id,
         serviceProviderId,
-        requestId: offer.requestId,
-        offerId: offerId,
+        clientId: client.id,
         rating,
         comment,
         offerCompletedAt: new Date()
@@ -1991,11 +1976,7 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
-      if (error.code === '23503') {
-        res.status(400).json({ error: "Invalid reference - offer or request not found" });
-      } else {
-        res.status(500).json({ error: "Failed to create review" });
-      }
+      res.status(500).json({ error: "Failed to create review" });
     }
   });
 
@@ -2150,9 +2131,6 @@ export function registerRoutes(app: Express): Server {
       console.log('Client disconnected');
     });
   });
-
-  // Add the reviews endpoint inside the registerRoutes function
-
 
   // Return the server at the end
   return httpServer;

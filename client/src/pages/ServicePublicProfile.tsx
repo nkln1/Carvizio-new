@@ -51,7 +51,7 @@ export default function ServicePublicProfile() {
     mutationFn: async (data: any) => {
       const response = await apiRequest('POST', '/api/reviews', {
         ...data,
-        serviceProviderId: serviceProfile?.id
+        serviceProviderId: serviceProfile?.id,
       });
 
       if (!response.ok) {
