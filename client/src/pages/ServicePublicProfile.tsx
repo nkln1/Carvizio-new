@@ -36,14 +36,13 @@ export default function ServicePublicProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Obținem profilul service-ului
-  const { data: serviceProfile, isLoading, refetch } = useQuery<ServiceProfileData>({
+  const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
     queryKey: ['/api/service-profile', username],
     queryFn: async () => {
       if (!username) throw new Error("Username is required");
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       if (!response.ok) throw new Error("Service-ul nu a fost găsit");
       const data = await response.json();
-      console.log("Received service profile data with reviews:", data.reviews);
       return {
         ...data,
         workingHours: data.workingHours || [],
@@ -116,61 +115,17 @@ export default function ServicePublicProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/service-profile', username] });
-      refetch();
-
       toast({
         title: "Succes",
         description: "Recenzia a fost adăugată cu succes!",
       });
       setIsSubmitting(false);
-
-      setTimeout(() => {
-        refetch();
-      }, 500);
     },
     onError: (error) => {
       toast({
         variant: "destructive",
         title: "Eroare",
         description: error.message || "Nu s-a putut adăuga recenzia. Încercați din nou.",
-      });
-      setIsSubmitting(false);
-    }
-  });
-
-  // Mutația pentru actualizarea recenziei
-  const updateReviewMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      setIsSubmitting(true);
-
-      const response = await apiRequest('PUT', `/api/reviews/${id}`, data);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update review');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/service-profile', username] });
-      refetch();
-
-      toast({
-        title: "Succes",
-        description: "Recenzia a fost actualizată cu succes!",
-      });
-      setIsSubmitting(false);
-
-      setTimeout(() => {
-        refetch();
-      }, 500);
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: error.message || "Nu s-a putut actualiza recenzia. Încercați din nou.",
       });
       setIsSubmitting(false);
     }
@@ -319,20 +274,11 @@ export default function ServicePublicProfile() {
             canReview={canReview}
             isLoading={isSubmitting}
             reviews={serviceProfile.reviews || []}
-            currentUserId={user?.role === 'client' ? user?.id : undefined}
             onSubmitReview={async (data) => {
               try {
                 await reviewMutation.mutateAsync(data);
               } catch (error) {
                 console.error('Error submitting review:', error);
-                throw error;
-              }
-            }}
-            onUpdateReview={async (id, data) => {
-              try {
-                await updateReviewMutation.mutateAsync({ id, data });
-              } catch (error) {
-                console.error('Error updating review:', error);
                 throw error;
               }
             }}
