@@ -888,7 +888,7 @@ export function registerRoutes(app: Express): Server {
         // Only update if phone number changed
         if (req.body.phone && req.body.phone !== client.phone) {
           // Check if phone is already taken by another user
-          const existingClientWithPhone = await storage.getClientByPhone(req.body.phone);
+          const existingClientWithPhone = awaitstorage.getClientByPhone(req.body.phone);
           if (existingClientWithPhone && existingClientWithPhone.id !== client.id) {
             return res.status(400).json({
               error: "Phone number already in use",
@@ -1960,12 +1960,11 @@ export function registerRoutes(app: Express): Server {
 
       const { rating, comment, offerId, requestId, serviceProviderId } = req.body;
 
-      // Create the review
       const review = await storage.createReview({
         clientId: client.id,
         serviceProviderId,
-        requestId,
-        offerId,
+        requestId: requestId || null,
+        offerId: offerId || null,
         rating,
         comment,
         offerCompletedAt: new Date()
@@ -1974,7 +1973,11 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
-      res.status(500).json({ error: "Failed to create review" });
+      if (error.code === '23503') {
+        res.status(400).json({ error: "Invalid reference - offer or request not found" });
+      } else {
+        res.status(500).json({ error: "Failed to create review" });
+      }
     }
   });
 
@@ -2131,31 +2134,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Add the reviews endpoint inside the registerRoutes function
-  app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
-    try {
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
-      }
-
-      const { rating, comment, serviceProviderId, requestId, offerId } = req.body;
-
-      const review = await storage.createReview({
-        clientId: client.id,
-        serviceProviderId,
-        requestId,
-        offerId: offerId || null,
-        rating,
-        comment,
-        offerCompletedAt: new Date()
-      });
-
-      res.status(201).json(review);
-    } catch (error) {
-      console.error("Error creating review:", error);
-      res.status(500).json({ error: "Failed to create review" });
-    }
-  });
+  
 
   // Return the server at the end
   return httpServer;

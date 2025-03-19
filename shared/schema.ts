@@ -311,7 +311,7 @@ export const reviews = pgTable("reviews", {
 export const insertReviewSchema = z.object({
   serviceProviderId: z.number(),
   clientId: z.number(),
-  requestId: z.number(),
+  requestId: z.number().optional().nullable(),
   offerId: z.number().optional().nullable(),
   rating: z.number().min(1).max(5),
   comment: z.string().min(5, "Review must be at least 5 characters long"),
