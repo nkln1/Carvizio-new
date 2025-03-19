@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, Mail, MapPin, Phone, Clock, Building2 } from "lucide-react";
+import { Loader2, Mail, MapPin, Phone, Clock, Building2, Star } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEditor";
 import { ReviewSection } from "@/components/reviews/ReviewSection";
-import type { ServiceProvider, WorkingHour, Review } from "@shared/schema";
+import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
   reviews: Review[];
+}
+
+interface AcceptedOffer extends SentOffer {
+  serviceProviderName: string;
+  serviceProviderUsername: string;
 }
 
 const getDayName = (dayOfWeek: number): string => {
@@ -28,14 +33,17 @@ export default function ServicePublicProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditingHours, setIsEditingHours] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
+  // Obținem profilul service-ului
+  const { data: serviceProfile, isLoading, refetch } = useQuery<ServiceProfileData>({
     queryKey: ['/api/service-profile', username],
     queryFn: async () => {
       if (!username) throw new Error("Username is required");
       const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
       if (!response.ok) throw new Error("Service-ul nu a fost găsit");
       const data = await response.json();
+      console.log("Received service profile data with reviews:", data.reviews);
       return {
         ...data,
         workingHours: data.workingHours || [],
@@ -46,12 +54,57 @@ export default function ServicePublicProfile() {
     enabled: !!username
   });
 
-  // Review mutation
+  // Obținem ofertele acceptate ale clientului pentru acest service
+  const { data: acceptedOffers } = useQuery<AcceptedOffer[]>({
+    queryKey: ['/api/client/offers/accepted', serviceProfile?.id],
+    queryFn: async () => {
+      if (!user || user.role !== 'client' || !serviceProfile?.id) return [];
+
+      // Obținem toate ofertele clientului
+      const response = await apiRequest('GET', '/api/client/offers');
+      if (!response.ok) return [];
+
+      const allOffers = await response.json();
+
+      // Filtrăm doar ofertele acceptate de la acest service provider
+      const accepted = allOffers.filter((offer: AcceptedOffer) => 
+        offer.serviceProviderId === serviceProfile.id && 
+        offer.status === "Accepted"
+      );
+
+      return accepted;
+    },
+    enabled: !!user && user.role === 'client' && !!serviceProfile?.id
+  });
+
+  // Verificăm dacă clientul poate lăsa o recenzie
+  const canReview = user && 
+    user.role === 'client' && 
+    user.username !== username && 
+    (acceptedOffers?.length > 0);
+
+  // Verificăm dacă utilizatorul este proprietarul profilului
+  const isOwner = user?.role === 'service' && user?.username === username;
+
+  // Mutația pentru trimiterea recenziei
   const reviewMutation = useMutation({
     mutationFn: async (data: any) => {
+      setIsSubmitting(true);
+
+      // Verificăm dacă există oferte acceptate
+      if (!acceptedOffers || acceptedOffers.length === 0) {
+        throw new Error('Nu aveți interacțiuni anterioare cu acest service');
+      }
+
+      // Folosim prima ofertă acceptată
+      const latestAcceptedOffer = acceptedOffers[0];
+
       const response = await apiRequest('POST', '/api/reviews', {
         ...data,
         serviceProviderId: serviceProfile?.id,
+        requestId: latestAcceptedOffer.requestId,
+        offerId: latestAcceptedOffer.id,
+        offerCompletedAt: latestAcceptedOffer.completedAt || new Date()
       });
 
       if (!response.ok) {
@@ -63,10 +116,17 @@ export default function ServicePublicProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/service-profile', username] });
+      refetch();
+
       toast({
         title: "Succes",
         description: "Recenzia a fost adăugată cu succes!",
       });
+      setIsSubmitting(false);
+
+      setTimeout(() => {
+        refetch();
+      }, 500);
     },
     onError: (error) => {
       toast({
@@ -74,6 +134,45 @@ export default function ServicePublicProfile() {
         title: "Eroare",
         description: error.message || "Nu s-a putut adăuga recenzia. Încercați din nou.",
       });
+      setIsSubmitting(false);
+    }
+  });
+
+  // Mutația pentru actualizarea recenziei
+  const updateReviewMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      setIsSubmitting(true);
+
+      const response = await apiRequest('PUT', `/api/reviews/${id}`, data);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update review');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-profile', username] });
+      refetch();
+
+      toast({
+        title: "Succes",
+        description: "Recenzia a fost actualizată cu succes!",
+      });
+      setIsSubmitting(false);
+
+      setTimeout(() => {
+        refetch();
+      }, 500);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: error.message || "Nu s-a putut actualiza recenzia. Încercați din nou.",
+      });
+      setIsSubmitting(false);
     }
   });
 
@@ -90,18 +189,61 @@ export default function ServicePublicProfile() {
     </div>;
   }
 
-  // User can review if they are logged in and are not the service owner
-  const canReview = user && user.role === 'client' && user.username !== username;
-
-  const isOwner = user?.role === 'service' && user?.username === username;
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-[#00aff5] flex items-center gap-2">
-          <Building2 className="h-6 w-6" />
-          {serviceProfile.companyName}
-        </h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
+          <h1 className="text-3xl font-bold text-[#00aff5] flex items-center gap-2">
+            <Building2 className="h-6 w-6" />
+            {serviceProfile.companyName}
+          </h1>
+
+          {/* Rating Preview Section */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center">
+              {serviceProfile.reviews && serviceProfile.reviews.length > 0 ? (
+                <>
+                  <div className="flex items-center">
+                    <span className="text-xl font-bold mr-2">
+                      {(serviceProfile.reviews.reduce((acc, review) => acc + review.rating, 0) / 
+                        serviceProfile.reviews.length).toFixed(1)}
+                    </span>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-5 w-5 ${
+                            star <= Math.round(serviceProfile.reviews.reduce((acc, review) => 
+                              acc + review.rating, 0) / serviceProfile.reviews.length)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2 text-gray-600">
+                      ({serviceProfile.reviews.length})
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <span className="text-gray-500 italic">Nicio recenzie încă</span>
+              )}
+            </div>
+
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                document.getElementById('review-section')?.scrollIntoView({ 
+                  behavior: 'smooth' 
+                });
+              }}
+            >
+              Vezi recenziile
+            </Button>
+          </div>
+        </div>
         <p className="text-gray-600 mb-4">Service Auto Autorizat</p>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -164,15 +306,33 @@ export default function ServicePublicProfile() {
         </div>
 
         {/* Review Section */}
-        <div className="mt-8">
+        <div className="mt-8" id="review-section">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Recenzii și evaluări</h2>
+          {!canReview && user?.role === 'client' && acceptedOffers?.length === 0 && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-amber-700">
+                Pentru a lăsa o recenzie, trebuie să fi acceptat o ofertă de la acest service auto.
+              </p>
+            </div>
+          )}
           <ReviewSection
             canReview={canReview}
+            isLoading={isSubmitting}
             reviews={serviceProfile.reviews || []}
+            currentUserId={user?.role === 'client' ? user?.id : undefined}
             onSubmitReview={async (data) => {
               try {
                 await reviewMutation.mutateAsync(data);
               } catch (error) {
                 console.error('Error submitting review:', error);
+                throw error;
+              }
+            }}
+            onUpdateReview={async (id, data) => {
+              try {
+                await updateReviewMutation.mutateAsync({ id, data });
+              } catch (error) {
+                console.error('Error updating review:', error);
                 throw error;
               }
             }}

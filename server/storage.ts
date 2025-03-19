@@ -1177,14 +1177,18 @@ export class DatabaseStorage implements IStorage {
 
   async createReview(review: InsertReview): Promise<Review> {
     try {
+      // Asigură-te că offerCompletedAt este definit
+      const reviewData = {
+        ...review,
+        offerCompletedAt: review.offerCompletedAt || new Date(), // Valoare implicită
+        reported: false,
+        lastModified: new Date(),
+        createdAt: new Date()
+      };
+
       const [newReview] = await db
         .insert(reviews)
-        .values({
-          ...review,
-          reported: false,
-          lastModified: new Date(),
-          createdAt: new Date()
-        })
+        .values(reviewData)
         .returning();
       return newReview;
     } catch (error) {

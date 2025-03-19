@@ -299,10 +299,9 @@ export const reviews = pgTable("reviews", {
   reportReason: text("report_reason"),
   lastModified: timestamp("last_modified").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  offerCompletedAt: timestamp("offer_completed_at")
+  offerCompletedAt: timestamp("offer_completed_at") // Trebuie să fie nullable
 }, (table) => {
   return {
-    // Ensure one review per client per offer when offer exists
     uniqueClientOffer: unique().on(table.clientId, table.offerId)
   };
 });

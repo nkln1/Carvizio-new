@@ -8,7 +8,7 @@ import session from "express-session";
 import { db } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { serviceProviders, workingHours } from '@shared/schema';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
@@ -288,7 +288,6 @@ export function registerRoutes(app: Express): Server {
 
       const username = req.params.username;
       console.log('Fetching service profile for username:', username);
-      console.log('Fetching service profile for username:', username);
 
       // First get service provider data
       const serviceProvider = await db.query.serviceProviders.findFirst({
@@ -311,7 +310,6 @@ export function registerRoutes(app: Express): Server {
 
       if (!serviceProvider) {
         console.log('No service found with username:', username);
-        console.log('No service found with username:', username);
         return res.status(404).json({ error: "Service-ul nu a fost găsit" });
       }
 
@@ -321,6 +319,36 @@ export function registerRoutes(app: Express): Server {
       });
 
       console.log('Working hours raw data:', workingHoursList);
+
+      // Fetch reviews directly from the database
+      console.log('Fetching reviews for service provider ID:', serviceProvider.id);
+      const serviceReviews = await db.select().from(reviews).where(eq(reviews.serviceProviderId, serviceProvider.id));
+      console.log('Found reviews count:', serviceReviews.length);
+
+      // Fetch client names for reviews
+      const reviewsWithClientData = await Promise.all(
+        serviceReviews.map(async (review) => {
+          try {
+            const client = await db.query.clients.findFirst({
+              where: eq(clients.id, review.clientId),
+              columns: { name: true }
+            });
+
+            return {
+              ...review,
+              clientName: client?.name || "Client"
+            };
+          } catch (err) {
+            console.error('Error fetching client for review:', err);
+            return {
+              ...review,
+              clientName: "Client"
+            };
+          }
+        })
+      );
+
+      console.log('Processed reviews with client data:', reviewsWithClientData.length);
 
       // Construct the response
       const responseData = {
@@ -342,10 +370,10 @@ export function registerRoutes(app: Express): Server {
           closeTime: wh.closeTime,
           isClosed: wh.isClosed
         })),
-        reviews: [] // Empty array for now
+        reviews: reviewsWithClientData
       };
 
-      console.log('Final response data:', JSON.stringify(responseData, null, 2));
+      console.log('Final response includes reviews:', responseData.reviews.length);
       res.json(responseData);
 
     } catch (error) {
@@ -1958,7 +1986,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
       }
 
-      const { rating, comment, serviceProviderId } = req.body;
+      const { rating, comment, serviceProviderId, offerId, requestId } = req.body;
 
       // Verify serviceProvider exists
       const serviceProvider = await storage.getServiceProvider(serviceProviderId);
@@ -1966,14 +1994,53 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
+      // Verificăm dacă clientul a interacționat cu acest service provider
+      // prin verificarea existenței unei oferte acceptate
+      let acceptedOffer = null;
+      const offers = await storage.getOffersForClient(client.id);
+
+      if (offerId) {
+        acceptedOffer = offers.find(offer => 
+          offer.id === offerId && 
+          offer.serviceProviderId === serviceProviderId && 
+          offer.status === "Accepted"
+        );
+
+        if (!acceptedOffer) {
+          return res.status(403).json({ 
+            error: "Cannot create review", 
+            message: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie." 
+          });
+        }
+      } else {
+        // Dacă nu este specificat un offerId, căutăm prima ofertă acceptată
+        acceptedOffer = offers.find(offer => 
+          offer.serviceProviderId === serviceProviderId && 
+          offer.status === "Accepted"
+        );
+
+        if (!acceptedOffer) {
+          return res.status(403).json({ 
+            error: "Cannot create review", 
+            message: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie." 
+          });
+        }
+      }
+
       console.log("Creating review for service provider:", serviceProviderId, "by client:", client.id);
+
+      // Determinăm data finalizării ofertei (completedAt sau data curentă)
+      const offerCompletedAt = acceptedOffer.completedAt || new Date();
 
       // Validate review data
       const reviewData = insertReviewSchema.parse({
         serviceProviderId,
         clientId: client.id,
         rating,
-        comment
+        comment,
+        requestId: requestId || acceptedOffer.requestId || null,
+        offerId: offerId || acceptedOffer.id || null,
+        offerCompletedAt // Adăugăm data finalizării
       });
 
       // Create the review
@@ -1995,6 +2062,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Endpoint pentru actualizarea recenziilor
+  // Endpoint pentru actualizarea recenziilor
+  app.put("/api/reviews/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Attempting to update review with data:", req.body);
+
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can update reviews." });
+      }
+
+      const reviewId = parseInt(req.params.id);
+      if (isNaN(reviewId)) {
+        return res.status(400).json({ error: "Invalid review ID" });
+      }
+
+      // Verifică dacă recenzia există 
+      const existingReview = await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.id, reviewId))
+        .limit(1);
+
+      if (!existingReview || existingReview.length === 0) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+
+      // Verifică separat dacă clientul este proprietarul
+      if (existingReview[0].clientId !== client.id) {
+        return res.status(403).json({ error: "This review does not belong to you" });
+      }
+
+      const { rating, comment } = req.body;
+
+      // Validează datele recenziei
+      if (!rating || rating < 1 || rating > 5 || !comment || comment.length < 20) {
+        return res.status(400).json({ 
+          error: "Invalid review data", 
+          message: "Rating must be between 1-5 and comment must be at least 20 characters" 
+        });
+      }
+
+      // Actualizează recenzia
+      const updatedReview = await storage.updateReview(reviewId, {
+        rating,
+        comment,
+        lastModified: new Date()
+      });
+
+      console.log("Review updated successfully:", updatedReview);
+      res.status(200).json(updatedReview);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      if (error instanceof Error) {
+        res.status(500).json({ 
+          error: "Failed to update review",
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      } else {
+        res.status(500).json({ error: "Failed to update review" });
+      }
+    }
+  });
+  
   // Working Hours endpoints
   app.get("/api/service/:serviceId/working-hours", async (req, res) => {
     try {
