@@ -20,7 +20,8 @@ export default function LoginDropdown() {
 
   // Add effect to handle automatic redirect when user logs in
   useEffect(() => {
-    if (user) {
+    const currentPath = window.location.pathname;
+    if (user && !currentPath.startsWith('/service/')) {
       if (user.role === "client") {
         setLocation("/dashboard");
       } else if (user.role === "service") {
