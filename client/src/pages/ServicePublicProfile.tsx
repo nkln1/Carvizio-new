@@ -131,6 +131,21 @@ export default function ServicePublicProfile() {
     }
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!username) throw new Error("Username is required");
+      const response = await apiRequest('GET', `/api/auth/service-profile/${username}`);
+      if (!response.ok) throw new Error("Service-ul nu a fost găsit");
+      const data = await response.json();
+      return {
+        ...data,
+        workingHours: data.workingHours || [],
+        reviews: data.reviews || []
+      };
+    };
+    fetchData();
+  }, [username]);
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
       <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
