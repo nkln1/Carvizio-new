@@ -1966,15 +1966,16 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      // Skip offer verification if not provided
+      // Verify offer exists if provided
       if (offerId) {
-        const offer = await storage.getSentOffersByRequest(requestId);
-        if (!offer.length) {
+        const offers = await storage.getSentOffersByServiceProvider(serviceProviderId);
+        const offer = offers.find(o => o.id === offerId);
+        if (!offer) {
           return res.status(400).json({ error: "Offer not found" });
         }
       }
 
-      // Skip request verification if not provided
+      // Verify request exists if provided
       if (requestId) {
         const request = await storage.getRequest(requestId);
         if (!request) {
