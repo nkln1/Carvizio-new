@@ -1966,7 +1966,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      // Verify offer exists if provided
+      // Skip offer verification if not provided
       if (offerId) {
         const offer = await storage.getSentOffersByRequest(requestId);
         if (!offer.length) {
@@ -1974,7 +1974,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
-      // Verify request exists if provided  
+      // Skip request verification if not provided
       if (requestId) {
         const request = await storage.getRequest(requestId);
         if (!request) {

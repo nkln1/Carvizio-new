@@ -45,14 +45,7 @@ export function ReviewSection({
   });
 
   const onSubmit = async (data: ReviewFormValues) => {
-    if (!offerId || !requestId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Missing required information for review submission",
-      });
-      return;
-    }
+    // No validation needed since offerId and requestId are optional
 
     try {
       setIsSubmitting(true);
