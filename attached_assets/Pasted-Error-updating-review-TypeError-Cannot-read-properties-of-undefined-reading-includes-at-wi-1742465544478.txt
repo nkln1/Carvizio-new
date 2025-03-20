@@ -1,0 +1,51 @@
+Error updating review: TypeError: Cannot read properties of undefined (reading 'includes')
+    at window.fetch (hmr-disable.ts:85:11)
+    at apiRequest (queryClient.ts:18:21)
+    at async onUpdateReview (ServicePublicProfile.tsx:303:17)
+    at async onSubmitEdit (ReviewSection.tsx:151:7)
+    at async chunk-YABUFNLM.js?v=0b6ef865:1675:9
+onUpdateReview @ ServicePublicProfile.tsx:309
+await in onUpdateReview
+onSubmitEdit @ ReviewSection.tsx:151
+(anonymous) @ chunk-YABUFNLM.js?v=0b6ef865:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=0b6ef865:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=0b6ef865:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=0b6ef865:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=0b6ef865:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=0b6ef865:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=0b6ef865:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=0b6ef865:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=0b6ef865:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=0b6ef865:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=0b6ef865:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=0b6ef865:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=0b6ef865:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=0b6ef865:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=0b6ef865:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=0b6ef865:5449
+ReviewSection.tsx:165 Error updating review: TypeError: Cannot read properties of undefined (reading 'includes')
+    at window.fetch (hmr-disable.ts:85:11)
+    at apiRequest (queryClient.ts:18:21)
+    at async onUpdateReview (ServicePublicProfile.tsx:303:17)
+    at async onSubmitEdit (ReviewSection.tsx:151:7)
+    at async chunk-YABUFNLM.js?v=0b6ef865:1675:9
+onSubmitEdit @ ReviewSection.tsx:165
+await in onSubmitEdit
+(anonymous) @ chunk-YABUFNLM.js?v=0b6ef865:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=0b6ef865:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=0b6ef865:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=0b6ef865:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=0b6ef865:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=0b6ef865:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=0b6ef865:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=0b6ef865:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=0b6ef865:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=0b6ef865:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=0b6ef865:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=0b6ef865:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=0b6ef865:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=0b6ef865:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=0b6ef865:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=0b6ef865:5449
