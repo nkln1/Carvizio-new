@@ -286,7 +286,7 @@ export const workingHours = pgTable("working_hours", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Update reviews table definition with optional offerCompletedAt
+// Update reviews table definition with modified constraints
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
@@ -299,10 +299,11 @@ export const reviews = pgTable("reviews", {
   reportReason: text("report_reason"),
   lastModified: timestamp("last_modified").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  offerCompletedAt: timestamp("offer_completed_at") // Trebuie să fie nullable
+  offerCompletedAt: timestamp("offer_completed_at") // Nullable
 }, (table) => {
   return {
-    uniqueClientOffer: unique().on(table.clientId, table.offerId)
+    // Modificarea constrângerii: clientul poate lăsa o singură recenzie per service provider
+    uniqueClientService: unique().on(table.clientId, table.serviceProviderId)
   };
 });
 

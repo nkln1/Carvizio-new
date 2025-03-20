@@ -75,8 +75,10 @@ export function ConversationList({
             <div className="flex justify-between items-start">
               <p className="font-medium">
                 {conv.serviceProviderUsername ? (
-                  <Link
+                  <a
                     href={`/service/${conv.serviceProviderUsername}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={`${
                       activeConversationId === conv.userId && activeRequestId === conv.requestId
                         ? "text-white hover:text-blue-100"
@@ -85,7 +87,7 @@ export function ConversationList({
                     onClick={(e) => e.stopPropagation()}
                   >
                     {conv.userName || `Client ${conv.userId}`}
-                  </Link>
+                  </a>
                 ) : (
                   conv.userName || `Client ${conv.userId}`
                 )}

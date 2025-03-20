@@ -1175,12 +1175,45 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Actualizarea metodei createReview pentru a verifica regulile noi
   async createReview(review: InsertReview): Promise<Review> {
     try {
-      // Asigură-te că offerCompletedAt este definit
+      // Verificăm dacă clientul a lăsat deja o recenzie pentru acest service
+      const existingReview = await db
+        .select()
+        .from(reviews)
+        .where(
+          and(
+            eq(reviews.clientId, review.clientId),
+            eq(reviews.serviceProviderId, review.serviceProviderId)
+          )
+        )
+        .limit(1);
+
+      if (existingReview.length > 0) {
+        throw new Error("Ați lăsat deja o recenzie pentru acest service");
+      }
+
+      // Verificăm dacă există o ofertă acceptată de la acest service pentru client
+      const acceptedOffers = await db
+        .select()
+        .from(sentOffers)
+        .where(
+          and(
+            eq(sentOffers.serviceProviderId, review.serviceProviderId),
+            eq(sentOffers.requestUserId, review.clientId),
+            eq(sentOffers.status, "Accepted")
+          )
+        );
+
+      if (!acceptedOffers.length) {
+        throw new Error("Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie");
+      }
+
+      // Continuăm cu inserarea recenziei
       const reviewData = {
         ...review,
-        offerCompletedAt: review.offerCompletedAt || new Date(), // Valoare implicită
+        offerCompletedAt: review.offerCompletedAt || new Date(),
         reported: false,
         lastModified: new Date(),
         createdAt: new Date()
@@ -1197,42 +1230,41 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateReview(id: number, reviewData: Partial<Review>): Promise<Review> {
+  // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
+  async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
     try {
-      const [updatedReview] = await db
-        .update(reviews)
-        .set(reviewData)
-        .where(eq(reviews.id, id))
-        .returning();
-      return updatedReview;
-    } catch (error) {
-      console.error('Error updating review:', error);
-      throw error;
-    }
-  }
-
-  async deleteReview(id: number): Promise<void> {
-    try {
-      await db.delete(reviews).where(eq(reviews.id, id));
-    } catch (error) {
-      console.error('Error deleting review:', error);
-      throw error;
-    }
-  }
-
-  async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
-    try {
-      const result = await db
-        .select({
-          averageRating: sql<number>`COALESCE(ROUND(AVG(${reviews.rating}::numeric), 1), 0)`
-        })
+      // Verificăm dacă clientul a lăsat deja o recenzie
+      const existingReview = await db
+        .select()
         .from(reviews)
-        .where(eq(reviews.serviceProviderId, serviceProviderId));
+        .where(
+          and(
+            eq(reviews.clientId, clientId),
+            eq(reviews.serviceProviderId, serviceProviderId)
+          )
+        )
+        .limit(1);
 
-      return result[0]?.averageRating ?? 0;
+      if (existingReview.length > 0) {
+        return false; // Clientul a lăsat deja o recenzie
+      }
+
+      // Verificăm dacă există oferte acceptate
+      const acceptedOffers = await db
+        .select()
+        .from(sentOffers)
+        .where(
+          and(
+            eq(sentOffers.serviceProviderId, serviceProviderId),
+            eq(sentOffers.requestUserId, clientId),
+            eq(sentOffers.status, "Accepted")
+          )
+        );
+
+      return acceptedOffers.length > 0; // Clientul poate lăsa recenzie dacă are oferte acceptate
     } catch (error) {
-      console.error('Error calculating average rating:', error);
-      return 0;
+      console.error('Error checking if client can review service:', error);
+      return false;
     }
   }
 }

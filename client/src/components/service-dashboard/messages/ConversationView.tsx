@@ -84,13 +84,15 @@ export function ConversationView({
           </Avatar>
           <div className="font-medium">
             {serviceProviderUsername ? (
-              <Link 
+              <a 
                 href={`/service/${serviceProviderUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-blue-500 hover:text-blue-700 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 {typeof userName === 'string' ? userName : 'Service Provider'}
-              </Link>
+              </a>
             ) : (
               userName
             )}
