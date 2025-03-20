@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Star, User, Filter, ArrowUpDown, ChevronDown, Check, ChevronLeft, ChevronRight, Edit2, Save } from "lucide-react";
+import { Star, User, Filter, ArrowUpDown, ChevronDown, Check, ChevronLeft, ChevronRight, Edit2, Save, Pencil } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -483,17 +483,17 @@ export function ReviewSection({
               <div className="space-y-6 divide-y">
                 {paginatedReviews.map((review) => (
                   <div key={review.id} className="pt-6 first:pt-0">
-  {currentUserId === review.clientId && (
-    <Button
-      variant="outline"
-      size="sm"
-      className="mb-2"
-      onClick={() => setEditingReviewId(review.id)}
-    >
-      <Pencil className="h-4 w-4 mr-2" />
-      Editează recenzia
-    </Button>
-  )}
+                    {currentUserId === review.clientId && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mb-2"
+                        onClick={() => setEditingReviewId(review.id)}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editează recenzia
+                      </Button>
+                    )}
                     {editingReviewId === review.id ? (
                       // Formular de editare recenzie
                       <div className="border p-4 rounded-lg bg-gray-50">
