@@ -302,7 +302,10 @@ export default function ServicePublicProfile() {
               try {
                 await apiRequest(`/api/reviews/${id}`, {
                   method: 'PUT',
-                  body: JSON.stringify(data)
+                  body: JSON.stringify(data),
+                  headers: {
+                    'Content-Type': 'application/json'
+                  }
                 });
                 queryClient.invalidateQueries(['serviceProfile', username]);
               } catch (error) {
