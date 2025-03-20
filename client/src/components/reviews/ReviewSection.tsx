@@ -43,6 +43,7 @@ interface ReviewProps {
   clientName?: string;
   createdAt: string | Date;
   lastModified?: string | Date;
+  currentUserId?: number;
 }
 
 type SortOption = "newest" | "oldest";
@@ -482,6 +483,17 @@ export function ReviewSection({
               <div className="space-y-6 divide-y">
                 {paginatedReviews.map((review) => (
                   <div key={review.id} className="pt-6 first:pt-0">
+  {currentUserId === review.clientId && (
+    <Button
+      variant="outline"
+      size="sm"
+      className="mb-2"
+      onClick={() => setEditingReviewId(review.id)}
+    >
+      <Pencil className="h-4 w-4 mr-2" />
+      Editează recenzia
+    </Button>
+  )}
                     {editingReviewId === review.id ? (
                       // Formular de editare recenzie
                       <div className="border p-4 rounded-lg bg-gray-50">
