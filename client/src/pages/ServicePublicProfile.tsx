@@ -289,11 +289,24 @@ export default function ServicePublicProfile() {
             canReview={canReview}
             isLoading={isSubmitting}
             reviews={serviceProfile.reviews || []}
+            currentUserId={user?.role === 'client' ? Number(user.id) : undefined}
             onSubmitReview={async (data) => {
               try {
                 await reviewMutation.mutateAsync(data);
               } catch (error) {
                 console.error('Error submitting review:', error);
+                throw error;
+              }
+            }}
+            onUpdateReview={async (id, data) => {
+              try {
+                await apiRequest(`/api/reviews/${id}`, {
+                  method: 'PUT',
+                  body: JSON.stringify(data)
+                });
+                queryClient.invalidateQueries(['serviceProfile', username]);
+              } catch (error) {
+                console.error('Error updating review:', error);
                 throw error;
               }
             }}
