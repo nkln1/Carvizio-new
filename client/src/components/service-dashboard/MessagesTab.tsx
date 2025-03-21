@@ -514,7 +514,12 @@ export default function MessagesTab({
                 isLoading={isLoadingMessages}
                 messageToSend={messageToSend}
                 setMessageToSend={setMessageToSend}
-                handleSendMessage={() => sendMessage(messageToSend)}
+                handleSendMessage={async () => {
+                  if (!messageToSend.trim()) return Promise.resolve();
+                  await sendMessage(messageToSend);
+                  setMessageToSend('');
+                  return Promise.resolve();
+                }}
                 serviceProviderUsername={activeConversation.serviceProviderUsername}
               />
             </Card>
