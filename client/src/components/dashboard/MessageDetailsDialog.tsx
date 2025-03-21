@@ -41,12 +41,8 @@ interface MessageDetailsDialogProps {
       }
     };
 
-    // Placeholder for the missing loadOfferDetails function
-    // This function should fetch offer details and update the offerData state
-    const loadOfferDetails = async () => {
-      //Implementation missing.  This should fetch offer details based on some ID.
-      console.warn("loadOfferDetails function is not implemented.");
-    };
+    // loadOfferDetails function is now implemented in MessagesTab.tsx
+    // and data is passed to this component via props
 
 
     return (

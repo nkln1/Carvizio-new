@@ -151,6 +151,7 @@ export function MessagesTab({
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      console.log("Fetching request details for requestId:", activeConversation.requestId);
       const response = await fetch(`/api/requests/${activeConversation.requestId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -160,15 +161,17 @@ export function MessagesTab({
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Server response:', errorText);
+        console.error('Server response for request details:', errorText);
         throw new Error(`Failed to load request details: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log("Received request data:", data);
       setRequestData(data);
 
       // Load offer details if available
       if (activeConversation.offerId) {
+        console.log("Fetching offer details for offerId:", activeConversation.offerId);
         const offerResponse = await fetch(`/api/client/offers/details/${activeConversation.offerId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -178,8 +181,15 @@ export function MessagesTab({
 
         if (offerResponse.ok) {
           const offerData = await offerResponse.json();
+          console.log("Received offer data:", offerData);
           setOfferData(offerData);
+        } else {
+          const errorText = await offerResponse.text();
+          console.error('Server response for offer details:', errorText);
+          console.warn(`Failed to load offer details: ${errorText}`);
         }
+      } else {
+        console.log("No offerId available in activeConversation, skipping offer details fetch");
       }
 
       setShowDetailsDialog(true);
@@ -197,16 +207,6 @@ export function MessagesTab({
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv => {
-    // Log conversations for debugging
-    if (conversations.length > 0 && !window.conversationsLogged) {
-      console.log("All conversations with offerId:", conversations.map(c => ({ 
-        requestId: c.requestId, 
-        userId: c.userId, 
-        offerId: c.offerId 
-      })));
-      window.conversationsLogged = true;
-    }
-    
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -215,6 +215,17 @@ export function MessagesTab({
       (conv.lastMessage && conv.lastMessage.toLowerCase().includes(searchLower))
     );
   });
+  
+  // Log conversation data for debugging
+  useEffect(() => {
+    if (conversations.length > 0) {
+      console.log("All conversations with offerId:", conversations.map(c => ({ 
+        requestId: c.requestId, 
+        userId: c.userId, 
+        offerId: c.offerId 
+      })));
+    }
+  }, [conversations]);
 
   if (!user) {
     return null;
