@@ -19,7 +19,7 @@ localPort = 24678
 externalPort = 3000
 
 [workflows]
-runButton = "Start application"
+runButton = "Start server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -44,3 +44,12 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Start server"
+author = 39123614
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "tsx server/index.ts"

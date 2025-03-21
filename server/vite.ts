@@ -146,7 +146,6 @@ export function log(message: string, source = "express") {
       next(e);
     }
   });
-}
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");

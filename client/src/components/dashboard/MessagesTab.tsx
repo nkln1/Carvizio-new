@@ -322,6 +322,15 @@ export function MessagesTab({
               >
                 ← Înapoi la conversații
               </Button>
+              <div>
+                <Button 
+                  onClick={handleViewDetails}
+                  variant="outline"
+                  className="ml-auto"
+                >
+                  {isLoadingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vezi detalii cerere"}
+                </Button>
+              </div>
             </div>
 
             {activeConversation && (
@@ -341,7 +350,6 @@ export function MessagesTab({
                   serviceProviderUsername={activeConversation.serviceProviderUsername}
                 />
               </Card>
-            )}
             )}
           </div>
         )}
