@@ -17,30 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, CalendarIcon, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useState } from "react";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useQuery } from "@tanstack/react-query";
 import type { Car as CarType } from "@shared/schema";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { ro } from "date-fns/locale";
 
-// Get today's date
+// Get today's date in YYYY-MM-DD format
 const today = new Date();
 today.setHours(0, 0, 0, 0);
-const defaultDate = new Date();
-defaultDate.setDate(defaultDate.getDate() + 1); // Add one day to current date
+const formattedToday = today.toISOString().split("T")[0];
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -52,14 +42,21 @@ const formSchema = z.object({
   carId: z.string({
     required_error: "Te rugăm să selectezi o mașină.",
   }),
-  preferredDates: z
-    .array(z.date())
+  preferredDate: z
+    .string()
     .min(1, {
-      message: "Te rugăm să selectezi cel puțin o dată preferată.",
+      message: "Te rugăm să selectezi o dată preferată.",
     })
-    .max(5, {
-      message: "Poți selecta maxim 5 date preferate.",
-    }),
+    .refine(
+      (date) => {
+        const selectedDate = new Date(date);
+        selectedDate.setHours(0, 0, 0, 0);
+        return selectedDate >= today;
+      },
+      {
+        message: "Data preferată nu poate fi anterioară datei curente.",
+      },
+    ),
   county: z.string().min(1, {
     message: "Te rugăm să selectezi județul.",
   }),
@@ -102,7 +99,7 @@ export function RequestForm({
       title: initialData?.title || "",
       description: initialData?.description || "",
       carId: initialData?.carId || "",
-      preferredDates: initialData?.preferredDates || [defaultDate],
+      preferredDate: initialData?.preferredDate || formattedToday,
       county: initialData?.county || "",
       cities: initialData?.cities || [],
     },
@@ -229,65 +226,18 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
 
             <FormField
               control={form.control}
-              name="preferredDates"
+              name="preferredDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date preferate (maxim 5)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start text-left font-normal ${
-                          !field.value?.length && "text-muted-foreground"
-                        }`}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value?.length > 0
-                          ? `${field.value.length} date selectate`
-                          : "Selectați datele preferate"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="multiple"
-                        selected={field.value}
-                        onSelect={(dates) => {
-                          // Limitează la maxim 5 date
-                          if (Array.isArray(dates) && dates.length > 5) {
-                            field.onChange(dates.slice(0, 5));
-                          } else {
-                            field.onChange(dates);
-                          }
-                        }}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {field.value?.map((date, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="px-3 py-1"
-                      >
-                        {format(date, "dd.MM.yyyy", { locale: ro })}
-                        <button
-                          type="button"
-                          className="ml-2 hover:text-destructive"
-                          onClick={() => {
-                            const newDates = [...field.value];
-                            newDates.splice(index, 1);
-                            field.onChange(newDates);
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
+                <FormItem>
+                  <FormLabel htmlFor="request-preferred-date">Data preferată</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="request-preferred-date"
+                      type="date"
+                      min={formattedToday}
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

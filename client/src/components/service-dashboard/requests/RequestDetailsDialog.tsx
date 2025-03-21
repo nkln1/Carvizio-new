@@ -4,10 +4,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import type { Request } from "@/types/dashboard";
 
 interface RequestDetailsDialogProps {
@@ -53,19 +51,14 @@ export function RequestDetailsDialog({
             </div>
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">
-                Date preferate
+                Data preferată
               </h3>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {request.preferredDates && request.preferredDates.length > 0 ? (
-                  request.preferredDates.map((date, index) => (
-                    <Badge key={index} variant="outline">
-                      {format(new Date(date), "dd.MM.yyyy")}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-sm">Nu există date specificate</p>
+              <p>
+                {format(
+                  new Date(request.preferredDate),
+                  "dd.MM.yyyy",
                 )}
-              </div>
+              </p>
             </div>
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">

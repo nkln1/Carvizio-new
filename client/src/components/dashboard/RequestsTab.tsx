@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Eye, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -173,28 +172,10 @@ export function RequestsTab({
                           {request.title}
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {request.preferredDates && request.preferredDates.length > 0 ? (
-                              <>
-                                {request.preferredDates.slice(0, 2).map((date, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {format(new Date(date), "dd.MM.yyyy")}
-                                  </Badge>
-                                ))}
-                                {request.preferredDates.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{request.preferredDates.length - 2}
-                                  </Badge>
-                                )}
-                              </>
-                            ) : request.preferredDate ? (
-                              <Badge variant="outline" className="text-xs">
-                                {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                              </Badge>
-                            ) : (
-                              "Nedisponibil"
-                            )}
-                          </div>
+                          {format(
+                            new Date(request.preferredDate),
+                            "dd.MM.yyyy",
+                          )}
                         </TableCell>
                         <TableCell>
                           {format(new Date(request.createdAt), "dd.MM.yyyy")}
@@ -318,23 +299,14 @@ export function RequestsTab({
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">
-                  Date preferate
+                  Data preferată
                 </h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {selectedRequest.preferredDates && selectedRequest.preferredDates.length > 0 ? (
-                    selectedRequest.preferredDates.map((date, index) => (
-                      <Badge key={index} variant="outline">
-                        {format(new Date(date), "dd.MM.yyyy")}
-                      </Badge>
-                    ))
-                  ) : selectedRequest.preferredDate ? (
-                    <Badge variant="outline">
-                      {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
-                    </Badge>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">Nu există date specificate</p>
+                <p>
+                  {format(
+                    new Date(selectedRequest.preferredDate),
+                    "dd.MM.yyyy",
                   )}
-                </div>
+                </p>
               </div>
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">

@@ -8,7 +8,6 @@ import {
   DialogPortal,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 
 interface MessageDetailsDialogProps {
@@ -86,23 +85,13 @@ interface MessageDetailsDialogProps {
                       </div>
                       <div>
                         <h4 className="font-medium text-sm text-muted-foreground">
-                          Date preferate
+                          Data preferată
                         </h4>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {requestData.preferredDates && Array.isArray(requestData.preferredDates) && requestData.preferredDates.length > 0 ? (
-                            requestData.preferredDates.map((date: string, index: number) => (
-                              <Badge key={index} variant="outline">
-                                {safeFormatDate(date)}
-                              </Badge>
-                            ))
-                          ) : requestData.preferredDate && isValidDate(requestData.preferredDate) ? (
-                            <Badge variant="outline">
-                              {safeFormatDate(requestData.preferredDate)}
-                            </Badge>
-                          ) : (
-                            <p className="text-muted-foreground text-sm">Nu există date specificate</p>
-                          )}
-                        </div>
+                        <p>
+                          {isValidDate(requestData.preferredDate) 
+                            ? safeFormatDate(requestData.preferredDate) 
+                            : "Dată nedisponibilă"}
+                        </p>
                       </div>
                       <div>
                         <h4 className="font-medium text-sm text-muted-foreground">

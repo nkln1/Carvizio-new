@@ -203,7 +203,7 @@ export const requests = pgTable("requests", {
   status: text("status", {
     enum: ["Active", "Rezolvat", "Anulat"]
   }).default("Active").notNull(),
-  preferredDates: timestamp("preferred_dates").array().notNull(),
+  preferredDate: timestamp("preferred_date").notNull(),
   county: text("county").notNull(),
   cities: text("cities").array().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -233,7 +233,7 @@ export const sentOffers = pgTable("sent_offers", {
   // Request details columns
   requestTitle: text("request_title").notNull(),
   requestDescription: text("request_description").notNull(),
-  requestPreferredDates: timestamp("request_preferred_dates").array().notNull(),
+  requestPreferredDate: timestamp("request_preferred_date").notNull(),
   requestCounty: text("request_county").notNull(),
   requestCities: text("request_cities").array().notNull(),
   // Add client information for messaging
@@ -254,7 +254,7 @@ export const insertSentOfferSchema = createInsertSchema(sentOffers).omit({
   // These fields will be filled automatically from the request
   requestTitle: true,
   requestDescription: true,
-  requestPreferredDates: true,
+  requestPreferredDate: true,
   requestCounty: true,
   requestCities: true,
   completedAt: true //Corrected: keep completedAt optional in insert schema
@@ -338,7 +338,9 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   })
 }));
 
-// Add review type declarations - moved to a single location below
+// Add type exports
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
 
 // Add review report schema
 export const reviewReportSchema = z.object({

@@ -1,7 +1,6 @@
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Eye, Trash2, MessageSquare } from "lucide-react";
 import type { Request } from "@/types/dashboard";
 
@@ -46,23 +45,8 @@ export function RequestCard({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="text-gray-600">Date preferate:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {request.preferredDates && request.preferredDates.length > 0 ? (
-                  request.preferredDates.slice(0, 3).map((date, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {format(new Date(date), "dd.MM.yyyy")}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-xs">Indisponibil</p>
-                )}
-                {request.preferredDates && request.preferredDates.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{request.preferredDates.length - 3}
-                  </Badge>
-                )}
-              </div>
+              <span className="text-gray-600">Data preferată:</span>
+              <p>{format(new Date(request.preferredDate), "dd.MM.yyyy")}</p>
             </div>
             <div>
               <span className="text-gray-600">Data trimiterii:</span>
