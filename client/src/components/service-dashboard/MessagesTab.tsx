@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, Loader2, Search, FileText } from "lucide-react"; 
+import { MessageSquare, Loader2, Search, FileText, Send } from "lucide-react"; 
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -508,15 +508,87 @@ export default function MessagesTab({
             </div>
 
             <Card className="fixed-height-card overflow-hidden">
-              <MessagesView
-                messages={messages}
-                activeConversation={activeConversation}
-                isLoading={isLoadingMessages}
-                messageToSend={messageToSend}
-                setMessageToSend={setMessageToSend}
-                handleSendMessage={() => sendMessage(messageToSend)}
-                serviceProviderUsername={activeConversation.serviceProviderUsername}
-              />
+              <div className="flex flex-col h-[70vh]">
+                <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-white z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="font-medium">
+                      {activeConversation.userName}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+                  {isLoadingMessages ? (
+                    <div className="flex justify-center items-center h-full">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex justify-center items-center h-full text-gray-500">
+                      Trimite primul mesaj pentru a începe conversația
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${
+                            message.senderId === Number(activeConversation.userId) ? 'justify-start' : 'justify-end'
+                          }`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg p-3 ${
+                              message.senderId === Number(activeConversation.userId)
+                                ? 'bg-white border border-gray-200'
+                                : 'bg-[#00aff5] text-white'
+                            }`}
+                          >
+                            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                            <div
+                              className={`text-xs mt-1 ${
+                                message.senderId === Number(activeConversation.userId) ? 'text-gray-500' : 'text-blue-100'
+                              }`}
+                            >
+                              {new Date(message.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 border-t">
+                  <div className="flex gap-2">
+                    <textarea
+                      placeholder="Scrie un mesaj..."
+                      value={messageToSend}
+                      onChange={(e) => setMessageToSend(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (messageToSend.trim()) {
+                            sendMessage(messageToSend);
+                            setMessageToSend('');
+                          }
+                        }
+                      }}
+                      className="flex-1 min-h-[2.5rem] max-h-[7.5rem] resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                    <Button
+                      onClick={() => {
+                        if (messageToSend.trim()) {
+                          sendMessage(messageToSend);
+                          setMessageToSend('');
+                        }
+                      }}
+                      disabled={!messageToSend.trim()}
+                      className="self-end"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </Card>
           </div>
         )}
