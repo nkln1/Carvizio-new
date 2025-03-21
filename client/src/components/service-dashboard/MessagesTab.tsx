@@ -521,6 +521,8 @@ export default function MessagesTab({
                   return Promise.resolve();
                 }}
                 serviceProviderUsername={activeConversation.serviceProviderUsername}
+                onViewDetails={handleViewDetails}
+                showDetailsButton={true}
               />
             </div>
           </div>
