@@ -109,17 +109,17 @@ export function MessagesTab({
     initializeWebSocket();
 
     // Handler pentru butonul "Vezi detalii" din MessagesView
-    const handleViewDetails = (event: CustomEvent) => {
+    const handleViewDetailsEvent = (event: CustomEvent) => {
       if (event.detail && event.detail.requestId) {
         handleViewDetails();
       }
     };
 
-    window.addEventListener('view-conversation-details', handleViewDetails as EventListener);
+    window.addEventListener('view-conversation-details', handleViewDetailsEvent as EventListener);
 
     return () => {
       mounted = false;
-      window.removeEventListener('view-conversation-details', handleViewDetails as EventListener);
+      window.removeEventListener('view-conversation-details', handleViewDetailsEvent as EventListener);
     };
   }, [wsInitialized]);
 
