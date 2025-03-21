@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, InfoIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { Message } from "@shared/schema";
 
@@ -20,6 +20,8 @@ interface MessagesViewProps {
   setMessageToSend: (message: string) => void;
   handleSendMessage: () => Promise<void>;
   serviceProviderUsername?: string;
+  onViewDetails?: () => void;
+  showDetailsButton?: boolean;
 }
 
 export default function MessagesView({
@@ -29,7 +31,9 @@ export default function MessagesView({
   messageToSend,
   setMessageToSend,
   handleSendMessage,
-  serviceProviderUsername
+  serviceProviderUsername,
+  onViewDetails,
+  showDetailsButton = false
 }: MessagesViewProps) {
   const [isSending, setIsSending] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -96,6 +100,12 @@ export default function MessagesView({
             )}
           </div>
         </div>
+        {showDetailsButton && onViewDetails && (
+          <Button variant="ghost" size="sm" onClick={onViewDetails}>
+            <InfoIcon className="h-4 w-4 mr-1" />
+            Vezi detalii cerere
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto bg-gray-50" ref={messagesContainerRef} style={{ minHeight: "200px" }}>
