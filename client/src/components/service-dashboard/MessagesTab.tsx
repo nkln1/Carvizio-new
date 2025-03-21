@@ -507,7 +507,7 @@ export default function MessagesTab({
               </Button>
             </div>
 
-            <Card className="fixed-height-card overflow-hidden">
+            <div className="flex flex-col h-[70vh] border rounded-md shadow">
               <MessagesView
                 messages={messages}
                 activeConversation={activeConversation}
@@ -522,7 +522,7 @@ export default function MessagesTab({
                 }}
                 serviceProviderUsername={activeConversation.serviceProviderUsername}
               />
-            </Card>
+            </div>
           </div>
         )}
 

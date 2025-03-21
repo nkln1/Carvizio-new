@@ -202,17 +202,19 @@ export default function MessagesList({ setActiveTab, initialConversation }: Mess
       </div>
       <div className="col-span-5 h-full lg:col-span-4">
         {activeConversation ? (
-          <MessagesView
-            messages={messages}
-            isLoading={isLoadingMessages}
-            activeConversation={activeConversation}
-            messageToSend={messageToSend}
-            setMessageToSend={setMessageToSend}
-            handleSendMessage={handleSendMessage}
-            serviceProviderUsername={activeConversation.serviceProviderUsername}
-          />
+          <div className="h-full border rounded-md shadow flex flex-col">
+            <MessagesView
+              messages={messages}
+              isLoading={isLoadingMessages}
+              activeConversation={activeConversation}
+              messageToSend={messageToSend}
+              setMessageToSend={setMessageToSend}
+              handleSendMessage={handleSendMessage}
+              serviceProviderUsername={activeConversation.serviceProviderUsername}
+            />
+          </div>
         ) : (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex h-full items-center justify-center border rounded-md shadow">
             <p className="text-muted-foreground">Selectează o conversație pentru a începe</p>
           </div>
         )}
