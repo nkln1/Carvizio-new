@@ -38,7 +38,7 @@ export default function MessagesView({
 
   useEffect(() => {
     if (endOfMessagesRef.current && messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = endOfMessagesRef.current.offsetTop;
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -70,19 +70,19 @@ export default function MessagesView({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-[70vh]">
       <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
             <span>
-              {typeof activeConversation.userName === 'string' 
+              {typeof activeConversation.userName === 'string'
                 ? activeConversation.userName.substring(0, 2).toUpperCase()
                 : 'US'}
             </span>
           </Avatar>
           <div className="font-medium">
             {serviceProviderUsername ? (
-              <a 
+              <a
                 href={`/service/${serviceProviderUsername}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -109,7 +109,7 @@ export default function MessagesView({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => (
+            {messages.slice().reverse().map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
