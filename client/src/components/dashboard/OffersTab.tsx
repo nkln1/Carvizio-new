@@ -272,13 +272,21 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
               )}
 
               {offer.status === "Accepted" && (
-                <Button
-                  variant="outline" size="sm" 
-                  className="h-7 px-2 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50"
-                  onClick={() => handleAction(offer.id, () => handleCancelOffer(offer))}
-                >
-                  <RotateCcw className="w-3 h-3 mr-1" />Anulează
-                </Button>
+                <>
+                  <Button
+                    variant="outline" size="sm" 
+                    className="h-7 px-2 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50"
+                    onClick={() => handleAction(offer.id, () => handleCancelOffer(offer))}
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />Anulează
+                  </Button>
+                  <Button
+                    variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => handleAction(offer.id, () => handleMessageClick(offer))}
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1" />Mesaj
+                  </Button>
+                </>
               )}
             </div>
           </div>
