@@ -23,7 +23,7 @@ export function log(message: string, source = "express") {
 }
 
   // In vite.ts file, modify the setupVite function
-  export async function setupVite(app: Express, server: Server) {
+export async function setupVite(app: Express, server: Server) {
     const serverOptions = {
       middlewareMode: true,
       // Explicitly disable HMR
@@ -109,57 +109,19 @@ export function log(message: string, source = "express") {
     });
   }
 
-  app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-
-    try {
-      const clientTemplate = path.resolve(
-        __dirname,
-        "..",
-        "client",
-        "index.html",
-      );
-
-      // Add a cache-busting query parameter to prevent stale content
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      const timestamp = new Date().getTime();
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}&t=${timestamp}"`,
-      );
-
-      const page = await vite.transformIndexHtml(url, template);
-
-      // Add cache control headers to prevent caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store',
-        'Content-Type': 'text/html',
-      });
-
-      res.status(200).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
-      next(e);
-    }
-  });
-
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+    const distPath = path.resolve(__dirname, "public");
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
-  }
+    if (!fs.existsSync(distPath)) {
+      throw new Error(
+        `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      );
+    }
 
-  app.use(express.static(distPath));
+    app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    // fall through to index.html if the file doesn't exist
+    app.use("*", (_req, res) => {
+      res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
