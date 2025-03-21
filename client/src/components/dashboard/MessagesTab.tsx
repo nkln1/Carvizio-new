@@ -108,18 +108,8 @@ export function MessagesTab({
 
     initializeWebSocket();
 
-    // Handler pentru butonul "Vezi detalii" din MessagesView
-    const handleViewDetailsEvent = (event: CustomEvent) => {
-      if (event.detail && event.detail.requestId) {
-        handleViewDetails();
-      }
-    };
-
-    window.addEventListener('view-conversation-details', handleViewDetailsEvent as EventListener);
-
     return () => {
       mounted = false;
-      window.removeEventListener('view-conversation-details', handleViewDetailsEvent as EventListener);
     };
   }, [wsInitialized]);
 
@@ -146,64 +136,6 @@ export function MessagesTab({
     await markConversationAsRead(conv.requestId, conv.userId);
   };
 
-  // Funcție pentru a încărca detaliile cererii
-  const loadRequestDetails = async (requestId: number) => {
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/requests/${requestId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load request details');
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error("Error loading request details:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca detaliile cererii."
-      });
-      throw error;
-    }
-  };
-
-  // Funcție pentru a încărca detaliile ofertei
-  const loadOfferDetails = async (offerId: number) => {
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No authentication token available');
-
-      const response = await fetch(`/api/client/offers/details/${offerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load offer details');
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error("Error loading offer details:", error);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca detaliile ofertei."
-      });
-      throw error;
-    }
-  };
-
   const handleViewDetails = async () => {
     if (!activeConversation?.requestId) return;
 
@@ -212,31 +144,38 @@ export function MessagesTab({
     setOfferData(null);
 
     try {
-      // Încărcăm detaliile cererii
-      const request = await loadRequestDetails(activeConversation.requestId);
-      setRequestData(request);
+      // Load request details
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
 
-      // Încărcăm detaliile ofertei
+      const response = await fetch(`/api/requests/${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error(`Failed to load request details: ${errorText}`);
+      }
+
+      const data = await response.json();
+      setRequestData(data);
+
+      // Load offer details if available
       if (activeConversation.offerId) {
-        const offer = await loadOfferDetails(activeConversation.offerId);
-        setOfferData(offer);
-      } else {
-        // Dacă nu avem offerId direct, încercăm să obținem oferte pentru acest request
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error('No authentication token available');
-
-        const response = await fetch(`/api/client/requests/${activeConversation.requestId}/offers`, {
+        const offerResponse = await fetch(`/api/client/offers/details/${activeConversation.offerId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
 
-        if (response.ok) {
-          const offers = await response.json();
-          if (offers && Array.isArray(offers) && offers.length > 0) {
-            setOfferData(offers[0]);
-          }
+        if (offerResponse.ok) {
+          const offerData = await offerResponse.json();
+          setOfferData(offerData);
         }
       }
 
