@@ -317,9 +317,8 @@ export default function MessagesTab({
             console.log("No offers found for this request");
           }
         }
-      } catch (offerError) {
-        console.error("Error loading offer details:", offerError);
-        setOfferData(null); 
+      } catch (error) {
+        console.error("Error loading offer details:", error);
       }
 
       setShowDetailsDialog(true);
