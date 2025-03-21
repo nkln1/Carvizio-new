@@ -103,7 +103,7 @@ export default function MessagesView({
         {showDetailsButton && onViewDetails && (
           <Button variant="ghost" size="sm" onClick={onViewDetails}>
             <InfoIcon className="h-4 w-4 mr-1" />
-            Vezi detalii cerere
+            {activeConversation.offerId ? "Vezi detalii cerere și ofertă" : "Vezi detalii cerere"}
           </Button>
         )}
       </div>

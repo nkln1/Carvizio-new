@@ -169,27 +169,32 @@ export function MessagesTab({
       console.log("Received request data:", data);
       setRequestData(data);
 
-      // Load offer details if available
-      if (activeConversation.offerId) {
-        console.log("Fetching offer details for offerId:", activeConversation.offerId);
-        const offerResponse = await fetch(`/api/client/offers/details/${activeConversation.offerId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+      // Try to fetch offers for this request even if no offerId is in the conversation
+      console.log("Fetching offers for requestId:", activeConversation.requestId);
+      const offersResponse = await fetch(`/api/client/offers?requestId=${activeConversation.requestId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-        if (offerResponse.ok) {
-          const offerData = await offerResponse.json();
-          console.log("Received offer data:", offerData);
-          setOfferData(offerData);
-        } else {
-          const errorText = await offerResponse.text();
-          console.error('Server response for offer details:', errorText);
-          console.warn(`Failed to load offer details: ${errorText}`);
+      if (offersResponse.ok) {
+        const offersData = await offersResponse.json();
+        console.log("Received offers data:", offersData);
+        
+        // Find an offer from this service provider
+        if (offersData && offersData.length > 0) {
+          // Use the offerId from the conversation if available, otherwise use the first offer
+          const offerToShow = activeConversation.offerId 
+            ? offersData.find(offer => offer.id === activeConversation.offerId) 
+            : offersData[0];
+          
+          if (offerToShow) {
+            setOfferData(offerToShow);
+          }
         }
       } else {
-        console.log("No offerId available in activeConversation, skipping offer details fetch");
+        console.warn(`No offers found for request ID ${activeConversation.requestId}`);
       }
 
       setShowDetailsDialog(true);
@@ -352,7 +357,7 @@ export function MessagesTab({
                   variant="outline"
                   className="ml-auto"
                 >
-                  {isLoadingData ? <Loader2 className="h-4 w-4 animate-spin" /> : activeConversation.offerId ? "Vezi detalii cerere și ofertă" : "Vezi detalii cerere"}
+                  {isLoadingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vezi detalii cerere și ofertă"}
                 </Button>
               </div>
             </div>
