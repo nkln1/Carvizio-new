@@ -178,10 +178,14 @@ export function useMessagesManagement(
 
       const newMessage = await response.json();
 
-      // Update messages cache
+      // Update messages cache with proper ordering
       queryClient.setQueryData(
         [`${baseEndpoint}/messages`, activeConversation.requestId],
-        (old: Message[] | undefined) => [...(old || []), newMessage]
+        (old: Message[] | undefined) => {
+          const currentMessages = [...(old || [])];
+          currentMessages.push(newMessage);
+          return currentMessages;
+        }
       );
 
       // Invalidate conversations to update last message

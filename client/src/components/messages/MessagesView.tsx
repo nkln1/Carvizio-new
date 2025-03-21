@@ -119,7 +119,9 @@ export default function MessagesView({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.slice().reverse().map((message) => (
+            {[...messages].sort((a, b) => 
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            ).map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
