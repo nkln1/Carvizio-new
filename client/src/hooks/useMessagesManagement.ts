@@ -14,6 +14,7 @@ export interface ConversationInfo {
   requestId: number;
   offerId?: number;
   sourceTab?: string;
+  serviceProviderUsername?: string;
 }
 
 export function useMessagesManagement(
@@ -69,7 +70,8 @@ export function useMessagesManagement(
         userId: initialConversation.userId,
         userName: initialConversation.userName || 'Unknown User',
         requestId: initialConversation.requestId,
-        offerId: initialConversation.offerId
+        offerId: initialConversation.offerId,
+        serviceProviderUsername: initialConversation.serviceProviderUsername
       });
 
       // Mark as read when conversation is opened

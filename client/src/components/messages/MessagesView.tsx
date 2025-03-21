@@ -70,7 +70,7 @@ export default function MessagesView({
   };
 
   return (
-    <div className="flex flex-col h-[70vh]">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
@@ -98,7 +98,7 @@ export default function MessagesView({
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto bg-gray-50" ref={messagesContainerRef}>
+      <div className="flex-1 p-4 overflow-y-auto bg-gray-50" ref={messagesContainerRef} style={{ minHeight: "200px" }}>
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
@@ -139,7 +139,7 @@ export default function MessagesView({
         )}
       </div>
 
-      <div className="p-3 border-t">
+      <div className="p-3 border-t mt-auto sticky bottom-0 bg-white">
         <div className="flex gap-2">
           <Textarea
             ref={textareaRef}
@@ -147,13 +147,14 @@ export default function MessagesView({
             value={messageToSend}
             onChange={(e) => setMessageToSend(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[2.5rem] max-h-[7.5rem] resize-none"
+            className="min-h-[2.5rem] max-h-[7.5rem] resize-none flex-1"
             disabled={isSending}
           />
           <Button
             onClick={onSendMessage}
             disabled={!messageToSend.trim() || isSending}
-            className="self-end"
+            className="self-end shrink-0"
+            size="icon"
           >
             {isSending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
