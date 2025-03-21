@@ -34,6 +34,7 @@ export default function ServicePublicProfile() {
   const { toast } = useToast();
   const [isEditingHours, setIsEditingHours] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasReviewedAlready, setHasReviewedAlready] = useState(false);
 
   // Obținem profilul service-ului
   const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
@@ -76,11 +77,22 @@ export default function ServicePublicProfile() {
     enabled: !!user && user.role === 'client' && !!serviceProfile?.id
   });
 
+  // Verificăm dacă utilizatorul curent a lăsat deja o recenzie
+  useEffect(() => {
+    if (user && user.role === 'client' && serviceProfile && serviceProfile.reviews) {
+      const existingReview = serviceProfile.reviews.find(
+        review => review.clientId === Number(user.id)
+      );
+      setHasReviewedAlready(!!existingReview);
+    }
+  }, [user, serviceProfile]);
+
   // Verificăm dacă clientul poate lăsa o recenzie
   const canReview = user && 
     user.role === 'client' && 
     user.username !== username && 
-    (acceptedOffers?.length > 0);
+    (acceptedOffers?.length > 0) &&
+    !hasReviewedAlready; // Adăugăm verificarea dacă utilizatorul a lăsat deja o recenzie
 
   // Verificăm dacă utilizatorul este proprietarul profilului
   const isOwner = user?.role === 'service' && user?.username === username;
@@ -120,6 +132,8 @@ export default function ServicePublicProfile() {
         description: "Recenzia a fost adăugată cu succes!",
       });
       setIsSubmitting(false);
+      // Setăm hasReviewedAlready la true după ce recenzia a fost adăugată cu succes
+      setHasReviewedAlready(true);
     },
     onError: (error) => {
       toast({
@@ -279,13 +293,25 @@ export default function ServicePublicProfile() {
         {/* Review Section */}
         <div className="mt-8" id="review-section">
           <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Recenzii și evaluări</h2>
-          {!canReview && user?.role === 'client' && acceptedOffers?.length === 0 && (
+
+          {/* Mesaj de informare pentru utilizatorii care au lăsat deja o recenzie */}
+          {user?.role === 'client' && hasReviewedAlready && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-blue-700">
+                Ați lăsat deja o recenzie pentru acest service. Mulțumim pentru feedback!
+              </p>
+            </div>
+          )}
+
+          {/* Mesaj de informare pentru utilizatorii care nu au interacționat cu service-ul */}
+          {!canReview && user?.role === 'client' && acceptedOffers?.length === 0 && !hasReviewedAlready && (
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-amber-700">
                 Pentru a lăsa o recenzie, trebuie să fi acceptat o ofertă de la acest service auto.
               </p>
             </div>
           )}
+
           <ReviewSection
             canReview={canReview}
             isLoading={isSubmitting}
