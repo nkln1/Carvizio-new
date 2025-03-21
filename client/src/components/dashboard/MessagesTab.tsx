@@ -127,6 +127,7 @@ export function MessagesTab({
     offerId?: number;
     serviceProviderUsername?: string;
   }) => {
+    console.log("Selected conversation in MessagesTab:", conv);
     setActiveConversation(conv);
     if (onConversationClear) {
       onConversationClear();
@@ -138,7 +139,9 @@ export function MessagesTab({
 
   const handleViewDetails = async () => {
     if (!activeConversation?.requestId) return;
-
+    
+    console.log("Viewing details for conversation:", activeConversation);
+    
     setIsLoadingData(true);
     setRequestData(null);
     setOfferData(null);
@@ -194,6 +197,16 @@ export function MessagesTab({
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv => {
+    // Log conversations for debugging
+    if (conversations.length > 0 && !window.conversationsLogged) {
+      console.log("All conversations with offerId:", conversations.map(c => ({ 
+        requestId: c.requestId, 
+        userId: c.userId, 
+        offerId: c.offerId 
+      })));
+      window.conversationsLogged = true;
+    }
+    
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -328,7 +341,7 @@ export function MessagesTab({
                   variant="outline"
                   className="ml-auto"
                 >
-                  {isLoadingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vezi detalii cerere"}
+                  {isLoadingData ? <Loader2 className="h-4 w-4 animate-spin" /> : activeConversation.offerId ? "Vezi detalii cerere și ofertă" : "Vezi detalii cerere"}
                 </Button>
               </div>
             </div>
