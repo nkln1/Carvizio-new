@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
-import { ConversationView } from "./messages/ConversationView";
+import MessagesView from "@/components/messages/MessagesView";
 import { ConversationList } from "./messages/ConversationList";
 import { ConversationInfo } from "@/pages/ServiceDashboard";
 import { useAuth } from "@/context/AuthContext";
@@ -129,6 +129,7 @@ export default function MessagesTab({
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [messageToSend, setMessageToSend] = useState('');
 
   const {
     activeConversation,
@@ -507,16 +508,14 @@ export default function MessagesTab({
             </div>
 
             <Card className="fixed-height-card overflow-hidden">
-              <ConversationView
+              <MessagesView
                 messages={messages}
-                userName={activeConversation.userName}
-                currentUserId={user.id}
+                activeConversation={activeConversation}
                 isLoading={isLoadingMessages}
-                onSendMessage={sendMessage}
-                onBack={handleBack}
-                onViewDetails={handleViewDetails}
-                showDetailsButton={!!activeConversation.requestId}
-                serviceProviderUsername={activeConversation.serviceProviderUsername} // Added serviceProviderUsername prop
+                messageToSend={messageToSend}
+                setMessageToSend={setMessageToSend}
+                handleSendMessage={() => sendMessage(messageToSend)}
+                serviceProviderUsername={activeConversation.serviceProviderUsername}
               />
             </Card>
           </div>
