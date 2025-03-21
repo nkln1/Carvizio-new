@@ -17,20 +17,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, CalendarIcon, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useState } from "react";
 import { romanianCounties, getCitiesForCounty } from "@/lib/romaniaData";
 import { useQuery } from "@tanstack/react-query";
 import type { Car as CarType } from "@shared/schema";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
 
-// Get today's date in YYYY-MM-DD format
+// Get today's date
 const today = new Date();
 today.setHours(0, 0, 0, 0);
-const formattedToday = today.toISOString().split("T")[0];
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -42,21 +50,14 @@ const formSchema = z.object({
   carId: z.string({
     required_error: "Te rugăm să selectezi o mașină.",
   }),
-  preferredDate: z
-    .string()
+  preferredDates: z
+    .array(z.date())
     .min(1, {
-      message: "Te rugăm să selectezi o dată preferată.",
+      message: "Te rugăm să selectezi cel puțin o dată preferată.",
     })
-    .refine(
-      (date) => {
-        const selectedDate = new Date(date);
-        selectedDate.setHours(0, 0, 0, 0);
-        return selectedDate >= today;
-      },
-      {
-        message: "Data preferată nu poate fi anterioară datei curente.",
-      },
-    ),
+    .max(5, {
+      message: "Poți selecta maxim 5 date preferate.",
+    }),
   county: z.string().min(1, {
     message: "Te rugăm să selectezi județul.",
   }),
