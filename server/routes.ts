@@ -524,10 +524,17 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Not authorized" });
       }
 
+      // Procesăm datele preferate ca array de date
+      const preferredDates = req.body.preferredDates 
+        ? Array.isArray(req.body.preferredDates) 
+          ? req.body.preferredDates.map((date: string) => new Date(date))
+          : [new Date(req.body.preferredDates)]
+        : [];
+
       const requestData = insertRequestSchema.parse({
         ...req.body,
         clientId: client.id,
-        preferredDate: new Date(req.body.preferredDate)
+        preferredDates
       });
 
       const request = await storage.createRequest(requestData);

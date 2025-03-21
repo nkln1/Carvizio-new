@@ -51,14 +51,19 @@ export function RequestDetailsDialog({
             </div>
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">
-                Data preferată
+                Date preferate
               </h3>
-              <p>
-                {format(
-                  new Date(request.preferredDate),
-                  "dd.MM.yyyy",
+              <div className="flex flex-wrap gap-2 mt-1">
+                {request.preferredDates && request.preferredDates.length > 0 ? (
+                  request.preferredDates.map((date, index) => (
+                    <Badge key={index} variant="outline">
+                      {format(new Date(date), "dd.MM.yyyy")}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-sm">Nu există date specificate</p>
                 )}
-              </p>
+              </div>
             </div>
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">

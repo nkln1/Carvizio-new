@@ -39,6 +39,8 @@ import { ro } from "date-fns/locale";
 // Get today's date
 const today = new Date();
 today.setHours(0, 0, 0, 0);
+const defaultDate = new Date();
+defaultDate.setDate(defaultDate.getDate() + 1); // Add one day to current date
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -100,7 +102,7 @@ export function RequestForm({
       title: initialData?.title || "",
       description: initialData?.description || "",
       carId: initialData?.carId || "",
-      preferredDate: initialData?.preferredDate || formattedToday,
+      preferredDates: initialData?.preferredDates || [defaultDate],
       county: initialData?.county || "",
       cities: initialData?.cities || [],
     },
@@ -227,18 +229,65 @@ ${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
 
             <FormField
               control={form.control}
-              name="preferredDate"
+              name="preferredDates"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="request-preferred-date">Data preferată</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="request-preferred-date"
-                      type="date"
-                      min={formattedToday}
-                      {...field}
-                    />
-                  </FormControl>
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date preferate (maxim 5)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${
+                          !field.value?.length && "text-muted-foreground"
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value?.length > 0
+                          ? `${field.value.length} date selectate`
+                          : "Selectați datele preferate"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="multiple"
+                        selected={field.value}
+                        onSelect={(dates) => {
+                          // Limitează la maxim 5 date
+                          if (Array.isArray(dates) && dates.length > 5) {
+                            field.onChange(dates.slice(0, 5));
+                          } else {
+                            field.onChange(dates);
+                          }
+                        }}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {field.value?.map((date, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="px-3 py-1"
+                      >
+                        {format(date, "dd.MM.yyyy", { locale: ro })}
+                        <button
+                          type="button"
+                          className="ml-2 hover:text-destructive"
+                          onClick={() => {
+                            const newDates = [...field.value];
+                            newDates.splice(index, 1);
+                            field.onChange(newDates);
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
