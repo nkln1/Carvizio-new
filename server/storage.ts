@@ -1230,6 +1230,28 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateReview(id: number, reviewData: Partial<Review>): Promise<Review> {
+    try {
+      const [updatedReview] = await db
+        .update(reviews)
+        .set({
+          ...reviewData,
+          lastModified: new Date()
+        })
+        .where(eq(reviews.id, id))
+        .returning();
+
+      if (!updatedReview) {
+        throw new Error('Review not found');
+      }
+
+      return updatedReview;
+    } catch (error) {
+      console.error('Error updating review:', error);
+      throw error;
+    }
+  }
+  
   // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
   async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
     try {

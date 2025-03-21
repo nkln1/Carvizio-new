@@ -2126,6 +2126,69 @@ export function registerRoutes(app: Express): Server {
       }
     }
   });
+
+  app.put("/api/reviews/:id", validateFirebaseToken, async (req, res) => {
+    try {
+      console.log("Attempting to update review with data:", req.body);
+
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can update reviews." });
+      }
+
+      const reviewId = parseInt(req.params.id);
+      if (isNaN(reviewId)) {
+        return res.status(400).json({ error: "Invalid review ID" });
+      }
+
+      // Verifică dacă recenzia există 
+      const existingReview = await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.id, reviewId))
+        .limit(1);
+
+      if (!existingReview || existingReview.length === 0) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+
+      // Verifică dacă clientul este proprietarul
+      if (existingReview[0].clientId !== client.id) {
+        return res.status(403).json({ error: "This review does not belong to you" });
+      }
+
+      const { rating, comment } = req.body;
+
+      // Validează datele recenziei
+      if (!rating || rating < 1 || rating > 5 || !comment || comment.length < 20) {
+        return res.status(400).json({ 
+          error: "Invalid review data", 
+          message: "Rating must be between 1-5 and comment must be at least 20 characters" 
+        });
+      }
+
+      // Actualizează recenzia
+      const updatedReview = await storage.updateReview(reviewId, {
+        rating,
+        comment,
+        lastModified: new Date()
+      });
+
+      console.log("Review updated successfully:", updatedReview);
+      res.status(200).json(updatedReview);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      if (error instanceof Error) {
+        res.status(500).json({ 
+          error: "Failed to update review",
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      } else {
+        res.status(500).json({ error: "Failed to update review" });
+      }
+    }
+  });
   
   // Working Hours endpoints
   app.get("/api/service/:serviceId/working-hours", async (req, res) => {

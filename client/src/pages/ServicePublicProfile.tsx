@@ -248,12 +248,13 @@ export default function ServicePublicProfile() {
                 </Button>
               )}
             </div>
-            {isOwner && isEditingHours ? (
-              <WorkingHoursEditor
-                serviceId={serviceProfile.id}
-                workingHours={serviceProfile.workingHours || []}
-                onClose={() => setIsEditingHours(false)}
-              />
+      {isOwner && isEditingHours ? (
+        <WorkingHoursEditor
+          serviceId={serviceProfile.id}
+          workingHours={serviceProfile.workingHours || []}
+          onClose={() => setIsEditingHours(false)}
+          username={username} // Adaugă username-ul ca prop
+        />
             ) : (
               <div className="space-y-2">
                 {[1, 2, 3, 4, 5, 6, 0].map((day) => {
@@ -300,14 +301,12 @@ export default function ServicePublicProfile() {
             }}
             onUpdateReview={async (id, data) => {
               try {
-                await apiRequest(`/api/reviews/${id}`, {
-                  method: 'PUT',
-                  body: JSON.stringify(data),
-                  headers: {
-                    'Content-Type': 'application/json'
-                  }
-                });
-                queryClient.invalidateQueries(['serviceProfile', username]);
+                const response = await apiRequest('PUT', `/api/reviews/${id}`, data);
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to update review');
+                }
+                queryClient.invalidateQueries(['/api/service-profile', username]);
               } catch (error) {
                 console.error('Error updating review:', error);
                 throw error;
