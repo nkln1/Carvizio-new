@@ -124,7 +124,7 @@ export function ConversationView({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => (
+            {messages.slice().reverse().map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
