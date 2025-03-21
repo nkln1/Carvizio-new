@@ -96,6 +96,18 @@ export default function MessagesView({
             )}
           </div>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => window.dispatchEvent(new CustomEvent('view-conversation-details', { 
+            detail: { 
+              requestId: activeConversation.requestId,
+              offerId: activeConversation.offerId 
+            } 
+          }))}
+        >
+          Vezi detalii
+        </Button>
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto bg-gray-50" ref={messagesContainerRef} style={{ minHeight: "200px" }}>

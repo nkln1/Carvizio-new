@@ -223,8 +223,19 @@ export default function MessagesTab({
 
     initializeWebSocket();
 
+    // Handler pentru butonul "Vezi detalii" din MessagesView
+    const handleViewDetails = (event: CustomEvent) => {
+      if (event.detail && event.detail.requestId) {
+        loadRequestDetails(event.detail.requestId, event.detail.offerId);
+        setShowDetailsDialog(true);
+      }
+    };
+
+    window.addEventListener('view-conversation-details', handleViewDetails as EventListener);
+
     return () => {
       mounted = false;
+      window.removeEventListener('view-conversation-details', handleViewDetails as EventListener);
     };
   }, [wsInitialized]);
 
