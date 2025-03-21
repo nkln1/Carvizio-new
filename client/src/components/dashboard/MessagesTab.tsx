@@ -16,7 +16,7 @@ import {
   PaginationItem,
 } from "@/components/ui/pagination";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
-import { ConversationView } from "@/components/service-dashboard/messages/ConversationView";
+import MessagesView from "@/components/messages/MessagesView";
 import { ConversationList } from "@/components/service-dashboard/messages/ConversationList";
 import { MessageDetailsDialog } from "./MessageDetailsDialog";
 import { useAuth } from "@/context/AuthContext";
@@ -52,6 +52,7 @@ export function MessagesTab({
   const [requestData, setRequestData] = useState<any>(null);
   const [offerData, setOfferData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [messageToSend, setMessageToSend] = useState('');
 
   const {
     activeConversation,
@@ -325,16 +326,14 @@ export function MessagesTab({
 
             {activeConversation && (
               <Card className="fixed-height-card overflow-hidden">
-                <ConversationView
+                <MessagesView
                   messages={messages}
-                  userName={activeConversation.userName}
-                  serviceProviderUsername={activeConversation.serviceProviderUsername}
-                  currentUserId={user.id}
+                  activeConversation={activeConversation}
                   isLoading={isLoadingMessages}
-                  onSendMessage={sendMessage}
-                  onBack={handleBack}
-                  onViewDetails={handleViewDetails}
-                  showDetailsButton={!!activeConversation.requestId}
+                  messageToSend={messageToSend}
+                  setMessageToSend={setMessageToSend}
+                  handleSendMessage={() => sendMessage(messageToSend)}
+                  serviceProviderUsername={activeConversation.serviceProviderUsername}
                 />
               </Card>
             )}
