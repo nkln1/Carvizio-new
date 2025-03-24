@@ -58,7 +58,7 @@ export default function Navigation() {
             <span
               className="ml-2 text-xl sm:text-3xl font-bold text-gray-900 font-gugi"
             >
-              CARVIZIO®
+              CARVIZIO<sup className="text-xs font-normal">®</sup>
             </span>
           </button>
           <div className="flex items-center space-x-2 sm:space-x-4">

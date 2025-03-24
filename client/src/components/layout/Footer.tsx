@@ -46,11 +46,11 @@ export default function Footer() {
               className="h-6 sm:h-8 w-auto"
             />
             <span className="text-lg sm:text-xl font-bold text-white font-gugi">
-              CARVIZIO®
+              CARVIZIO<sup className="text-xs font-normal">®</sup>
             </span>
           </button>
           <p className="mt-4 text-center text-sm sm:text-base text-gray-400">
-            © {currentYear} CARVIZIO®. All rights reserved.
+            © {currentYear} CARVIZIO<sup className="text-xs">®</sup>. All rights reserved.
           </p>
         </div>
       </div>
