@@ -56,7 +56,7 @@ export default function Footer() {
         {/* Sponsors Section */}
         <div className="mb-10">
           <h3 className="text-lg font-semibold text-center text-[#00aff5] mb-4">
-            Sponsorii Noștri
+            Sponsori
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {mockSponsors.map((sponsor) => (
