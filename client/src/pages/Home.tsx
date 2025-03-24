@@ -11,7 +11,7 @@ import Sponsors from "@/components/home/Sponsors";
 
 export default function Home() {
   useEffect(() => {
-    document.title = "CARVIZIO - Găsește service auto rapid și ușor";
+    document.title = "CARVIZIO® - Găsește service auto rapid și ușor";
   }, []);
 
   return (
