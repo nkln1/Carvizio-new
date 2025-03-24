@@ -123,22 +123,34 @@ export function RequestForm({
       const selectedCar = userCars.find(car => car.id === parseInt(selectedCarId));
       if (selectedCar) {
         const existingDescription = form.getValues("description");
-        if (!existingDescription || !existingDescription.includes("Detalii mașină:")) {
-          const carDetails = `
-Detalii mașină:
-- Marca: ${selectedCar.brand}
-- Model: ${selectedCar.model}
-- An fabricație: ${selectedCar.year}
-${selectedCar.vin ? `- Serie șasiu (VIN): ${selectedCar.vin}` : ''}
-- Motor: ${selectedCar.fuelType}
-- Transmisie: ${selectedCar.transmission}
-- Kilometraj: ${selectedCar.mileage} km
 
-Descriere cerere:
-${form.getValues("description").split("\n\nDetalii mașină:")[0] || ""}`;
-
-          form.setValue("description", carDetails.trim(), { shouldDirty: true });
+        // Extrage descrierea utilizatorului din textul existent (dacă există)
+        let userDescription = '';
+        if (existingDescription.includes("Descriere cerere:")) {
+          // Extrage textul de după "Descriere cerere:" și înainte de "Detalii mașină:" (dacă există)
+          const descriptionMatch = existingDescription.match(/Descriere cerere:([\s\S]*?)(?:\n\nDetalii mașină:|$)/);
+          if (descriptionMatch && descriptionMatch[1]) {
+            userDescription = descriptionMatch[1].trim();
+          }
+        } else if (!existingDescription.includes("Detalii mașină:")) {
+          // Dacă nu există "Descriere cerere:" sau "Detalii mașină:", folosește toată descrierea
+          userDescription = existingDescription;
         }
+
+        // Construiește noua descriere cu ordinea inversată
+        const carDetails = `Descriere cerere:
+  ${userDescription}
+
+  Detalii mașină:
+  - Marca: ${selectedCar.brand}
+  - Model: ${selectedCar.model}
+  - An fabricație: ${selectedCar.year}
+  ${selectedCar.vin ? `- Serie șasiu (VIN): ${selectedCar.vin}` : ''}
+  - Motor: ${selectedCar.fuelType}
+  - Transmisie: ${selectedCar.transmission}
+  - Kilometraj: ${selectedCar.mileage} km`;
+
+        form.setValue("description", carDetails.trim(), { shouldDirty: true });
       }
     }
   }, [form.watch("carId"), userCars]);
