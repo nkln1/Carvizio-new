@@ -26,6 +26,30 @@ const testimonials = [
     testimonial: "Am găsit rapid un service care m-a ajutat cu problema la mașină, la un preț corect. Serviciile sunt excelente și totul a fost transparent.",
     rating: 5,
     image: "https://i.ibb.co/Mgp43wv/Maria.jpg"
+  },
+  {
+    name: "George M.",
+    testimonial: "Foarte utilă aplicația! În câteva minute am primit oferte și am ales varianta cea mai avantajoasă pentru schimbul de plăcuțe.",
+    rating: 5,
+    image: "https://i.ibb.co/tpvZbqNb/George.jpg"
+  },
+  {
+    name: "Raluca P.",
+    testimonial: "Recomand CARVIZIO! Mi-a plăcut că am putut compara prețurile rapid și am evitat drumurile inutile prin oraș.",
+    rating: 5,
+    image: "https://i.ibb.co/Mk3qsKXP/Raluca.jpg"
+  },
+  {
+    name: "Mihai V.",
+    testimonial: "Foarte tare aplicația! Am găsit un service exact cum îmi doream, la preț bun și aproape de casă.",
+    rating: 5,
+    image: "https://i.ibb.co/gLfp24CS/Mihai.jpg"
+  },
+  {
+    name: "Ioana S.",
+    testimonial: "O experiență excelentă! Totul a decurs ușor, iar comunicarea cu service-ul ales a fost foarte bună.",
+    rating: 5,
+    image: "https://i.ibb.co/Z0XM4HV/Ioana.jpg"
   }
 ];
 
