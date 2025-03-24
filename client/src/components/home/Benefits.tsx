@@ -28,7 +28,7 @@ export default function Benefits() {
     <div className="bg-gradient-to-r from-[#00aff5] to-[#005f99] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl font-extrabold text-center text-white sm:text-5xl">
-          De ce să alegi CARVIZIO
+          De ce să alegi CARVIZIO<span className="relative" style={{ fontSize: '0.5em', top: '-0.9em', fontFamily: 'Times New Roman, serif', fontStyle: 'normal' }}>®</span>
         </h2>
         <p className="mt-4 text-lg text-center text-blue-100 font-sans">
           Simplificăm procesul de întreținere auto pentru tine.
