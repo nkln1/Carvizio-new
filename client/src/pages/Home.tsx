@@ -7,6 +7,7 @@ import FAQ from "@/components/home/FAQ";
 import AppPreview from "@/components/home/AppPreview";
 import Footer from "@/components/layout/Footer";
 import TestimonialCarousel from "@/components/home/TestimonialCarousel";
+import Sponsors from "@/components/home/Sponsors";
 
 export default function Home() {
   useEffect(() => {
@@ -26,6 +27,9 @@ export default function Home() {
       </ParallaxWrapper>
       <ParallaxWrapper offset={50}>
         <TestimonialCarousel />
+      </ParallaxWrapper>
+      <ParallaxWrapper offset={45}>
+        <Sponsors />
       </ParallaxWrapper>
       <ParallaxWrapper offset={50}>
         <AppPreview />
