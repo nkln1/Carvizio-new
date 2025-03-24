@@ -1,7 +1,8 @@
+
 import { ChevronRight } from "lucide-react";
 import AuthDialog from "@/components/auth/AuthDialog";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { useLocation } from "wouter";
 
 export default function Hero() {
@@ -16,25 +17,25 @@ export default function Hero() {
   };
 
   return (
-    <div className="relative bg-gray-900 overflow-hidden">
-      <div className="absolute inset-0">
+    <section className="relative py-20 overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-black opacity-60"></div>
         <img
-          className="w-full h-full object-cover opacity-50"
-          src="https://i.ibb.co/q7mrkwc/carvizio.jpg"
-          alt="Mechanic working on car"
+          src="https://images.unsplash.com/photo-1575564413292-000318a0dc43?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+          alt="Background"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-transparent to-gray-900 opacity-90"></div>
       </div>
-      <div className="relative max-w-7xl mx-auto py-24 px-6 sm:py-32 sm:px-12 lg:px-16 flex flex-col items-center text-center">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl drop-shadow-lg">
-          Găsește cel mai bun service auto din zona ta,
-          <br />
-          <span className="text-[#00aff5]">rapid, ușor și GRATUIT!</span>
-        </h1>
-        <p className="mt-6 text-lg sm:text-xl text-gray-300 max-w-3xl">
-          Descoperă service-uri auto de încredere în zona ta. Primește cotații
-          rapide, programează-te în câteva minute și repară-ți mașina fără bătăi
-          de cap.
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="text-center lg:text-left">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-tight">
+            Găsește service-ul auto <br className="hidden lg:inline" />
+            <span className="text-[#00aff5]">în doar câteva minute</span>
+          </h1>
+          <p className="mt-6 text-xl text-gray-300 max-w-3xl mx-auto lg:mx-0">
+            Platforma care conectează șoferii cu service-urile auto profesionale
+            din România. Rapid, transparent și fără bătăi
+            de cap.
         </p>
         <div className="mt-10 flex space-x-4">
           {user ? (
@@ -60,10 +61,11 @@ export default function Hero() {
             onClick={() => scrollToSection("how-it-works")}
             className="inline-flex items-center px-8 py-3 border border-white text-lg font-medium rounded-full text-white bg-transparent hover:bg-gray-800 shadow-lg transition-transform transform hover:scale-105"
           >
-            Află mai multe
+            Cum funcționează
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
