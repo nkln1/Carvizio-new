@@ -14,7 +14,6 @@ export default function Navigation() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -23,7 +22,6 @@ export default function Navigation() {
     queryKey: ['/api/messages/unread'],
     enabled: !!auth.currentUser
   });
-
   const unreadClientsCount = unreadData?.count ?? 0;
 
   const handleContactClick = () => {
@@ -58,7 +56,7 @@ export default function Navigation() {
             <span
               className="ml-2 text-xl sm:text-3xl font-bold text-gray-900 font-gugi"
             >
-              CARVIZIO<sup className="text-xs font-normal">®</sup>
+              CARVIZIO<span className="relative" style={{ fontSize: '0.5em', top: '-0.9em', fontFamily: 'Times New Roman, serif', fontStyle: 'normal' }}>®</span>
             </span>
           </button>
           <div className="flex items-center space-x-2 sm:space-x-4">
