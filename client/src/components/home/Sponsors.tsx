@@ -69,7 +69,7 @@ export default function Sponsors() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-[#00aff5]">
-                Devino Sponsor CARVIZIO<span className="relative" style={{ fontSize: '0.5em', top: '-0.9em', fontFamily: 'Times New Roman, serif', fontStyle: 'normal' }}>®</span>
+                Devino Sponsor CARVIZIO®
               </DialogTitle>
               <DialogDescription className="pt-4 space-y-4 text-base">
                 <p>

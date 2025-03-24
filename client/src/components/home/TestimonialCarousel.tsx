@@ -78,7 +78,7 @@ export default function TestimonialCarousel() {
     <div className="bg-gradient-to-r from-blue-50 to-blue-100 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl font-extrabold text-center text-gray-900 sm:text-5xl mb-12">
-          Ce spun utilizatorii <span className="text-[#00aff5]">CARVIZIO<span className="relative" style={{ fontSize: '0.5em', top: '-0.9em', fontFamily: 'Times New Roman, serif', fontStyle: 'normal' }}>®</span></span>
+          Ce spun utilizatorii <span className="text-[#00aff5]">CARVIZIO</span>
         </h2>
         <div className="relative h-[400px] overflow-hidden">
           <AnimatePresence initial={false} custom={direction}>
