@@ -1,8 +1,13 @@
 import { ChevronRight } from "lucide-react";
 import AuthDialog from "@/components/auth/AuthDialog";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 export default function Hero() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  
   const scrollToSection = (id: string) => {
     const section = document.getElementById(id);
     if (section) {
@@ -32,15 +37,25 @@ export default function Hero() {
           de cap.
         </p>
         <div className="mt-10 flex space-x-4">
-          <AuthDialog
-            trigger={
-              <button className="inline-flex items-center px-8 py-3 border border-transparent text-lg font-medium rounded-full text-white bg-[#00aff5] hover:bg-blue-700 shadow-lg transition-transform transform hover:scale-105">
-                Începe acum
-                <ChevronRight className="ml-2 h-6 w-6" />
-              </button>
-            }
-            defaultView="signup"
-          />
+          {user ? (
+            <button 
+              onClick={() => setLocation("/dashboard")}
+              className="inline-flex items-center px-8 py-3 border border-transparent text-lg font-medium rounded-full text-white bg-[#00aff5] hover:bg-blue-700 shadow-lg transition-transform transform hover:scale-105"
+            >
+              Intră în cont
+              <ChevronRight className="ml-2 h-6 w-6" />
+            </button>
+          ) : (
+            <AuthDialog
+              trigger={
+                <button className="inline-flex items-center px-8 py-3 border border-transparent text-lg font-medium rounded-full text-white bg-[#00aff5] hover:bg-blue-700 shadow-lg transition-transform transform hover:scale-105">
+                  Începe acum
+                  <ChevronRight className="ml-2 h-6 w-6" />
+                </button>
+              }
+              defaultView="signup"
+            />
+          )}
           <button
             onClick={() => scrollToSection("how-it-works")}
             className="inline-flex items-center px-8 py-3 border border-white text-lg font-medium rounded-full text-white bg-transparent hover:bg-gray-800 shadow-lg transition-transform transform hover:scale-105"
