@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { User, Settings, Loader2 } from "lucide-react";
 import { EditProfileService } from "@/components/auth/EditProfileService";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
-import type { User as UserType } from "@shared/schema";
+import type { ServiceProviderUser } from "@shared/schema";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import NotificationPreferences from "./NotificationPreferences";
@@ -11,7 +11,7 @@ import NotificationPreferences from "./NotificationPreferences";
 export default function AccountTab() {
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const { data: userProfile, isLoading } = useQuery<UserType>({
+  const { data: userProfile, isLoading } = useQuery<ServiceProviderUser>({
     queryKey: ['/api/auth/me'],
     retry: 1,
     refetchOnWindowFocus: false

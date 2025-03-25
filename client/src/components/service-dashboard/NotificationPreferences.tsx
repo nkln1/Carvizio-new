@@ -11,9 +11,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { NotificationPreference } from "@shared/schema";
 
 // Tipul pentru preferințele de notificări pentru UI
-interface NotificationPreferences extends Omit<NotificationPreference, 'createdAt' | 'updatedAt'> {
-  id?: number;
-  serviceProviderId?: number;
+interface NotificationPreferences {
+  id: number;
+  serviceProviderId: number;
   emailNotificationsEnabled: boolean;
   newRequestEmailEnabled: boolean;
   acceptedOfferEmailEnabled: boolean;
@@ -27,10 +27,9 @@ interface NotificationPreferences extends Omit<NotificationPreference, 'createdA
   browserPermission: boolean;
 }
 
-// Valori implicite pentru preferințe
-const defaultPreferences: NotificationPreferences = {
-  id: undefined,
-  serviceProviderId: undefined,
+// API-ul va furniza valorile implicite sau cele existente,
+// nu folosim direct această constantă
+const defaultValues = {
   emailNotificationsEnabled: true,
   newRequestEmailEnabled: true,
   acceptedOfferEmailEnabled: true,
