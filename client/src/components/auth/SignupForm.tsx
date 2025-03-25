@@ -49,6 +49,7 @@ interface ClientFormValues {
   city: string;
   password: string;
   confirmPassword: string;
+  termsAccepted: boolean;
 }
 
 interface ServiceFormValues {
@@ -63,6 +64,7 @@ interface ServiceFormValues {
   city: string;
   password: string;
   confirmPassword: string;
+  termsAccepted: boolean;
 }
 
 const clientSchema = z
@@ -86,6 +88,9 @@ const clientSchema = z
       message: "Parola trebuie să conțină cel puțin 6 caractere.",
     }),
     confirmPassword: z.string(),
+    termsAccepted: z.boolean().refine(val => val === true, {
+      message: "Trebuie să accepți termenii și condițiile pentru a continua.",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Parolele nu coincid",
@@ -128,6 +133,9 @@ const serviceSchema = z
       message: "Parola trebuie să conțină cel puțin 6 caractere.",
     }),
     confirmPassword: z.string(),
+    termsAccepted: z.boolean().refine(val => val === true, {
+      message: "Trebuie să accepți termenii și condițiile pentru a continua.",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Parolele nu coincid",
@@ -154,6 +162,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       city: "",
       password: "",
       confirmPassword: "",
+      termsAccepted: false,
     },
   });
 
@@ -171,6 +180,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
       city: "",
       password: "",
       confirmPassword: "",
+      termsAccepted: false,
     },
   });
 
