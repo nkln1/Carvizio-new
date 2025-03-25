@@ -125,6 +125,11 @@ export interface IStorage {
     closeTime: string;
     isClosed: boolean;
   }): Promise<WorkingHour>;
+  
+  // Notification Preferences management
+  getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined>;
+  createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
+  updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference>;
 
 
   // Reviews management
@@ -1144,6 +1149,54 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error updating working hours:', error);
+      throw error;
+    }
+  }
+
+  // Notification Preferences methods
+  async getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined> {
+    try {
+      const [preferences] = await db
+        .select()
+        .from(notificationPreferences)
+        .where(eq(notificationPreferences.serviceProviderId, serviceProviderId));
+      return preferences;
+    } catch (error) {
+      console.error('Error getting notification preferences:', error);
+      return undefined;
+    }
+  }
+
+  async createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference> {
+    try {
+      const [newPreferences] = await db
+        .insert(notificationPreferences)
+        .values({
+          ...preferences,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      return newPreferences;
+    } catch (error) {
+      console.error('Error creating notification preferences:', error);
+      throw error;
+    }
+  }
+
+  async updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference> {
+    try {
+      const [updatedPreferences] = await db
+        .update(notificationPreferences)
+        .set({
+          ...preferencesData,
+          updatedAt: new Date()
+        })
+        .where(eq(notificationPreferences.id, id))
+        .returning();
+      return updatedPreferences;
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
       throw error;
     }
   }
