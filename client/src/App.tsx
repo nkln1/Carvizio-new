@@ -10,6 +10,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
 import ServicePublicProfile from "@/pages/ServicePublicProfile";
+import CookiePolicy from "@/pages/CookiePolicy";
+import CookieBanner from "@/components/common/CookieBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 function Router() {
@@ -19,6 +21,7 @@ function Router() {
       <Route path="/service-dashboard" component={ServiceDashboard} />
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/contact" component={Contact} />
+      <Route path="/politica-cookie" component={CookiePolicy} />
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
@@ -32,6 +35,7 @@ function App() {
         <AuthProvider>
           <Navigation />
           <Router />
+          <CookieBanner />
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>
