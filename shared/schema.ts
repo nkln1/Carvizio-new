@@ -412,12 +412,13 @@ export const notificationPreferencesRelations = relations(notificationPreference
   })
 }));
 
-export const serviceProvidersRelations = relations(serviceProviders, ({ many }) => ({
+export const serviceProvidersRelations = relations(serviceProviders, ({ many, one }) => ({
   viewedRequests: many(viewedRequests),
   sentOffers: many(sentOffers),
   viewedAcceptedOffers: many(viewedAcceptedOffers),
   workingHours: many(workingHours),
-  reviews: many(reviews)
+  reviews: many(reviews),
+  notificationPreferences: one(notificationPreferences)
 }));
 
 export const viewedRequests = pgTable("viewed_requests", {
@@ -525,6 +526,16 @@ export type ViewedRequest = typeof viewedRequests.$inferSelect;
 export type InsertWorkingHour = z.infer<typeof insertWorkingHourSchema>;
 export type WorkingHour = typeof workingHours.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+// Add schema for notification preferences
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferencesSchema>;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 
 // Define a type for accepted offer with client details
 export type AcceptedOfferWithClient = SentOffer & {

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,26 +8,11 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Bell, Mail, AlertTriangle, Loader2 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { NotificationPreference } from "@shared/schema";
 
-// Tipul pentru preferințele de notificări
-interface NotificationPreferences {
-  id?: number;
-  serviceProviderId?: number;
-  
-  // Email notification settings
-  emailNotificationsEnabled: boolean;
-  newRequestEmailEnabled: boolean;
-  acceptedOfferEmailEnabled: boolean;
-  newMessageEmailEnabled: boolean;
-  newReviewEmailEnabled: boolean;
-  
-  // Browser notification settings
-  browserNotificationsEnabled: boolean;
-  newRequestBrowserEnabled: boolean;
-  acceptedOfferBrowserEnabled: boolean;
-  newMessageBrowserEnabled: boolean;
-  newReviewBrowserEnabled: boolean;
-  browserPermission: boolean;
+// Tipul pentru preferințele de notificări pentru UI
+interface NotificationPreferences extends Omit<NotificationPreference, 'createdAt' | 'updatedAt'> {
+  // Asigurăm că toate proprietățile necesare sunt incluse
 }
 
 // Valori implicite pentru preferințe
@@ -62,13 +46,6 @@ export default function NotificationPreferences() {
   // Obținem preferințele de notificări
   const { data: preferences, isLoading, error } = useQuery<NotificationPreferences>({
     queryKey: ['/api/service/notification-preferences'],
-    onError: () => {
-      toast({
-        title: "Eroare",
-        description: "Nu am putut încărca preferințele de notificări",
-        variant: "destructive"
-      });
-    },
     refetchOnWindowFocus: false
   });
 
