@@ -110,6 +110,7 @@ export default function CookiePolicy() {
           <p className="mb-3">
             Ne rezervăm dreptul de a modifica această politică de cookie-uri în orice moment. Orice modificări vor fi publicate pe această pagină. 
             Vă încurajăm să consultați periodic această pagină pentru a fi la curent cu orice modificări.
+            Prin continuarea navigării pe acest site, vă exprimați acordul explicit pentru utilizarea exclusivă a cookie-urilor esențiale, conform Politicii de Cookie-uri.
           </p>
         </section>
 
