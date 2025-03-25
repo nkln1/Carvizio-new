@@ -8,6 +8,13 @@
       "when": 1740222983429,
       "tag": "0000_sharp_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1743107224000,
+      "tag": "0004_notification_preferences_table",
+      "breakpoints": true
     }
   ]
 }
