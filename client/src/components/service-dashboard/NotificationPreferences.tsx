@@ -12,11 +12,25 @@ import { NotificationPreference } from "@shared/schema";
 
 // Tipul pentru preferințele de notificări pentru UI
 interface NotificationPreferences extends Omit<NotificationPreference, 'createdAt' | 'updatedAt'> {
-  // Asigurăm că toate proprietățile necesare sunt incluse
+  id?: number;
+  serviceProviderId?: number;
+  emailNotificationsEnabled: boolean;
+  newRequestEmailEnabled: boolean;
+  acceptedOfferEmailEnabled: boolean;
+  newMessageEmailEnabled: boolean;
+  newReviewEmailEnabled: boolean;
+  browserNotificationsEnabled: boolean;
+  newRequestBrowserEnabled: boolean;
+  acceptedOfferBrowserEnabled: boolean;
+  newMessageBrowserEnabled: boolean;
+  newReviewBrowserEnabled: boolean;
+  browserPermission: boolean;
 }
 
 // Valori implicite pentru preferințe
 const defaultPreferences: NotificationPreferences = {
+  id: undefined,
+  serviceProviderId: undefined,
   emailNotificationsEnabled: true,
   newRequestEmailEnabled: true,
   acceptedOfferEmailEnabled: true,

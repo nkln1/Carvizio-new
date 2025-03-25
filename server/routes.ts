@@ -2342,6 +2342,113 @@ export function registerRoutes(app: Express): Server {
     });
   });
 
+  // Notification Preferences API routes
+  app.get("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
+    try {
+      const { userType } = req.session;
+      
+      if (!userType || userType !== "service") {
+        return res.status(403).json({ error: "Unauthorized. Only service providers can access notification preferences." });
+      }
+      
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(404).json({ error: "Service provider not found" });
+      }
+      
+      const preferences = await storage.getNotificationPreferences(provider.id);
+      
+      // If no preferences exist yet, return default values
+      if (!preferences) {
+        return res.status(200).json({
+          emailNotificationsEnabled: true,
+          newRequestEmailEnabled: true,
+          acceptedOfferEmailEnabled: true,
+          newMessageEmailEnabled: true,
+          newReviewEmailEnabled: true,
+          browserNotificationsEnabled: true,
+          newRequestBrowserEnabled: true,
+          acceptedOfferBrowserEnabled: true,
+          newMessageBrowserEnabled: true,
+          newReviewBrowserEnabled: true,
+          browserPermission: false
+        });
+      }
+      
+      return res.status(200).json(preferences);
+    } catch (error) {
+      console.error("Error getting notification preferences:", error);
+      return res.status(500).json({ error: "Failed to get notification preferences" });
+    }
+  });
+
+  app.post("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
+    try {
+      const { userType } = req.session;
+      
+      if (!userType || userType !== "service") {
+        return res.status(403).json({ error: "Unauthorized. Only service providers can create notification preferences." });
+      }
+      
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(404).json({ error: "Service provider not found" });
+      }
+      
+      // Check if preferences already exist
+      const existingPreferences = await storage.getNotificationPreferences(provider.id);
+      if (existingPreferences) {
+        return res.status(400).json({ error: "Notification preferences already exist. Use PUT to update." });
+      }
+      
+      // Create new preferences
+      const newPreferences = await storage.createNotificationPreferences({
+        serviceProviderId: provider.id,
+        ...req.body
+      });
+      
+      return res.status(201).json(newPreferences);
+    } catch (error) {
+      console.error("Error creating notification preferences:", error);
+      return res.status(500).json({ error: "Failed to create notification preferences" });
+    }
+  });
+
+  app.put("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
+    try {
+      const { userType } = req.session;
+      
+      if (!userType || userType !== "service") {
+        return res.status(403).json({ error: "Unauthorized. Only service providers can update notification preferences." });
+      }
+      
+      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!provider) {
+        return res.status(404).json({ error: "Service provider not found" });
+      }
+      
+      // Check if preferences exist
+      const existingPreferences = await storage.getNotificationPreferences(provider.id);
+      if (!existingPreferences) {
+        // If preferences don't exist, create them
+        const newPreferences = await storage.createNotificationPreferences({
+          serviceProviderId: provider.id,
+          ...req.body
+        });
+        
+        return res.status(201).json(newPreferences);
+      }
+      
+      // Update existing preferences
+      const updatedPreferences = await storage.updateNotificationPreferences(existingPreferences.id, req.body);
+      
+      return res.status(200).json(updatedPreferences);
+    } catch (error) {
+      console.error("Error updating notification preferences:", error);
+      return res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
+
   // Return the server at the end
   return httpServer;
 }
