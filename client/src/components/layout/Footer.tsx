@@ -91,7 +91,9 @@ export default function Footer() {
             Contactează-ne
           </button>
           <a
-            href="#"
+            href="/Termeni_Conditii.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-gray-400 hover:text-gray-300 transition-colors"
           >
             Termeni și condiții
