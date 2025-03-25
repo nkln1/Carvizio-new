@@ -90,14 +90,12 @@ export default function Footer() {
           >
             Contactează-ne
           </button>
-          <a
-            href="/Termeni_Conditii.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => setLocation("/termeni-conditii")}
             className="text-gray-400 hover:text-gray-300 transition-colors"
           >
             Termeni și condiții
-          </a>
+          </button>
         </nav>
         <div className="mt-8 flex flex-col items-center">
           <button

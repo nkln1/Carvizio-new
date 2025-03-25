@@ -13,6 +13,7 @@ import ServicePublicProfile from "@/pages/ServicePublicProfile";
 import CookiePolicy from "@/pages/CookiePolicy";
 import CookieBanner from "@/components/common/CookieBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import TermsAndConditions from "./pages/TermsAndConditions"; // Added import
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/contact" component={Contact} />
       <Route path="/cookie-policy" component={CookiePolicy} />
+      <Route path="/terms-and-conditions" component={TermsAndConditions} /> {/* Added route */}
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
