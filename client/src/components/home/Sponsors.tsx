@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Dialog,
@@ -71,32 +70,34 @@ export default function Sponsors() {
               <DialogTitle className="text-[#00aff5]">
                 Devino Sponsor CARVIZIO®
               </DialogTitle>
-              <DialogDescription className="pt-4 space-y-4 text-base">
-                <p>
-                  Alătură-te celor mai importanți parteneri și afișează-ți
-                  brandul în fața unei audiențe relevante. Aceasta este o
-                  oportunitate unică de a îți crește vizibilitatea și de a avea
-                  un impact real într-o industrie competitivă.
-                </p>
-                <p className="font-semibold text-[#00aff5]">Beneficii:</p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>Promovare strategică în cadrul platformei noastre</li>
-                  <li>Acces direct la o comunitate pasionată de auto</li>
-                  <li>Un spațiu exclusiv pentru afacerea ta</li>
-                  <li>Parteneriat cu o platformă în continuă creștere</li>
-                  <li>
-                    Susținere continuă pentru a maximiza impactul reclamei tale
-                  </li>
-                </ul>
-                <p className="font-semibold pt-2">
-                  Nu rata șansa de a face parte dintr-o comunitate care
-                  inovează!
-                </p>
-                <p className="text-[#00aff5] font-medium underline">
-                  contact@carvizio.com
-                </p>
+              <DialogDescription className="text-base">
+                Alătură-te celor mai importanți parteneri și afișează-ți
+                brandul în fața unei audiențe relevante.
               </DialogDescription>
             </DialogHeader>
+            <div className="space-y-4 text-base">
+              <div>
+                Aceasta este o oportunitate unică de a îți crește vizibilitatea și de a avea
+                un impact real într-o industrie competitivă.
+              </div>
+              <div className="font-semibold text-[#00aff5]">Beneficii:</div>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>Promovare strategică în cadrul platformei noastre</li>
+                <li>Acces direct la o comunitate pasionată de auto</li>
+                <li>Un spațiu exclusiv pentru afacerea ta</li>
+                <li>Parteneriat cu o platformă în continuă creștere</li>
+                <li>
+                  Susținere continuă pentru a maximiza impactul reclamei tale
+                </li>
+              </ul>
+              <div className="font-semibold pt-2">
+                Nu rata șansa de a face parte dintr-o comunitate care
+                inovează!
+              </div>
+              <div className="text-[#00aff5] font-medium underline">
+                contact@carvizio.com
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
