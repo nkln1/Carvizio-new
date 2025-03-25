@@ -10,6 +10,7 @@ import {
   viewedAcceptedOffers,
   workingHours,
   reviews,
+  notificationPreferences,
   type Message,
   type Client,
   type InsertClient,
@@ -28,7 +29,9 @@ import {
   type WorkingHour,
   type InsertWorkingHour,
   type Review,
-  type InsertReview
+  type InsertReview,
+  type NotificationPreference,
+  type InsertNotificationPreference
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and, inArray, sql } from "drizzle-orm";
