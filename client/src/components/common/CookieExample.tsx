@@ -1,109 +1,113 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { 
-  setCookie, 
   getCookie, 
-  removeCookie, 
-  setLocalStorage, 
-  getLocalStorage 
+  setCookie, 
+  removeCookie,
+  hasConsentedToCookies
 } from '@/lib/cookieUtils';
 
-// This is an example component showcasing how to use the cookie utilities
+/**
+ * Example component demonstrating proper cookie usage with GDPR compliance
+ */
 export default function CookieExample() {
-  const DEMO_COOKIE_NAME = 'demo-preference';
-  const DEMO_STORAGE_KEY = 'user-theme-preference';
+  const [userPreference, setUserPreference] = useState<string | undefined>(undefined);
+  const [consentStatus, setConsentStatus] = useState<boolean>(false);
   
-  const [cookieValue, setCookieValue] = useState<string | undefined>('');
-  const [storageValue, setStorageValue] = useState<string | null>('');
+  // Example preference cookie name
+  const PREFERENCE_COOKIE = 'user-color-mode';
   
-  // Load initial values
   useEffect(() => {
-    setCookieValue(getCookie(DEMO_COOKIE_NAME));
-    setStorageValue(getLocalStorage(DEMO_STORAGE_KEY, 'default'));
+    // Check if user has consented to cookies
+    const hasConsent = hasConsentedToCookies();
+    setConsentStatus(hasConsent);
+    
+    // Only get the preference cookie if user has consented
+    if (hasConsent) {
+      const savedPreference = getCookie(PREFERENCE_COOKIE);
+      setUserPreference(savedPreference);
+    }
   }, []);
   
-  // Example 1: Setting and retrieving a basic preference cookie
-  const savePreference = (preference: string) => {
-    setCookie(DEMO_COOKIE_NAME, preference);
-    setCookieValue(preference);
+  const setDarkMode = () => {
+    // Only set cookies if user has consented
+    if (consentStatus) {
+      setCookie(PREFERENCE_COOKIE, 'dark');
+      setUserPreference('dark');
+    } else {
+      alert('Nu putem salva preferințele dvs. fără consimțământul pentru cookie-uri. Vă rugăm să acceptați cookie-urile esențiale în banner.');
+    }
   };
   
-  // Example 2: Using localStorage for theme preference
-  const saveThemePreference = (theme: string) => {
-    setLocalStorage(DEMO_STORAGE_KEY, theme);
-    setStorageValue(theme);
+  const setLightMode = () => {
+    // Only set cookies if user has consented
+    if (consentStatus) {
+      setCookie(PREFERENCE_COOKIE, 'light');
+      setUserPreference('light');
+    } else {
+      alert('Nu putem salva preferințele dvs. fără consimțământul pentru cookie-uri. Vă rugăm să acceptați cookie-urile esențiale în banner.');
+    }
   };
   
-  // Clear example data
-  const clearDemoData = () => {
-    removeCookie(DEMO_COOKIE_NAME);
-    localStorage.removeItem(DEMO_STORAGE_KEY);
-    setCookieValue(undefined);
-    setStorageValue(null);
+  const clearPreference = () => {
+    if (consentStatus) {
+      removeCookie(PREFERENCE_COOKIE);
+      setUserPreference(undefined);
+    }
   };
   
   return (
-    <Card className="p-6 max-w-md mx-auto my-8">
-      <h3 className="text-xl font-medium mb-4">Exemplu utilizare cookie-uri esențiale</h3>
+    <div className="p-6 border rounded-lg shadow-sm bg-white">
+      <h3 className="text-lg font-semibold mb-4">Exemplu de utilizare a cookie-urilor</h3>
       
-      <div className="space-y-6">
-        <div>
-          <h4 className="font-medium mb-2">Exemplu cookie pentru preferințe</h4>
-          <p className="text-sm mb-2">
-            Valoare actuală: {cookieValue || '(nicio preferință salvată)'}
-          </p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Button 
-              size="sm"
-              variant="outline"
-              onClick={() => savePreference('opțiunea-1')}
-            >
-              Salvează Opțiunea 1
-            </Button>
-            <Button 
-              size="sm"
-              variant="outline"
-              onClick={() => savePreference('opțiunea-2')}
-            >
-              Salvează Opțiunea 2
-            </Button>
-          </div>
+      <div className="mb-4">
+        <p className="text-gray-600 text-sm mb-2">
+          Acest exemplu demonstrează utilizarea corectă a cookie-urilor, respectând GDPR:
+        </p>
+        <ul className="list-disc pl-6 text-sm text-gray-600 mb-4">
+          <li>Cookie-urile sunt setate doar după consimțământul utilizatorului</li>
+          <li>Scopul este explicat clar</li>
+          <li>Utilizatorii au control asupra datelor lor</li>
+        </ul>
+      </div>
+      
+      <div className="flex flex-col space-y-3">
+        <div className="p-3 bg-gray-100 rounded text-sm">
+          Preferință curentă: <span className="font-medium">{userPreference || 'Nicio preferință salvată'}</span>
         </div>
-        
-        <div>
-          <h4 className="font-medium mb-2">Exemplu localStorage pentru tema aplicației</h4>
-          <p className="text-sm mb-2">
-            Valoare actuală: {storageValue || '(nicio temă salvată)'}
-          </p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Button 
-              size="sm"
-              variant="outline"
-              onClick={() => saveThemePreference('light')}
-            >
-              Tema Deschisă
-            </Button>
-            <Button 
-              size="sm"
-              variant="outline"
-              onClick={() => saveThemePreference('dark')}
-            >
-              Tema Întunecată
-            </Button>
-          </div>
-        </div>
-        
-        <div className="pt-4 border-t">
+        <div className="flex flex-wrap gap-2">
           <Button 
-            variant="destructive"
+            variant="outline" 
             size="sm"
-            onClick={clearDemoData}
+            onClick={setLightMode}
+            className="bg-white hover:bg-gray-100"
           >
-            Șterge datele de exemplu
+            Mod deschis
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={setDarkMode}
+            className="bg-gray-800 text-white hover:bg-gray-900"
+          >
+            Mod întunecat
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={clearPreference}
+            className="text-red-500 hover:text-red-600"
+          >
+            Șterge preferința
           </Button>
         </div>
+        
+        {!consentStatus && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            Notă: Cookie-urile de preferințe pot fi setate doar după ce acceptați cookie-urile esențiale din banner.
+          </div>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }

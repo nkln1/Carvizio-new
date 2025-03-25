@@ -21,7 +21,7 @@ function Router() {
       <Route path="/service-dashboard" component={ServiceDashboard} />
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/contact" component={Contact} />
-      <Route path="/politica-cookie" component={CookiePolicy} />
+      <Route path="/cookie-policy" component={CookiePolicy} />
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
