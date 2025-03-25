@@ -605,7 +605,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                   <FormLabel>
                     Am citit și sunt de acord cu{" "}
                     <a
-                      href="/Termeni_Conditii.pdf"
+                      href="/terms-and-conditions"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#00aff5] hover:underline"
@@ -958,7 +958,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
                   <FormLabel>
                     Am citit și sunt de acord cu{" "}
                     <a
-                      href="/Termeni_Conditii.pdf"
+                      href="/terms-and-conditions"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#00aff5] hover:underline"

@@ -91,7 +91,7 @@ export default function Footer() {
             Contactează-ne
           </button>
           <button
-            onClick={() => setLocation("/termeni-conditii")}
+            onClick={() => setLocation("/terms-and-conditions")}
             className="text-gray-400 hover:text-gray-300 transition-colors"
           >
             Termeni și condiții
