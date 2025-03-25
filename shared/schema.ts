@@ -69,6 +69,27 @@ export interface ClientUser extends BaseUser {
 }
 
 // Service Provider specific interface
+// Notification preferences interface
+export interface NotificationPreferences {
+  id: number;
+  serviceProviderId: number;
+  emailNotificationsEnabled: boolean;
+  newRequestEmailEnabled: boolean;
+  acceptedOfferEmailEnabled: boolean;
+  newMessageEmailEnabled: boolean;
+  newReviewEmailEnabled: boolean;
+  
+  browserNotificationsEnabled: boolean;
+  newRequestBrowserEnabled: boolean;
+  acceptedOfferBrowserEnabled: boolean;
+  newMessageBrowserEnabled: boolean;
+  newReviewBrowserEnabled: boolean;
+  browserPermission: boolean;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ServiceProviderUser extends BaseUser {
   role: "service";
   companyName: string;
@@ -77,6 +98,7 @@ export interface ServiceProviderUser extends BaseUser {
   tradeRegNumber: string;
   address: string;
   username: string; // Add username field
+  notificationPreferences?: NotificationPreferences;
 }
 
 // Messages table definition
@@ -338,8 +360,7 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   })
 }));
 
-// Add type exports
-export type InsertReview = z.infer<typeof insertReviewSchema>;
+// Add review types
 export type Review = typeof reviews.$inferSelect;
 
 // Add review report schema
@@ -358,6 +379,35 @@ export type ReviewWithClient = Review & {
 export const workingHoursRelations = relations(workingHours, ({ one }) => ({
   serviceProvider: one(serviceProviders, {
     fields: [workingHours.serviceProviderId],
+    references: [serviceProviders.id],
+  })
+}));
+
+// Notification preferences table definition
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id).unique(),
+  emailNotificationsEnabled: boolean("email_notifications_enabled").default(true).notNull(),
+  newRequestEmailEnabled: boolean("new_request_email_enabled").default(true).notNull(),
+  acceptedOfferEmailEnabled: boolean("accepted_offer_email_enabled").default(true).notNull(),
+  newMessageEmailEnabled: boolean("new_message_email_enabled").default(true).notNull(), 
+  newReviewEmailEnabled: boolean("new_review_email_enabled").default(true).notNull(),
+  
+  browserNotificationsEnabled: boolean("browser_notifications_enabled").default(true).notNull(),
+  newRequestBrowserEnabled: boolean("new_request_browser_enabled").default(true).notNull(),
+  acceptedOfferBrowserEnabled: boolean("accepted_offer_browser_enabled").default(true).notNull(),
+  newMessageBrowserEnabled: boolean("new_message_browser_enabled").default(true).notNull(),
+  newReviewBrowserEnabled: boolean("new_review_browser_enabled").default(true).notNull(),
+  browserPermission: boolean("browser_permission").default(false).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Relations for notification preferences
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  serviceProvider: one(serviceProviders, {
+    fields: [notificationPreferences.serviceProviderId],
     references: [serviceProviders.id],
   })
 }));
@@ -471,11 +521,10 @@ export type InsertViewedRequest = z.infer<typeof insertViewedRequestSchema>;
 export type ViewedRequest = typeof viewedRequests.$inferSelect;
 
 
-// Add type exports for working hours and reviews
+// Add type exports for working hours
 export type InsertWorkingHour = z.infer<typeof insertWorkingHourSchema>;
 export type WorkingHour = typeof workingHours.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
-export type Review = typeof reviews.$inferSelect;
 
 // Define a type for accepted offer with client details
 export type AcceptedOfferWithClient = SentOffer & {
