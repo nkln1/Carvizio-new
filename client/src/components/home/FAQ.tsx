@@ -3,34 +3,54 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const faqs = [
   {
-    question: "Cum îmi creez un cont în aplicație?",
-    answer:
-      'Pentru a-ți crea un cont, mergi în bara de navigare și apasă pe butonul "Conectează-te" sau "Login". Completează formularul cu adresa de email și parola, iar contul se va crea instant. Poți, de asemenea, să folosești un cont de Google sau Facebook pentru a te autentifica mai rapid.',
+  question: "Este gratuită folosirea platformei Carvizio",
+  answer:
+  'Da, utilizarea platformei Carvizio este integral gratuită atât pentru clienți, cât și pentru service-urile auto partenere. Platforma nu percepe comisioane sau alte taxe ascunse. Costurile de funcționare și mentenanță ale Carvizio sunt acoperite exclusiv prin sponsorizări, iar sponsorii noștri sunt menționați transparent pe pagina principală și în secțiunea de jos a site-ului (footer)',
   },
   {
-    question: "Cum trimit o cerere către service-urile auto?",
-    answer:
-      'După ce te-ai logat, mergi la secțiunea "Trimite cerere" (sau "Solicită ofertă"). Acolo vei completa detaliile mașinii tale (model, an, kilometraj) și vei descrie serviciul necesar (reparație, revizie, ITP, etc.). Aplicația va distribui automat cererea ta către service-urile din zona selectată de tine.',
+  question: "Cum îmi creez un cont pe Carvizio?",
+  answer:
+  'Pentru a-ți crea un cont pe Carvizio, accesează pagina principală și fă clic pe iconița de login din bara de navigare. Alege tipul de cont - Client sau Service Auto, completează formularul cu datele necesare, adresa ta de email și o parolă sigură.',
   },
   {
-    question: "Cum primesc cotații de la service-uri?",
-    answer:
-      "Service-urile auto înregistrate vor vedea cererea ta și îți vor trimite ofertele. Vei primi o notificare în aplicație și, opțional, pe email. Apoi, poți compara prețurile și disponibilitatea fiecărui service înainte să alegi unul.",
+  question: "Cum solicit o ofertă de la service-uri auto prin Carvizio?",
+  answer:
+  'După conectare, în dashboard, apasă butonul "Adaugă cerere", selecteză mașina (dacă ai salvat-o în cont) sau introdu detaliile autoturismului tău (marca, modelul, anul fabricației, kilometrajul), descrie tipul serviciului dorit (revizie, reparație, ITP, etc.), selectează data dorită și locația dorită. Cererea va fi automat transmisă către service-urile partenere din zona selectată.',
   },
   {
-    question: "Cum aleg service-ul potrivit dintre mai multe oferte?",
-    answer:
-      "După ce primești ofertele, poți compara prețurile, detaliile incluse în ofertă și evaluările altor clienți. Selectează oferta care corespunde cel mai bine criteriilor tale (preț, localizare, recenzii, etc.) și confirmă programarea.",
+  question: "Cum primesc ofertele de la service-uri auto?",
+  answer:
+  'Ofertele primite vor apărea direct în contul tău Carvizio, în secțiunea "Oferte primite" și vei fi notificat prin aplicație și pe email, în funcție de preferințele tale de notificare. Poți analiza și compara fiecare ofertă primită în funcție de preț și disponibilitate.',
   },
   {
-    question: "Cum programez o vizită la service-ul ales?",
-    answer:
-      "În momentul în care accepți o ofertă, aplicația îți va arăta intervalele orare disponibile. Alege data și ora convenabile, iar service-ul îți va confirma rezervarea printr-un mesaj sau notificare în aplicație.",
+  question: "Cum aleg cea mai potrivită ofertă de la service-urile auto?",
+  answer:
+  'După primirea ofertelor, analizează prețurile, serviciile incluse și evaluările altor clienți. Poți selecta oferta care corespunde cel mai bine nevoilor tale și confirmă alegerea desemnând acceptată oferta dorită. Ulterior, vei putea lăsa o recenzie service-ului auto a cărui ofertă ai acceptat-o.',
   },
   {
-    question: "Ce se întâmplă dacă un service anulează programarea?",
-    answer:
-      "Dacă service-ul anulează, vei primi o notificare și poți fie să ceri o reprogramare, fie să alegi una dintre celelalte oferte primite inițial. Eventualele costuri plătite în avans (dacă există) vor fi rambursate automat.",
+  question: "Cum programez vizita la service-ul auto ales?",
+  answer:
+  'După ce ai ales o ofertă, apelează sau trimite un mesaj service-ului pentru a stabili toate detaliile',
+  },
+  {
+  question: "Pot adăuga mai multe mașini în contul meu Carvizio",
+  answer:
+  'Da, poți salva oricâte autoturisme dorești în contul tău Carvizio, astfel încât să poți trimite rapid cereri de oferte fără să reintroduci detaliile mașinii de fiecare dată.',
+  },
+  {
+  question: "Cum pot lăsa o recenzie pentru un service auto?",
+  answer:
+  'După ce serviciul auto a fost prestat, vei avea opțiunea de a lăsa o recenzie pe pagina publică a service-ului auto, evaluând calitatea serviciului și experiența generală',
+  },
+  {
+  question: "Ce fac dacă întâmpin o problemă tehnică pe platforma Carvizio?",
+  answer:
+  'Pentru orice problemă tehnică sau neclaritate, contactează-ne folosind formularul de suport disponibil în secțiunea „Contact” sau trimite-ne direct un email la adresa de suport afișată pe site.',
+  },
+  {
+  question: "Pot folosi Carvizio și pentru servicii de urgență?",
+  answer:
+  'Momentan, Carvizio se concentrează pe cerere și ofertă, însă poți specifica în cererea ta dacă ai nevoie urgentă, iar service-urile pot ține cont de acest aspect atunci când îți transmit ofertele.',
   },
 ];
 
