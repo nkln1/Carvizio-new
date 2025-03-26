@@ -4,12 +4,13 @@
  * Previne erorile "X is not defined" pe server
  */
 
-export const isBrowser = typeof window !== 'undefined';
+import { isBrowser, getDocument, getWindow } from '@shared/browserUtils';
 
-export const safeWindow: Window | undefined = isBrowser ? window : undefined;
-export const safeDocument: Document | undefined = isBrowser ? document : undefined;
-export const safeLocalStorage: Storage | undefined = isBrowser ? localStorage : undefined;
-export const safeSessionStorage: Storage | undefined = isBrowser ? sessionStorage : undefined;
+export { isBrowser };
+export const safeWindow = getWindow();
+export const safeDocument = getDocument();
+export const safeLocalStorage = isBrowser ? window.localStorage : undefined;
+export const safeSessionStorage = isBrowser ? window.sessionStorage : undefined;
 
 /**
  * Execută o funcție doar în browser
