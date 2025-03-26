@@ -1,0 +1,110 @@
+he script has an unsupported MIME type ('text/html').
+service-dashboard:106 Eroare la înregistrarea Service Worker: SecurityError: Failed to register a ServiceWorker for scope ('https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/') with script ('https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/sw.js'): The script has an unsupported MIME type ('text/html').
+(anonymous) @ service-dashboard:106
+Promise.catch
+(anonymous) @ service-dashboard:105
+notifications.ts:555 Service Worker nu este disponibil pentru oprirea verificării mesajelor în fundal
+stopBackgroundMessageCheck @ notifications.ts:555
+(anonymous) @ ServiceDashboard.tsx:113
+safelyCallDestroy @ chunk-RPCDYKBN.js?v=e4ec5e4e:16748
+commitHookEffectListUnmount @ chunk-RPCDYKBN.js?v=e4ec5e4e:16875
+invokePassiveEffectUnmountInDEV @ chunk-RPCDYKBN.js?v=e4ec5e4e:18363
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=e4ec5e4e:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=e4ec5e4e:19682
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=e4ec5e4e:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=e4ec5e4e:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=e4ec5e4e:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=e4ec5e4e:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=e4ec5e4e:19432
+commitRoot @ chunk-RPCDYKBN.js?v=e4ec5e4e:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=e4ec5e4e:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=e4ec5e4e:18718
+workLoop @ chunk-RPCDYKBN.js?v=e4ec5e4e:197
+flushWork @ chunk-RPCDYKBN.js?v=e4ec5e4e:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=e4ec5e4e:384
+notifications.ts:33 Notificări browser suportate: true
+notifications.ts:33 Notificări browser suportate: true
+notifications.ts:55 Permisiune notificări browser: granted
+ServiceDashboard.tsx:81 Inițierea verificării mesajelor în fundal pentru utilizatorul 1
+notifications.ts:521 Service Worker nu este disponibil pentru verificarea mesajelor în fundal
+startBackgroundMessageCheck @ notifications.ts:521
+(anonymous) @ ServiceDashboard.tsx:84
+Promise.then
+(anonymous) @ ServiceDashboard.tsx:78
+(anonymous) @ firebase_auth.js?v=e4ec5e4e:2697
+Promise.then
+registerStateListener @ firebase_auth.js?v=e4ec5e4e:2693
+onAuthStateChanged @ firebase_auth.js?v=e4ec5e4e:2553
+(anonymous) @ ServiceDashboard.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=e4ec5e4e:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=e4ec5e4e:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=e4ec5e4e:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=e4ec5e4e:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=e4ec5e4e:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=e4ec5e4e:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=e4ec5e4e:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=e4ec5e4e:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=e4ec5e4e:19432
+commitRoot @ chunk-RPCDYKBN.js?v=e4ec5e4e:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=e4ec5e4e:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=e4ec5e4e:18718
+workLoop @ chunk-RPCDYKBN.js?v=e4ec5e4e:197
+flushWork @ chunk-RPCDYKBN.js?v=e4ec5e4e:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=e4ec5e4e:384
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:41
+initialize @ websocket.ts:38
+(anonymous) @ websocket.ts:23
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:46 WebSocket connection promise rejected, will use polling fallback: Error: WebSocket connection failed
+    at ws.onerror (websocket.ts:169:33)
+websocket.ts:234 Starting polling fallback for message updates
+websocket.ts:253 Polling for new messages...
+2websocket.ts:336 Using polling fallback after WebSocket connection failure
+websocket.ts:257 No authentication token available for polling
+2App.tsx:79 WebSocket conectat pentru notificări
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 1 in 3000ms
+notifications.ts:555 Service Worker nu este disponibil pentru oprirea verificării mesajelor în fundal
+stopBackgroundMessageCheck @ notifications.ts:555
+(anonymous) @ ServiceDashboard.tsx:113
+safelyCallDestroy @ chunk-RPCDYKBN.js?v=e4ec5e4e:16748
+commitHookEffectListUnmount @ chunk-RPCDYKBN.js?v=e4ec5e4e:16875
+commitPassiveUnmountOnFiber @ chunk-RPCDYKBN.js?v=e4ec5e4e:18235
+commitPassiveUnmountEffects_complete @ chunk-RPCDYKBN.js?v=e4ec5e4e:18213
+commitPassiveUnmountEffects_begin @ chunk-RPCDYKBN.js?v=e4ec5e4e:18204
+commitPassiveUnmountEffects @ chunk-RPCDYKBN.js?v=e4ec5e4e:18169
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=e4ec5e4e:19489
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=e4ec5e4e:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=e4ec5e4e:19328
+workLoop @ chunk-RPCDYKBN.js?v=e4ec5e4e:197
+flushWork @ chunk-RPCDYKBN.js?v=e4ec5e4e:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=e4ec5e4e:384
+notifications.ts:33 Notificări browser suportate: true
+notifications.ts:33 Notificări browser suportate: true
+notifications.ts:55 Permisiune notificări browser: granted
+ServiceDashboard.tsx:81 Inițierea verificării mesajelor în fundal pentru utilizatorul 1
+notifications.ts:521 Service Worker nu este disponibil pentru verificarea mesajelor în fundal
+startBackgroundMessageCheck @ notifications.ts:521
+(anonymous) @ ServiceDashboard.tsx:84
+Promise.then
+(anonymous) @ ServiceDashboard.tsx:78
+(anonymous) @ firebase_auth.js?v=e4ec5e4e:2697
+Promise.then
+registerStateListener @ firebase_auth.js?v=e4ec5e4e:2693
+onAuthStateChanged @ firebase_auth.js?v=e4ec5e4e:2553
+(anonymous) @ ServiceDashboard.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=e4ec5e4e:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=e4ec5e4e:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=e4ec5e4e:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=e4ec5e4e:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=e4ec5e4e:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=e4ec5e4e:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=e4ec5e4e:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=e4ec5e4e:19328
+workLoop @ chunk-RPCDYKBN.js?v=e4ec5e4e:197
+flushWork @ chunk-RPCDYKBN.js?v=e4ec5e4e:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=e4ec5e4e:384
