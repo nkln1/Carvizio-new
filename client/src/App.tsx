@@ -12,11 +12,8 @@ import ServiceDashboard from "@/pages/ServiceDashboard";
 import ServicePublicProfile from "@/pages/ServicePublicProfile";
 import CookiePolicy from "@/pages/CookiePolicy";
 import CookieBanner from "@/components/common/CookieBanner";
-import ConnectionStatus from "@/components/common/ConnectionStatus";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import TermsAndConditions from "./pages/TermsAndConditions"; 
-import { useEffect } from 'react';
-import { initializeNotifications } from "@/services/notificationService";
+import TermsAndConditions from "./pages/TermsAndConditions"; // Added import
 
 function Router() {
   return (
@@ -26,7 +23,7 @@ function Router() {
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/contact" component={Contact} />
       <Route path="/cookie-policy" component={CookiePolicy} />
-      <Route path="/terms-and-conditions" component={TermsAndConditions} />
+      <Route path="/terms-and-conditions" component={TermsAndConditions} /> {/* Added route */}
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
@@ -34,11 +31,6 @@ function Router() {
 }
 
 function App() {
-  // Add useEffect inside the component function
-  useEffect(() => {
-    initializeNotifications();
-  }, []);
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -46,7 +38,6 @@ function App() {
           <Navigation />
           <Router />
           <CookieBanner />
-          <ConnectionStatus />
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>

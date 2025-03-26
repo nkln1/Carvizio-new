@@ -2300,7 +2300,7 @@ export function registerRoutes(app: Express): Server {
   // Initialize WebSocket server with the correct path to match client
   const wss = new WebSocketServer({
     server: httpServer,
-    path: '/api/ws'  // Should match the path in websocket.ts
+    path: '/api/ws'  // Match the client's WebSocket path
   });
 
   // WebSocket connection handler with improved error handling
@@ -2439,11 +2439,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(201).json(newPreferences);
       }
       
-      // Update existing preferences - adăugăm explicit câmpul updatedAt
-      const updatedPreferences = await storage.updateNotificationPreferences(existingPreferences.id, {
-        ...req.body,
-        updatedAt: new Date() 
-      });
+      // Update existing preferences
+      const updatedPreferences = await storage.updateNotificationPreferences(existingPreferences.id, req.body);
       
       return res.status(200).json(updatedPreferences);
     } catch (error) {

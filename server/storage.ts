@@ -128,7 +128,7 @@ export interface IStorage {
     closeTime: string;
     isClosed: boolean;
   }): Promise<WorkingHour>;
-
+  
   // Notification Preferences management
   getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
@@ -142,7 +142,6 @@ export interface IStorage {
   updateReview(id: number, reviewData: Partial<Review>): Promise<Review>;
   deleteReview(id: number): Promise<void>;
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
-  canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean>;
 }
 
 async function generateUniqueUsername(companyName: string, db: typeof import('./db').db): Promise<string> {
@@ -1019,7 +1018,8 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderWorkingHours(serviceProviderId: number): Promise<WorkingHour[]> {
     try {
       return await db
-        .select()        .from(workingHours)
+        .select()
+        .from(workingHours)
         .where(eq(workingHours.serviceProviderId, serviceProviderId))
         .orderBy(workingHours.dayOfWeek);
     } catch (error) {
@@ -1189,39 +1189,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference> {
     try {
-      // Filter out any non-boolean fields that should not be included
-      const sanitizedData: any = {};
-      
-      // Only copy valid boolean preference fields
-      const booleanFields = [
-        'emailNotificationsEnabled', 'newRequestEmailEnabled', 'acceptedOfferEmailEnabled', 
-        'newMessageEmailEnabled', 'newReviewEmailEnabled', 'browserNotificationsEnabled',
-        'newRequestBrowserEnabled', 'acceptedOfferBrowserEnabled', 'newMessageBrowserEnabled', 
-        'newReviewBrowserEnabled', 'browserPermission'
-      ];
-      
-      // Copy only the boolean fields from the input data
-      for (const field of booleanFields) {
-        if (field in preferencesData && typeof preferencesData[field as keyof typeof preferencesData] === 'boolean') {
-          sanitizedData[field] = preferencesData[field as keyof typeof preferencesData];
-        }
-      }
-      
-      // Always use current timestamp for updatedAt
       const [updatedPreferences] = await db
         .update(notificationPreferences)
-        .set({ 
-          ...sanitizedData, 
-          updatedAt: new Date() // Always use a fresh Date object
+        .set({
+          ...preferencesData,
+          updatedAt: new Date()
         })
         .where(eq(notificationPreferences.id, id))
         .returning();
-
-      if (!updatedPreferences) {
-        throw new Error('Failed to update notification preferences');
-      }
-
-      console.log('Updated notification preferences:', updatedPreferences);
       return updatedPreferences;
     } catch (error) {
       console.error('Error updating notification preferences:', error);
@@ -1332,7 +1307,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-
+  
   // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
   async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
     try {

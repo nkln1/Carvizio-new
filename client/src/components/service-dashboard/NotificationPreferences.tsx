@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Bell, Mail, AlertTriangle, Loader2 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { NotificationPreference } from "@shared/schema";
-import { requestNotificationPermission } from '@/services/notificationService';
 
 // Tipul pentru preferințele de notificări pentru UI
 interface NotificationPreferences {
@@ -78,56 +77,26 @@ export default function NotificationPreferences() {
   // Mutație pentru actualizarea preferințelor
   const updateMutation = useMutation({
     mutationFn: async (updatedPreferences: NotificationPreferences) => {
-      console.log("Sending preferences update:", updatedPreferences);
-      
-      // Create a sanitized copy containing only boolean preference fields
-      const sanitizedPreferences: Partial<NotificationPreferences> = {};
-      const booleanFields = [
-        'emailNotificationsEnabled', 'newRequestEmailEnabled', 'acceptedOfferEmailEnabled', 
-        'newMessageEmailEnabled', 'newReviewEmailEnabled', 'browserNotificationsEnabled',
-        'newRequestBrowserEnabled', 'acceptedOfferBrowserEnabled', 'newMessageBrowserEnabled', 
-        'newReviewBrowserEnabled', 'browserPermission'
-      ];
-      
-      // Only include id and serviceProviderId plus boolean fields
-      sanitizedPreferences.id = updatedPreferences.id;
-      sanitizedPreferences.serviceProviderId = updatedPreferences.serviceProviderId;
-      
-      for (const field of booleanFields) {
-        if (field in updatedPreferences) {
-          sanitizedPreferences[field as keyof NotificationPreferences] = 
-            updatedPreferences[field as keyof NotificationPreferences];
-        }
-      }
-      
-      // Send sanitized preferences
-      const response = await apiRequest('PUT', '/api/service/notification-preferences', sanitizedPreferences);
+      const response = await apiRequest('PUT', '/api/service/notification-preferences', updatedPreferences);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Failed to update preferences", errorData);
-        throw new Error(errorData.error || 'Nu am putut actualiza preferințele de notificări');
+        throw new Error('Nu am putut actualiza preferințele de notificări');
       }
-      const data = await response.json();
-      console.log("Preferences update response:", data);
-      return data;
+      return await response.json();
     },
-    onSuccess: (data) => {
-      console.log("Preferences update successful:", data);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/service/notification-preferences'] });
       toast({
         title: "Succes",
         description: "Preferințele de notificări au fost actualizate",
       });
     },
-    onError: (error) => {
-      console.error("Notification preferences update error:", error);
+    onError: () => {
       toast({
         title: "Eroare",
-        description: "Nu am putut actualiza preferințele de notificări. Încercați din nou mai târziu.",
+        description: "Nu am putut actualiza preferințele de notificări",
         variant: "destructive"
       });
-    },
-    retry: 1, // Only retry once on failure
+    }
   });
 
   // Manipulator pentru schimbarea unei preferințe
@@ -161,23 +130,22 @@ export default function NotificationPreferences() {
   // Manipulator pentru solicitarea permisiunii de notificări browser
   const handleRequestPermission = async () => {
     if (!notificationsAvailable) return;
-
+    
     try {
       setRequestingPermission(true);
-      const permissionGranted = await requestNotificationPermission();
-      setHasBrowserPermission(permissionGranted);
-
-      // Update in backend
+      const permission = await Notification.requestPermission();
+      setHasBrowserPermission(permission === 'granted');
+      
+      // Actualizăm și în backend
       if (preferences) {
         const updatedPreferences = {
           ...preferences,
-          browserPermission: permissionGranted
+          browserPermission: permission === 'granted'
         };
-
+        
         updateMutation.mutate(updatedPreferences);
       }
     } catch (error) {
-      console.error('Error during permission request:', error);
       toast({
         title: "Eroare",
         description: "Nu am putut solicita permisiunea pentru notificări browser",
