@@ -36,8 +36,8 @@ export function initializeNotifications() {
   websocketService.ensureConnection()
     .then(() => console.log('WebSocket connection ready for notifications'))
     .catch(err => {
-      // Just log the error with less dramatic messaging
-      console.log('Waiting for WebSocket connection to establish...', err.message);
+      console.error('Failed to establish WebSocket connection for notifications:', err);
+      // Don't show an error to the user, just log it
       // The websocket service will automatically try to reconnect
     });
     
