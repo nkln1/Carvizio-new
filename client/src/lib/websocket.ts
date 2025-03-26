@@ -1,7 +1,7 @@
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempt = 0;
-  private readonly maxReconnectAttempts = 5;
+  private readonly maxReconnectAttempts = 20;
   private readonly reconnectDelay = 3000;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private messageHandlers: Set<(data: any) => void> = new Set();
@@ -83,7 +83,22 @@ class WebSocketService {
         try {
           const data = JSON.parse(event.data);
           console.log('Received WebSocket message:', data);
-          this.messageHandlers.forEach(handler => handler(data));
+          
+          // Verificăm dacă mesajul are un tip valid
+          if (data && data.type) {
+            // Adăugăm debug suplimentar pentru mesajele de tip NEW_MESSAGE
+            if (data.type === 'NEW_MESSAGE') {
+              console.log('Received NEW_MESSAGE event:', data);
+            }
+            // Notificăm toți handlerii înregistrați
+            this.messageHandlers.forEach(handler => {
+              try {
+                handler(data);
+              } catch (handlerError) {
+                console.error('Error in message handler:', handlerError);
+              }
+            });
+          }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }

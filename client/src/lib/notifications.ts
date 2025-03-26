@@ -1,56 +1,116 @@
 
-// Utilitar pentru gestionarea notificărilor browser
-const NotificationHelper = {
-  // Verifică dacă notificările sunt suportate
-  isSupported(): boolean {
-    return typeof window !== 'undefined' && 'Notification' in window;
-  },
+/**
+ * Helper pentru gestionarea notificărilor browser
+ */
+class NotificationHelper {
+  /**
+   * Verifică dacă API-ul de notificări este suportat de browser
+   */
+  static isSupported(): boolean {
+    return 'Notification' in window;
+  }
 
-  // Verifică permisiunea curentă
-  checkPermission(): string {
-    if (!this.isSupported()) return 'not-supported';
+  /**
+   * Verifică permisiunea curentă pentru notificări
+   * @returns 'granted', 'denied' sau 'default'
+   */
+  static checkPermission(): NotificationPermission {
+    if (!this.isSupported()) {
+      return 'denied';
+    }
     return Notification.permission;
-  },
+  }
 
-  // Solicită permisiunea
-  async requestPermission(): Promise<boolean> {
-    if (!this.isSupported()) return false;
-    
+  /**
+   * Solicită permisiunea pentru notificări
+   * @returns Promise<boolean> - true dacă permisiunea a fost acordată
+   */
+  static async requestPermission(): Promise<boolean> {
+    if (!this.isSupported()) {
+      console.error('Notificările nu sunt suportate în acest browser');
+      return false;
+    }
+
     try {
       const permission = await Notification.requestPermission();
       return permission === 'granted';
     } catch (error) {
-      console.error('Eroare la solicitarea permisiunii de notificare:', error);
+      console.error('Eroare la solicitarea permisiunii pentru notificări:', error);
       return false;
     }
-  },
+  }
 
-  // Afișează o notificare
-  showNotification(title: string, options?: NotificationOptions): Notification | null {
+  /**
+   * Arată o notificare
+   * @param title Titlul notificării
+   * @param options Opțiuni pentru notificare
+   * @returns Instanța notificării sau null în caz de eroare
+   */
+  static showNotification(title: string, options: NotificationOptions = {}): Notification | null {
     if (!this.isSupported() || Notification.permission !== 'granted') {
-      console.warn('Notificările nu sunt permise sau nu sunt suportate');
+      console.error('Notificările nu sunt disponibile sau permisiunea nu este acordată');
       return null;
     }
 
     try {
-      return new Notification(title, options);
+      // Opțiuni implicite pentru notificări
+      const defaultOptions: NotificationOptions = {
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        silent: false,
+        ...options
+      };
+
+      // Creăm și afișăm notificarea
+      const notification = new Notification(title, defaultOptions);
+      
+      // Event handlers
+      notification.onclick = () => {
+        console.log('Notificare accesată');
+        window.focus();
+        notification.close();
+      };
+
+      notification.onclose = () => {
+        console.log('Notificare închisă');
+      };
+
+      notification.onerror = (error) => {
+        console.error('Eroare la afișarea notificării:', error);
+      };
+
+      return notification;
     } catch (error) {
       console.error('Eroare la afișarea notificării:', error);
       return null;
     }
-  },
+  }
 
-  // Testează dacă notificările funcționează
-  testNotification(): void {
-    if (this.checkPermission() === 'granted') {
-      this.showNotification('Test Notificare', {
-        body: 'Aceasta este o notificare de test',
-        icon: '/favicon.ico'
+  /**
+   * Metodă pentru testarea notificărilor
+   */
+  static testNotification(): void {
+    const permission = this.checkPermission();
+    console.log('Testăm notificările. Permisiune curentă:', permission);
+    
+    if (permission === 'granted') {
+      this.showNotification('Notificare de test', {
+        body: 'Aceasta este o notificare de test. Dacă vedeți acest mesaj, notificările în browser funcționează corect.',
+        icon: '/favicon.ico',
+        tag: 'test-notification'
       });
     } else {
-      console.warn('Permisiune pentru notificări neacordată');
+      console.warn('Nu se poate testa notificarea - permisiunea nu este acordată');
+      // Încercăm să solicităm permisiunea dacă nu este denial
+      if (permission !== 'denied') {
+        this.requestPermission().then(granted => {
+          if (granted) {
+            this.testNotification();
+          }
+        });
+      }
     }
   }
-};
+}
 
 export default NotificationHelper;

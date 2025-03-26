@@ -51,16 +51,46 @@ function App() {
         websocketService.ensureConnection().then(() => {
           console.log("WebSocket conectat pentru notificări");
           
+          // Obținem preferințele de notificări
+          const fetchNotificationPreferences = async () => {
+            try {
+              const response = await fetch('/api/service/notification-preferences');
+              if (response.ok) {
+                return await response.json();
+              }
+              return null;
+            } catch (error) {
+              console.error("Eroare la obținerea preferințelor de notificări:", error);
+              return null;
+            }
+          };
+          
           // Adăugăm un handler pentru mesaje WebSocket
-          const removeHandler = websocketService.addMessageHandler((data: any) => {
+          const removeHandler = websocketService.addMessageHandler(async (data: any) => {
             console.log("Processing websocket message for notifications:", data);
             
             // Verificăm dacă este un mesaj nou
-            if (data && data.type === 'NEW_MESSAGE' && NotificationHelper.checkPermission() === 'granted') {
-              NotificationHelper.showNotification('Mesaj nou', {
-                body: data.message || 'Ați primit un mesaj nou',
-                icon: '/favicon.ico'
-              });
+            if (data && data.type === 'NEW_MESSAGE') {
+              if (NotificationHelper.checkPermission() === 'granted') {
+                // Verificăm preferințele de notificări
+                const preferences = await fetchNotificationPreferences();
+                
+                // Verificăm dacă notificările pentru mesaje noi sunt activate
+                if (preferences && 
+                    preferences.browserNotificationsEnabled && 
+                    preferences.newMessageBrowserEnabled) {
+                  
+                  console.log("Afișare notificare pentru mesaj nou");
+                  NotificationHelper.showNotification('Mesaj nou', {
+                    body: data.message || 'Ați primit un mesaj nou',
+                    icon: '/favicon.ico'
+                  });
+                } else {
+                  console.log("Notificările pentru mesaje noi sunt dezactivate în preferințe");
+                }
+              } else {
+                console.log("Permisiunea browserului pentru notificări nu este acordată");
+              }
             }
           });
           
