@@ -3,11 +3,15 @@
  * Helper pentru gestionarea notificărilor browser
  */
 class NotificationHelper {
+  private static debugMode = true;
+
   /**
    * Verifică dacă API-ul de notificări este suportat de browser
    */
   static isSupported(): boolean {
-    return 'Notification' in window;
+    const supported = 'Notification' in window;
+    if (this.debugMode) console.log('Notificări browser suportate:', supported);
+    return supported;
   }
 
   /**
@@ -18,7 +22,9 @@ class NotificationHelper {
     if (!this.isSupported()) {
       return 'denied';
     }
-    return Notification.permission;
+    const permission = Notification.permission;
+    if (this.debugMode) console.log('Permisiune notificări browser:', permission);
+    return permission;
   }
 
   /**
@@ -32,7 +38,9 @@ class NotificationHelper {
     }
 
     try {
+      console.log('Solicită permisiunea pentru notificări...');
       const permission = await Notification.requestPermission();
+      console.log('Permisiune primită:', permission);
       return permission === 'granted';
     } catch (error) {
       console.error('Eroare la solicitarea permisiunii pentru notificări:', error);
@@ -47,17 +55,25 @@ class NotificationHelper {
    * @returns Instanța notificării sau null în caz de eroare
    */
   static showNotification(title: string, options: NotificationOptions = {}): Notification | null {
-    if (!this.isSupported() || Notification.permission !== 'granted') {
-      console.error('Notificările nu sunt disponibile sau permisiunea nu este acordată');
+    if (!this.isSupported()) {
+      console.error('Notificările nu sunt disponibile în acest browser');
+      return null;
+    }
+    
+    if (Notification.permission !== 'granted') {
+      console.error('Permisiune pentru notificări neacordată, permisiune curentă:', Notification.permission);
       return null;
     }
 
     try {
+      console.log('Afișare notificare:', title, options);
+      
       // Opțiuni implicite pentru notificări
       const defaultOptions: NotificationOptions = {
         icon: '/favicon.ico',
         badge: '/favicon.ico',
         silent: false,
+        requireInteraction: true,  // Notificarea rămâne vizibilă până când utilizatorul interacționează cu ea
         ...options
       };
 
@@ -66,7 +82,7 @@ class NotificationHelper {
       
       // Event handlers
       notification.onclick = () => {
-        console.log('Notificare accesată');
+        console.log('Notificare accesată de utilizator');
         window.focus();
         notification.close();
       };
@@ -90,14 +106,17 @@ class NotificationHelper {
    * Metodă pentru testarea notificărilor
    */
   static testNotification(): void {
+    console.log('Inițiere test notificări browser...');
     const permission = this.checkPermission();
-    console.log('Testăm notificările. Permisiune curentă:', permission);
+    console.log('Test notificări. Permisiune curentă:', permission);
     
     if (permission === 'granted') {
+      console.log('Permisiune acordată, afișăm notificarea de test');
       this.showNotification('Notificare de test', {
         body: 'Aceasta este o notificare de test. Dacă vedeți acest mesaj, notificările în browser funcționează corect.',
         icon: '/favicon.ico',
-        tag: 'test-notification'
+        tag: 'test-notification',
+        requireInteraction: true
       });
     } else {
       console.warn('Nu se poate testa notificarea - permisiunea nu este acordată');
@@ -105,10 +124,59 @@ class NotificationHelper {
       if (permission !== 'denied') {
         this.requestPermission().then(granted => {
           if (granted) {
+            console.log('Permisiune acordată după solicitare, testăm notificarea');
             this.testNotification();
+          } else {
+            console.log('Permisiune refuzată de utilizator');
           }
         });
       }
+    }
+  }
+  
+  /**
+   * Metoda pentru gestionarea evenimentelor de notificare
+   * @param data Datele evenimentului pentru afișarea notificării
+   */
+  static handleNotificationEvent(data: any): void {
+    console.log('Procesare eveniment notificare:', data);
+    
+    if (!data || !data.type) {
+      console.warn('Date de notificare invalide:', data);
+      return;
+    }
+    
+    // Verificăm tipul de eveniment
+    switch (data.type) {
+      case 'NEW_MESSAGE':
+        this.showNotification('Mesaj nou', {
+          body: data.payload?.content || 'Ați primit un mesaj nou',
+          icon: '/favicon.ico',
+          tag: `message-${Date.now()}` // Tag unic pentru fiecare mesaj
+        });
+        break;
+      case 'NEW_OFFER':
+        this.showNotification('Ofertă nouă', {
+          body: data.payload?.title || 'Ați primit o ofertă nouă',
+          icon: '/favicon.ico'
+        });
+        break;
+      case 'NEW_REQUEST':
+        this.showNotification('Cerere nouă', {
+          body: data.payload?.title || 'Ați primit o cerere nouă',
+          icon: '/favicon.ico'
+        });
+        break;
+      case 'OFFER_STATUS_CHANGED':
+        if (data.payload?.status === 'Accepted') {
+          this.showNotification('Ofertă acceptată', {
+            body: 'O ofertă trimisă de dvs. a fost acceptată',
+            icon: '/favicon.ico'
+          });
+        }
+        break;
+      default:
+        console.log('Tip de eveniment necunoscut pentru notificare:', data.type);
     }
   }
 }

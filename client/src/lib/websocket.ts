@@ -52,7 +52,7 @@ class WebSocketService {
 
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`; // Updated path to match server
+    const wsUrl = `${protocol}//${window.location.host}/api/ws`; // Corectare cale API/WS
     console.log('WebSocket URL:', wsUrl);
     return wsUrl;
   }

@@ -30,26 +30,42 @@ function Router() {
   );
 }
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import NotificationHelper from "./lib/notifications";
 
 function App() {
+  const [webSocketInitialized, setWebSocketInitialized] = useState(false);
+  
   // Inițializare handler pentru notificări la încărcarea aplicației
   useEffect(() => {
     console.log("[App] Încărcare aplicație...");
+    
+    // Flag pentru a urmări dacă avem permisiunea utilizatorului
+    let hasPermission = false;
     
     // Verifică și inițializează notificările dacă sunt suportate
     if (NotificationHelper.isSupported()) {
       const currentPermission = NotificationHelper.checkPermission();
       console.log("Stare permisiune notificări:", currentPermission);
+      hasPermission = currentPermission === 'granted';
+      
+      // Dacă avem deja permisiunea, sau utilizatorul nu a răspuns încă, solicităm explicit
+      if (currentPermission === 'default') {
+        NotificationHelper.requestPermission().then(granted => {
+          console.log("Permisiune notificări după solicitare:", granted ? "acordată" : "refuzată");
+          hasPermission = granted;
+        });
+      }
       
       // Importăm și inițializăm WebSocketService
+      let websocketService: any = null;
       import("@/lib/websocket").then((module) => {
-        const websocketService = module.default;
+        websocketService = module.default;
         
         // Ne asigurăm că WebSocket este conectat
         websocketService.ensureConnection().then(() => {
           console.log("WebSocket conectat pentru notificări");
+          setWebSocketInitialized(true);
           
           // Obținem preferințele de notificări
           const fetchNotificationPreferences = async () => {
@@ -69,45 +85,85 @@ function App() {
           const removeHandler = websocketService.addMessageHandler(async (data: any) => {
             console.log("Processing websocket message for notifications:", data);
             
-            // Verificăm dacă este un mesaj nou
-            if (data && data.type === 'NEW_MESSAGE') {
-              if (NotificationHelper.checkPermission() === 'granted') {
-                // Verificăm preferințele de notificări
+            // Verificăm dacă este un mesaj valid
+            if (!data || !data.type) {
+              console.warn("Mesaj WebSocket invalid sau fără tip:", data);
+              return;
+            }
+            
+            // Verificăm dacă avem permisiunea de notificare
+            const permissionNow = NotificationHelper.checkPermission();
+            if (permissionNow !== 'granted') {
+              console.log("Notificări browser: Permisiune neacordată, nu putem afișa notificări");
+              return;
+            }
+
+            // Verificăm preferințele de notificări doar pentru mesaje de tip NEW_MESSAGE
+            if (data.type === 'NEW_MESSAGE') {
+              try {
                 const preferences = await fetchNotificationPreferences();
                 
-                // Verificăm dacă notificările pentru mesaje noi sunt activate
                 if (preferences && 
                     preferences.browserNotificationsEnabled && 
                     preferences.newMessageBrowserEnabled) {
+                  console.log("Afișăm notificare pentru mesaj nou:", data.payload);
                   
-                  console.log("Afișare notificare pentru mesaj nou");
+                  let messageBody = 'Ați primit un mesaj nou';
+                  if (data.payload && data.payload.content) {
+                    messageBody = data.payload.content;
+                  }
+                  
                   NotificationHelper.showNotification('Mesaj nou', {
-                    body: data.message || 'Ați primit un mesaj nou',
-                    icon: '/favicon.ico'
+                    body: messageBody,
+                    icon: '/favicon.ico',
+                    tag: `message-${Date.now()}`
                   });
                 } else {
                   console.log("Notificările pentru mesaje noi sunt dezactivate în preferințe");
                 }
-              } else {
-                console.log("Permisiunea browserului pentru notificări nu este acordată");
+              } catch (error) {
+                console.error("Eroare la procesarea notificării:", error);
               }
+            } else {
+              // Pentru alte tipuri de evenimente, delegăm către NotificationHelper
+              NotificationHelper.handleNotificationEvent(data);
             }
           });
           
           // Adaugă un window event listener pentru testare manuală
-          window.addEventListener('test-notification', () => {
+          const testNotificationHandler = () => {
+            console.log("Testare notificare din event dispatcher");
             NotificationHelper.testNotification();
-          });
+          };
+          
+          window.addEventListener('test-notification', testNotificationHandler);
+          
+          // Test manual de notificare la inițializare pentru a ne asigura că funcționează
+          setTimeout(() => {
+            if (hasPermission) {
+              console.log("Trimitem o notificare de test pentru a verifica funcționalitatea");
+              NotificationHelper.showNotification('Notificările sunt active', {
+                body: 'Vei primi notificări pentru mesaje noi și alte evenimente importante',
+                icon: '/favicon.ico'
+              });
+            }
+          }, 3000);
           
           // Clean-up la unmount
           return () => {
-            removeHandler();
-            window.removeEventListener('test-notification', () => {});
+            if (websocketService) {
+              removeHandler();
+              websocketService.disconnect();
+            }
+            window.removeEventListener('test-notification', testNotificationHandler);
+            setWebSocketInitialized(false);
           };
         }).catch(error => {
           console.error("Eroare la conectarea WebSocket pentru notificări:", error);
         });
       });
+    } else {
+      console.warn("Acest browser nu suportă notificările");
     }
   }, []);
 
