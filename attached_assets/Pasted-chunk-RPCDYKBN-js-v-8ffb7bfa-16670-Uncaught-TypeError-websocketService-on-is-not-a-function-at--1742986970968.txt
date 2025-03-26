@@ -1,0 +1,186 @@
+chunk-RPCDYKBN.js?v=8ffb7bfa:16670 Uncaught TypeError: websocketService.on is not a function
+    at ConnectionStatus.tsx:30:22
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=8ffb7bfa:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=8ffb7bfa:18161:17)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=8ffb7bfa:18129:17)
+    at commitPassiveMountEffects_begin (chunk-RPCDYKBN.js?v=8ffb7bfa:18119:15)
+    at commitPassiveMountEffects (chunk-RPCDYKBN.js?v=8ffb7bfa:18109:11)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=8ffb7bfa:19490:11)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=8ffb7bfa:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=8ffb7bfa:18868:11)
+    at flushSyncCallbacks (chunk-RPCDYKBN.js?v=8ffb7bfa:9119:30)
+(anonymous) @ ConnectionStatus.tsx:30
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=8ffb7bfa:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=8ffb7bfa:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=8ffb7bfa:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=8ffb7bfa:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=8ffb7bfa:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19432
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=8ffb7bfa:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18718
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+chunk-RPCDYKBN.js?v=8ffb7bfa:16670 Uncaught TypeError: websocketService.on is not a function
+    at ConnectionStatus.tsx:30:22
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=8ffb7bfa:16915:34)
+    at invokePassiveEffectMountInDEV (chunk-RPCDYKBN.js?v=8ffb7bfa:18324:19)
+    at invokeEffectsInDev (chunk-RPCDYKBN.js?v=8ffb7bfa:19701:19)
+    at commitDoubleInvokeEffectsInDEV (chunk-RPCDYKBN.js?v=8ffb7bfa:19686:15)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=8ffb7bfa:19503:13)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=8ffb7bfa:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=8ffb7bfa:18868:11)
+    at flushSyncCallbacks (chunk-RPCDYKBN.js?v=8ffb7bfa:9119:30)
+    at commitRootImpl (chunk-RPCDYKBN.js?v=8ffb7bfa:19432:11)
+(anonymous) @ ConnectionStatus.tsx:30
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=8ffb7bfa:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=8ffb7bfa:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=8ffb7bfa:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=8ffb7bfa:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=8ffb7bfa:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19432
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=8ffb7bfa:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18718
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+chunk-RPCDYKBN.js?v=8ffb7bfa:14032 The above error occurred in the <ConnectionStatus> component:
+
+    at ConnectionStatus (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/common/ConnectionStatus.tsx:6:41)
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:13:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=8ffb7bfa:2848:3)
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ErrorBoundary.tsx:5:5)
+    at App (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/App.tsx:70:3)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+logCapturedError @ chunk-RPCDYKBN.js?v=8ffb7bfa:14032
+callback @ chunk-RPCDYKBN.js?v=8ffb7bfa:14078
+callCallback @ chunk-RPCDYKBN.js?v=8ffb7bfa:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=8ffb7bfa:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=8ffb7bfa:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=8ffb7bfa:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=8ffb7bfa:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19353
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=8ffb7bfa:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19432
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=8ffb7bfa:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18718
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+ErrorBoundary.tsx:21 Error caught by boundary: TypeError: websocketService.on is not a function
+    at ConnectionStatus.tsx:30:22
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=8ffb7bfa:16915:34)
+    at commitPassiveMountOnFiber (chunk-RPCDYKBN.js?v=8ffb7bfa:18161:17)
+    at commitPassiveMountEffects_complete (chunk-RPCDYKBN.js?v=8ffb7bfa:18129:17)
+    at commitPassiveMountEffects_begin (chunk-RPCDYKBN.js?v=8ffb7bfa:18119:15)
+    at commitPassiveMountEffects (chunk-RPCDYKBN.js?v=8ffb7bfa:18109:11)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=8ffb7bfa:19490:11)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=8ffb7bfa:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=8ffb7bfa:18868:11)
+    at flushSyncCallbacks (chunk-RPCDYKBN.js?v=8ffb7bfa:9119:30) {componentStack: '\n    at ConnectionStatus (https://1becfc92-d03b-40…2tt25zbu0b2gm.picard.replit.dev/src/App.tsx:70:3)'}
+componentDidCatch @ ErrorBoundary.tsx:21
+callback @ chunk-RPCDYKBN.js?v=8ffb7bfa:14084
+callCallback @ chunk-RPCDYKBN.js?v=8ffb7bfa:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=8ffb7bfa:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=8ffb7bfa:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=8ffb7bfa:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=8ffb7bfa:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19353
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=8ffb7bfa:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19432
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=8ffb7bfa:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18718
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+chunk-RPCDYKBN.js?v=8ffb7bfa:14032 The above error occurred in the <ConnectionStatus> component:
+
+    at ConnectionStatus (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/common/ConnectionStatus.tsx:6:41)
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:13:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=8ffb7bfa:2848:3)
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ErrorBoundary.tsx:5:5)
+    at App (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/App.tsx:70:3)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+logCapturedError @ chunk-RPCDYKBN.js?v=8ffb7bfa:14032
+callback @ chunk-RPCDYKBN.js?v=8ffb7bfa:14078
+callCallback @ chunk-RPCDYKBN.js?v=8ffb7bfa:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=8ffb7bfa:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=8ffb7bfa:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=8ffb7bfa:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=8ffb7bfa:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19353
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=8ffb7bfa:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19432
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=8ffb7bfa:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18718
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+ErrorBoundary.tsx:21 Error caught by boundary: TypeError: websocketService.on is not a function
+    at ConnectionStatus.tsx:30:22
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=8ffb7bfa:16915:34)
+    at invokePassiveEffectMountInDEV (chunk-RPCDYKBN.js?v=8ffb7bfa:18324:19)
+    at invokeEffectsInDev (chunk-RPCDYKBN.js?v=8ffb7bfa:19701:19)
+    at commitDoubleInvokeEffectsInDEV (chunk-RPCDYKBN.js?v=8ffb7bfa:19686:15)
+    at flushPassiveEffectsImpl (chunk-RPCDYKBN.js?v=8ffb7bfa:19503:13)
+    at flushPassiveEffects (chunk-RPCDYKBN.js?v=8ffb7bfa:19447:22)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=8ffb7bfa:18868:11)
+    at flushSyncCallbacks (chunk-RPCDYKBN.js?v=8ffb7bfa:9119:30)
+    at commitRootImpl (chunk-RPCDYKBN.js?v=8ffb7bfa:19432:11) {componentStack: '\n    at ConnectionStatus (https://1becfc92-d03b-40…2tt25zbu0b2gm.picard.replit.dev/src/App.tsx:70:3)'}
+componentDidCatch @ ErrorBoundary.tsx:21
+callback @ chunk-RPCDYKBN.js?v=8ffb7bfa:14084
+callCallback @ chunk-RPCDYKBN.js?v=8ffb7bfa:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=8ffb7bfa:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=8ffb7bfa:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=8ffb7bfa:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=8ffb7bfa:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19353
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=8ffb7bfa:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19432
+commitRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=8ffb7bfa:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=8ffb7bfa:18718
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+websocket.ts:81 WebSocket URL: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:84 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:85
+(anonymous) @ websocket.ts:161
+websocket.ts:124 WebSocket connection issue detected, will retry automatically
+websocket.ts:132 WebSocket connection lost, reconnecting...
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+3hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
