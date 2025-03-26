@@ -17,37 +17,120 @@ let isReconnecting = false;
 let messageHandlers: ((data: any) => void)[] = [];
 let connectionStatusListeners: ((status: boolean) => void)[] = [];
 
-// Stocăm temporar mesajele dacă conexiunea nu este stabilită
-const messageQueue: { message: any; resolve: (value: any) => void; reject: (reason?: any) => void }[] = [];
+// Stocăm temporar mesajele dacă conexiunea nu este stabilită încă
+const messageQueue: {id: string, data: any, timeout: NodeJS.Timeout}[] = [];
 
 /**
- * Adaugă un handler pentru procesarea mesajelor primite
+ * Serviciu WebSocket pentru comunicarea în timp real
  */
-export function addMessageHandler(handler: (data: any) => void) {
-  messageHandlers.push(handler);
-}
+const websocketService = {
+  /**
+   * Inițializează serviciul WebSocket și stabilește o conexiune
+   */
+  initialize: () => {
+    initializeWebSocketService();
+  },
 
-/**
- * Adaugă un listener pentru schimbări în starea conexiunii
- */
-export function addConnectionStatusListener(listener: (status: boolean) => void) {
-  connectionStatusListeners.push(listener);
-  
-  // Trimite starea curentă noului listener
-  isConnected().then(status => {
-    listener(status);
-  });
-}
+  /**
+   * Adaugă un handler pentru procesarea mesajelor primite
+   * @param handler Funcția care va procesa mesajele
+   */
+  addMessageHandler: (handler: (data: any) => void) => {
+    if (typeof handler !== 'function') {
+      console.error('Handlerul pentru mesaje trebuie să fie o funcție');
+      return;
+    }
+    messageHandlers.push(handler);
+  },
 
-/**
- * Elimină un listener pentru schimbări în starea conexiunii
- */
-export function removeConnectionStatusListener(listener: (status: boolean) => void) {
-  const index = connectionStatusListeners.indexOf(listener);
-  if (index !== -1) {
-    connectionStatusListeners.splice(index, 1);
+  /**
+   * Adaugă un listener pentru starea conexiunii
+   * @param listener Funcția care va fi apelată la schimbarea stării conexiunii
+   */
+  addConnectionStatusListener: (listener: (status: boolean) => void) => {
+    if (typeof listener !== 'function') {
+      console.error('Listener-ul pentru starea conexiunii trebuie să fie o funcție');
+      return;
+    }
+    connectionStatusListeners.push(listener);
+    
+    // Notificăm imediat starea curentă
+    isConnected().then(status => {
+      listener(status);
+    });
+  },
+
+  /**
+   * Elimină un listener pentru starea conexiunii
+   * @param listener Funcția care a fost anterior înregistrată
+   */
+  removeConnectionStatusListener: (listener: (status: boolean) => void) => {
+    const index = connectionStatusListeners.indexOf(listener);
+    if (index !== -1) {
+      connectionStatusListeners.splice(index, 1);
+    }
+  },
+
+  /**
+   * Trimite un mesaj către server
+   * @param data Datele care vor fi trimise
+   * @returns Promisiune care se rezolvă când mesajul este trimis sau respins în caz de eroare
+   */
+  sendMessage: (data: any): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // Generăm un ID unic pentru acest mesaj
+      const messageId = uuidv4();
+      
+      // Creăm un timeout pentru mesaj
+      const timeoutId = setTimeout(() => {
+        // Găsim și eliminăm mesajul din coadă
+        const index = messageQueue.findIndex(msg => msg.id === messageId);
+        if (index !== -1) {
+          messageQueue.splice(index, 1);
+        }
+        reject(new Error('Timeout la trimiterea mesajului'));
+      }, MESSAGE_TIMEOUT);
+      
+      // Adăugăm mesajul în coadă
+      messageQueue.push({
+        id: messageId,
+        data,
+        timeout: timeoutId
+      });
+      
+      // Încercăm să trimitem mesajul imediat dacă conexiunea este deschisă
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        sendQueuedMessages();
+        resolve();
+      } else {
+        // Inițializăm WebSocket-ul dacă nu este deja conectat
+        ensureConnection()
+          .then(() => {
+            resolve();
+          })
+          .catch(error => {
+            reject(error);
+          });
+      }
+    });
+  },
+
+  /**
+   * Asigură că există o conexiune WebSocket activă
+   * @returns Promisiune care se rezolvă când conexiunea este stabilită
+   */
+  ensureConnection: (): Promise<void> => {
+    return ensureConnection();
+  },
+
+  /**
+   * Verifică dacă conexiunea WebSocket este deschisă
+   * @returns Promisiune care se rezolvă cu starea conexiunii
+   */
+  isConnected: (): Promise<boolean> => {
+    return isConnected();
   }
-}
+};
 
 /**
  * Inițializează serviciul WebSocket și stabilește o conexiune
@@ -123,9 +206,174 @@ function createWebSocketConnection(url: string) {
     websocket.onmessage = handleWebSocketMessage;
   } catch (error) {
     console.error('Error creating WebSocket connection:', error);
-    scheduleReconnect();
     notifyConnectionStatus(false);
   }
+}
+
+/**
+ * Programează o încercare de reconectare cu algoritm de backoff exponențial
+ */
+function scheduleReconnect() {
+  if (isReconnecting) {
+    return;
+  }
+  
+  isReconnecting = true;
+  
+  // Implementăm backoff exponențial pentru a evita supraîncărcarea serverului
+  reconnectAttempt += 1;
+  
+  // Calculăm întârzierea cu o componentă aleatoare pentru a evita conexiunile sincrone
+  const randomFactor = 0.5 * Math.random();
+  let delay = Math.min(
+    RECONNECT_DELAY_MAX,
+    RECONNECT_DELAY_MIN * Math.pow(1.5, Math.min(reconnectAttempt, 10)) * (1 + randomFactor)
+  );
+  
+  delay = Math.floor(delay);
+  console.log(`Reconnecting attempt ${reconnectAttempt} in ${Math.round(delay / 1000)}s`);
+  
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+  }
+  
+  reconnectTimeout = setTimeout(() => {
+    if (websocket?.readyState === WebSocket.OPEN) {
+      isReconnecting = false;
+      return;
+    }
+    
+    // Construim URL-ul WebSocket bazat pe locația curentă
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/api/ws`;
+    
+    console.log('WebSocket URL:', wsUrl);
+    console.log('Connecting to WebSocket:', wsUrl);
+    createWebSocketConnection(wsUrl);
+  }, delay);
+}
+
+/**
+ * Trimite un mesaj de ping pentru a menține conexiunea activă
+ */
+function sendPing() {
+  if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+  
+  // Verificăm dacă conexiunea este inactivă de prea mult timp
+  const currentTime = Date.now();
+  if (currentTime - lastPingTime > 60000) { // 60 secunde
+    // Conexiunea pare inactivă, încercăm să o închidem și să reconectăm
+    websocket.close();
+    return;
+  }
+  
+  try {
+    // Trimitem un mesaj simplu de ping
+    websocket.send(JSON.stringify({ type: 'PING', timestamp: new Date().toISOString() }));
+  } catch (error) {
+    console.error('Error sending ping:', error);
+    notifyConnectionStatus(false);
+  }
+}
+
+/**
+ * Notifică toți ascultătorii despre starea conexiunii
+ */
+function notifyConnectionStatus(connected: boolean) {
+  connectionStatusListeners.forEach(listener => {
+    try {
+      listener(connected);
+    } catch (error) {
+      console.error('Error in connection status listener:', error);
+    }
+  });
+}
+
+/**
+ * Trimite toate mesajele din coadă
+ */
+function sendQueuedMessages() {
+  if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+  
+  // Procesăm toate mesajele din coadă
+  while (messageQueue.length > 0) {
+    const message = messageQueue.shift();
+    if (!message) continue;
+    
+    // Curățăm timeout-ul pentru acest mesaj
+    clearTimeout(message.timeout);
+    
+    try {
+      // Trimitem mesajul
+      websocket.send(JSON.stringify(message.data));
+    } catch (error) {
+      console.error('Error sending queued message:', error);
+      notifyConnectionStatus(false);
+    }
+  }
+}
+
+/**
+ * Asigură că există o conexiune WebSocket activă
+ */
+async function ensureConnection(): Promise<void> {
+  // Dacă conexiunea este deja deschisă, nu facem nimic
+  if (await isConnected()) {
+    return;
+  }
+  
+  // Inițializăm WebSocket-ul dacă nu există
+  if (websocket === null || websocket.readyState === WebSocket.CLOSED) {
+    initializeWebSocketService();
+  }
+  
+  // Așteptăm să se deschidă conexiunea
+  return new Promise((resolve, reject) => {
+    // Verificăm dacă conexiunea s-a deschis între timp
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+      resolve();
+      return;
+    }
+    
+    // Setăm un timeout pentru rezolvarea promisiunii
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Timeout la conectarea WebSocket'));
+    }, 10000); // 10 secunde
+    
+    // Adăugăm un handler temporar pentru evenimentul onopen
+    const originalOnOpen = websocket?.onopen;
+    if (websocket) {
+      websocket.onopen = (event) => {
+        // Apelăm handler-ul original
+        if (originalOnOpen) {
+          originalOnOpen.call(websocket, event);
+        }
+        
+        // Curățăm timeout-ul
+        clearTimeout(timeoutId);
+        
+        // Rezolvăm promisiunea
+        resolve();
+      };
+    } else {
+      clearTimeout(timeoutId);
+      reject(new Error('WebSocket nu a putut fi inițializat'));
+    }
+  });
+}
+
+/**
+ * Verifică dacă conexiunea WebSocket este deschisă
+ * @returns Promise care se rezolvă cu starea conexiunii
+ */
+async function isConnected(): Promise<boolean> {
+  // Dacă nu există websocket sau starea nu este OPEN, nu suntem conectați
+  return websocket !== null && websocket.readyState === WebSocket.OPEN;
 }
 
 /**
@@ -152,7 +400,7 @@ function handleWebSocketOpen() {
   pingInterval = setInterval(sendPing, 30000); // Trimitem ping la fiecare 30 secunde
   
   // Procesăm eventualele mesaje din coadă
-  processMessageQueue();
+  sendQueuedMessages();
   
   // Notificăm ascultătorii despre starea conexiunii
   notifyConnectionStatus(true);
@@ -251,220 +499,7 @@ function handleWebSocketMessage(event: MessageEvent) {
   }
 }
 
-/**
- * Programează o încercare de reconectare cu algoritm de backoff exponențial
- */
-function scheduleReconnect() {
-  if (isReconnecting) {
-    return;
-  }
-  
-  isReconnecting = true;
-  
-  // Implementăm backoff exponențial pentru a evita supraîncărcarea serverului
-  reconnectAttempt += 1;
-  
-  // Calculăm întârzierea cu o componentă aleatoare pentru a evita conexiunile sincrone
-  const randomFactor = 0.5 * Math.random();
-  let delay = Math.min(
-    RECONNECT_DELAY_MAX,
-    RECONNECT_DELAY_MIN * Math.pow(1.5, Math.min(reconnectAttempt, 10)) * (1 + randomFactor)
-  );
-  
-  delay = Math.floor(delay);
-  console.log(`Reconnecting attempt ${reconnectAttempt} in ${Math.round(delay / 1000)}s`);
-  
-  if (reconnectTimeout) {
-    clearTimeout(reconnectTimeout);
-  }
-  
-  reconnectTimeout = setTimeout(() => {
-    if (websocket?.readyState === WebSocket.OPEN) {
-      isReconnecting = false;
-      return;
-    }
-    
-    // Construim URL-ul WebSocket bazat pe locația curentă
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/api/ws`;
-    
-    console.log('WebSocket URL:', wsUrl);
-    console.log('Connecting to WebSocket:', wsUrl);
-    createWebSocketConnection(wsUrl);
-  }, delay);
-}
-
-/**
- * Trimite un mesaj ping pentru a menține conexiunea activă
- */
-function sendPing() {
-  if (websocket?.readyState === WebSocket.OPEN) {
-    try {
-      const elapsedTime = Date.now() - lastPingTime;
-      
-      // Dacă nu am primit niciun mesaj în ultimul minut, forțăm reconectarea
-      if (elapsedTime > 60000) {
-        console.log('No messages received for 60s, forcing reconnect');
-        
-        if (websocket) {
-          websocket.close();
-        }
-        
-        scheduleReconnect();
-        return;
-      }
-      
-      // Trimitem un ping normal
-      websocket.send(JSON.stringify({ type: 'PING' }));
-    } catch (error) {
-      console.error('Error sending ping:', error);
-    }
-  }
-}
-
-/**
- * Verifică dacă WebSocket este conectat
- * @returns Promise care se rezolvă cu starea conexiunii
- */
-async function isConnected(): Promise<boolean> {
-  // Dacă nu există websocket sau starea nu este OPEN, nu suntem conectați
-  return websocket !== null && websocket.readyState === WebSocket.OPEN;
-}
-
-/**
- * Notifică toți ascultătorii despre schimbarea stării conexiunii
- */
-function notifyConnectionStatus(status: boolean) {
-  connectionStatusListeners.forEach(listener => {
-    try {
-      listener(status);
-    } catch (error) {
-      console.error('Error in connection status listener:', error);
-    }
-  });
-}
-
-/**
- * Asigură că există o conexiune WebSocket activă
- * @returns Promise care se rezolvă când conexiunea este stabilită
- */
-export async function ensureConnection(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (websocket === null || websocket.readyState !== WebSocket.OPEN) {
-      if (!websocket || websocket.readyState === WebSocket.CLOSED) {
-        initializeWebSocketService();
-      }
-      
-      const checkInterval = setInterval(() => {
-        if (websocket?.readyState === WebSocket.OPEN) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
-      
-      // Timeout pentru a evita blocarea
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        reject(new Error('WebSocket connection timed out'));
-      }, 5000);
-    } else {
-      resolve();
-    }
-  });
-}
-
-/**
- * Trimite un mesaj prin WebSocket
- * @param message Mesajul de trimis
- * @returns Promise care se rezolvă cu răspunsul
- */
-export async function sendMessage(message: any): Promise<any> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // Generăm un ID unic pentru acest mesaj
-      const messageId = uuidv4();
-      const messageWithId = {
-        ...message,
-        id: messageId
-      };
-      
-      // Funcția de timeout pentru a evita blocarea
-      const timeoutFunc = setTimeout(() => {
-        reject(new Error('WebSocket message timed out'));
-      }, MESSAGE_TIMEOUT);
-      
-      // Adăugăm mesajul în coadă
-      messageQueue.push({
-        message: messageWithId,
-        resolve: (value) => {
-          clearTimeout(timeoutFunc);
-          resolve(value);
-        },
-        reject: (reason) => {
-          clearTimeout(timeoutFunc);
-          reject(reason);
-        }
-      });
-      
-      // Încercăm să trimitem imediat dacă suntem conectați
-      await ensureConnection()
-        .then(() => processMessageQueue())
-        .catch(error => {
-          console.warn('WebSocket not connected, message queued:', messageWithId);
-          // Nu respingem aici, vom păstra mesajul în coadă pentru încercări viitoare
-        });
-    } catch (error) {
-      console.error('Error in sendMessage:', error);
-      reject(error);
-    }
-  });
-}
-
-/**
- * Procesează mesajele din coadă atunci când conexiunea este disponibilă
- */
-function processMessageQueue() {
-  if (websocket === null || websocket.readyState !== WebSocket.OPEN) {
-    return;
-  }
-  
-  // Verificăm dacă avem mesaje în coadă
-  if (messageQueue.length === 0) {
-    return;
-  }
-  
-  console.log(`Processing message queue (${messageQueue.length} messages)`);
-  
-  // Parcurgem toate mesajele din coadă
-  while (messageQueue.length > 0) {
-    const { message, resolve, reject } = messageQueue.shift()!;
-    
-    try {
-      if (websocket.readyState === WebSocket.OPEN) {
-        websocket.send(JSON.stringify(message));
-        resolve({ success: true, messageId: message.id });
-      } else {
-        // Punem mesajul înapoi în coadă
-        messageQueue.unshift({ message, resolve, reject });
-        break;
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      reject(error);
-    }
-  }
-}
-
-// Exportăm funcții și variabile utile
-const websocketService = {
-  initialize: initializeWebSocketService,
-  ensureConnection,
-  sendMessage,
-  addMessageHandler,
-  addConnectionStatusListener,
-  removeConnectionStatusListener,
-  isConnected
-};
+// Initialize when imported
+initializeWebSocketService();
 
 export default websocketService;
