@@ -2439,8 +2439,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(201).json(newPreferences);
       }
       
-      // Update existing preferences
-      const updatedPreferences = await storage.updateNotificationPreferences(existingPreferences.id, req.body);
+      // Update existing preferences - adăugăm explicit câmpul updatedAt
+      const updatedPreferences = await storage.updateNotificationPreferences(existingPreferences.id, {
+        ...req.body,
+        updatedAt: new Date() 
+      });
       
       return res.status(200).json(updatedPreferences);
     } catch (error) {

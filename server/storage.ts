@@ -128,7 +128,7 @@ export interface IStorage {
     closeTime: string;
     isClosed: boolean;
   }): Promise<WorkingHour>;
-  
+
   // Notification Preferences management
   getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
@@ -142,6 +142,7 @@ export interface IStorage {
   updateReview(id: number, reviewData: Partial<Review>): Promise<Review>;
   deleteReview(id: number): Promise<void>;
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
+  canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean>;
 }
 
 async function generateUniqueUsername(companyName: string, db: typeof import('./db').db): Promise<string> {
@@ -1018,8 +1019,7 @@ export class DatabaseStorage implements IStorage {
   async getServiceProviderWorkingHours(serviceProviderId: number): Promise<WorkingHour[]> {
     try {
       return await db
-        .select()
-        .from(workingHours)
+        .select()        .from(workingHours)
         .where(eq(workingHours.serviceProviderId, serviceProviderId))
         .orderBy(workingHours.dayOfWeek);
     } catch (error) {
@@ -1189,14 +1189,20 @@ export class DatabaseStorage implements IStorage {
 
   async updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference> {
     try {
+      // Excludem orice câmp updatedAt non-Date care ar putea veni din client
+      const { updatedAt, ...otherData } = preferencesData;
+
+      // Update the preferences cu un câmp updatedAt valid
       const [updatedPreferences] = await db
         .update(notificationPreferences)
-        .set({
-          ...preferencesData,
-          updatedAt: new Date()
+        .set({ 
+          ...otherData, 
+          updatedAt: preferencesData.updatedAt instanceof Date ? preferencesData.updatedAt : sql`NOW()` 
         })
         .where(eq(notificationPreferences.id, id))
         .returning();
+
+      console.log('Updated notification preferences:', updatedPreferences);
       return updatedPreferences;
     } catch (error) {
       console.error('Error updating notification preferences:', error);
@@ -1307,7 +1313,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
   async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
     try {
