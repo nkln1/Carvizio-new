@@ -13,6 +13,8 @@ import { sql } from 'drizzle-orm';
 import { serviceProviders, workingHours } from '@shared/schema';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -109,6 +111,59 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 };
 
 export function registerRoutes(app: Express): Server {
+
+  // Adăugăm rute specifice pentru Service Worker
+  app.get('/sw.js', (req, res) => {
+    console.log('!!!! RUTA SW.JS ACCESATĂ !!!!');
+    try {
+      const rootDir = process.cwd();
+      const swPath = path.join(rootDir, 'public', 'sw.js');
+      console.log('Calea către Service Worker:', swPath);
+      
+      if (fs.existsSync(swPath)) {
+        console.log('Fișierul sw.js există, îl servim cu tipul application/javascript');
+        res.setHeader('Content-Type', 'application/javascript');
+        res.setHeader('Service-Worker-Allowed', '/');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.status(200).sendFile(swPath);
+        console.log('Service Worker servit din ' + swPath);
+      } else {
+        console.error('Fișierul sw.js nu a fost găsit la calea:', swPath);
+        res.status(404).send('Service Worker file not found');
+      }
+    } catch (error) {
+      console.error('Eroare la servirea Service Worker:', error);
+      res.status(500).send('Internal server error serving Service Worker');
+    }
+  });
+
+  app.get('/sw-registration.js', (req, res) => {
+    console.log('!!!! RUTA SW-REGISTRATION.JS ACCESATĂ !!!!');
+    try {
+      const rootDir = process.cwd();
+      const regPath = path.join(rootDir, 'public', 'sw-registration.js');
+      console.log('Calea către Service Worker Registration:', regPath);
+      
+      if (fs.existsSync(regPath)) {
+        console.log('Fișierul sw-registration.js există, îl servim cu tipul application/javascript');
+        res.setHeader('Content-Type', 'application/javascript');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.status(200).sendFile(regPath);
+        console.log('Service Worker Registration servit din ' + regPath);
+      } else {
+        console.error('Fișierul sw-registration.js nu a fost găsit la calea:', regPath);
+        res.status(404).send('Service Worker Registration file not found');
+      }
+    } catch (error) {
+      console.error('Eroare la servirea Service Worker Registration:', error);
+      res.status(500).send('Internal server error serving Service Worker Registration');
+    }
+  });
+
   // Configure session middleware
   app.use(
     session({

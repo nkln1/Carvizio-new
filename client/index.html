@@ -32,7 +32,9 @@
       function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
+            // Adăugăm un timestamp pentru a preveni cache-ul și pentru a forța reîncărcarea
+            const timestamp = new Date().getTime();
+            navigator.serviceWorker.register(`/sw.js?t=${timestamp}`)
               .then(registration => {
                 console.log('Service Worker înregistrat cu succes:', registration.scope);
 
@@ -44,6 +46,16 @@
               })
               .catch(error => {
                 console.error('Eroare la înregistrarea Service Worker:', error);
+                // Dacă prima încercare eșuează, încercăm cu o altă cale
+                return navigator.serviceWorker.register(`/client/public/sw.js?t=${timestamp}`)
+                  .then(registration => {
+                    console.log('Service Worker înregistrat cu succes (cale alternativă):', registration.scope);
+                    window.swRegistration = registration;
+                    checkPushSupport(registration);
+                  })
+                  .catch(secondError => {
+                    console.error('Eroare la înregistrarea Service Worker (a doua încercare):', secondError);
+                  });
               });
           });
         } else {
