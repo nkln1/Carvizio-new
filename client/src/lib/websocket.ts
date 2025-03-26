@@ -1,10 +1,6 @@
 // client/src/lib/websocket.ts
 import { auth } from "./firebase";
-let isConnected = false; // Added: Assuming this variable is used globally.  Needs proper initialization if not already present.
-//let eventEmitter = ...; // Added:  Requires importing and initializing an event emitter library if not already present.
-
-
-// Module state
+let isConnected = false; 
 let websocket: WebSocket | null = null;
 let messageHandlers: ((data: any) => void)[] = [];
 let reconnectAttempts = 0;
@@ -96,14 +92,18 @@ function connect() {
 function configureWebSocket(ws: WebSocket) {
   ws.onopen = () => {
     console.log('WebSocket connection established');
+    reconnectAttempts = 0; // Reset reconnect attempt counter on successful connection
     hasActiveConnection = true;
-    reconnectAttempts = 0;
-    isConnected = true; // Assuming isConnected is defined globally and used by other parts of the code.
-    if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
-    }
-    //eventEmitter.emit('connected'); // Assuming eventEmitter is defined globally and used by other parts of the code.
+    isConnected = true;
+
+    // Notificăm toți handler-ii despre conectare
+    messageHandlers.forEach(handler => {
+      try {
+        handler({ type: 'CONNECTED', message: 'WebSocket connection established' });
+      } catch (error) {
+        console.error('Error in connection notification handler:', error);
+      }
+    });
 
     // Send authentication information if available
     const user = auth.currentUser;
@@ -118,24 +118,42 @@ function configureWebSocket(ws: WebSocket) {
     }
   };
 
-  ws.onerror = (event) => {
-    // Reducem mesajele de eroare în consolă
-    if (reconnectAttempts <= 1) {
-      console.log('WebSocket connection issue detected, will retry automatically');
+  ws.onclose = (event) => {
+    // Evită log excesiv în consolă - doar afișează un mesaj simplu
+    if (reconnectAttempts < 3) {
+      console.log('WebSocket connection closed, reconnecting...');
     }
+
     hasActiveConnection = false;
+    isConnected = false;
+
+    // Notificăm toți handler-ii despre deconectare
+    messageHandlers.forEach(handler => {
+      try {
+        handler({ type: 'DISCONNECTED', message: 'WebSocket connection closed' });
+      } catch (error) {
+        console.error('Error in disconnection notification handler:', error);
+      }
+    });
+
+    scheduleReconnect();
   };
 
-  ws.onclose = (event) => {
-    // Reducem logarea la închiderea conexiunii
-    if (reconnectAttempts < 2) {
-      console.log('WebSocket connection lost, reconnecting...');
+  ws.onerror = (error) => {
+    // Evită log excesiv de erori în consolă
+    if (reconnectAttempts < 3) {
+      console.log('WebSocket connection issue, attempting to reconnect...');
     }
-
     hasActiveConnection = false;
-    isConnected = false; // Assuming isConnected is defined globally and used by other parts of the code.
-    //eventEmitter.emit('disconnected'); // Assuming eventEmitter is defined globally and used by other parts of the code.
-    scheduleReconnect();
+
+    // Notificăm handler-ii despre eroare
+    messageHandlers.forEach(handler => {
+      try {
+        handler({ type: 'ERROR', message: 'WebSocket connection error' });
+      } catch (err) {
+        console.error('Error in error notification handler:', err);
+      }
+    });
   };
 }
 
@@ -206,17 +224,20 @@ function sendMessage(message: any): Promise<void> {
 }
 
 /**
- * Checks if the websocket connection is active.
- * @returns A promise that resolves to true if the connection is active, and rejects otherwise.
+ * Check if the WebSocket connection is active
  */
 function isConnectionActive(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        if (isConnected && websocket && websocket.readyState === WebSocket.OPEN) {
-            resolve(true);
-        } else {
-            reject(new Error('WebSocket not connected'));
-        }
-    });
+  return new Promise((resolve, reject) => {
+    if (hasActiveConnection && websocket && websocket.readyState === WebSocket.OPEN) {
+      resolve(true);
+    } else {
+      // Încercăm să reconectăm dacă nu suntem deja în proces de reconectare
+      if (!reconnectTimeout) {
+        scheduleReconnect();
+      }
+      reject(false);
+    }
+  });
 }
 
 
@@ -227,9 +248,7 @@ const websocketService = {
   removeMessageHandler,
   sendMessage,
   ensureConnection,
-  isConnectionActive, //Added: isConnectionActive method
-  //on: eventEmitter.on.bind(eventEmitter), // Assuming eventEmitter is defined globally and used by other parts of the code.
-  //off: eventEmitter.off.bind(eventEmitter), // Assuming eventEmitter is defined globally and used by other parts of the code.
+  isConnectionActive,
 };
 
 // Initialize the WebSocket service when this module is imported

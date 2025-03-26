@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+import { AlertTriangle, WifiOff } from 'lucide-react';
 import websocketService from '@/lib/websocket';
 
 export default function ConnectionStatus() {
@@ -11,13 +11,15 @@ export default function ConnectionStatus() {
     let reconnectTimeout: ReturnType<typeof setTimeout>;
     let disconnectedTime = 0;
     
-    const onConnected = () => {
+    // Funcție pentru tratarea conexiunii stabilite
+    const handleConnection = () => {
       setIsConnected(true);
       setShowBanner(false);
       disconnectedTime = 0;
     };
     
-    const onDisconnected = () => {
+    // Funcție pentru tratarea deconectării
+    const handleDisconnection = () => {
       setIsConnected(false);
       disconnectedTime = Date.now();
       
@@ -26,19 +28,24 @@ export default function ConnectionStatus() {
         setShowBanner(true);
       }, 10000);
     };
-    
-    websocketService.on('connected', onConnected);
-    websocketService.on('disconnected', onDisconnected);
+
+    // Adăugăm handler pentru mesaje de conectare/deconectare
+    const removeHandler = websocketService.addMessageHandler((data) => {
+      if (data.type === 'CONNECTED') {
+        handleConnection();
+      } else if (data.type === 'DISCONNECTED') {
+        handleDisconnection();
+      }
+    });
     
     // Verificăm starea inițială
     websocketService.isConnectionActive()
       .then(() => setIsConnected(true))
-      .catch(() => onDisconnected());
+      .catch(() => handleDisconnection());
     
     return () => {
       clearTimeout(reconnectTimeout);
-      websocketService.off('connected', onConnected);
-      websocketService.off('disconnected', onDisconnected);
+      removeHandler(); // Eliminăm handler-ul la unmount
     };
   }, []);
   
@@ -47,9 +54,11 @@ export default function ConnectionStatus() {
   
   // Arătăm un banner discret când conexiunea e întreruptă
   return (
-    <div className="fixed bottom-4 right-4 bg-amber-50 p-2 px-4 rounded-md border border-amber-200 shadow-md flex items-center gap-2 z-50 max-w-[300px] animate-fade-in">
+    <div className="fixed bottom-4 right-4 bg-amber-50 p-2 px-4 rounded-md border border-amber-200 shadow-md flex items-center gap-2 z-50 max-w-[300px]">
       <WifiOff className="h-4 w-4 text-amber-500" />
-      <span className="text-sm text-amber-800">Conexiune limitată. Încercăm să reconectăm...</span>
+      <p className="text-sm text-amber-800">
+        Conexiunea la server a fost întreruptă. Încerc reconectarea...
+      </p>
     </div>
   );
 }
