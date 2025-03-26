@@ -77,7 +77,11 @@ app.use((req, res, next) => {
   // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Content-Type', 'application/json');
+  
+  // Setăm Content-Type doar pentru API-uri, nu pentru fișiere statice
+  if (req.path.startsWith('/api/')) {
+    res.setHeader('Content-Type', 'application/json');
+  }
 
   next();
 });
@@ -92,8 +96,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // Initialize routes
 (async () => {
-  registerRoutes(app);
+  // Aplicăm configurarea MIME types ÎNAINTE de a înregistra rutele
   setCustomMimeTypes(app); // Add MIME type configuration
+  
+  registerRoutes(app);
 
   if (app.get("env") === "development") {
     await setupVite(app, server);
