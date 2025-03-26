@@ -135,7 +135,7 @@
         }
 
         return sendMessageToSW({
-          type: 'START_PERIODIC_CHECK',
+          type: 'START_BACKGROUND_MESSAGE_CHECK',
           payload: options
         });
       }
@@ -147,7 +147,7 @@
         }
 
         return sendMessageToSW({
-          type: 'STOP_PERIODIC_CHECK'
+          type: 'STOP_BACKGROUND_MESSAGE_CHECK'
         });
       }
 

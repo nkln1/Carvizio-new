@@ -1,287 +1,142 @@
-// sw.js - Service Worker pentru notificări în fundal
-// Acest fișier este accesibil direct din root path-ul aplicației
+// Service Worker principal pentru aplicație
+// Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
 
-// Versiune cache pentru actualizări
-const CACHE_VERSION = 'v2';
-const CACHE_NAME = `carvizio-cache-${CACHE_VERSION}`;
+// Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
+const VERSION = 'v1.0.2';
 
-// Contor pentru ținerea evidenței notificărilor
-let notificationCounter = 0;
+// Resurse pentru caching
+const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
 
-// Eveniment de instalare - pregătește service worker-ul
-self.addEventListener('install', event => {
-  console.log('[Service Worker] Instalare');
-
-  // Trecem peste așteptarea până când old service worker-ul termină
+// La instalare, punem în cache resursele esențiale
+self.addEventListener('install', (event) => {
+  console.log('[Service Worker] Instalare în curs...');
+  
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        '/',
+        '/index.html',
+        '/favicon.ico'
+      ]);
+    })
+  );
+  
+  // Forțăm Service Worker-ul să devină activ imediat
   self.skipWaiting();
-
-  // Nu e nevoie să punem resursele în cache deocamdată,
-  // ne concentrăm doar pe notificări
 });
 
-// Eveniment de activare - activează noul service worker
-self.addEventListener('activate', event => {
-  console.log('[Service Worker] Activare');
-
-  // Preia imediat controlul paginilor deschise
-  event.waitUntil(self.clients.claim());
-
-  // Curăță cache-urile vechi dacă există
+// La activare, ștergem cache-urile vechi
+self.addEventListener('activate', (event) => {
+  console.log('[Service Worker] Activare cu versiunea:', VERSION);
+  
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.filter(cacheName => {
-          return cacheName.startsWith('carvizio-cache-') && cacheName !== CACHE_NAME;
-        }).map(cacheName => {
-          console.log('[Service Worker] Ștergere cache vechi:', cacheName);
-          return caches.delete(cacheName);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[Service Worker] Ștergere cache vechi:', cacheName);
+            return caches.delete(cacheName);
+          }
         })
       );
     })
   );
+  
+  // Facem Service Worker-ul să preia controlul tuturor paginilor imediat
+  self.clients.claim();
 });
 
-// Gestionează evenimentele de notificări push
-self.addEventListener('push', event => {
-  console.log('[Service Worker] Am primit un eveniment push');
+// Configurare pentru verificarea mesajelor în fundal
+let backgroundCheckConfig = {
+  isActive: false,
+  intervalId: null,
+  checkInterval: 30000, // 30 secunde între verificări
+  userId: null,
+  userRole: null,
+  token: null
+};
 
-  // Verificăm dacă evenimentul push conține date
-  let data = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-      console.log('[Service Worker] Date push:', data);
-    } catch (e) {
-      console.log('[Service Worker] Nu s-au putut parsa datele push', e);
-      data = {
-        title: 'Notificare nouă',
-        body: event.data.text()
-      };
-    }
-  }
-
-  // Valori implicite pentru notificare dacă datele sunt incomplete
-  const title = data.title || 'Notificare Carvizio';
-  const options = {
-    body: data.body || 'Aveți o notificare nouă',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
-    tag: data.tag || 'default',
-    data: { url: data.url || '/' },
-    requireInteraction: true,
-    actions: data.actions || []
-  };
-
-  // Afișează notificarea
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// Gestionează evenimentele de click pe notificări
-self.addEventListener('notificationclick', event => {
-  console.log('[Service Worker] Click pe notificare', event.notification);
-
-  // Închide notificarea
-  event.notification.close();
-
-  // URL-ul către care să redirecționeze utilizatorul
-  const urlToOpen = event.notification.data && event.notification.data.url ? 
-                    new URL(event.notification.data.url, self.location.origin).href : 
-                    '/';
-
-  // Verifică dacă există deja un client deschis cu aplicația și focusează-l
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clientList => {
-        // Verifică dacă există vreun client deschis
-        for (const client of clientList) {
-          // Dacă găsim un client deschis, îl focusăm
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
-        }
-
-        // Dacă nu există un client deschis, deschidem o fereastră nouă
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(urlToOpen);
-        }
-      })
-  );
-});
-
-// Gestionează evenimentele de mesaje între pagină și service worker
-self.addEventListener('message', event => {
-  console.log('[Service Worker] Am primit un mesaj', event.data);
-
-  // Dacă nu avem date de mesaj, nu facem nimic
-  if (!event.data || !event.data.type) {
-    return;
-  }
-
-  switch (event.data.type) {
-    case 'SHOW_NOTIFICATION':
-      handleShowNotification(event);
-      break;
-    
-    case 'START_PERIODIC_CHECK':
-      // Pornește verificarea periodică a mesajelor
-      if (event.data.payload) {
-        startPeriodicMessageCheck(event.data.payload);
-        
-        // Confirmă către pagină că am pornit verificarea
-        if (event.source) {
-          event.source.postMessage({
-            type: 'PERIODIC_CHECK_STARTED',
-            success: true,
-            id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
-          });
-        }
-      }
-      break;
-    
-    case 'STOP_PERIODIC_CHECK':
-      // Oprește verificarea periodică a mesajelor
-      stopPeriodicMessageCheck();
-      
-      // Confirmă către pagină că am oprit verificarea
-      if (event.source) {
-        event.source.postMessage({
-          type: 'PERIODIC_CHECK_STOPPED',
-          success: true,
-          id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
-        });
-      }
-      break;
-    
-    case 'TEST_NOTIFICATION':
-      // Afișează o notificare de test
-      notificationCounter++;
-      self.registration.showNotification('Test Notificare', {
-        body: 'Aceasta este o notificare de test #' + notificationCounter + ' din Service Worker',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: 'test-' + Date.now(),
-        requireInteraction: true,
-        vibrate: [200, 100, 200]
-      }).then(() => {
-        console.log('[Service Worker] Notificare de test afișată cu succes');
-        if (event.source) {
-          event.source.postMessage({
-            type: 'TEST_NOTIFICATION_RESULT',
-            success: true,
-            id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
-          });
-        }
-      }).catch(error => {
-        console.error('[Service Worker] Eroare la afișarea notificării de test:', error);
-        if (event.source) {
-          event.source.postMessage({
-            type: 'TEST_NOTIFICATION_RESULT',
-            success: false,
-            error: error.message,
-            id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
-          });
-        }
-      });
-      break;
-  }
-});
-
-// Funcție pentru gestionarea cererilor de afișare a notificărilor
+// Metodă pentru afișarea notificărilor
 function handleShowNotification(event) {
-  const notifData = event.data.payload;
-  notificationCounter++;
-
-  // Verificăm permisiunea pentru notificări
-  console.log('[Service Worker] Afișare notificare:', notifData);
-
-  self.registration.showNotification(
-    notifData.title || 'Notificare Carvizio', 
-    {
-      body: notifData.body || 'Aveți o notificare nouă',
-      icon: '/favicon.ico',
-      badge: '/favicon.ico',
-      tag: notifData.tag || 'message-' + new Date().getTime(),
-      data: { url: notifData.url || '/' },
-      requireInteraction: notifData.requireInteraction !== false,
-      vibrate: [200, 100, 200] // Adăugăm vibrație pentru dispozitivele mobile
+  const { title, options } = event.data.payload;
+  
+  return self.registration.showNotification(title, {
+    badge: '/favicon.ico',
+    icon: '/favicon.ico',
+    ...options,
+    // Adăugăm un handler pentru click (pentru a deschide tab-ul corespunzător)
+    data: {
+      ...(options.data || {}),
+      timestamp: new Date().getTime()
     }
-  ).then(() => {
-    console.log('[Service Worker] Notificare afișată cu succes');
-    // Notificăm pagina că s-a afișat notificarea
-    if (event.source) {
-      event.source.postMessage({
-        type: 'NOTIFICATION_SHOWN',
-        success: true,
-        id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
-      });
-    }
-  }).catch(error => {
+  })
+  .then(() => {
+    // Notificarea a fost afișată cu succes
+    event.ports[0].postMessage({ success: true });
+  })
+  .catch((error) => {
     console.error('[Service Worker] Eroare la afișarea notificării:', error);
-    if (event.source) {
-      event.source.postMessage({
-        type: 'NOTIFICATION_SHOWN',
-        success: false,
-        error: error.message,
-        id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
-      });
-    }
+    event.ports[0].postMessage({ error: error.message });
   });
 }
 
-// Interceptează request-urile de rețea - nu facem nimic deocamdată
-// Service Worker-ul este folosit doar pentru notificări în acest moment
-self.addEventListener('fetch', event => {
-  // Permitem request-urilor să meargă normal către server
-  return;
-});
-
-// Adăugăm un interval pentru verificarea periodică a mesajelor noi, chiar și când tab-ul este inactiv
-let checkMessagesInterval = null;
-
-// Funcție pentru a porni verificarea periodică a mesajelor
+// Pornește verificarea periodică a mesajelor în fundal
 function startPeriodicMessageCheck(options = {}) {
-  if (checkMessagesInterval) {
-    clearInterval(checkMessagesInterval);
+  if (backgroundCheckConfig.isActive) {
+    stopPeriodicMessageCheck(); // Oprim verificarea existentă înainte de a porni una nouă
   }
-
-  const interval = options.interval || 30000; // Implicit la 30 de secunde
-  const userId = options.userId;
-  const userRole = options.userRole;
-  const token = options.token;
-
-  console.log('[Service Worker] Pornire verificare periodică a mesajelor pentru utilizator:', userId, 'rol:', userRole);
-
-  // Setăm intervalul pentru verificare
-  checkMessagesInterval = setInterval(() => {
-    checkForNewMessages(userId, userRole, token);
-  }, interval);
-
-  // Verificăm imediat prima dată
-  checkForNewMessages(userId, userRole, token);
+  
+  backgroundCheckConfig = {
+    isActive: true,
+    userId: options.userId,
+    userRole: options.userRole,
+    token: options.token,
+    checkInterval: options.interval || 30000
+  };
+  
+  console.log('[Service Worker] Pornire verificare mesaje în fundal pentru utilizator:', backgroundCheckConfig.userId);
+  
+  // Prima verificare imediată
+  checkForNewMessages(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
+  
+  // Programăm verificări periodice
+  backgroundCheckConfig.intervalId = setInterval(() => {
+    if (backgroundCheckConfig.isActive) {
+      checkForNewMessages(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
+    }
+  }, backgroundCheckConfig.checkInterval);
+  
+  return { success: true, message: 'Verificare mesaje în fundal pornită' };
 }
 
-// Funcție pentru a opri verificarea periodică
+// Oprește verificarea periodică a mesajelor
 function stopPeriodicMessageCheck() {
-  if (checkMessagesInterval) {
-    clearInterval(checkMessagesInterval);
-    checkMessagesInterval = null;
-    console.log('[Service Worker] Oprire verificare periodică a mesajelor');
+  if (backgroundCheckConfig.intervalId) {
+    clearInterval(backgroundCheckConfig.intervalId);
+    backgroundCheckConfig.intervalId = null;
   }
+  
+  backgroundCheckConfig.isActive = false;
+  console.log('[Service Worker] Oprire verificare mesaje în fundal');
+  
+  return { success: true, message: 'Verificare mesaje în fundal oprită' };
 }
 
-// Funcție pentru a verifica mesajele noi
+// Verifică dacă există mesaje noi pentru utilizator
 function checkForNewMessages(userId, userRole, token) {
   if (!userId || !userRole || !token) {
-    console.warn('[Service Worker] Lipsesc datele necesare pentru verificarea mesajelor');
-    return;
+    console.error('[Service Worker] Date lipsă pentru verificarea mesajelor');
+    return Promise.reject(new Error('Date lipsă pentru verificarea mesajelor'));
   }
-
-  console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId, 'rol:', userRole);
-
-  // Construim URL-ul API în funcție de rolul utilizatorului
-  const apiUrl = `/api/${userRole === 'service' ? 'service' : 'client'}/messages/unread`;
   
-  fetch(apiUrl, {
+  console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId);
+  
+  // URL-ul pentru API-ul de verificare a mesajelor
+  const apiUrl = userRole === 'service' 
+    ? '/api/service/unread-messages-count' 
+    : '/api/client/unread-messages-count';
+  
+  return fetch(apiUrl, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -289,37 +144,149 @@ function checkForNewMessages(userId, userRole, token) {
   })
   .then(response => {
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error('Răspuns invalid de la server');
     }
     return response.json();
   })
   .then(data => {
-    console.log('[Service Worker] Răspuns verificare mesaje:', data);
+    const unreadCount = data.count || 0;
     
-    // Verificăm dacă sunt mesaje noi și afișăm notificări pentru acestea
-    if (data && data.newMessages && data.newMessages.length > 0) {
-      // Procesăm fiecare mesaj nou
-      data.newMessages.forEach(message => {
-        // Creăm un ID unic pentru fiecare mesaj
-        const notificationId = `message-${message.id}-${Date.now()}`;
-        
-        // Afișăm notificare pentru fiecare mesaj nou
-        self.registration.showNotification('Mesaj nou', {
-          body: message.content || 'Ați primit un mesaj nou',
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: notificationId,
-          data: { 
-            url: `/${userRole === 'service' ? 'service-dashboard' : 'dashboard'}?tab=messages`,
-            messageId: message.id
-          },
-          requireInteraction: true,
-          vibrate: [200, 100, 200] // Adăugăm vibrație pentru dispozitivele mobile
+    console.log('[Service Worker] Mesaje necitite:', unreadCount);
+    
+    // Afișăm notificări doar dacă există mesaje necitite
+    if (unreadCount > 0) {
+      // Verificăm dacă există clienți activi - dacă utilizatorul are tab-ul deschis
+      // nu afișăm notificarea, deoarece va vedea deja mesajele în interfață
+      return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then(clients => {
+          const hasActiveClients = clients.some(client => client.visibilityState === 'visible');
+          
+          // Dacă nu există clienți activi sau sunt minimizați, afișăm notificarea
+          if (!hasActiveClients) {
+            return self.registration.showNotification('Mesaje noi', {
+              body: `Aveți ${unreadCount} mesaje necitite`,
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+              tag: 'unread-messages',
+              requireInteraction: true,
+              data: {
+                url: userRole === 'service' ? '/service-dashboard?tab=mesaje' : '/client-dashboard?tab=mesaje',
+                timestamp: new Date().getTime()
+              }
+            });
+          }
         });
-      });
     }
   })
   .catch(error => {
-    console.error('[Service Worker] Eroare la verificarea mesajelor noi:', error);
+    console.error('[Service Worker] Eroare la verificarea mesajelor:', error);
   });
 }
+
+// Ascultăm evenimentele de notificare (când utilizatorul face click pe notificare)
+self.addEventListener('notificationclick', (event) => {
+  console.log('[Service Worker] Click pe notificare');
+  
+  // Închide notificarea
+  event.notification.close();
+  
+  // Extragem URL-ul către care să redirecționăm utilizatorul
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  // Verificăm dacă există un client deschis și îl focalizăm
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clients => {
+        // Verifică dacă un client deschis are deja URL-ul potrivit
+        const matchingClient = clients.find(client => {
+          const clientUrl = new URL(client.url);
+          const targetUrl = new URL(urlToOpen, self.location.origin);
+          
+          // Comparăm pathname-ul (ignorăm query parameters)
+          return clientUrl.pathname === targetUrl.pathname;
+        });
+        
+        // Dacă există un client potrivit, îl focalizăm
+        if (matchingClient) {
+          return matchingClient.focus().then(client => {
+            // Dacă există query parameters, navigăm la URL-ul exact
+            if (urlToOpen.includes('?')) {
+              return client.navigate(urlToOpen);
+            }
+          });
+        }
+        
+        // Dacă nu există un client potrivit, deschidem un tab nou
+        return self.clients.openWindow(urlToOpen);
+      })
+  );
+});
+
+// Ascultăm mesajele de la pagină
+self.addEventListener('message', (event) => {
+  console.log('[Service Worker] Mesaj primit:', event.data);
+  
+  // Tratăm diferitele tipuri de mesaje
+  switch (event.data.type) {
+    case 'SHOW_NOTIFICATION':
+      event.waitUntil(handleShowNotification(event));
+      break;
+      
+    case 'START_BACKGROUND_MESSAGE_CHECK':
+      const result = startPeriodicMessageCheck(event.data.payload);
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage(result);
+      }
+      break;
+      
+    case 'STOP_BACKGROUND_MESSAGE_CHECK':
+      const stopResult = stopPeriodicMessageCheck();
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage(stopResult);
+      }
+      break;
+      
+    case 'TEST_NOTIFICATION':
+      event.waitUntil(
+        self.registration.showNotification(
+          event.data.payload?.title || 'Test Service Worker', 
+          {
+            body: event.data.payload?.body || 'Aceasta este o notificare de test.',
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: event.data.payload?.tag || 'test-notification',
+            requireInteraction: true
+          }
+        )
+        .then(() => {
+          if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ 
+              type: 'TEST_NOTIFICATION_RESULT', 
+              success: true 
+            });
+          }
+        })
+        .catch(error => {
+          console.error('[Service Worker] Eroare la testarea notificării:', error);
+          if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ 
+              type: 'TEST_NOTIFICATION_RESULT', 
+              success: false, 
+              error: error.message 
+            });
+          }
+        })
+      );
+      break;
+      
+    case 'PAGE_LOADED':
+      console.log('[Service Worker] Pagină încărcată');
+      break;
+      
+    default:
+      console.log('[Service Worker] Tip de mesaj necunoscut:', event.data.type);
+  }
+});
+
+// Afișează un mesaj în consolă pentru a confirma că Service Worker-ul a fost încărcat
+console.log('[Service Worker] Script încărcat cu versiunea:', VERSION);
