@@ -77,13 +77,9 @@ export default function NotificationPreferences() {
   // Mutație pentru actualizarea preferințelor
   const updateMutation = useMutation({
     mutationFn: async (updatedPreferences: NotificationPreferences) => {
-      // Excludem câmpurile id, serviceProviderId, createdAt și updatedAt înainte de a trimite datele
-      const { id, serviceProviderId, createdAt, updatedAt, ...prefsToUpdate } = updatedPreferences as any;
-      
-      const response = await apiRequest('PUT', '/api/service/notification-preferences', prefsToUpdate);
+      const response = await apiRequest('PUT', '/api/service/notification-preferences', updatedPreferences);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Eroare necunoscută' }));
-        throw new Error(errorData.error || 'Nu am putut actualiza preferințele de notificări');
+        throw new Error('Nu am putut actualiza preferințele de notificări');
       }
       return await response.json();
     },
@@ -94,11 +90,10 @@ export default function NotificationPreferences() {
         description: "Preferințele de notificări au fost actualizate",
       });
     },
-    onError: (error: any) => {
-      console.error('Eroare la actualizarea preferințelor:', error);
+    onError: () => {
       toast({
         title: "Eroare",
-        description: error.message || "Nu am putut actualiza preferințele de notificări",
+        description: "Nu am putut actualiza preferințele de notificări",
         variant: "destructive"
       });
     }
