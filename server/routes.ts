@@ -2300,7 +2300,7 @@ export function registerRoutes(app: Express): Server {
   // Initialize WebSocket server with the correct path to match client
   const wss = new WebSocketServer({
     server: httpServer,
-    path: '/api/ws'  // Match the client's WebSocket path
+    path: '/api/ws'  // Should match the path in websocket.ts
   });
 
   // WebSocket connection handler with improved error handling

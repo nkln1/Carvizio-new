@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Settings, Loader2 } from "lucide-react";
@@ -7,6 +8,7 @@ import type { ServiceProviderUser } from "@shared/schema";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import NotificationPreferences from "./NotificationPreferences";
+import { setNotificationPreferences } from "@/services/notificationService";
 
 export default function AccountTab() {
   const [isEditing, setIsEditing] = useState(false);
@@ -16,6 +18,13 @@ export default function AccountTab() {
     retry: 1,
     refetchOnWindowFocus: false
   });
+
+  useEffect(() => {
+    if (userProfile?.notificationPreferences) {
+      console.log("Setting notification preferences from user profile:", userProfile.notificationPreferences);
+      setNotificationPreferences(userProfile.notificationPreferences);
+    }
+  }, [userProfile]);
 
   if (isLoading) {
     return (
