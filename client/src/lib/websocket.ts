@@ -1,119 +1,218 @@
-import { WebSocketMessage } from '@/types/websocket';
+// client/src/lib/websocket.ts
+import { auth } from "./firebase";
 
-let socket: WebSocket | null = null;
-let reconnectAttempt = 0;
-let reconnectTimer: number | null = null;
-const maxReconnectAttempts = 10; // Increased from 5
-const baseReconnectDelay = 3000; // 3 seconds
-const messageHandlers: Array<(data: any) => void> = [];
-let isConnecting = false;
-let wsUrl = '';
+// Module state
+let websocket: WebSocket | null = null;
+let messageHandlers: ((data: any) => void)[] = [];
+let reconnectAttempts = 0;
+let reconnectTimeout: NodeJS.Timeout | null = null;
+let hasActiveConnection = false;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_DELAY = 3000; // 3 seconds
 
 /**
- * Initialize WebSocket connection
+ * Initializes WebSocket service
  */
-const initialize = () => {
+function initialize() {
   console.log('Initializing WebSocket service...');
-
-  // Determine WebSocket URL
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.host;
-  wsUrl = `${protocol}//${host}/api/ws`;
-
-  console.log('WebSocket URL:', wsUrl);
-
-  // Create connection
-  if (!isConnecting && !socket) {
-    connect(wsUrl);
-  }
-};
+  connect();
+}
 
 /**
- * Connect to WebSocket server
+ * Ensures a WebSocket connection exists
+ * Returns a Promise that resolves when the connection is established
  */
-const connect = (url: string) => {
-  try {
-    if (isConnecting) return; // Prevent multiple connection attempts
-    isConnecting = true;
-
-    // Clear any existing reconnect timer
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+function ensureConnection(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+      resolve();
+      return;
     }
 
-    console.log('Connecting to WebSocket:', url);
-    socket = new WebSocket(url);
+    // If connection is in progress
+    if (websocket && websocket.readyState === WebSocket.CONNECTING) {
+      const checkConnection = () => {
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+          resolve();
+        } else if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+          reject(new Error('WebSocket connection failed'));
+        } else {
+          setTimeout(checkConnection, 100);
+        }
+      };
+      setTimeout(checkConnection, 100);
+      return;
+    }
 
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-      isConnecting = false;
-      // Reset reconnect attempt counter on successful connection
-      reconnectAttempt = 0;
-    };
+    // Need to create a new connection
+    connect();
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('WebSocket message received:', data);
-
-        // Notify all handlers
-        messageHandlers.forEach(handler => handler(data));
-      } catch (error) {
-        console.error('Error processing WebSocket message:', error);
-      }
-    };
-
-    socket.onerror = (event) => {
-      console.error('WebSocket error:', event);
-      isConnecting = false;
-      // Don't try to reconnect on error, let onclose handle it
-    };
-
-    socket.onclose = () => {
-      console.log('WebSocket connection closed');
-      socket = null;
-      isConnecting = false;
-
-      // Attempt to reconnect
-      if (reconnectAttempt < maxReconnectAttempts) {
-        reconnectAttempt++;
-        const delay = baseReconnectDelay * Math.pow(1.5, reconnectAttempt - 1);
-        console.log(`Reconnecting attempt ${reconnectAttempt} in ${delay}ms`);
-
-        reconnectTimer = window.setTimeout(() => {
-          connect(url);
-        }, delay);
+    const checkNewConnection = () => {
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        resolve();
+      } else if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+        reject(new Error('WebSocket connection failed'));
       } else {
-        console.log('Maximum reconnection attempts reached. Giving up.');
+        setTimeout(checkNewConnection, 100);
       }
     };
+    setTimeout(checkNewConnection, 100);
+  });
+}
+
+/**
+ * Creates a WebSocket connection with the server
+ */
+function connect() {
+  try {
+    // Close existing connection if any
+    if (websocket) {
+      websocket.onclose = null; // Prevent reconnection on intentional close
+      websocket.close();
+    }
+
+    // Determine WebSocket URL
+    const loc = window.location;
+    const protocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${loc.host}/api/ws`;
+    console.log('WebSocket URL:', wsUrl);
+
+    // Create new WebSocket
+    console.log('Connecting to WebSocket:', wsUrl);
+    websocket = new WebSocket(wsUrl);
+    configureWebSocket(websocket);
   } catch (error) {
-    console.error('Error connecting to WebSocket:', error);
-    isConnecting = false;
+    console.error('Error creating WebSocket connection:', error);
+    scheduleReconnect();
   }
-};
+}
 
+/**
+ * Configure WebSocket event handlers
+ */
+function configureWebSocket(ws: WebSocket) {
+  ws.onopen = () => {
+    console.log('WebSocket connection established');
+    hasActiveConnection = true;
+    reconnectAttempts = 0;
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
+    }
 
-export const websocketService = {
+    // Send authentication information if available
+    const user = auth.currentUser;
+    if (user) {
+      user.getIdToken().then(token => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'AUTH', token }));
+        }
+      }).catch(error => {
+        console.error('Error getting authentication token:', error);
+      });
+    }
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      // Forward message to all registered handlers
+      messageHandlers.forEach(handler => {
+        try {
+          handler(data);
+        } catch (error) {
+          console.error('Error in message handler:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  };
+
+  ws.onerror = (event) => {
+    console.error('WebSocket error:', event);
+    hasActiveConnection = false;
+  };
+
+  ws.onclose = (event) => {
+    console.log('WebSocket connection closed');
+    hasActiveConnection = false;
+    scheduleReconnect();
+  };
+}
+
+/**
+ * Schedule a reconnection attempt
+ */
+function scheduleReconnect() {
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+  }
+
+  if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+    reconnectAttempts++;
+    const delay = reconnectAttempts * RECONNECT_DELAY;
+    console.log(`Reconnecting attempt ${reconnectAttempts} in ${delay}ms`);
+
+    reconnectTimeout = setTimeout(() => {
+      connect();
+    }, delay);
+  } else {
+    console.error('Maximum WebSocket reconnection attempts reached');
+  }
+}
+
+/**
+ * Register a handler for incoming messages
+ */
+function addMessageHandler(handler: (data: any) => void) {
+  messageHandlers.push(handler);
+}
+
+/**
+ * Remove a message handler
+ */
+function removeMessageHandler(handler: (data: any) => void) {
+  const index = messageHandlers.indexOf(handler);
+  if (index !== -1) {
+    messageHandlers.splice(index, 1);
+  }
+}
+
+/**
+ * Send a message through the WebSocket
+ */
+function sendMessage(message: any): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+      ensureConnection()
+        .then(() => {
+          if (websocket) {
+            websocket.send(JSON.stringify(message));
+            resolve();
+          } else {
+            reject(new Error('WebSocket not available'));
+          }
+        })
+        .catch(reject);
+    } else {
+      websocket.send(JSON.stringify(message));
+      resolve();
+    }
+  });
+}
+
+// Create websocket service object with all methods
+const websocketService = {
   initialize,
-  addMessageHandler: (handler: (data: any) => void) => {
-    messageHandlers.push(handler);
-    return () => {
-      messageHandlers.splice(messageHandlers.indexOf(handler), 1);
-    };
-  },
-  disconnect: () => {
-    if (socket) {
-      socket.close();
-      socket = null;
-    }
-    messageHandlers.length = 0;
-    reconnectAttempt = 0;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-    }
-    isConnecting = false;
-
-  }
+  ensureConnection,
+  addMessageHandler,
+  removeMessageHandler,
+  sendMessage
 };
+
+// Initialize the WebSocket service when this module is imported
+initialize();
+
+// Export the websocket service as default
+export default websocketService;
