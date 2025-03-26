@@ -109,40 +109,124 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('message', event => {
   console.log('[Service Worker] Am primit un mesaj', event.data);
 
-  // Verificăm dacă mesajul este pentru notificare
-  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    const notifData = event.data.payload;
+  // Dacă nu avem date de mesaj, nu facem nimic
+  if (!event.data || !event.data.type) {
+    return;
+  }
 
-    self.registration.showNotification(
-      notifData.title || 'Notificare Carvizio', 
-      {
-        body: notifData.body || 'Aveți o notificare nouă',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: notifData.tag || 'message-' + new Date().getTime(),
-        data: { url: notifData.url || '/' },
-        requireInteraction: notifData.requireInteraction !== false
+  switch (event.data.type) {
+    case 'SHOW_NOTIFICATION':
+      handleShowNotification(event);
+      break;
+    
+    case 'START_PERIODIC_CHECK':
+      // Pornește verificarea periodică a mesajelor
+      if (event.data.payload) {
+        startPeriodicMessageCheck(event.data.payload);
+        
+        // Confirmă către pagină că am pornit verificarea
+        if (event.source) {
+          event.source.postMessage({
+            type: 'PERIODIC_CHECK_STARTED',
+            success: true
+          });
+        }
       }
-    ).then(() => {
-      // Notificăm pagina că s-a afișat notificarea
+      break;
+    
+    case 'STOP_PERIODIC_CHECK':
+      // Oprește verificarea periodică a mesajelor
+      stopPeriodicMessageCheck();
+      
+      // Confirmă către pagină că am oprit verificarea
       if (event.source) {
         event.source.postMessage({
-          type: 'NOTIFICATION_SHOWN',
+          type: 'PERIODIC_CHECK_STOPPED',
           success: true
         });
       }
-    }).catch(error => {
-      console.error('[Service Worker] Eroare la afișarea notificării:', error);
-      if (event.source) {
-        event.source.postMessage({
-          type: 'NOTIFICATION_SHOWN',
-          success: false,
-          error: error.message
-        });
-      }
-    });
+      break;
+    
+    case 'TEST_NOTIFICATION':
+      // Afișează o notificare de test
+      self.registration.showNotification('Test Notificare', {
+        body: 'Aceasta este o notificare de test din Service Worker',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'test-' + Date.now(),
+        requireInteraction: true
+      }).then(() => {
+        console.log('[Service Worker] Notificare de test afișată cu succes');
+        if (event.source) {
+          event.source.postMessage({
+            type: 'TEST_NOTIFICATION_RESULT',
+            success: true
+          });
+        }
+      }).catch(error => {
+        console.error('[Service Worker] Eroare la afișarea notificării de test:', error);
+        if (event.source) {
+          event.source.postMessage({
+            type: 'TEST_NOTIFICATION_RESULT',
+            success: false,
+            error: error.message
+          });
+        }
+      });
+      break;
   }
 });
+
+// Funcție pentru gestionarea cererilor de afișare a notificărilor
+function handleShowNotification(event) {
+  const notifData = event.data.payload;
+
+  // Verificăm permisiunea pentru notificări
+  if (Notification.permission !== 'granted') {
+    console.warn('[Service Worker] Permisiunea pentru notificări nu este acordată');
+    if (event.source) {
+      event.source.postMessage({
+        type: 'NOTIFICATION_SHOWN',
+        success: false,
+        error: 'Permisiunea pentru notificări nu este acordată'
+      });
+    }
+    return;
+  }
+
+  console.log('[Service Worker] Afișare notificare:', notifData);
+
+  self.registration.showNotification(
+    notifData.title || 'Notificare Carvizio', 
+    {
+      body: notifData.body || 'Aveți o notificare nouă',
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: notifData.tag || 'message-' + new Date().getTime(),
+      data: { url: notifData.url || '/' },
+      requireInteraction: notifData.requireInteraction !== false,
+      vibrate: [200, 100, 200] // Adăugăm vibrație pentru dispozitivele mobile
+    }
+  ).then(() => {
+    console.log('[Service Worker] Notificare afișată cu succes');
+    // Notificăm pagina că s-a afișat notificarea
+    if (event.source) {
+      event.source.postMessage({
+        type: 'NOTIFICATION_SHOWN',
+        success: true
+      });
+    }
+  }).catch(error => {
+    console.error('[Service Worker] Eroare la afișarea notificării:', error);
+    if (event.source) {
+      event.source.postMessage({
+        type: 'NOTIFICATION_SHOWN',
+        success: false,
+        error: error.message
+      });
+    }
+  });
+}
 
 // Interceptează request-urile de rețea - nu facem nimic deocamdată
 // Service Worker-ul este folosit doar pentru notificări în acest moment
