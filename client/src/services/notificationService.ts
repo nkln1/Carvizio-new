@@ -35,7 +35,18 @@ export function initializeNotifications() {
   // Ensure WebSocket connection
   websocketService.ensureConnection()
     .then(() => console.log('WebSocket connection ready for notifications'))
-    .catch(err => console.error('Failed to establish WebSocket connection for notifications:', err));
+    .catch(err => {
+      console.error('Failed to establish WebSocket connection for notifications:', err);
+      // Don't show an error to the user, just log it
+      // The websocket service will automatically try to reconnect
+    });
+    
+  // Periodically try to ensure connection
+  setInterval(() => {
+    websocketService.ensureConnection().catch(() => {
+      // Silent catch, just to prevent unhandled promise rejection
+    });
+  }, 30000); // Try every 30 seconds
 }
 
 /**

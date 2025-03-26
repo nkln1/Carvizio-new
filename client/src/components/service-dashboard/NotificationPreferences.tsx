@@ -79,7 +79,29 @@ export default function NotificationPreferences() {
   const updateMutation = useMutation({
     mutationFn: async (updatedPreferences: NotificationPreferences) => {
       console.log("Sending preferences update:", updatedPreferences);
-      const response = await apiRequest('PUT', '/api/service/notification-preferences', updatedPreferences);
+      
+      // Create a sanitized copy containing only boolean preference fields
+      const sanitizedPreferences: Partial<NotificationPreferences> = {};
+      const booleanFields = [
+        'emailNotificationsEnabled', 'newRequestEmailEnabled', 'acceptedOfferEmailEnabled', 
+        'newMessageEmailEnabled', 'newReviewEmailEnabled', 'browserNotificationsEnabled',
+        'newRequestBrowserEnabled', 'acceptedOfferBrowserEnabled', 'newMessageBrowserEnabled', 
+        'newReviewBrowserEnabled', 'browserPermission'
+      ];
+      
+      // Only include id and serviceProviderId plus boolean fields
+      sanitizedPreferences.id = updatedPreferences.id;
+      sanitizedPreferences.serviceProviderId = updatedPreferences.serviceProviderId;
+      
+      for (const field of booleanFields) {
+        if (field in updatedPreferences) {
+          sanitizedPreferences[field as keyof NotificationPreferences] = 
+            updatedPreferences[field as keyof NotificationPreferences];
+        }
+      }
+      
+      // Send sanitized preferences
+      const response = await apiRequest('PUT', '/api/service/notification-preferences', sanitizedPreferences);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error("Failed to update preferences", errorData);
@@ -101,10 +123,11 @@ export default function NotificationPreferences() {
       console.error("Notification preferences update error:", error);
       toast({
         title: "Eroare",
-        description: "Nu am putut actualiza preferințele de notificări",
+        description: "Nu am putut actualiza preferințele de notificări. Încercați din nou mai târziu.",
         variant: "destructive"
       });
-    }
+    },
+    retry: 1, // Only retry once on failure
   });
 
   // Manipulator pentru schimbarea unei preferințe

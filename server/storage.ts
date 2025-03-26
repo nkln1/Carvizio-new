@@ -1189,18 +1189,37 @@ export class DatabaseStorage implements IStorage {
 
   async updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference> {
     try {
-      // Extract updatedAt from the incoming data to handle it specially
-      const { updatedAt, ...otherData } = preferencesData;
-
+      // Filter out any non-boolean fields that should not be included
+      const sanitizedData: any = {};
+      
+      // Only copy valid boolean preference fields
+      const booleanFields = [
+        'emailNotificationsEnabled', 'newRequestEmailEnabled', 'acceptedOfferEmailEnabled', 
+        'newMessageEmailEnabled', 'newReviewEmailEnabled', 'browserNotificationsEnabled',
+        'newRequestBrowserEnabled', 'acceptedOfferBrowserEnabled', 'newMessageBrowserEnabled', 
+        'newReviewBrowserEnabled', 'browserPermission'
+      ];
+      
+      // Copy only the boolean fields from the input data
+      for (const field of booleanFields) {
+        if (field in preferencesData && typeof preferencesData[field as keyof typeof preferencesData] === 'boolean') {
+          sanitizedData[field] = preferencesData[field as keyof typeof preferencesData];
+        }
+      }
+      
       // Always use current timestamp for updatedAt
       const [updatedPreferences] = await db
         .update(notificationPreferences)
         .set({ 
-          ...otherData, 
+          ...sanitizedData, 
           updatedAt: new Date() // Always use a fresh Date object
         })
         .where(eq(notificationPreferences.id, id))
         .returning();
+
+      if (!updatedPreferences) {
+        throw new Error('Failed to update notification preferences');
+      }
 
       console.log('Updated notification preferences:', updatedPreferences);
       return updatedPreferences;
