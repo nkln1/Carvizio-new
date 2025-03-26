@@ -30,7 +30,41 @@ function Router() {
   );
 }
 
+import { useEffect } from "react";
+import NotificationHelper from "./lib/notifications";
+
 function App() {
+  // Inițializare handler pentru notificări la încărcarea aplicației
+  useEffect(() => {
+    console.log("[App] Încărcare aplicație...");
+    
+    // Verifică și inițializează notificările dacă sunt suportate
+    if (NotificationHelper.isSupported()) {
+      const currentPermission = NotificationHelper.checkPermission();
+      console.log("Stare permisiune notificări:", currentPermission);
+      
+      // Adăugăm un handler pentru mesaje WebSocket
+      const handleWebSocketMessage = (data: any) => {
+        if (data && data.type === 'NEW_MESSAGE' && NotificationHelper.checkPermission() === 'granted') {
+          NotificationHelper.showNotification('Mesaj nou', {
+            body: data.message || 'Ați primit un mesaj nou',
+            icon: '/favicon.ico'
+          });
+        }
+      };
+      
+      // Adaugă un window event listener pentru testare manuală
+      window.addEventListener('test-notification', () => {
+        NotificationHelper.testNotification();
+      });
+      
+      // Clean-up la unmount
+      return () => {
+        window.removeEventListener('test-notification', () => {});
+      };
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

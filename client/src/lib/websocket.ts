@@ -12,10 +12,16 @@ class WebSocketService {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      if (document.readyState === 'complete') {
-        this.initialize();
+      // Verificăm mai întâi dacă document este disponibil
+      if (typeof document !== 'undefined') {
+        if (document.readyState === 'complete') {
+          this.initialize();
+        } else {
+          window.addEventListener('load', () => this.initialize());
+        }
       } else {
-        window.addEventListener('load', () => this.initialize());
+        // Dacă documentul nu e disponibil, amânăm inițializarea
+        setTimeout(() => this.initialize(), 100);
       }
     }
   }

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
+import NotificationHelper from '@/lib/notifications'; // Added import for NotificationHelper
 
 const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
 const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
