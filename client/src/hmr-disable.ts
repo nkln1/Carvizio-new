@@ -5,10 +5,12 @@
  * Este o soluție pentru mediile Replit unde HMR cauzează probleme de conexiune
  */
 
-// Verificăm dacă suntem în browser înainte de a încerca să accesăm document/window
-const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+import { isBrowser } from '@shared/browserUtils';
 
-// Nu execută nimic dacă nu suntem în browser
+// Nu execută nimic dacă nu suntem în browserm // Nu execută nimic dacă nu suntem în browser
+if (!isBrowser) {
+  console.log('[HMR Blocker] Nu rulează în browser, se sare peste dezactivarea HMR');
+} else {u suntem în browser
 if (!isBrowser) {
   console.log('[HMR Blocker] Nu rulează în browser, se sare peste dezactivarea HMR');
 } else {
@@ -61,6 +63,10 @@ if (!isBrowser) {
     for (const prop in originalEventSource) {
       if (Object.prototype.hasOwnProperty.call(originalEventSource, prop)) {
         (window.EventSource as any)[prop] = (originalEventSource as any)[prop];
+      }
+    }
+  }
+} // Închidere pentru blocul if (isBrowser)ny)[prop];
       }
     }
   }

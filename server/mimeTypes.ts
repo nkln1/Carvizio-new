@@ -1,4 +1,3 @@
-
 import { Express } from 'express';
 
 export function setCustomMimeTypes(app: Express) {
