@@ -1189,15 +1189,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference> {
     try {
-      // Excludem orice câmp updatedAt non-Date care ar putea veni din client
+      // Extract updatedAt from the incoming data to handle it specially
       const { updatedAt, ...otherData } = preferencesData;
 
-      // Update the preferences cu un câmp updatedAt valid
+      // Always use current timestamp for updatedAt
       const [updatedPreferences] = await db
         .update(notificationPreferences)
         .set({ 
           ...otherData, 
-          updatedAt: preferencesData.updatedAt instanceof Date ? preferencesData.updatedAt : sql`NOW()` 
+          updatedAt: new Date() // Always use a fresh Date object
         })
         .where(eq(notificationPreferences.id, id))
         .returning();
