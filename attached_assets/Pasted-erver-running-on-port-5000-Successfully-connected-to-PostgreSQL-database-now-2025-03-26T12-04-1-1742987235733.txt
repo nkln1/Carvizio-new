@@ -1,0 +1,64 @@
+erver running on port 5000
+Successfully connected to PostgreSQL database: { now: 2025-03-26T12:04:19.516Z }
+New WebSocket connection established: /ws
+12:04:23 PM [vite] Pre-transf
+12:04:23 PM [vite] Pre-transform error: Transform failed with 1 error:
+12:04:23 PM [vite] Pre-transf
+12:04:23 PM [vite] Pre-transf
+12:04:23 PM [vite] Pre-transform error: Transform failed with 1 error:
+/home/runner/workspace/client/src/lib/websocket.ts:256:15: ERROR: The symbol "isConnected" has already been declared (x6)
+12:04:29 PM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/client/src/lib/websocket.ts:256:15: ERROR: The symbol "isConnected" has already been declared
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/websocket.ts:256:15
+  
+  The symbol "isConnected" has already been declared
+  254|   * @returns Promise care se rezolvă cu starea conexiunii
+  255|   */
+  256|  async function isConnected(): Promise<boolean> {
+     |                 ^
+  257|    // Dacă nu există websocket sau starea nu este OPEN, nu suntem conectați
+  258|    return websocket !== null && websocket.readyState === WebSocket.OPEN;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+Firebase token verified successfully for user: hOUlEkEXvfhTu5G8A3OaluSsMhw1
+Firebase token verified successfully for user: hOUlEkEXvfhTu5G8A3OaluSsMhw1
+Firebase token verified successfully for user: hOUlEkEXvfhTu5G8A3OaluSsMhw1
+Firebase token verified successfully for user: hOUlEkEXvfhTu5G8A3OaluSsMhw1
+12:04:34 PM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/client/src/lib/websocket.ts:256:15: ERROR: The symbol "isConnected" has already been declared
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/websocket.ts:256:15
+  
+  The symbol "isConnected" has already been declared
+  254|   * @returns Promise care se rezolvă cu starea conexiunii
+  255|   */
+  256|  async function isConnected(): Promise<boolean> {
+     |                 ^
+  257|    // Dacă nu există websocket sau starea nu este OPEN, nu suntem conectați
+  258|    return websocket !== null && websocket.readyState === WebSocket.OPEN;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23) (x2)
+Retrieved messages: 78
+Firebase token verified successfully for user: hOUlEkEXvfhTu5G8A3OaluSsMhw1
+Firebase token verified successfully for user: hOUlEkEXvfhTu5G8A3OaluSsMhw1
+Retrieved messages: 78
+Sending enriched messages: 78
