@@ -135,6 +135,24 @@ class NotificationHelper {
   }
   
   /**
+   * Forțează afișarea unei notificări pentru mesaj nou - utilizat în debugging
+   */
+  static forceMessageNotification(content: string): void {
+    if (this.checkPermission() !== 'granted') {
+      console.warn('Nu se poate forța notificarea - permisiunea nu este acordată');
+      return;
+    }
+    
+    console.log('Forțăm afișarea notificării pentru mesaj nou:', content);
+    this.showNotification('Mesaj nou', {
+      body: content || 'Ați primit un mesaj nou',
+      icon: '/favicon.ico',
+      tag: `message-${Date.now()}`,
+      requireInteraction: true
+    });
+  }
+  
+  /**
    * Metoda pentru gestionarea evenimentelor de notificare
    * @param data Datele evenimentului pentru afișarea notificării
    */
@@ -146,32 +164,43 @@ class NotificationHelper {
       return;
     }
     
+    // Verificăm permisiunea înainte de toate
+    if (this.checkPermission() !== 'granted') {
+      console.warn('Nu se poate afișa notificarea - permisiunea nu este acordată');
+      return;
+    }
+    
     // Verificăm tipul de eveniment
     switch (data.type) {
       case 'NEW_MESSAGE':
+        console.log('Afișăm notificare pentru mesaj nou:', data.payload);
         this.showNotification('Mesaj nou', {
           body: data.payload?.content || 'Ați primit un mesaj nou',
           icon: '/favicon.ico',
-          tag: `message-${Date.now()}` // Tag unic pentru fiecare mesaj
+          tag: `message-${Date.now()}`, // Tag unic pentru fiecare mesaj
+          requireInteraction: true
         });
         break;
       case 'NEW_OFFER':
         this.showNotification('Ofertă nouă', {
           body: data.payload?.title || 'Ați primit o ofertă nouă',
-          icon: '/favicon.ico'
+          icon: '/favicon.ico',
+          requireInteraction: true
         });
         break;
       case 'NEW_REQUEST':
         this.showNotification('Cerere nouă', {
           body: data.payload?.title || 'Ați primit o cerere nouă',
-          icon: '/favicon.ico'
+          icon: '/favicon.ico',
+          requireInteraction: true
         });
         break;
       case 'OFFER_STATUS_CHANGED':
         if (data.payload?.status === 'Accepted') {
           this.showNotification('Ofertă acceptată', {
             body: 'O ofertă trimisă de dvs. a fost acceptată',
-            icon: '/favicon.ico'
+            icon: '/favicon.ico',
+            requireInteraction: true
           });
         }
         break;

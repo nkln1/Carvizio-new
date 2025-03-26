@@ -67,20 +67,6 @@ function App() {
           console.log("WebSocket conectat pentru notificări");
           setWebSocketInitialized(true);
           
-          // Obținem preferințele de notificări
-          const fetchNotificationPreferences = async () => {
-            try {
-              const response = await fetch('/api/service/notification-preferences');
-              if (response.ok) {
-                return await response.json();
-              }
-              return null;
-            } catch (error) {
-              console.error("Eroare la obținerea preferințelor de notificări:", error);
-              return null;
-            }
-          };
-          
           // Adăugăm un handler pentru mesaje WebSocket
           const removeHandler = websocketService.addMessageHandler(async (data: any) => {
             console.log("Processing websocket message for notifications:", data);
@@ -90,7 +76,7 @@ function App() {
               console.warn("Mesaj WebSocket invalid sau fără tip:", data);
               return;
             }
-            
+
             // Verificăm dacă avem permisiunea de notificare
             const permissionNow = NotificationHelper.checkPermission();
             if (permissionNow !== 'granted') {
@@ -101,7 +87,17 @@ function App() {
             // Verificăm preferințele de notificări doar pentru mesaje de tip NEW_MESSAGE
             if (data.type === 'NEW_MESSAGE') {
               try {
-                const preferences = await fetchNotificationPreferences();
+                // Obținem preferințele de notificări
+                const response = await fetch('/api/service/notification-preferences');
+                
+                if (!response.ok) {
+                  console.error("Nu am putut obține preferințele de notificări");
+                  return;
+                }
+                
+                const preferences = await response.json();
+                
+                console.log("Preferințe notificări obținute:", preferences);
                 
                 if (preferences && 
                     preferences.browserNotificationsEnabled && 
@@ -113,16 +109,18 @@ function App() {
                     messageBody = data.payload.content;
                   }
                   
-                  NotificationHelper.showNotification('Mesaj nou', {
-                    body: messageBody,
-                    icon: '/favicon.ico',
-                    tag: `message-${Date.now()}`
-                  });
+                  // Forțăm afișarea notificării direct
+                  NotificationHelper.forceMessageNotification(messageBody);
                 } else {
                   console.log("Notificările pentru mesaje noi sunt dezactivate în preferințe");
                 }
               } catch (error) {
                 console.error("Eroare la procesarea notificării:", error);
+                
+                // În caz de eroare, încercăm totuși să afișăm notificarea
+                if (data.payload && data.payload.content) {
+                  NotificationHelper.forceMessageNotification(data.payload.content);
+                }
               }
             } else {
               // Pentru alte tipuri de evenimente, delegăm către NotificationHelper
@@ -144,7 +142,8 @@ function App() {
               console.log("Trimitem o notificare de test pentru a verifica funcționalitatea");
               NotificationHelper.showNotification('Notificările sunt active', {
                 body: 'Vei primi notificări pentru mesaje noi și alte evenimente importante',
-                icon: '/favicon.ico'
+                icon: '/favicon.ico',
+                requireInteraction: true
               });
             }
           }, 3000);

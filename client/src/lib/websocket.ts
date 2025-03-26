@@ -68,6 +68,7 @@ class WebSocketService {
     try {
       const wsUrl = this.getWebSocketUrl();
       console.log('Connecting to WebSocket:', wsUrl);
+      console.log('[WebSocket] Permisă conexiunea către:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
@@ -81,15 +82,24 @@ class WebSocketService {
 
       this.ws.onmessage = (event) => {
         try {
+          console.log('Raw WebSocket message received:', event.data);
           const data = JSON.parse(event.data);
-          console.log('Received WebSocket message:', data);
+          console.log('Received WebSocket message (parsed):', data);
           
           // Verificăm dacă mesajul are un tip valid
           if (data && data.type) {
             // Adăugăm debug suplimentar pentru mesajele de tip NEW_MESSAGE
             if (data.type === 'NEW_MESSAGE') {
               console.log('Received NEW_MESSAGE event:', data);
+              console.log('NEW_MESSAGE content:', data.payload?.content);
+              
+              // Emitem un eveniment DOM pentru a facilita depanarea
+              const newMessageEvent = new CustomEvent('new-message-received', { 
+                detail: data 
+              });
+              window.dispatchEvent(newMessageEvent);
             }
+            
             // Notificăm toți handlerii înregistrați
             this.messageHandlers.forEach(handler => {
               try {
@@ -101,6 +111,7 @@ class WebSocketService {
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
+          console.log('Raw message that caused error:', event.data);
         }
       };
 
