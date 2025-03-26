@@ -6,6 +6,8 @@ let messageHandlers: ((data: any) => void)[] = [];
 let reconnectAttempts = 0;
 let reconnectTimeout: NodeJS.Timeout | null = null;
 let hasActiveConnection = false;
+let connectionHandlers: (() => void)[] = [];
+let disconnectionHandlers: (() => void)[] = [];
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_DELAY = 3000; // 3 seconds
 
@@ -97,13 +99,7 @@ function configureWebSocket(ws: WebSocket) {
     isConnected = true;
 
     // Notificăm toți handler-ii despre conectare
-    messageHandlers.forEach(handler => {
-      try {
-        handler({ type: 'CONNECTED', message: 'WebSocket connection established' });
-      } catch (error) {
-        console.error('Error in connection notification handler:', error);
-      }
-    });
+    connectionHandlers.forEach(handler => handler());
 
     // Send authentication information if available
     const user = auth.currentUser;
@@ -128,13 +124,7 @@ function configureWebSocket(ws: WebSocket) {
     isConnected = false;
 
     // Notificăm toți handler-ii despre deconectare
-    messageHandlers.forEach(handler => {
-      try {
-        handler({ type: 'DISCONNECTED', message: 'WebSocket connection closed' });
-      } catch (error) {
-        console.error('Error in disconnection notification handler:', error);
-      }
-    });
+    disconnectionHandlers.forEach(handler => handler());
 
     scheduleReconnect();
   };
@@ -147,13 +137,7 @@ function configureWebSocket(ws: WebSocket) {
     hasActiveConnection = false;
 
     // Notificăm handler-ii despre eroare
-    messageHandlers.forEach(handler => {
-      try {
-        handler({ type: 'ERROR', message: 'WebSocket connection error' });
-      } catch (err) {
-        console.error('Error in error notification handler:', err);
-      }
-    });
+    disconnectionHandlers.forEach(handler => handler());
   };
 }
 
@@ -188,6 +172,9 @@ function scheduleReconnect() {
  */
 function addMessageHandler(handler: (data: any) => void) {
   messageHandlers.push(handler);
+  return () => {
+    messageHandlers = messageHandlers.filter(h => h !== handler);
+  };
 }
 
 /**
@@ -240,6 +227,36 @@ function isConnectionActive(): Promise<boolean> {
   });
 }
 
+/**
+ * Adaugă un handler pentru evenimentul de conexiune
+ * @returns O funcție pentru eliminarea handler-ului
+ */
+function addConnectionHandler(handler: () => void) {
+  connectionHandlers.push(handler);
+  return () => {
+    connectionHandlers = connectionHandlers.filter(h => h !== handler);
+  };
+}
+
+/**
+ * Adaugă un handler pentru evenimentul de deconectare
+ * @returns O funcție pentru eliminarea handler-ului
+ */
+function addDisconnectionHandler(handler: () => void) {
+  disconnectionHandlers.push(handler);
+  return () => {
+    disconnectionHandlers = disconnectionHandlers.filter(h => h !== handler);
+  };
+}
+
+/**
+ * Verifică dacă conexiunea WebSocket este activă
+ * @returns Promise care se rezolvă cu starea conexiunii
+ */
+async function isConnected(): Promise<boolean> {
+  // Dacă nu există websocket sau starea nu este OPEN, nu suntem conectați
+  return websocket !== null && websocket.readyState === WebSocket.OPEN;
+}
 
 // Create websocket service object with all methods
 const websocketService = {
@@ -249,6 +266,9 @@ const websocketService = {
   sendMessage,
   ensureConnection,
   isConnectionActive,
+  addConnectionHandler,
+  addDisconnectionHandler,
+  isConnected,
 };
 
 // Initialize the WebSocket service when this module is imported

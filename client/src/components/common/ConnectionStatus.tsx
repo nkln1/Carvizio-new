@@ -28,37 +28,38 @@ export default function ConnectionStatus() {
         setShowBanner(true);
       }, 10000);
     };
-
-    // Adăugăm handler pentru mesaje de conectare/deconectare
-    const removeHandler = websocketService.addMessageHandler((data) => {
-      if (data.type === 'CONNECTED') {
-        handleConnection();
-      } else if (data.type === 'DISCONNECTED') {
-        handleDisconnection();
-      }
-    });
+    
+    // Adăugăm handlerii corecți pentru evenimentele websocket
+    const connectionHandler = websocketService.addConnectionHandler(handleConnection);
+    const disconnectionHandler = websocketService.addDisconnectionHandler(handleDisconnection);
     
     // Verificăm starea inițială
-    websocketService.isConnectionActive()
-      .then(() => setIsConnected(true))
-      .catch(() => handleDisconnection());
+    websocketService.isConnected().then(connected => {
+      setIsConnected(connected);
+    });
     
+    // Curățăm event listeners la unmount
     return () => {
+      connectionHandler();
+      disconnectionHandler();
       clearTimeout(reconnectTimeout);
-      removeHandler(); // Eliminăm handler-ul la unmount
     };
   }, []);
   
-  // Nu arătăm nimic dacă totul e în regulă sau dacă deconectarea e de scurtă durată
-  if (isConnected || !showBanner) return null;
+  // Nu afișăm nimic dacă avem conexiune sau deconectarea este recentă
+  if (isConnected || !showBanner) {
+    return null;
+  }
   
-  // Arătăm un banner discret când conexiunea e întreruptă
+  // Afișăm banner-ul de avertizare pentru pierderea conexiunii
   return (
-    <div className="fixed bottom-4 right-4 bg-amber-50 p-2 px-4 rounded-md border border-amber-200 shadow-md flex items-center gap-2 z-50 max-w-[300px]">
-      <WifiOff className="h-4 w-4 text-amber-500" />
-      <p className="text-sm text-amber-800">
-        Conexiunea la server a fost întreruptă. Încerc reconectarea...
-      </p>
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-2 bg-amber-50 border-t border-amber-200 shadow-md">
+      <div className="container mx-auto flex items-center gap-2 text-amber-800">
+        <WifiOff className="h-5 w-5 flex-shrink-0" />
+        <div className="text-sm">
+          Conexiunea la server a fost pierdută. Reconnectare automată...
+        </div>
+      </div>
     </div>
   );
 }
