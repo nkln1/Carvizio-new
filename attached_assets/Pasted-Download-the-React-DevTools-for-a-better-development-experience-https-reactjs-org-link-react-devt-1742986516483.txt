@@ -1,0 +1,83 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+websocket.ts:17 Initializing WebSocket service...
+websocket.ts:78 WebSocket URL: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:81 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+notificationService.ts:28 Initializing notifications service
+notificationService.ts:28 Initializing notifications service
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:82
+initialize @ websocket.ts:18
+(anonymous) @ websocket.ts:215
+websocket.ts:133 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:133
+websocket.ts:138 WebSocket connection closed
+websocket.ts:155 Reconnecting attempt 1 in 3000ms
+notificationService.ts:39 Failed to establish WebSocket connection for notifications: Error: WebSocket connection failed
+    at checkConnection (websocket.ts:38:18)
+(anonymous) @ notificationService.ts:39
+Promise.catch
+initializeNotifications @ notificationService.ts:38
+(anonymous) @ App.tsx:38
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=8ffb7bfa:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=8ffb7bfa:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=8ffb7bfa:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=8ffb7bfa:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=8ffb7bfa:19328
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+notificationService.ts:39 Failed to establish WebSocket connection for notifications: Error: WebSocket connection failed
+    at checkConnection (websocket.ts:38:18)
+(anonymous) @ notificationService.ts:39
+Promise.catch
+initializeNotifications @ notificationService.ts:38
+(anonymous) @ App.tsx:38
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=8ffb7bfa:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=8ffb7bfa:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=8ffb7bfa:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=8ffb7bfa:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=8ffb7bfa:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=8ffb7bfa:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=8ffb7bfa:19328
+workLoop @ chunk-RPCDYKBN.js?v=8ffb7bfa:197
+flushWork @ chunk-RPCDYKBN.js?v=8ffb7bfa:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=8ffb7bfa:384
+firebase.ts:27 Firebase auth state: Logged in
+firebase.ts:29 Email verified: true
+firebase.ts:19 Firebase persistence set to LOCAL
+2AuthContext.tsx:40 Firebase persistence set to LOCAL
+websocket.ts:78 WebSocket URL: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:81 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:82
+(anonymous) @ websocket.ts:158
+websocket.ts:133 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:133
+websocket.ts:138 WebSocket connection closed
+websocket.ts:155 Reconnecting attempt 2 in 6000ms
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+2hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:78 WebSocket URL: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:81 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:82
+(anonymous) @ websocket.ts:158
+websocket.ts:133 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:133
+websocket.ts:138 WebSocket connection closed
+websocket.ts:155 Reconnecting attempt 3 in 9000ms
+3hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
