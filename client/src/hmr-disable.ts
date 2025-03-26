@@ -5,6 +5,15 @@
  * Este o soluție pentru mediile Replit unde HMR cauzează probleme de conexiune
  */
 
+// Verificăm dacă suntem în browser înainte de a încerca să accesăm document/window
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+// Nu execută nimic dacă nu suntem în browser
+if (!isBrowser) {
+  console.log('[HMR Blocker] Nu rulează în browser, se sare peste dezactivarea HMR');
+} else {exiune
+ */
+
 if (typeof window !== 'undefined') {
   // Blocăm complet obiectul global __HMR__ folosit de Vite
   try {
@@ -127,6 +136,9 @@ if (typeof window !== 'undefined') {
       }
 
       return new originalEventSource(url, eventSourceInitDict);
+    };
+  }
+} // Închidere pentru blocul if (isBrowser)tSourceInitDict);
     } as any;
 
     // Copiem proprietățile statice
