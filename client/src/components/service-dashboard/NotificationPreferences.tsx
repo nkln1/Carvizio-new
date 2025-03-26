@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Bell, Mail, AlertTriangle, Loader2 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { NotificationPreference } from "@shared/schema";
+import NotificationHelper from '@/lib/notifications';
 
 // Tipul pentru preferințele de notificări pentru UI
 interface NotificationPreferences {
@@ -53,8 +54,7 @@ export default function NotificationPreferences() {
   const [hasBrowserPermission, setHasBrowserPermission] = useState<boolean>(false);
   const [requestingPermission, setRequestingPermission] = useState<boolean>(false);
 
-  // Importăm NotificationHelper
-  import NotificationHelper from '@/lib/notifications';
+  // Folosim NotificationHelper pentru verificarea suportului notificărilor
   
   // Verificăm dacă API-ul de notificări este disponibil
   const notificationsAvailable = NotificationHelper.isSupported();
