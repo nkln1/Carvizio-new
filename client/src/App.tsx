@@ -12,6 +12,7 @@ import ServiceDashboard from "@/pages/ServiceDashboard";
 import ServicePublicProfile from "@/pages/ServicePublicProfile";
 import CookiePolicy from "@/pages/CookiePolicy";
 import CookieBanner from "@/components/common/CookieBanner";
+import ConnectionStatus from "@/components/common/ConnectionStatus";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import TermsAndConditions from "./pages/TermsAndConditions"; 
 import { useEffect } from 'react';
@@ -45,6 +46,7 @@ function App() {
           <Navigation />
           <Router />
           <CookieBanner />
+          <ConnectionStatus />
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>

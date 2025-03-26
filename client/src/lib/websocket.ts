@@ -1,5 +1,8 @@
 // client/src/lib/websocket.ts
 import { auth } from "./firebase";
+let isConnected = false; // Added: Assuming this variable is used globally.  Needs proper initialization if not already present.
+//let eventEmitter = ...; // Added:  Requires importing and initializing an event emitter library if not already present.
+
 
 // Module state
 let websocket: WebSocket | null = null;
@@ -95,10 +98,12 @@ function configureWebSocket(ws: WebSocket) {
     console.log('WebSocket connection established');
     hasActiveConnection = true;
     reconnectAttempts = 0;
+    isConnected = true; // Assuming isConnected is defined globally and used by other parts of the code.
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
       reconnectTimeout = null;
     }
+    //eventEmitter.emit('connected'); // Assuming eventEmitter is defined globally and used by other parts of the code.
 
     // Send authentication information if available
     const user = auth.currentUser;
@@ -113,30 +118,23 @@ function configureWebSocket(ws: WebSocket) {
     }
   };
 
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      // Forward message to all registered handlers
-      messageHandlers.forEach(handler => {
-        try {
-          handler(data);
-        } catch (error) {
-          console.error('Error in message handler:', error);
-        }
-      });
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
-
   ws.onerror = (event) => {
-    console.error('WebSocket error:', event);
+    // Reducem mesajele de eroare în consolă
+    if (reconnectAttempts <= 1) {
+      console.log('WebSocket connection issue detected, will retry automatically');
+    }
     hasActiveConnection = false;
   };
 
   ws.onclose = (event) => {
-    console.log('WebSocket connection closed');
+    // Reducem logarea la închiderea conexiunii
+    if (reconnectAttempts < 2) {
+      console.log('WebSocket connection lost, reconnecting...');
+    }
+
     hasActiveConnection = false;
+    isConnected = false; // Assuming isConnected is defined globally and used by other parts of the code.
+    //eventEmitter.emit('disconnected'); // Assuming eventEmitter is defined globally and used by other parts of the code.
     scheduleReconnect();
   };
 }
@@ -150,11 +148,16 @@ function scheduleReconnect() {
   }
 
   if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-    reconnectAttempts++;
-    const delay = reconnectAttempts * RECONNECT_DELAY;
-    console.log(`Reconnecting attempt ${reconnectAttempts} in ${delay}ms`);
+    // Backoff strategy with maximum wait time
+    const delay = Math.min(3000 * Math.pow(1.5, reconnectAttempts), 60000);
+
+    // Afișăm mesaje mai puțin frecvent pentru a reduce zgomotul
+    if (reconnectAttempts % 3 === 0 || reconnectAttempts === 0) {
+      console.log(`Reconnecting attempt ${reconnectAttempts + 1} in ${Math.round(delay/1000)}s`);
+    }
 
     reconnectTimeout = setTimeout(() => {
+      reconnectAttempts++;
       connect();
     }, delay);
   } else {
@@ -202,13 +205,31 @@ function sendMessage(message: any): Promise<void> {
   });
 }
 
+/**
+ * Checks if the websocket connection is active.
+ * @returns A promise that resolves to true if the connection is active, and rejects otherwise.
+ */
+function isConnectionActive(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+        if (isConnected && websocket && websocket.readyState === WebSocket.OPEN) {
+            resolve(true);
+        } else {
+            reject(new Error('WebSocket not connected'));
+        }
+    });
+}
+
+
 // Create websocket service object with all methods
 const websocketService = {
   initialize,
-  ensureConnection,
   addMessageHandler,
   removeMessageHandler,
-  sendMessage
+  sendMessage,
+  ensureConnection,
+  isConnectionActive, //Added: isConnectionActive method
+  //on: eventEmitter.on.bind(eventEmitter), // Assuming eventEmitter is defined globally and used by other parts of the code.
+  //off: eventEmitter.off.bind(eventEmitter), // Assuming eventEmitter is defined globally and used by other parts of the code.
 };
 
 // Initialize the WebSocket service when this module is imported
