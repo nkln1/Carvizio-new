@@ -53,8 +53,11 @@ export default function NotificationPreferences() {
   const [hasBrowserPermission, setHasBrowserPermission] = useState<boolean>(false);
   const [requestingPermission, setRequestingPermission] = useState<boolean>(false);
 
+  // Importăm NotificationHelper
+  import NotificationHelper from '@/lib/notifications';
+  
   // Verificăm dacă API-ul de notificări este disponibil
-  const notificationsAvailable = typeof Notification !== 'undefined';
+  const notificationsAvailable = NotificationHelper.isSupported();
   
   // Obținem preferințele de notificări
   const { data: preferences, isLoading, error } = useQuery<NotificationPreferences>({
@@ -65,11 +68,19 @@ export default function NotificationPreferences() {
   // Detectare permisiune browser la încărcare
   useEffect(() => {
     if (notificationsAvailable) {
-      setHasBrowserPermission(Notification.permission === 'granted');
+      const currentPermission = NotificationHelper.checkPermission();
+      setHasBrowserPermission(currentPermission === 'granted');
       
       // Actualizăm starea când se schimbă preferințele
       if (preferences) {
-        setHasBrowserPermission(preferences.browserPermission);
+        // Sincronizăm permisiunea reală cu cea din baza de date
+        if (preferences.browserPermission !== (currentPermission === 'granted')) {
+          setTimeout(() => {
+            handleToggleChange('browserPermission', currentPermission === 'granted');
+          }, 500);
+        }
+        
+        setHasBrowserPermission(currentPermission === 'granted');
       }
     }
   }, [preferences, notificationsAvailable]);
@@ -133,14 +144,25 @@ export default function NotificationPreferences() {
     
     try {
       setRequestingPermission(true);
-      const permission = await Notification.requestPermission();
-      setHasBrowserPermission(permission === 'granted');
+      // Folosim NotificationHelper pentru solicitarea permisiunii
+      const granted = await NotificationHelper.requestPermission();
+      setHasBrowserPermission(granted);
+      
+      // Test notificare dacă permisiunea a fost acordată
+      if (granted) {
+        setTimeout(() => {
+          NotificationHelper.showNotification('Notificări activate', {
+            body: 'Veți primi notificări pentru mesaje noi și alte actualizări importante',
+            icon: '/favicon.ico'
+          });
+        }, 500);
+      }
       
       // Actualizăm și în backend
       if (preferences) {
         const updatedPreferences = {
           ...preferences,
-          browserPermission: permission === 'granted'
+          browserPermission: granted
         };
         
         updateMutation.mutate(updatedPreferences);
@@ -342,6 +364,28 @@ export default function NotificationPreferences() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
                       Solicită permisiunea browserului
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {notificationsAvailable && hasBrowserPermission && (
+                <div className="bg-green-50 p-4 rounded-md mb-4">
+                  <div className="flex flex-col gap-3">
+                    <p className="text-green-800 text-sm">
+                      Notificările în browser sunt activate. Poți testa funcționalitatea cu butonul de mai jos.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        NotificationHelper.testNotification();
+                        // Emitem și un eveniment WebSocket simulat
+                        window.dispatchEvent(new Event('test-notification'));
+                      }}
+                      className="w-full sm:w-auto bg-green-100 hover:bg-green-200 text-green-800"
+                    >
+                      Testează notificările
                     </Button>
                   </div>
                 </div>

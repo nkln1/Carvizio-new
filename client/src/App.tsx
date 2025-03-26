@@ -43,25 +43,41 @@ function App() {
       const currentPermission = NotificationHelper.checkPermission();
       console.log("Stare permisiune notificări:", currentPermission);
       
-      // Adăugăm un handler pentru mesaje WebSocket
-      const handleWebSocketMessage = (data: any) => {
-        if (data && data.type === 'NEW_MESSAGE' && NotificationHelper.checkPermission() === 'granted') {
-          NotificationHelper.showNotification('Mesaj nou', {
-            body: data.message || 'Ați primit un mesaj nou',
-            icon: '/favicon.ico'
+      // Importăm și inițializăm WebSocketService
+      import("@/lib/websocket").then((module) => {
+        const websocketService = module.default;
+        
+        // Ne asigurăm că WebSocket este conectat
+        websocketService.ensureConnection().then(() => {
+          console.log("WebSocket conectat pentru notificări");
+          
+          // Adăugăm un handler pentru mesaje WebSocket
+          const removeHandler = websocketService.addMessageHandler((data: any) => {
+            console.log("Processing websocket message for notifications:", data);
+            
+            // Verificăm dacă este un mesaj nou
+            if (data && data.type === 'NEW_MESSAGE' && NotificationHelper.checkPermission() === 'granted') {
+              NotificationHelper.showNotification('Mesaj nou', {
+                body: data.message || 'Ați primit un mesaj nou',
+                icon: '/favicon.ico'
+              });
+            }
           });
-        }
-      };
-      
-      // Adaugă un window event listener pentru testare manuală
-      window.addEventListener('test-notification', () => {
-        NotificationHelper.testNotification();
+          
+          // Adaugă un window event listener pentru testare manuală
+          window.addEventListener('test-notification', () => {
+            NotificationHelper.testNotification();
+          });
+          
+          // Clean-up la unmount
+          return () => {
+            removeHandler();
+            window.removeEventListener('test-notification', () => {});
+          };
+        }).catch(error => {
+          console.error("Eroare la conectarea WebSocket pentru notificări:", error);
+        });
       });
-      
-      // Clean-up la unmount
-      return () => {
-        window.removeEventListener('test-notification', () => {});
-      };
     }
   }, []);
 
