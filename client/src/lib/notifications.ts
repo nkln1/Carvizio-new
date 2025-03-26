@@ -5,11 +5,13 @@ class NotificationHelper {
   private static debugMode = true;
   private static notificationQueue: any[] = [];
   private static isProcessingQueue = false;
+  private static backgroundCheckActive = false;
   private static notificationSettings = {
     enabled: true,
     silentMode: false,
     lastNotificationTime: 0,
-    minTimeBetweenNotifications: 1000 // 1 second between notifications
+    minTimeBetweenNotifications: 1000, // 1 second between notifications
+    backgroundCheckInterval: 30000 // 30 seconds between background checks
   };
 
   /**

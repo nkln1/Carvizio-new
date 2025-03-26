@@ -1,15 +1,18 @@
 // sw.js - Service Worker pentru notificări în fundal
-// Acest fișier trebuie plasat în directorul public
+// Acest fișier este accesibil direct din root path-ul aplicației
 
 // Versiune cache pentru actualizări
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `carvizio-cache-${CACHE_VERSION}`;
+
+// Contor pentru ținerea evidenței notificărilor
+let notificationCounter = 0;
 
 // Eveniment de instalare - pregătește service worker-ul
 self.addEventListener('install', event => {
   console.log('[Service Worker] Instalare');
 
-  // Treci peste așteptarea până când old service worker-ul termină
+  // Trecem peste așteptarea până când old service worker-ul termină
   self.skipWaiting();
 
   // Nu e nevoie să punem resursele în cache deocamdată,
@@ -128,7 +131,8 @@ self.addEventListener('message', event => {
         if (event.source) {
           event.source.postMessage({
             type: 'PERIODIC_CHECK_STARTED',
-            success: true
+            success: true,
+            id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
           });
         }
       }
@@ -142,25 +146,29 @@ self.addEventListener('message', event => {
       if (event.source) {
         event.source.postMessage({
           type: 'PERIODIC_CHECK_STOPPED',
-          success: true
+          success: true,
+          id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
         });
       }
       break;
     
     case 'TEST_NOTIFICATION':
       // Afișează o notificare de test
+      notificationCounter++;
       self.registration.showNotification('Test Notificare', {
-        body: 'Aceasta este o notificare de test din Service Worker',
+        body: 'Aceasta este o notificare de test #' + notificationCounter + ' din Service Worker',
         icon: '/favicon.ico',
         badge: '/favicon.ico',
         tag: 'test-' + Date.now(),
-        requireInteraction: true
+        requireInteraction: true,
+        vibrate: [200, 100, 200]
       }).then(() => {
         console.log('[Service Worker] Notificare de test afișată cu succes');
         if (event.source) {
           event.source.postMessage({
             type: 'TEST_NOTIFICATION_RESULT',
-            success: true
+            success: true,
+            id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
           });
         }
       }).catch(error => {
@@ -169,7 +177,8 @@ self.addEventListener('message', event => {
           event.source.postMessage({
             type: 'TEST_NOTIFICATION_RESULT',
             success: false,
-            error: error.message
+            error: error.message,
+            id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
           });
         }
       });
@@ -180,20 +189,9 @@ self.addEventListener('message', event => {
 // Funcție pentru gestionarea cererilor de afișare a notificărilor
 function handleShowNotification(event) {
   const notifData = event.data.payload;
+  notificationCounter++;
 
   // Verificăm permisiunea pentru notificări
-  if (Notification.permission !== 'granted') {
-    console.warn('[Service Worker] Permisiunea pentru notificări nu este acordată');
-    if (event.source) {
-      event.source.postMessage({
-        type: 'NOTIFICATION_SHOWN',
-        success: false,
-        error: 'Permisiunea pentru notificări nu este acordată'
-      });
-    }
-    return;
-  }
-
   console.log('[Service Worker] Afișare notificare:', notifData);
 
   self.registration.showNotification(
@@ -213,7 +211,8 @@ function handleShowNotification(event) {
     if (event.source) {
       event.source.postMessage({
         type: 'NOTIFICATION_SHOWN',
-        success: true
+        success: true,
+        id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
       });
     }
   }).catch(error => {
@@ -222,7 +221,8 @@ function handleShowNotification(event) {
       event.source.postMessage({
         type: 'NOTIFICATION_SHOWN',
         success: false,
-        error: error.message
+        error: error.message,
+        id: event.data.id // Returnăm ID-ul pentru a putea identifica răspunsul
       });
     }
   });
@@ -300,17 +300,21 @@ function checkForNewMessages(userId, userRole, token) {
     if (data && data.newMessages && data.newMessages.length > 0) {
       // Procesăm fiecare mesaj nou
       data.newMessages.forEach(message => {
+        // Creăm un ID unic pentru fiecare mesaj
+        const notificationId = `message-${message.id}-${Date.now()}`;
+        
         // Afișăm notificare pentru fiecare mesaj nou
         self.registration.showNotification('Mesaj nou', {
           body: message.content || 'Ați primit un mesaj nou',
           icon: '/favicon.ico',
           badge: '/favicon.ico',
-          tag: `message-${Date.now()}`,
+          tag: notificationId,
           data: { 
             url: `/${userRole === 'service' ? 'service-dashboard' : 'dashboard'}?tab=messages`,
             messageId: message.id
           },
-          requireInteraction: true
+          requireInteraction: true,
+          vibrate: [200, 100, 200] // Adăugăm vibrație pentru dispozitivele mobile
         });
       });
     }
