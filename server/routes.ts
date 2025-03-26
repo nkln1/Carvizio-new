@@ -2448,7 +2448,114 @@ export function registerRoutes(app: Express): Server {
       return res.status(500).json({ error: "Failed to update notification preferences" });
     }
   });
+  // Adaugă acest endpoint în fișierul routes.ts, în funcția registerRoutes
 
+  // Endpoint pentru polling mesaje când WebSocket nu funcționează
+  app.get("/api/messages/poll", validateFirebaseToken, async (req, res) => {
+    try {
+      // Determină utilizatorul
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      if (!client && !serviceProvider) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const userId = client ? client.id : serviceProvider!.id;
+      const userRole = client ? "client" : "service";
+
+      // Obține timestamp-ul de la care să verificăm (dacă este furnizat)
+      let since = req.query.since ? new Date(req.query.since as string) : new Date(Date.now() - 60 * 1000); // Ultimul minut implicit
+
+      // Obține mesajele noi
+      const newMessages = await db
+        .select()
+        .from(messagesTable)
+        .where(
+          and(
+            eq(messagesTable.receiverId, userId),
+            eq(messagesTable.receiverRole, userRole),
+            eq(messagesTable.isRead, false),
+            sql`${messagesTable.createdAt} > ${since}`
+          )
+        )
+        .orderBy(messagesTable.createdAt);
+
+      // Transformă mesajele în format compatibil cu ce ar trimite WebSocket
+      const wsCompatibleMessages = await Promise.all(
+        newMessages.map(async (message) => {
+          // Obține numele expeditorului
+          let senderName = '';
+          try {
+            if (message.senderRole === 'client') {
+              const sender = await storage.getClient(message.senderId);
+              senderName = sender?.name || 'Unknown Client';
+            } else {
+              const sender = await storage.getServiceProvider(message.senderId);
+              senderName = sender?.companyName || 'Unknown Service Provider';
+            }
+          } catch (error) {
+            console.error('Error getting sender info:', error);
+            senderName = message.senderRole === 'client' ? 'Unknown Client' : 'Unknown Service Provider';
+          }
+
+          return {
+            type: 'NEW_MESSAGE',
+            payload: {
+              ...message,
+              senderName
+            },
+            timestamp: message.createdAt.toISOString()
+          };
+        })
+      );
+
+      // Trimite răspunsul
+      res.json(wsCompatibleMessages);
+    } catch (error) {
+      console.error("Error polling messages:", error);
+      res.status(500).json({ error: "Failed to poll messages" });
+    }
+  });
+
+  // Endpoint pentru a verifica manual noi mesaje - util pentru testing
+  app.get("/api/messages/unread/check", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+
+      if (!client && !serviceProvider) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const userId = client ? client.id : serviceProvider!.id;
+      const userRole = client ? "client" : "service";
+
+      // Obține mesaje necitite din ultimele 5 minute
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+      const newMessages = await db
+        .select()
+        .from(messagesTable)
+        .where(
+          and(
+            eq(messagesTable.receiverId, userId),
+            eq(messagesTable.receiverRole, userRole),
+            eq(messagesTable.isRead, false),
+            sql`${messagesTable.createdAt} > ${fiveMinutesAgo}`
+          )
+        )
+        .orderBy(messagesTable.createdAt);
+
+      res.json({ 
+        unreadCount: newMessages.length,
+        newMessages
+      });
+    } catch (error) {
+      console.error("Error checking unread messages:", error);
+      res.status(500).json({ error: "Failed to check unread messages" });
+    }
+  });
   // Return the server at the end
   return httpServer;
 }

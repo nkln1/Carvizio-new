@@ -9,6 +9,9 @@ class WebSocketService {
   private connectionPromise: Promise<void> | null = null;
   private connectionResolve: (() => void) | null = null;
   private connectionReject: ((error: Error) => void) | null = null;
+  private isPollingFallback = false;
+  private pollingInterval: NodeJS.Timeout | null = null;
+  private lastMessageTimestamp: string | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -38,6 +41,12 @@ class WebSocketService {
       this.connect();
     });
 
+    // Add catch handler to prevent unhandled promise rejection
+    this.connectionPromise.catch(error => {
+      console.log('WebSocket connection promise rejected, will use polling fallback:', error);
+      this.startPollingFallback();
+    });
+
     window.addEventListener('online', () => {
       console.log('Network connection restored, reconnecting WebSocket...');
       this.reconnectAttempt = 0;
@@ -51,10 +60,24 @@ class WebSocketService {
   }
 
   private getWebSocketUrl(): string {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/ws`; // Corectare cale API/WS
-    console.log('WebSocket URL:', wsUrl);
-    return wsUrl;
+    // Try to detect if we're in a development environment
+    const isDev = window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1' ||
+                  window.location.hostname.includes('replit.dev');
+
+    // In dev environment, use relative URL to avoid CORS issues
+    if (isDev) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+      console.log('WebSocket URL (dev environment):', wsUrl);
+      return wsUrl;
+    } else {
+      // In production, use same origin
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+      console.log('WebSocket URL (production):', wsUrl);
+      return wsUrl;
+    }
   }
 
   private connect() {
@@ -68,13 +91,32 @@ class WebSocketService {
     try {
       const wsUrl = this.getWebSocketUrl();
       console.log('Connecting to WebSocket:', wsUrl);
-      console.log('[WebSocket] Permisă conexiunea către:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
+      // Add timeout for connection attempt
+      const connectionTimeout = setTimeout(() => {
+        console.log('WebSocket connection attempt timed out');
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          this.ws.close();
+          if (this.connectionReject) {
+            this.connectionReject(new Error('WebSocket connection timeout'));
+          }
+          this.scheduleReconnect();
+        }
+      }, 10000); // 10 second timeout
+
       this.ws.onopen = () => {
-        console.log('WebSocket connection established');
+        console.log('WebSocket connection established successfully');
+        clearTimeout(connectionTimeout);
         this.reconnectAttempt = 0;
+
+        // Stop polling if it's active
+        if (this.isPollingFallback) {
+          this.stopPollingFallback();
+          this.isPollingFallback = false;
+        }
+
         if (this.connectionResolve) {
           this.connectionResolve();
         }
@@ -85,21 +127,26 @@ class WebSocketService {
           console.log('Raw WebSocket message received:', event.data);
           const data = JSON.parse(event.data);
           console.log('Received WebSocket message (parsed):', data);
-          
+
+          // Update last message timestamp for polling fallback
+          if (data && data.timestamp) {
+            this.lastMessageTimestamp = data.timestamp;
+          }
+
           // Verificăm dacă mesajul are un tip valid
           if (data && data.type) {
             // Adăugăm debug suplimentar pentru mesajele de tip NEW_MESSAGE
             if (data.type === 'NEW_MESSAGE') {
               console.log('Received NEW_MESSAGE event:', data);
               console.log('NEW_MESSAGE content:', data.payload?.content);
-              
+
               // Emitem un eveniment DOM pentru a facilita depanarea
               const newMessageEvent = new CustomEvent('new-message-received', { 
                 detail: data 
               });
               window.dispatchEvent(newMessageEvent);
             }
-            
+
             // Notificăm toți handlerii înregistrați
             this.messageHandlers.forEach(handler => {
               try {
@@ -117,13 +164,15 @@ class WebSocketService {
 
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        clearTimeout(connectionTimeout);
         if (this.connectionReject && this.reconnectAttempt === 0) {
           this.connectionReject(new Error('WebSocket connection failed'));
         }
       };
 
-      this.ws.onclose = () => {
-        console.log('WebSocket connection closed');
+      this.ws.onclose = (event) => {
+        console.log(`WebSocket connection closed with code ${event.code} and reason: ${event.reason}`);
+        clearTimeout(connectionTimeout);
         this.scheduleReconnect();
       };
     } catch (error) {
@@ -135,7 +184,13 @@ class WebSocketService {
   private scheduleReconnect() {
     if (this.reconnectAttempt < this.maxReconnectAttempts) {
       this.reconnectAttempt++;
-      const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempt - 1);
+
+      // Use shorter backoff times to prevent long waits
+      const delay = Math.min(
+        this.reconnectDelay * Math.min(2, this.reconnectAttempt),
+        30000 // Max 30 seconds between attempts
+      );
+
       console.log(`Reconnecting attempt ${this.reconnectAttempt} in ${delay}ms`);
 
       if (this.reconnectTimeout) {
@@ -143,8 +198,17 @@ class WebSocketService {
       }
 
       this.reconnectTimeout = setTimeout(() => this.connect(), delay);
+
+      // After a few failed attempts, start polling as fallback
+      if (this.reconnectAttempt >= 3 && !this.isPollingFallback) {
+        console.log('Starting polling fallback after multiple WebSocket failures');
+        this.startPollingFallback();
+      }
     } else {
-      console.log('Max reconnection attempts reached');
+      console.log('Max reconnection attempts reached, switching to polling fallback');
+      if (!this.isPollingFallback) {
+        this.startPollingFallback();
+      }
     }
   }
 
@@ -155,8 +219,108 @@ class WebSocketService {
     }
 
     if (this.ws) {
-      this.ws.close();
+      // Only close if not already closed
+      if (this.ws.readyState !== WebSocket.CLOSED && this.ws.readyState !== WebSocket.CLOSING) {
+        this.ws.close();
+      }
       this.ws = null;
+    }
+  }
+
+  // Polling fallback mechanism for environments where WebSockets don't work
+  private startPollingFallback() {
+    if (this.isPollingFallback) return;
+
+    console.log('Starting polling fallback for message updates');
+    this.isPollingFallback = true;
+
+    // Poll every 10 seconds for new messages
+    this.pollingFallback();
+    this.pollingInterval = setInterval(() => this.pollingFallback(), 10000);
+  }
+
+  private stopPollingFallback() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+    this.isPollingFallback = false;
+    console.log('Stopped polling fallback as WebSocket is now connected');
+  }
+
+  private async pollingFallback() {
+    try {
+      console.log('Polling for new messages...');
+      // Get authentication token if available
+      const authToken = await this.getAuthToken();
+      if (!authToken) {
+        console.log('No authentication token available for polling');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (this.lastMessageTimestamp) {
+        params.append('since', this.lastMessageTimestamp);
+      }
+
+      const response = await fetch(`/api/messages/poll?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to poll for messages:', response.status);
+        return;
+      }
+
+      const messages = await response.json();
+      console.log('Polled messages:', messages);
+
+      if (messages && messages.length > 0) {
+        // Update last timestamp
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.timestamp) {
+          this.lastMessageTimestamp = lastMessage.timestamp;
+        }
+
+        // Process messages as if they came from WebSocket
+        messages.forEach(message => {
+          this.messageHandlers.forEach(handler => {
+            try {
+              handler(message);
+            } catch (handlerError) {
+              console.error('Error in message handler during polling:', handlerError);
+            }
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error during message polling:', error);
+    }
+  }
+
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      // Check if Firebase auth is available
+      if (typeof window !== 'undefined' && window.firebase && window.firebase.auth) {
+        const user = window.firebase.auth().currentUser;
+        if (user) {
+          return await user.getIdToken();
+        }
+      }
+
+      // Try to find token in localStorage as fallback
+      if (typeof localStorage !== 'undefined') {
+        const token = localStorage.getItem('authToken');
+        if (token) return token;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
     }
   }
 
@@ -164,7 +328,17 @@ class WebSocketService {
     if (!this.isInitialized) {
       this.initialize();
     }
-    return this.connectionPromise || Promise.resolve();
+
+    try {
+      await (this.connectionPromise || Promise.resolve());
+      return Promise.resolve();
+    } catch (error) {
+      console.log('Using polling fallback after WebSocket connection failure');
+      if (!this.isPollingFallback) {
+        this.startPollingFallback();
+      }
+      return Promise.resolve(); // Still resolve to not block app functionality
+    }
   }
 
   public addMessageHandler(handler: (data: any) => void) {
@@ -175,11 +349,41 @@ class WebSocketService {
   public disconnect() {
     console.log('Disconnecting WebSocket service');
     this.cleanup();
+
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+
     this.messageHandlers.clear();
     this.isInitialized = false;
     this.connectionPromise = null;
     this.connectionResolve = null;
     this.connectionReject = null;
+    this.isPollingFallback = false;
+  }
+
+  // For testing and debugging
+  public testConnection() {
+    this.reconnectAttempt = 0;
+    this.cleanup();
+    return this.connect();
+  }
+
+  public getConnectionStatus() {
+    if (!this.ws) return 'disconnected';
+
+    switch(this.ws.readyState) {
+      case WebSocket.CONNECTING: return 'connecting';
+      case WebSocket.OPEN: return 'connected';
+      case WebSocket.CLOSING: return 'closing';
+      case WebSocket.CLOSED: return 'closed';
+      default: return 'unknown';
+    }
+  }
+
+  public isPollingActive() {
+    return this.isPollingFallback;
   }
 }
 
