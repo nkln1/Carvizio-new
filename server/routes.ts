@@ -163,6 +163,32 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send('Internal server error serving Service Worker Registration');
     }
   });
+  
+  // Adăugăm o rută pentru pagina de test a Service Worker-ului
+  app.get('/sw-test', (req, res) => {
+    console.log('!!!! RUTA SW-TEST ACCESATĂ !!!!');
+    try {
+      const rootDir = process.cwd();
+      const testPagePath = path.join(rootDir, 'public', 'sw-test.html');
+      console.log('Calea către pagina de test SW:', testPagePath);
+      
+      if (fs.existsSync(testPagePath)) {
+        console.log('Fișierul sw-test.html există, îl servim');
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.status(200).sendFile(testPagePath);
+        console.log('Pagina de test Service Worker servită din ' + testPagePath);
+      } else {
+        console.error('Fișierul sw-test.html nu a fost găsit la calea:', testPagePath);
+        res.status(404).send('Service Worker test page not found');
+      }
+    } catch (error) {
+      console.error('Eroare la servirea paginii de test Service Worker:', error);
+      res.status(500).send('Internal server error serving Service Worker test page');
+    }
+  });
 
   // Configure session middleware
   app.use(
