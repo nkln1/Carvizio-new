@@ -17,6 +17,7 @@ import AcceptedOffersTab from "@/components/service-dashboard/AcceptedOffersTab"
 import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
 import { useServiceOfferManagement } from "@/hooks/useServiceOfferManagement";
+import NotificationHelper from "@/lib/notifications";
 
 type TabId = "cereri" | "oferte-trimise" | "oferte-acceptate" | "mesaje" | "cont";
 
@@ -66,13 +67,53 @@ export default function ServiceDashboard() {
   });
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      if (!firebaseUser) {
         setLocation("/");
+      } else if (user && !window.startBackgroundMessageCheck) {
+        console.error("Service Worker nu este disponibil pentru verificarea mesajelor în fundal");
+      } else if (user && user.id && window.startBackgroundMessageCheck) {
+        // Inițiem verificarea periodică a mesajelor în fundal pentru a primi notificări
+        // chiar și când tab-ul browser-ului este inactiv
+        firebaseUser.getIdToken().then(token => {
+          if (NotificationHelper.isSupported() && NotificationHelper.checkPermission() === 'granted') {
+            try {
+              console.log("Inițierea verificării mesajelor în fundal pentru utilizatorul", user.id);
+              
+              // Pornim verificarea pe fundal folosind Service Worker
+              NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
+              
+              // Afișăm un toast de confirmare
+              toast({
+                title: "Notificări active",
+                description: "Vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.",
+                variant: "default",
+              });
+            } catch (error) {
+              console.error("Eroare la inițierea verificării mesajelor în fundal:", error);
+            }
+          } else if (NotificationHelper.checkPermission() !== 'granted') {
+            console.log("Permisiunile pentru notificări nu sunt acordate");
+            // Afișăm un toast care informează utilizatorul
+            toast({
+              title: "Notificări dezactivate",
+              description: "Permite notificările pentru a primi alerte de mesaje noi.",
+              variant: "default",
+            });
+          }
+        });
       }
     });
-    return () => unsubscribe();
-  }, [setLocation]);
+
+    // Curățăm verificarea în fundal când componenta este demontată
+    return () => {
+      unsubscribe();
+      // Verificăm dacă metoda există înainte de a o apela
+      if (typeof NotificationHelper.stopBackgroundMessageCheck === 'function') {
+        NotificationHelper.stopBackgroundMessageCheck();
+      }
+    };
+  }, [setLocation, user, toast]);
 
   // Query to fetch viewed requests
   const { data: viewedRequestIds = [] } = useQuery<number[]>({

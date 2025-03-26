@@ -1,6 +1,17 @@
 /**
  * Helper pentru gestionarea notificărilor browser
  */
+
+// Declarăm tipul pentru window pentru a evita erorile TypeScript
+declare global {
+  interface Window {
+    showNotificationViaSW?: (title: string, options?: NotificationOptions) => Promise<any>;
+    startBackgroundMessageCheck?: (options: any) => Promise<any>;
+    stopBackgroundMessageCheck?: () => Promise<any>;
+    swRegistration?: ServiceWorkerRegistration;
+  }
+}
+
 class NotificationHelper {
   private static debugMode = true;
   private static notificationQueue: any[] = [];
@@ -114,7 +125,7 @@ class NotificationHelper {
       };
 
       // Încercăm mai întâi să folosim Service Worker dacă este disponibil
-      if (this.isServiceWorkerAvailable()) {
+      if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
         console.log('Folosim Service Worker pentru notificare');
         return window.showNotificationViaSW(title, defaultOptions);
       }
@@ -255,7 +266,7 @@ class NotificationHelper {
     const tag = `message-${timestamp}`;
 
     // Folosim Service Worker dacă este disponibil
-    if (this.isServiceWorkerAvailable()) {
+    if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
       console.log('Folosim Service Worker pentru notificarea de mesaj');
       window.showNotificationViaSW('Mesaj nou', {
         body: safeContent,
@@ -357,7 +368,7 @@ class NotificationHelper {
         switch (data.type) {
           case 'NEW_MESSAGE':
             console.log('Afișăm notificare pentru mesaj nou:', data.payload);
-            if (this.isServiceWorkerAvailable()) {
+            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
               window.showNotificationViaSW('Mesaj nou', {
                 body: data.payload?.content || 'Ați primit un mesaj nou',
                 icon: '/favicon.ico',
@@ -375,7 +386,7 @@ class NotificationHelper {
             }
             break;
           case 'NEW_OFFER':
-            if (this.isServiceWorkerAvailable()) {
+            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
               window.showNotificationViaSW('Ofertă nouă', {
                 body: data.payload?.title || 'Ați primit o ofertă nouă',
                 icon: '/favicon.ico',
@@ -391,7 +402,7 @@ class NotificationHelper {
             }
             break;
           case 'NEW_REQUEST':
-            if (this.isServiceWorkerAvailable()) {
+            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
               window.showNotificationViaSW('Cerere nouă', {
                 body: data.payload?.title || 'Ați primit o cerere nouă',
                 icon: '/favicon.ico',
@@ -408,7 +419,7 @@ class NotificationHelper {
             break;
           case 'OFFER_STATUS_CHANGED':
             if (data.payload?.status === 'Accepted') {
-              if (this.isServiceWorkerAvailable()) {
+              if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
                 window.showNotificationViaSW('Ofertă acceptată', {
                   body: 'O ofertă trimisă de dvs. a fost acceptată',
                   icon: '/favicon.ico',
@@ -496,15 +507,100 @@ class NotificationHelper {
         return false;
     }
   }
+
+  /**
+   * Pornește verificarea mesajelor în fundal folosind Service Worker
+   * Această funcție va permite verificarea mesajelor chiar și când tab-ul este inactiv
+   * @param userId ID-ul utilizatorului curent
+   * @param userRole Rolul utilizatorului ('client' sau 'service')
+   * @param token Token-ul de autentificare
+   */
+  static startBackgroundMessageCheck(userId: number, userRole: 'client' | 'service', token: string): void {
+    // Verificăm dacă Service Worker-ul este disponibil
+    if (!this.isServiceWorkerAvailable() || !window.startBackgroundMessageCheck) {
+      console.warn('Service Worker nu este disponibil pentru verificarea mesajelor în fundal');
+      return;
+    }
+
+    // Dacă verificarea este deja activă, o oprim mai întâi
+    if (this.backgroundCheckActive) {
+      this.stopBackgroundMessageCheck();
+    }
+
+    console.log('Pornire verificare mesaje în fundal pentru utilizator:', userId, 'rol:', userRole);
+
+    const options = {
+      userId,
+      userRole,
+      token,
+      interval: this.notificationSettings.backgroundCheckInterval
+    };
+
+    // Pornim verificarea și marcăm ca activă
+    window.startBackgroundMessageCheck(options)
+      .then(() => {
+        this.backgroundCheckActive = true;
+        console.log('Verificare mesaje în fundal pornită cu succes');
+      })
+      .catch(error => {
+        console.error('Eroare la pornirea verificării mesajelor în fundal:', error);
+      });
+  }
+
+  /**
+   * Oprește verificarea mesajelor în fundal
+   */
+  static stopBackgroundMessageCheck(): void {
+    if (!this.isServiceWorkerAvailable() || !window.stopBackgroundMessageCheck) {
+      console.warn('Service Worker nu este disponibil pentru oprirea verificării mesajelor în fundal');
+      return;
+    }
+
+    if (this.backgroundCheckActive) {
+      window.stopBackgroundMessageCheck()
+        .then(() => {
+          this.backgroundCheckActive = false;
+          console.log('Verificare mesaje în fundal oprită cu succes');
+        })
+        .catch(error => {
+          console.error('Eroare la oprirea verificării mesajelor în fundal:', error);
+        });
+    }
+  }
+
+  /**
+   * Verifică starea verificării mesajelor în fundal
+   * @returns boolean - true dacă verificarea este activă, false altfel
+   */
+  static isBackgroundCheckActive(): boolean {
+    return this.backgroundCheckActive;
+  }
 }
 
-// Adăugăm o referință globală pentru showNotificationViaSW dacă nu există
-if (typeof window !== 'undefined' && !window.showNotificationViaSW) {
-  window.showNotificationViaSW = (title: string, options: any = {}) => {
-    console.warn('Service Worker nu este disponibil, folosim notificări standard');
-    const notification = new Notification(title, options);
-    return Promise.resolve(notification);
-  };
+// Adăugăm referințe globale pentru funcțiile Service Worker dacă nu există
+if (typeof window !== 'undefined') {
+  if (!window.showNotificationViaSW) {
+    window.showNotificationViaSW = (title: string, options: any = {}) => {
+      console.warn('Service Worker nu este disponibil, folosim notificări standard');
+      const notification = new Notification(title, options);
+      return Promise.resolve(notification);
+    };
+  }
+
+  if (!window.startBackgroundMessageCheck) {
+    window.startBackgroundMessageCheck = (options: any = {}) => {
+      console.warn('Service Worker nu este disponibil, nu se poate porni verificarea mesajelor în fundal');
+      return Promise.reject(new Error('Service Worker nu este disponibil'));
+    };
+  }
+
+  if (!window.stopBackgroundMessageCheck) {
+    window.stopBackgroundMessageCheck = () => {
+      console.warn('Service Worker nu este disponibil, nu este necesară oprirea verificării mesajelor în fundal');
+      return Promise.resolve();
+    };
+  }
 }
 
+// Exportăm clasa pentru a putea fi folosită în alte componente
 export default NotificationHelper;
