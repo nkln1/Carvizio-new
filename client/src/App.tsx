@@ -16,6 +16,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import TermsAndConditions from "./pages/TermsAndConditions"; 
 import { useEffect } from 'react';
 import { initializeNotifications } from "@/services/notificationService";
+import ConnectionStatus from "@/components/common/ConnectionStatus";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function App() {
           <Navigation />
           <Router />
           <CookieBanner />
+          <ConnectionStatus />
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>
