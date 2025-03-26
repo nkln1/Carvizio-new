@@ -102,8 +102,34 @@ function showNotificationViaSW(title, options = {}) {
   });
 }
 
+// Funcție pentru a porni verificarea periodică a mesajelor în Service Worker
+function startBackgroundMessageCheck(options = {}) {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+    console.warn('Service Worker nu este disponibil pentru verificarea periodică a mesajelor');
+    return Promise.reject(new Error('Service Worker nu este disponibil'));
+  }
+
+  return sendMessageToSW({
+    type: 'START_PERIODIC_CHECK',
+    payload: options
+  });
+}
+
+// Funcție pentru a opri verificarea periodică a mesajelor
+function stopBackgroundMessageCheck() {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+    return Promise.resolve(); // Nimic de făcut dacă SW nu e disponibil
+  }
+
+  return sendMessageToSW({
+    type: 'STOP_PERIODIC_CHECK'
+  });
+}
+
 // Înregistrează Service Worker-ul
 registerServiceWorker();
 
 // Expune funcțiile global pentru a fi folosite din alte părți ale aplicației
 window.showNotificationViaSW = showNotificationViaSW;
+window.startBackgroundMessageCheck = startBackgroundMessageCheck;
+window.stopBackgroundMessageCheck = stopBackgroundMessageCheck;

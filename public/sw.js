@@ -150,3 +150,88 @@ self.addEventListener('fetch', event => {
   // Permitem request-urilor să meargă normal către server
   return;
 });
+
+// Adăugăm un interval pentru verificarea periodică a mesajelor noi, chiar și când tab-ul este inactiv
+let checkMessagesInterval = null;
+
+// Funcție pentru a porni verificarea periodică a mesajelor
+function startPeriodicMessageCheck(options = {}) {
+  if (checkMessagesInterval) {
+    clearInterval(checkMessagesInterval);
+  }
+
+  const interval = options.interval || 30000; // Implicit la 30 de secunde
+  const userId = options.userId;
+  const userRole = options.userRole;
+  const token = options.token;
+
+  console.log('[Service Worker] Pornire verificare periodică a mesajelor pentru utilizator:', userId, 'rol:', userRole);
+
+  // Setăm intervalul pentru verificare
+  checkMessagesInterval = setInterval(() => {
+    checkForNewMessages(userId, userRole, token);
+  }, interval);
+
+  // Verificăm imediat prima dată
+  checkForNewMessages(userId, userRole, token);
+}
+
+// Funcție pentru a opri verificarea periodică
+function stopPeriodicMessageCheck() {
+  if (checkMessagesInterval) {
+    clearInterval(checkMessagesInterval);
+    checkMessagesInterval = null;
+    console.log('[Service Worker] Oprire verificare periodică a mesajelor');
+  }
+}
+
+// Funcție pentru a verifica mesajele noi
+function checkForNewMessages(userId, userRole, token) {
+  if (!userId || !userRole || !token) {
+    console.warn('[Service Worker] Lipsesc datele necesare pentru verificarea mesajelor');
+    return;
+  }
+
+  console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId, 'rol:', userRole);
+
+  // Construim URL-ul API în funcție de rolul utilizatorului
+  const apiUrl = `/api/${userRole === 'service' ? 'service' : 'client'}/messages/unread`;
+  
+  fetch(apiUrl, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('[Service Worker] Răspuns verificare mesaje:', data);
+    
+    // Verificăm dacă sunt mesaje noi și afișăm notificări pentru acestea
+    if (data && data.newMessages && data.newMessages.length > 0) {
+      // Procesăm fiecare mesaj nou
+      data.newMessages.forEach(message => {
+        // Afișăm notificare pentru fiecare mesaj nou
+        self.registration.showNotification('Mesaj nou', {
+          body: message.content || 'Ați primit un mesaj nou',
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: `message-${Date.now()}`,
+          data: { 
+            url: `/${userRole === 'service' ? 'service-dashboard' : 'dashboard'}?tab=messages`,
+            messageId: message.id
+          },
+          requireInteraction: true
+        });
+      });
+    }
+  })
+  .catch(error => {
+    console.error('[Service Worker] Eroare la verificarea mesajelor noi:', error);
+  });
+}
