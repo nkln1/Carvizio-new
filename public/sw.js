@@ -76,11 +76,15 @@ function handleShowNotification(event) {
   })
   .then(() => {
     // Notificarea a fost afișată cu succes
-    event.ports[0].postMessage({ success: true });
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ success: true });
+    }
   })
   .catch((error) => {
     console.error('[Service Worker] Eroare la afișarea notificării:', error);
-    event.ports[0].postMessage({ error: error.message });
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ error: error.message });
+    }
   });
 }
 
@@ -134,6 +138,12 @@ function checkForNewMessages(userId, userRole, token) {
   }
   
   console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId);
+  
+  // Verificăm dacă avem token
+  if (!token) {
+    console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
+    return Promise.reject(new Error('Token-ul de autentificare lipsește'));
+  }
   
   // URL-ul pentru API-ul de verificare a mesajelor
   const apiUrl = userRole === 'service' 
