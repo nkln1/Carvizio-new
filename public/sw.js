@@ -168,17 +168,69 @@ function stopPeriodicMessageCheck() {
   return { success: true, message: 'Verificare mesaje în fundal oprită' };
 }
 
+// Obține tokenul din localStorage (pentru verificări din fundal)
+async function getAuthToken() {
+  try {
+    // Folosim clients.matchAll pentru a accesa fereastra clientului
+    const clientList = await self.clients.matchAll();
+    if (clientList.length === 0) {
+      console.warn('[Service Worker] Nu s-au găsit clienți conectați');
+      return null;
+    }
+    
+    // Cerem tokenul de la client
+    const tokenResponsePromise = new Promise((resolve) => {
+      const channel = new MessageChannel();
+      
+      // Configurăm portul pentru a primi răspunsul
+      channel.port1.onmessage = (event) => {
+        if (event.data && event.data.token) {
+          resolve(event.data.token);
+        } else {
+          console.warn('[Service Worker] Nu s-a putut obține tokenul de autentificare din localStorage');
+          resolve(null);
+        }
+      };
+      
+      // Trimitem cererea către client
+      clientList[0].postMessage({
+        type: 'GET_AUTH_TOKEN'
+      }, [channel.port2]);
+    });
+    
+    // Așteptăm răspunsul cu timeout de 1 secundă
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => resolve(null), 1000);
+    });
+    
+    // Returnăm primul rezultat - fie tokenul, fie null după timeout
+    return Promise.race([tokenResponsePromise, timeoutPromise]);
+  } catch (error) {
+    console.error('[Service Worker] Eroare la obținerea tokenului:', error);
+    return null;
+  }
+}
+
 // Verifică dacă există mesaje noi pentru utilizator
-function checkForNewMessages(userId, userRole, token) {
-  if (!userId || !userRole || !token) {
+async function checkForNewMessages(userId, userRole, token) {
+  if (!userId || !userRole) {
     console.error('[Service Worker] Date lipsă pentru verificarea mesajelor');
     return Promise.reject(new Error('Date lipsă pentru verificarea mesajelor'));
   }
   
   console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId);
   
+  // Încercăm să folosim tokenul furnizat direct din apel
+  let authToken = token;
+  
+  // Dacă nu avem token, încercăm să-l obținem din localStorage prin client
+  if (!authToken) {
+    console.log('[Service Worker] Tokenul nu a fost furnizat, încerc obținerea din localStorage');
+    authToken = await getAuthToken();
+  }
+  
   // Verificăm dacă avem token
-  if (!token) {
+  if (!authToken) {
     console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
     return Promise.reject(new Error('Token-ul de autentificare lipsește'));
   }
@@ -190,7 +242,7 @@ function checkForNewMessages(userId, userRole, token) {
   
   return fetch(apiUrl, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${authToken}`,
       'Content-Type': 'application/json'
     }
   })

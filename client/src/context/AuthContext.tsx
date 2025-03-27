@@ -30,8 +30,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
+  // Token de autentificare pentru Service Worker
+  const [currentIdToken, setCurrentIdToken] = useState<string | null>(null);
+
+  // Funcția pentru obținerea tokenului ID și salvarea în localStorage pentru Service Worker
+  const updateIdToken = async (firebaseUser: any) => {
+    try {
+      const idToken = await firebaseUser.getIdToken(true);
+      setCurrentIdToken(idToken);
+      
+      // Salvăm tokenul în localStorage pentru a-l face disponibil Service Worker-ului
+      localStorage.setItem('firebase_auth_token', idToken);
+      
+      // Data de expirare este de obicei 1 oră de la generare, dar o setăm la 50 minute pentru a fi siguri
+      const expiresAt = Date.now() + 50 * 60 * 1000; // 50 de minute
+      localStorage.setItem('firebase_auth_token_expires', expiresAt.toString());
+      
+      console.log("Token de autentificare actualizat și salvat pentru Service Worker");
+      return idToken;
+    } catch (error) {
+      console.error("Eroare la obținerea tokenului ID:", error);
+      return null;
+    }
+  };
+
+  // Funcție pentru a reînnoi tokenul de autentificare periodic
+  const setupTokenRefresh = (firebaseUser: any) => {
+    // Reînnoim tokenul la fiecare 45 de minute pentru a preveni expirarea
+    const refreshInterval = 45 * 60 * 1000; // 45 de minute
+    
+    const intervalId = setInterval(async () => {
+      console.log("Reînnoirea programată a tokenului de autentificare...");
+      await updateIdToken(firebaseUser);
+    }, refreshInterval);
+    
+    // Returnăm funcția de curățare
+    return () => {
+      clearInterval(intervalId);
+    };
+  };
+
   useEffect(() => {
     let unsubscribeAuth: (() => void) | null = null;
+    let tokenRefreshCleanup: (() => void) | null = null;
 
     const initializeAuth = async () => {
       try {
@@ -42,7 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
           try {
             if (firebaseUser) {
-              const idToken = await firebaseUser.getIdToken(true);
+              const idToken = await updateIdToken(firebaseUser);
+              
+              if (!idToken) {
+                console.error("Nu s-a putut obține tokenul de autentificare");
+                await firebaseSignOut(auth);
+                setUser(null);
+                return;
+              }
 
               const response = await fetch('/api/auth/me', {
                 headers: {
@@ -57,6 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   ...userData,
                   emailVerified: firebaseUser.emailVerified
                 });
+                
+                // Configurăm reînnoirea automată a tokenului
+                if (tokenRefreshCleanup) {
+                  tokenRefreshCleanup();
+                }
+                tokenRefreshCleanup = setupTokenRefresh(firebaseUser);
+                
               } else {
                 console.error("Failed to get user data from backend:", await response.text());
                 await firebaseSignOut(auth);
@@ -65,6 +120,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
               console.log("User is signed out");
               setUser(null);
+              setCurrentIdToken(null);
+              localStorage.removeItem('firebase_auth_token');
+              localStorage.removeItem('firebase_auth_token_expires');
+              
+              // Curățăm intervalul de reînnoire a tokenului
+              if (tokenRefreshCleanup) {
+                tokenRefreshCleanup();
+                tokenRefreshCleanup = null;
+              }
             }
           } catch (error) {
             console.error('Auth state change error:', error);
@@ -86,6 +150,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       if (unsubscribeAuth) {
         unsubscribeAuth();
+      }
+      if (tokenRefreshCleanup) {
+        tokenRefreshCleanup();
       }
     };
   }, []);

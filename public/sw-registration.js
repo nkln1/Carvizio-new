@@ -1,10 +1,10 @@
-// Service Worker Registration Script v1.1.0
+// Service Worker Registration Script v1.2.0
 // Acest script trebuie inclus în pagina HTML pentru a înregistra Service Worker-ul
-// Versiunea actualizată include suport pentru sunete în notificări și gestionare mai bună a erorilor
+// Versiunea actualizată include suport pentru sunete în notificări, gestionare mai bună a erorilor și autentificare
 
 /**
  * Înregistrează Service Worker-ul pentru aplicație
- * Versiunea actuală: 1.1.0
+ * Versiunea actuală: 1.2.0
  */
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
@@ -16,6 +16,9 @@ function registerServiceWorker() {
           
           // Verificăm dacă browserul suportă notificări push
           checkPushSupport(registration);
+          
+          // Configurăm ascultătorul pentru mesajele de la Service Worker
+          setupServiceWorkerMessageListener();
           
           // Expunem funcțiile către Window pentru a putea fi folosite de alte componente
           window.showNotificationViaSW = function(title, options = {}) {
@@ -48,6 +51,40 @@ function registerServiceWorker() {
               }, [messageChannel.port2]);
             });
           };
+
+          /**
+           * Configurează ascultătorul pentru mesajele primite de la Service Worker
+           * Tratează în special solicitările de token de autentificare
+           */
+          function setupServiceWorkerMessageListener() {
+            // Configurăm ascultătorul pentru mesajele din Service Worker
+            navigator.serviceWorker.addEventListener('message', function(event) {
+              console.log('Mesaj primit de la Service Worker:', event.data);
+              
+              // Verificăm tipul mesajului
+              if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
+                // Service Worker-ul cere token-ul de autentificare
+                const token = localStorage.getItem('firebase_auth_token');
+                const expiresAt = localStorage.getItem('firebase_auth_token_expires');
+                
+                console.log('Service Worker solicită token-ul de autentificare, disponibil:', !!token);
+                
+                // Verificăm validitatea tokenului
+                let isValid = false;
+                if (token && expiresAt) {
+                  const now = Date.now();
+                  isValid = now < parseInt(expiresAt, 10);
+                }
+                
+                // Răspundem la solicitare
+                if (event.ports && event.ports[0]) {
+                  event.ports[0].postMessage({
+                    token: isValid ? token : null
+                  });
+                }
+              }
+            });
+          }
           
           window.startBackgroundMessageCheck = function(options = {}) {
             return new Promise((resolve, reject) => {

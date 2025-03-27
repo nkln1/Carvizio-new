@@ -515,7 +515,7 @@ class NotificationHelper {
    * @param userRole Rolul utilizatorului ('client' sau 'service')
    * @param token Token-ul de autentificare
    */
-  static startBackgroundMessageCheck(userId: number, userRole: 'client' | 'service', token: string): void {
+  static startBackgroundMessageCheck(userId: number, userRole: 'client' | 'service', token?: string): void {
     // Verificăm dacă Service Worker-ul este disponibil
     if (!this.isServiceWorkerAvailable() || !window.startBackgroundMessageCheck) {
       console.warn('Service Worker nu este disponibil pentru verificarea mesajelor în fundal');
@@ -529,10 +529,18 @@ class NotificationHelper {
 
     console.log('Pornire verificare mesaje în fundal pentru utilizator:', userId, 'rol:', userRole);
 
+    // Obținem token-ul din localStorage, dacă nu este furnizat direct
+    // Tokenul ar trebui să fie deja salvat în localStorage de către AuthContext
+    if (!token) {
+      token = localStorage.getItem('firebase_auth_token') || '';
+      console.log('Folosim tokenul din localStorage pentru verificarea mesajelor în fundal, disponibil:', !!token);
+    }
+
     const options = {
       userId,
       userRole,
-      token,
+      // Adăugăm token-ul doar dacă este disponibil (Service Worker-ul va încerca să îl obțină din localStorage dacă nu este furnizat)
+      ...(token ? { token } : {}),
       interval: this.notificationSettings.backgroundCheckInterval
     };
 
