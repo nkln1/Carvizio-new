@@ -1522,7 +1522,7 @@ export function registerRoutes(app: Express): Server {
         receiverName: await getUserDisplayName(message.receiverId, message.receiverRole, storage)
       };
 
-      // Send real-time notification
+      // Send real-time notification via WebSocket
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({
@@ -1532,6 +1532,116 @@ export function registerRoutes(app: Express): Server {
           }));
         }
       });
+      
+      // Send push notification via Firebase Cloud Messaging
+      try {
+        const admin = require('firebase-admin');
+        
+        // Obținem informații suplimentare despre expeditor și destinatar
+        let senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
+        
+        // Obținem informații despre solicitare
+        const request = await storage.getRequest(requestId);
+        
+        // Obținem Firebase UID al destinatarului pentru a trimite notificarea
+        let receiverFirebaseUid = null;
+        
+        if (message.receiverRole === 'client') {
+          // Destinatarul este client, obținem Firebase UID
+          const receiver = await storage.getClient(message.receiverId);
+          receiverFirebaseUid = receiver?.firebaseUid;
+        } else {
+          // Destinatarul este service provider, obținem Firebase UID
+          const receiver = await storage.getServiceProvider(message.receiverId);
+          receiverFirebaseUid = receiver?.firebaseUid;
+        }
+        
+        // Dacă am găsit UID-ul Firebase al destinatarului, trimitem notificarea
+        if (receiverFirebaseUid) {
+          // Obținem token-urile FCM asociate cu acest utilizator din Firestore
+          const db = admin.firestore();
+          const userCollection = message.receiverRole === 'client' ? 'clients' : 'service_providers';
+          const userDoc = await db.collection(userCollection).doc(message.receiverId.toString()).get();
+          
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            
+            if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
+              // Pregătim datele notificării
+              const notificationTitle = `${senderName} v-a trimis un mesaj`;
+              const notificationBody = content.length > 100 ? content.substring(0, 97) + '...' : content;
+              
+              // URL-ul pentru redirecționare la click
+              const deepLink = `/dashboard/${message.receiverRole}/messages/${requestId}`;
+              
+              // Trimitem notificarea către toate token-urile utilizatorului
+              const messagePayload = {
+                notification: {
+                  title: notificationTitle,
+                  body: notificationBody,
+                },
+                data: {
+                  requestId: requestId.toString(),
+                  messageId: message.id.toString(),
+                  senderId: message.senderId.toString(),
+                  senderRole: message.senderRole,
+                  type: 'new_message',
+                  url: deepLink,
+                  timestamp: new Date().getTime().toString(),
+                  requestTitle: request?.title || 'Cerere service'
+                },
+                tokens: userData.fcmTokens,
+                // Configurare pentru Android
+                android: {
+                  notification: {
+                    sound: 'default',
+                    clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+                  }
+                },
+                // Configurare pentru iOS
+                apns: {
+                  payload: {
+                    aps: {
+                      sound: 'default',
+                    }
+                  }
+                },
+                // Configurare pentru web
+                webpush: {
+                  notification: {
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico',
+                  },
+                  fcmOptions: {
+                    link: deepLink,
+                  },
+                  headers: {
+                    TTL: '86400' // 24 de ore în secunde
+                  }
+                }
+              };
+              
+              // Trimitem notificarea către toate dispozitivele utilizatorului
+              admin.messaging().sendMulticast(messagePayload)
+                .then((response) => {
+                  console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
+                })
+                .catch((error) => {
+                  console.error('FCM: Eroare la trimiterea notificării:', error);
+                });
+            } else {
+              console.log(`Nu s-au găsit token-uri FCM pentru utilizatorul ${message.receiverId} (${message.receiverRole})`);
+            }
+          } else {
+            console.log(`Nu s-a găsit documentul Firestore pentru utilizatorul ${message.receiverId} (${message.receiverRole})`);
+          }
+        } else {
+          console.log(`Nu s-a găsit Firebase UID pentru utilizatorul ${message.receiverId} (${message.receiverRole})`);
+        }
+      } catch (fcmError) {
+        console.error('Eroare la trimiterea notificării FCM:', fcmError);
+        // Nu eșuăm întregul request dacă notificarea FCM eșuează
+      }
 
       res.status(201).json(enrichedMessage);
     } catch (error: any) {
@@ -1690,6 +1800,99 @@ export function registerRoutes(app: Express): Server {
           console.error('Error sending WebSocket message:', error);
         }
       });
+      
+      // Send push notification via Firebase Cloud Messaging
+      try {
+        const admin = require('firebase-admin');
+        
+        // Get receiver Firebase UID
+        const receiverFirebaseUid = receiver.firebaseUid;
+        
+        if (receiverFirebaseUid) {
+          // Obținem token-urile FCM asociate cu acest utilizator din Firestore
+          const db = admin.firestore();
+          const userCollection = 'clients'; // Receiving role is client
+          const userDoc = await db.collection(userCollection).doc(receiver.id.toString()).get();
+          
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            
+            if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
+              // Prepare notification data
+              const notificationTitle = `${sender.companyName} v-a trimis un mesaj`;
+              const notificationBody = content.length > 100 ? content.substring(0, 97) + '...' : content;
+              
+              // Deep link URL
+              const deepLink = `/dashboard/client/messages/${requestId}`;
+              
+              // Send notification to all user devices
+              const messagePayload = {
+                notification: {
+                  title: notificationTitle,
+                  body: notificationBody,
+                },
+                data: {
+                  requestId: requestId.toString(),
+                  messageId: message.id.toString(),
+                  senderId: sender.id.toString(),
+                  senderRole: 'service',
+                  type: 'new_message',
+                  url: deepLink,
+                  timestamp: new Date().getTime().toString(),
+                  requestTitle: request.title || 'Cerere service'
+                },
+                tokens: userData.fcmTokens,
+                // Android configuration
+                android: {
+                  notification: {
+                    sound: 'default',
+                    clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+                  }
+                },
+                // iOS configuration
+                apns: {
+                  payload: {
+                    aps: {
+                      sound: 'default',
+                    }
+                  }
+                },
+                // Web configuration
+                webpush: {
+                  notification: {
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico',
+                  },
+                  fcmOptions: {
+                    link: deepLink,
+                  },
+                  headers: {
+                    TTL: '86400' // 24 hours in seconds
+                  }
+                }
+              };
+              
+              // Send notification to all user devices
+              admin.messaging().sendMulticast(messagePayload)
+                .then((response) => {
+                  console.log(`FCM: Notification sent successfully. Success count: ${response.successCount}`);
+                })
+                .catch((error) => {
+                  console.error('FCM: Error sending notification:', error);
+                });
+            } else {
+              console.log(`No FCM tokens found for client ${receiver.id}`);
+            }
+          } else {
+            console.log(`No Firestore document found for client ${receiver.id}`);
+          }
+        } else {
+          console.log(`No Firebase UID found for client ${receiver.id}`);
+        }
+      } catch (fcmError) {
+        console.error('Error sending FCM notification:', fcmError);
+        // Don't fail the entire request if FCM notification fails
+      }
 
       res.json(enrichedMessage);
     } catch (error) {
@@ -2150,6 +2353,99 @@ export function registerRoutes(app: Express): Server {
           }
         }
       });
+      
+      // Send push notification via Firebase Cloud Messaging
+      try {
+        const admin = require('firebase-admin');
+        
+        // Obținem informații despre destinatar
+        const receiver = await storage.getServiceProvider(receiverId);
+        
+        if (receiver && receiver.firebaseUid) {
+          // Obținem token-urile FCM asociate cu service provider-ul
+          const db = admin.firestore();
+          const userCollection = 'service_providers';
+          const userDoc = await db.collection(userCollection).doc(receiverId.toString()).get();
+          
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            
+            if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
+              // Pregătim datele notificării
+              const notificationTitle = `${client.name} v-a trimis un mesaj`;
+              const notificationBody = content.length > 100 ? content.substring(0, 97) + '...' : content;
+              
+              // URL-ul pentru redirecționare la click
+              const deepLink = `/dashboard/service/messages/${requestId}`;
+              
+              // Pregătim payload-ul notificării
+              const messagePayload = {
+                notification: {
+                  title: notificationTitle,
+                  body: notificationBody,
+                },
+                data: {
+                  requestId: requestId.toString(),
+                  messageId: message.id.toString(),
+                  senderId: client.id.toString(),
+                  senderRole: 'client',
+                  type: 'new_message',
+                  url: deepLink,
+                  timestamp: new Date().getTime().toString(),
+                  requestTitle: request.title || 'Cerere service'
+                },
+                tokens: userData.fcmTokens,
+                // Configurare pentru Android
+                android: {
+                  notification: {
+                    sound: 'default',
+                    clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+                  }
+                },
+                // Configurare pentru iOS
+                apns: {
+                  payload: {
+                    aps: {
+                      sound: 'default',
+                    }
+                  }
+                },
+                // Configurare pentru web
+                webpush: {
+                  notification: {
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico',
+                  },
+                  fcmOptions: {
+                    link: deepLink,
+                  },
+                  headers: {
+                    TTL: '86400' // 24 de ore în secunde
+                  }
+                }
+              };
+              
+              // Trimitem notificarea către toate dispozitivele utilizatorului
+              admin.messaging().sendMulticast(messagePayload)
+                .then((response) => {
+                  console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
+                })
+                .catch((error) => {
+                  console.error('FCM: Eroare la trimiterea notificării:', error);
+                });
+            } else {
+              console.log(`Nu s-au găsit token-uri FCM pentru service provider-ul ${receiverId}`);
+            }
+          } else {
+            console.log(`Nu s-a găsit documentul Firestore pentru service provider-ul ${receiverId}`);
+          }
+        } else {
+          console.log(`Nu s-a găsit Firebase UID pentru service provider-ul ${receiverId}`);
+        }
+      } catch (fcmError) {
+        console.error('Eroare la trimiterea notificării FCM:', fcmError);
+        // Nu eșuăm întregul request dacă notificarea FCM eșuează
+      }
 
       // Set proper content type and send response
       res.setHeader('Content-Type', 'application/json');
