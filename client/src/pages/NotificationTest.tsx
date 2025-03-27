@@ -23,7 +23,7 @@ export default function NotificationTest() {
   const [serviceWorkerSupported, setServiceWorkerSupported] = useState<boolean>(false);
   const [serviceWorkerStatus, setServiceWorkerStatus] = useState<string>("necunoscut");
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
-  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);l);
+  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
 
   // Funcție de testare pentru a verifica dacă Service Worker este încărcat corect
   const testServiceWorkerMimeType = async () => {

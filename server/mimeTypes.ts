@@ -36,21 +36,25 @@ export function setCustomMimeTypes(app: Express) {
       '.otf': 'font/otf',
     };
 
-    // Adăugare specifică pentru Service Workers
-    if (url.endsWith('sw.js') || url.endsWith('sw-registration.js')) {
+    // Adăugare specifică pentru Service Workers și fișiere JavaScript
+    if (url.includes('sw.js') || url.includes('sw-registration.js') || extension === '.js') {
       res.setHeader('Content-Type', 'application/javascript');
-      console.log(`[MIME Type] Set application/javascript for ${url}`);
+      if (url.includes('sw.js')) {
+        console.log(`[MIME Type] Set application/javascript for ${url}`);
+      }
     }
-    // Setare MIME type bazat pe extensie
+    // Setare MIME type bazat pe extensie pentru alte tipuri de fișiere
     else if (extension && mimeTypes[extension]) {
       res.setHeader('Content-Type', mimeTypes[extension]);
     }
 
     // Asigurăm că Service Worker-ul nu este cache-uit
-    if (url.endsWith('sw.js')) {
+    if (url.includes('sw.js')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
     }
 
     next();

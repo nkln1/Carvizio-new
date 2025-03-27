@@ -62,6 +62,16 @@ let backgroundCheckConfig = {
 
 // Metodă pentru afișarea notificărilor
 function handleShowNotification(event) {
+  if (!event.data || !event.data.payload) {
+    console.error('[Service Worker] Date lipsă pentru afișarea notificării', event);
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ 
+        error: 'Date lipsă pentru afișarea notificării' 
+      });
+    }
+    return Promise.reject(new Error('Date lipsă pentru afișarea notificării'));
+  }
+  
   const { title, options } = event.data.payload;
   
   return self.registration.showNotification(title, {
@@ -70,7 +80,7 @@ function handleShowNotification(event) {
     ...options,
     // Adăugăm un handler pentru click (pentru a deschide tab-ul corespunzător)
     data: {
-      ...(options.data || {}),
+      ...(options && options.data ? options.data : {}),
       timestamp: new Date().getTime()
     }
   })
@@ -158,8 +168,16 @@ function checkForNewMessages(userId, userRole, token) {
   })
   .then(response => {
     if (!response.ok) {
-      throw new Error('Răspuns invalid de la server');
+      throw new Error(`Răspuns invalid de la server: ${response.status}`);
     }
+    
+    // Verificăm content-type pentru a evita erori de parsare JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('[Service Worker] Răspunsul nu este JSON valid:', contentType);
+      throw new Error('Răspunsul nu este în format JSON valid');
+    }
+    
     return response.json();
   })
   .then(data => {
@@ -194,6 +212,8 @@ function checkForNewMessages(userId, userRole, token) {
   })
   .catch(error => {
     console.error('[Service Worker] Eroare la verificarea mesajelor:', error);
+    // Nu propagăm eroarea mai departe pentru a evita întreruperea Service Worker-ului
+    return Promise.resolve(); // Returnăm un promise rezolvat pentru a continua execuția
   });
 }
 
