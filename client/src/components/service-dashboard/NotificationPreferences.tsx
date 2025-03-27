@@ -88,11 +88,16 @@ export default function NotificationPreferences() {
   // Mutație pentru actualizarea preferințelor
   const updateMutation = useMutation({
     mutationFn: async (updatedPreferences: NotificationPreferences) => {
-      const response = await apiRequest('PUT', '/api/service/notification-preferences', updatedPreferences);
+      console.log('Trimit cerere de actualizare a preferințelor:', updatedPreferences);
+      // Folosim POST în loc de PUT pentru a fi compatibili cu implementarea backend-ului
+      const response = await apiRequest('POST', '/api/service/notification-preferences', updatedPreferences);
       if (!response.ok) {
+        console.error('Eroare la actualizarea preferințelor, status:', response.status);
         throw new Error('Nu am putut actualiza preferințele de notificări');
       }
-      return await response.json();
+      const data = await response.json();
+      console.log('Răspuns actualizare preferințe:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/service/notification-preferences'] });

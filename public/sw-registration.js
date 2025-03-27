@@ -150,11 +150,17 @@ function showNotificationViaSW(title, options = {}) {
   if (window.showNotificationViaSW) {
     // Dacă se dorește redarea unui sunet, pregătim audio
     if (options.playSound) {
-      const soundUrl = options.soundUrl || '/notification-sound.mp3';
+      const soundUrl = options.soundUrl || '/sounds/notification.mp3';
+      console.log('Folosesc sunet pentru notificare din:', soundUrl);
       
       // Ștergem opțiunile specifice de sunet din options înainte de a trimite la SW
-      // pentru a evita erori de serializare în unele browsere
+      // și adăugăm datele despre sunet în data pentru a le trimite corect service worker-ului
       const { playSound, soundUrl: removedSoundUrl, ...cleanOptions } = options;
+      
+      // Asigurăm-ne că avem un obiect data pentru a putea adăuga informațiile despre sunet
+      cleanOptions.data = cleanOptions.data || {};
+      cleanOptions.data.shouldPlaySound = true;
+      cleanOptions.data.soundUrl = soundUrl;
       
       // Promisiune pentru redarea sunetului
       const soundPromise = new Promise((resolve) => {
@@ -216,7 +222,8 @@ function showNotificationViaSW(title, options = {}) {
       let audio;
       if (options.playSound) {
         try {
-          const soundUrl = options.soundUrl || '/notification-sound.mp3';
+          const soundUrl = options.soundUrl || '/sounds/notification.mp3';
+          console.log('Încercare redare sunet din fallback:', soundUrl);
           audio = new Audio(soundUrl);
           audio.volume = 0.5;
           audio.play().catch(e => console.warn('Eroare la redarea sunetului:', e));

@@ -2538,37 +2538,7 @@ export function registerRoutes(app: Express): Server {
 
   // Am eliminat ruta duplicată, folosind cea definită la linia 253
 
-  app.post("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
-    try {
-      const { userType } = req.session;
-      
-      if (!userType || userType !== "service") {
-        return res.status(403).json({ error: "Unauthorized. Only service providers can create notification preferences." });
-      }
-      
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(404).json({ error: "Service provider not found" });
-      }
-      
-      // Check if preferences already exist
-      const existingPreferences = await storage.getNotificationPreferences(provider.id);
-      if (existingPreferences) {
-        return res.status(400).json({ error: "Notification preferences already exist. Use PUT to update." });
-      }
-      
-      // Create new preferences
-      const newPreferences = await storage.createNotificationPreferences({
-        serviceProviderId: provider.id,
-        ...req.body
-      });
-      
-      return res.status(201).json(newPreferences);
-    } catch (error) {
-      console.error("Error creating notification preferences:", error);
-      return res.status(500).json({ error: "Failed to create notification preferences" });
-    }
-  });
+  // Endpoint-ul duplicat a fost eliminat, folosim routerul de la linia 292
 
   app.put("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
     try {

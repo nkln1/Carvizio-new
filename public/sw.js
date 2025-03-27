@@ -94,9 +94,17 @@ function handleShowNotification(event) {
   const title = payload.title || 'Notificare';
   const options = payload.options || {};
   
+  console.log('[Service Worker] Afișez notificare cu opțiunile:', JSON.stringify(options));
+  
+  // Verificăm dacă trebuie să redăm un sunet
+  if (options.data && options.data.shouldPlaySound) {
+    console.log('[Service Worker] Ar trebui să redau sunetul notificării:', options.data.soundUrl);
+  }
+  
   return self.registration.showNotification(title, {
     badge: '/favicon.ico',
     icon: '/favicon.ico',
+    requireInteraction: true, // Notificarea rămâne până când utilizatorul interacționează cu ea
     ...options,
     // Adăugăm un handler pentru click (pentru a deschide tab-ul corespunzător)
     data: {
