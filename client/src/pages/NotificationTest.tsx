@@ -1,367 +1,352 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Info, XCircle, Bell } from 'lucide-react';
-import useNotifications from '@/hooks/useNotifications';
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Check, Info, XCircle, Bell } from "lucide-react";
+import useNotifications from "@/hooks/useNotifications";
 
 export default function NotificationTest() {
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [serviceWorkerStatus, setServiceWorkerStatus] = useState<'neînregistrat' | 'în așteptare' | 'activ'>('neînregistrat');
-  const [serviceWorkerSupported, setServiceWorkerSupported] = useState(false);
-  const [notificationSupported, setNotificationSupported] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [testResult, setTestResult] = useState<any>(null);
+  const [swRegistered, setSwRegistered] = useState<boolean>(false);
+  const [backgroundActive, setBackgroundActive] = useState<boolean>(false);
+  const { permission, supported, error, requestPermission, showNotification } = useNotifications();
 
-  const { requestPermission } = useNotifications();
-
-  // Verificăm suportul pentru Service Workers și notificări la încărcarea componentei
   useEffect(() => {
-    // Verificare suport Service Worker
-    const isServiceWorkerSupported = 'serviceWorker' in navigator;
-    setServiceWorkerSupported(isServiceWorkerSupported);
-
-    // Verificare suport notificări
-    const isNotificationSupported = 'Notification' in window;
-    setNotificationSupported(isNotificationSupported);
-
-    // Verificare permisiune notificări
-    if (isNotificationSupported) {
-      setNotificationPermission(Notification.permission);
-    }
-
-    // Verificare status Service Worker
-    if (isServiceWorkerSupported && navigator.serviceWorker.controller) {
-      setServiceWorkerStatus('activ');
+    // Verifică dacă Service Worker este înregistrat
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration()
+        .then(registration => {
+          setSwRegistered(!!registration);
+        })
+        .catch(err => {
+          console.error('Eroare la verificarea Service Worker:', err);
+          setSwRegistered(false);
+        });
     }
   }, []);
 
-  // Funcție pentru a solicita permisiunea de notificări
-  const requestNotificationPermission = async () => {
-    try {
-      const permission = await requestPermission();
-      setNotificationPermission(permission);
-    } catch (error) {
-      console.error('Eroare la solicitarea permisiunii:', error);
-      setTestResult({
-        success: false,
-        message: `Eroare la solicitarea permisiunii: ${error instanceof Error ? error.message : String(error)}`
-      });
-    }
-  };
-
-  // Funcție pentru înregistrarea manuală a Service Worker-ului
-  const registerServiceWorker = async () => {
+  const handleTestServiceWorker = async () => {
     try {
       if (!('serviceWorker' in navigator)) {
-        throw new Error('Service Worker nu este suportat de acest browser');
+        setTestResult({
+          success: false,
+          message: 'Service Worker nu este suportat de acest browser.'
+        });
+        return;
       }
 
-      setServiceWorkerStatus('în așteptare');
-
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
-      });
-
-      if (registration.installing) {
-        // Service Worker se instalează
-        setServiceWorkerStatus('în așteptare');
-      } else if (registration.waiting) {
-        // Service Worker este instalat și așteaptă activarea
-        setServiceWorkerStatus('în așteptare');
-      } else if (registration.active) {
-        // Service Worker este activ
-        setServiceWorkerStatus('activ');
+      // Înregistrăm Service Worker sau obținem înregistrarea existentă
+      const registration = await navigator.serviceWorker.getRegistration();
+      
+      if (!registration) {
+        const timestamp = new Date().getTime();
+        const newRegistration = await navigator.serviceWorker.register(`/sw.js?t=${timestamp}`, {
+          scope: '/'
+        });
+        
+        setTestResult({
+          success: true,
+          message: `Service Worker înregistrat cu succes: ${newRegistration.scope}`
+        });
+        setSwRegistered(true);
+      } else {
+        setTestResult({
+          success: true,
+          message: `Service Worker deja înregistrat: ${registration.scope}`
+        });
+        setSwRegistered(true);
       }
-
-      setTestResult({
-        success: true,
-        message: `Service Worker înregistrat cu succes. Scope: ${registration.scope}`
-      });
-    } catch (error) {
-      console.error('Eroare la înregistrarea Service Worker:', error);
+    } catch (err) {
+      console.error('Eroare la testarea Service Worker:', err);
       setTestResult({
         success: false,
-        message: `Eroare la înregistrarea Service Worker: ${error instanceof Error ? error.message : String(error)}`
+        message: `Eroare la testarea Service Worker: ${err instanceof Error ? err.message : String(err)}`
       });
     }
   };
 
-  // Funcție de testare pentru a verifica dacă Service Worker este încărcat corect
-  const testServiceWorkerMimeType = async () => {
+  const handleTestPermission = async () => {
     try {
-      const response = await fetch('/sw.js');
-      const contentType = response.headers.get('Content-Type');
-
+      const result = await requestPermission();
       setTestResult({
-        success: contentType?.includes('javascript') || false,
-        message: `Content-Type pentru Service Worker: ${contentType || 'necunoscut'}`
+        success: result,
+        message: result 
+          ? 'Permisiune pentru notificări acordată!' 
+          : `Permisiune pentru notificări refuzată. Status: ${permission}`
       });
-    } catch (error) {
-      console.error('Eroare la testarea MIME Type pentru Service Worker:', error);
+    } catch (err) {
+      console.error('Eroare la testarea permisiunii:', err);
       setTestResult({
         success: false,
-        message: `Eroare la testarea MIME Type: ${error instanceof Error ? error.message : String(error)}`
+        message: `Eroare la testarea permisiunii: ${err instanceof Error ? err.message : String(err)}`
       });
     }
   };
 
-  // Funcția pentru a trimite o notificare de test
-  const sendTestNotification = async () => {
+  const handleTestNotification = async () => {
     try {
-      if (!('Notification' in window)) {
-        throw new Error('Notificările nu sunt suportate de acest browser');
-      }
-
-      if (Notification.permission !== 'granted') {
-        throw new Error('Permisiunea pentru notificări nu a fost acordată');
-      }
-
-      // Verificăm dacă avem acces la funcția globală
-      if (typeof window.showNotificationViaSW !== 'function') {
-        throw new Error('Funcția de notificare prin Service Worker nu este disponibilă');
-      }
-
-      // Trimitem notificarea prin Service Worker
-      const result = await window.showNotificationViaSW('Test Notificare', {
-        body: 'Aceasta este o notificare de test trimisă prin Service Worker.',
+      const result = await showNotification('Test Notificare', {
+        body: 'Aceasta este o notificare de test.',
         icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: 'test-notification',
         requireInteraction: true,
-        data: {
-          url: '/notification-test',
-          testId: Date.now()
-        }
+        tag: 'test-notification'
       });
 
       setTestResult({
-        success: true,
-        message: `Notificare trimisă cu succes: ${JSON.stringify(result)}`
+        success: result,
+        message: result 
+          ? 'Notificare trimisă cu succes!' 
+          : 'Nu s-a putut trimite notificarea.'
       });
-    } catch (error) {
-      console.error('Eroare la trimiterea notificării de test:', error);
+    } catch (err) {
+      console.error('Eroare la testarea notificării:', err);
       setTestResult({
         success: false,
-        message: `Eroare la trimiterea notificării: ${error instanceof Error ? error.message : String(error)}`
+        message: `Eroare la testarea notificării: ${err instanceof Error ? err.message : String(err)}`
       });
     }
   };
 
-  // Funcție pentru a începe verificarea de mesaje în background
-  const startBackgroundMessagesCheck = async () => {
-    try {
-      // Verificăm dacă funcția globală există
-      if (typeof window.startBackgroundMessageCheck !== 'function') {
-        throw new Error('Funcția de verificare a mesajelor în fundal nu este disponibilă');
-      }
-
-      // Simulăm un utilizator logat pentru test
-      const testUserOptions = {
-        userId: 1,
-        userRole: 'client',
-        token: 'test-token',
-        interval: 10000 // 10 secunde între verificări
-      };
-
-      const result = await window.startBackgroundMessageCheck(testUserOptions);
-
-      setTestResult({
-        success: true,
-        message: `Verificare mesaje în fundal pornită: ${JSON.stringify(result)}`
-      });
-    } catch (error) {
-      console.error('Eroare la pornirea verificării mesajelor în fundal:', error);
+  const handleStartBackgroundCheck = async () => {
+    if (!swRegistered) {
       setTestResult({
         success: false,
-        message: `Eroare la pornirea verificării: ${error instanceof Error ? error.message : String(error)}`
+        message: 'Service Worker nu este înregistrat. Testați mai întâi Service Worker.'
+      });
+      return;
+    }
+
+    try {
+      if (typeof window.startBackgroundMessageCheck === 'function') {
+        await window.startBackgroundMessageCheck({
+          userId: 1, // Folosim un ID de test
+          userRole: 'client',
+          token: 'test-token',
+          interval: 30000
+        });
+        
+        setBackgroundActive(true);
+        setTestResult({
+          success: true,
+          message: 'Verificare mesaje în fundal pornită cu succes!'
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: 'Funcția startBackgroundMessageCheck nu este disponibilă.'
+        });
+      }
+    } catch (err) {
+      console.error('Eroare la pornirea verificării în fundal:', err);
+      setTestResult({
+        success: false,
+        message: `Eroare la pornirea verificării în fundal: ${err instanceof Error ? err.message : String(err)}`
       });
     }
   };
 
-  // Funcție pentru a opri verificarea de mesaje în background
-  const stopBackgroundMessagesCheck = async () => {
+  const handleStopBackgroundCheck = async () => {
     try {
-      // Verificăm dacă funcția globală există
-      if (typeof window.stopBackgroundMessageCheck !== 'function') {
-        throw new Error('Funcția de oprire a verificării mesajelor nu este disponibilă');
+      if (typeof window.stopBackgroundMessageCheck === 'function') {
+        await window.stopBackgroundMessageCheck();
+        
+        setBackgroundActive(false);
+        setTestResult({
+          success: true,
+          message: 'Verificare mesaje în fundal oprită cu succes!'
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: 'Funcția stopBackgroundMessageCheck nu este disponibilă.'
+        });
       }
-
-      const result = await window.stopBackgroundMessageCheck();
-
-      setTestResult({
-        success: true,
-        message: `Verificare mesaje în fundal oprită: ${JSON.stringify(result)}`
-      });
-    } catch (error) {
-      console.error('Eroare la oprirea verificării mesajelor în fundal:', error);
+    } catch (err) {
+      console.error('Eroare la oprirea verificării în fundal:', err);
       setTestResult({
         success: false,
-        message: `Eroare la oprirea verificării: ${error instanceof Error ? error.message : String(error)}`
+        message: `Eroare la oprirea verificării în fundal: ${err instanceof Error ? err.message : String(err)}`
       });
     }
   };
 
   return (
-    <div className="container py-8">
-      <h1 className="text-2xl font-bold mb-6">Testare Notificări și Service Worker</h1>
-
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Status Sistem</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="font-medium">Suport Service Worker:</span>
-              <span className="flex items-center gap-2">
-                {serviceWorkerSupported ? 
-                  <><Check className="h-5 w-5 text-green-500" /> Suportat</> : 
-                  <><XCircle className="h-5 w-5 text-red-500" /> Nesuportat</>}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="font-medium">Suport Notificări:</span>
-              <span className="flex items-center gap-2">
-                {notificationSupported ? 
-                  <><Check className="h-5 w-5 text-green-500" /> Suportat</> : 
-                  <><XCircle className="h-5 w-5 text-red-500" /> Nesuportat</>}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="font-medium">Status Service Worker:</span>
-              <span className="flex items-center gap-2">
-                {serviceWorkerStatus === "activ" ? 
-                  <><Check className="h-5 w-5 text-green-500" /> {serviceWorkerStatus}</> : 
-                  <><Info className="h-5 w-5 text-blue-500" /> {serviceWorkerStatus}</>}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Permisiune notificări:</span>
-              <span className="flex items-center gap-2">
-                {notificationPermission === "granted" ? 
-                  <><Check className="h-5 w-5 text-green-500" /> Acordată</> : 
-                  notificationPermission === "denied" ?
-                  <><XCircle className="h-5 w-5 text-red-500" /> Refuzată</> :
-                  <><Info className="h-5 w-5 text-blue-500" /> Neprecizată</>}
-              </span>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-wrap gap-3">
-            <Button 
-              onClick={requestNotificationPermission} 
-              disabled={!notificationSupported || notificationPermission === "granted"}
-              variant="default"
-            >
-              Solicită permisiunea pentru notificări
-            </Button>
-
-            <Button 
-              onClick={testServiceWorkerMimeType} 
-              variant="outline"
-            >
-              Testează MIME Type Service Worker
-            </Button>
-
-            {serviceWorkerSupported && serviceWorkerStatus !== "activ" && (
-              <Button 
-                onClick={registerServiceWorker} 
-                variant="secondary"
-              >
-                Înregistrează Service Worker
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        <Tabs defaultValue="notifications">
-          <TabsList className="mb-4">
-            <TabsTrigger value="notifications">Notificări</TabsTrigger>
-            <TabsTrigger value="background">Verificare Mesaje</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Testare Notificări</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">
-                  Această secțiune permite testarea funcționalității de notificări prin Service Worker.
-                  Asigurați-vă că Service Worker-ul este activ și permisiunea pentru notificări a fost acordată.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={sendTestNotification}
-                  disabled={!serviceWorkerSupported || serviceWorkerStatus !== "activ" || notificationPermission !== "granted"}
-                  className="flex items-center gap-2"
-                >
-                  <Bell className="h-4 w-4" />
-                  Trimite notificare de test
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="background">
-            <Card>
-              <CardHeader>
-                <CardTitle>Verificare Mesaje în Fundal</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">
-                  Această secțiune permite testarea funcționalității de verificare periodică a mesajelor noi în fundal.
-                  Acest test va simula un utilizator logat pentru a verifica funcționarea corectă a Service Worker-ului.
-                </p>
-              </CardContent>
-              <CardFooter className="flex gap-3">
-                <Button 
-                  onClick={startBackgroundMessagesCheck}
-                  disabled={!serviceWorkerSupported || serviceWorkerStatus !== "activ"}
-                  variant="default"
-                >
-                  Pornește verificare
-                </Button>
-
-                <Button 
-                  onClick={stopBackgroundMessagesCheck}
-                  disabled={!serviceWorkerSupported || serviceWorkerStatus !== "activ"}
-                  variant="outline"
-                >
-                  Oprește verificare
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {testResult && (
-          <Card className={testResult.success ? "border-green-300" : "border-red-300"}>
+    <div className="container mx-auto p-4 max-w-3xl">
+      <h1 className="text-2xl font-bold mb-6">Test Notificări Browser</h1>
+      
+      <Tabs defaultValue="service-worker">
+        <TabsList className="mb-4">
+          <TabsTrigger value="service-worker">Service Worker</TabsTrigger>
+          <TabsTrigger value="permissions">Permisiuni</TabsTrigger>
+          <TabsTrigger value="notifications">Notificări</TabsTrigger>
+          <TabsTrigger value="background">Verificare Fundal</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="service-worker">
+          <Card>
             <CardHeader>
-              <CardTitle className={testResult.success ? "text-green-600" : "text-red-600"}>
-                {testResult.success ? "Operație reușită" : "Eroare"}
-              </CardTitle>
+              <CardTitle>Service Worker</CardTitle>
+              <CardDescription>
+                Înregistrează și verifică Service Worker-ul pentru notificări.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap">{testResult.message}</p>
+              <div className="mb-4">
+                <span className="font-semibold mr-2">Status:</span>
+                {swRegistered ? (
+                  <span className="text-green-600 flex items-center">
+                    <Check className="w-4 h-4 mr-1" /> Înregistrat
+                  </span>
+                ) : (
+                  <span className="text-amber-600 flex items-center">
+                    <Info className="w-4 h-4 mr-1" /> Neînregistrat
+                  </span>
+                )}
+              </div>
+              <Button onClick={handleTestServiceWorker}>
+                Testează Service Worker
+              </Button>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="permissions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Permisiuni Notificări</CardTitle>
+              <CardDescription>
+                Verifică și solicită permisiuni pentru notificări.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <span className="font-semibold mr-2">Status:</span>
+                {permission === 'granted' ? (
+                  <span className="text-green-600 flex items-center">
+                    <Check className="w-4 h-4 mr-1" /> Permisiune acordată
+                  </span>
+                ) : permission === 'denied' ? (
+                  <span className="text-red-600 flex items-center">
+                    <XCircle className="w-4 h-4 mr-1" /> Permisiune respinsă
+                  </span>
+                ) : (
+                  <span className="text-amber-600 flex items-center">
+                    <Info className="w-4 h-4 mr-1" /> Permisiune nesolicitată
+                  </span>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <span className="font-semibold mr-2">Suportat:</span>
+                {supported ? (
+                  <span className="text-green-600 flex items-center">
+                    <Check className="w-4 h-4 mr-1" /> Da
+                  </span>
+                ) : (
+                  <span className="text-red-600 flex items-center">
+                    <XCircle className="w-4 h-4 mr-1" /> Nu
+                  </span>
+                )}
+              </div>
+              
+              <Button onClick={handleTestPermission} disabled={!supported}>
+                Solicită Permisiune
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Test Notificări</CardTitle>
+              <CardDescription>
+                Trimite o notificare de test pentru a verifica funcționalitatea.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <span className="font-semibold mr-2">Prerequisite:</span>
+                {(swRegistered && permission === 'granted') ? (
+                  <span className="text-green-600 flex items-center">
+                    <Check className="w-4 h-4 mr-1" /> Toate condițiile îndeplinite
+                  </span>
+                ) : (
+                  <span className="text-amber-600 flex items-center">
+                    <Info className="w-4 h-4 mr-1" /> 
+                    {!swRegistered && 'Service Worker neînregistrat. '}
+                    {permission !== 'granted' && 'Permisiune pentru notificări neacordată.'}
+                  </span>
+                )}
+              </div>
+              
+              <Button 
+                onClick={handleTestNotification} 
+                disabled={!supported || permission !== 'granted'}
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                Trimite Notificare Test
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="background">
+          <Card>
+            <CardHeader>
+              <CardTitle>Verificare Mesaje în Fundal</CardTitle>
+              <CardDescription>
+                Pornește și oprește verificarea periodică a mesajelor noi în fundal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <span className="font-semibold mr-2">Status:</span>
+                {backgroundActive ? (
+                  <span className="text-green-600 flex items-center">
+                    <Check className="w-4 h-4 mr-1" /> Activ
+                  </span>
+                ) : (
+                  <span className="text-amber-600 flex items-center">
+                    <Info className="w-4 h-4 mr-1" /> Inactiv
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex space-x-4">
+                <Button 
+                  onClick={handleStartBackgroundCheck} 
+                  disabled={!swRegistered || backgroundActive}
+                >
+                  Pornește Verificare
+                </Button>
+                
+                <Button 
+                  onClick={handleStopBackgroundCheck} 
+                  disabled={!backgroundActive}
+                  variant="outline"
+                >
+                  Oprește Verificare
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      {testResult && (
+        <Card className={`mt-6 ${testResult.success ? 'border-green-500' : 'border-red-500'}`}>
+          <CardHeader>
+            <CardTitle className={testResult.success ? 'text-green-700' : 'text-red-700'}>
+              {testResult.success ? 'Succes!' : 'Eroare!'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>{testResult.message}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-}
-
-// Declarăm tipurile pentru funcțiile globale adăugate de script-ul inline din index.html
-declare global {
-  interface Window {
-    showNotificationViaSW: (title: string, options?: NotificationOptions) => Promise<any>;
-    startBackgroundMessageCheck: (options: any) => Promise<any>;
-    stopBackgroundMessageCheck: () => Promise<any>;
-    swRegistration?: ServiceWorkerRegistration;
-    firebase?: any;
-  }
 }

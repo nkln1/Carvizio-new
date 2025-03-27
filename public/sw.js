@@ -62,9 +62,9 @@ let backgroundCheckConfig = {
 
 // Metodă pentru afișarea notificărilor
 function handleShowNotification(event) {
-  if (!event.data || !event.data.payload) {
-    console.error('[Service Worker] Date lipsă pentru afișarea notificării', event);
-    if (event.ports && event.ports[0]) {
+  if (!event || !event.data) {
+    console.error('[Service Worker] Event sau date lipsă pentru afișarea notificării', event);
+    if (event && event.ports && event.ports[0]) {
       event.ports[0].postMessage({ 
         error: 'Date lipsă pentru afișarea notificării' 
       });
@@ -72,7 +72,20 @@ function handleShowNotification(event) {
     return Promise.reject(new Error('Date lipsă pentru afișarea notificării'));
   }
   
-  const { title, options } = event.data.payload;
+  // Verifică dacă payload există în event.data
+  const payload = event.data.payload;
+  if (!payload) {
+    console.error('[Service Worker] Payload lipsă pentru afișarea notificării', event.data);
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ 
+        error: 'Payload lipsă pentru afișarea notificației' 
+      });
+    }
+    return Promise.reject(new Error('Payload lipsă pentru afișarea notificației'));
+  }
+  
+  const title = payload.title || 'Notificare';
+  const options = payload.options || {};
   
   return self.registration.showNotification(title, {
     badge: '/favicon.ico',
