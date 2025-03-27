@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
 import ServicePublicProfile from "@/pages/ServicePublicProfile";
@@ -15,6 +16,8 @@ import CookieBanner from "@/components/common/CookieBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import NotificationTest from "./pages/NotificationTest";
+import NotificationPermissionDialog from "@/components/NotificationPermissionDialog";
+import { useEffect, useState } from "react";
 
 function Router() {
   return (
@@ -32,55 +35,55 @@ function Router() {
   );
 }
 
-import { useEffect, useState } from "react";
-import NotificationHelper from "./lib/notifications";
-
-function App() {
+function AppNotificationInitializer() {
   const [webSocketInitialized, setWebSocketInitialized] = useState(false);
   
-  // Inițializare handler pentru notificări la încărcarea aplicației
-  // Acest cod înlocuiește secțiunea useEffect din App.tsx pentru inițializarea WebSocket
-
   useEffect(() => {
     console.log("[App] Încărcare aplicație...");
 
-    // Flag pentru a urmări dacă avem permisiunea utilizatorului
-    let hasPermission = false;
+    // Pentru a evita problemele cu hook-urile, importăm direct tote modulele necesare
+    const initializeNotifications = async () => {
+      try {
+        // Importăm dinammic modulele
+        const NotificationHelperModule = await import("./lib/notifications");
+        const NotificationHelper = NotificationHelperModule.default;
+        
+        // Flag pentru a urmări dacă avem permisiunea utilizatorului
+        let hasPermission = false;
 
-    // Verifică și inițializează notificările dacă sunt suportate
-    if (NotificationHelper.isSupported()) {
-      const currentPermission = NotificationHelper.checkPermission();
-      console.log("Stare permisiune notificări:", currentPermission);
-      hasPermission = currentPermission === 'granted';
+        // Verifică și inițializează notificările dacă sunt suportate
+        if (NotificationHelper.isSupported()) {
+          const currentPermission = NotificationHelper.checkPermission();
+          console.log("Stare permisiune notificări:", currentPermission);
+          hasPermission = currentPermission === 'granted';
 
-      // Dacă avem deja permisiunea, sau utilizatorul nu a răspuns încă, solicităm explicit
-      if (currentPermission === 'default') {
-        NotificationHelper.requestPermission().then(granted => {
-          console.log("Permisiune notificări după solicitare:", granted ? "acordată" : "refuzată");
-          hasPermission = granted;
-        });
-      }
+          // Dacă avem deja permisiunea, sau utilizatorul nu a răspuns încă, solicităm explicit
+          if (currentPermission === 'default') {
+            const granted = await NotificationHelper.requestPermission();
+            console.log("Permisiune notificări după solicitare:", granted ? "acordată" : "refuzată");
+            hasPermission = granted;
+          }
 
-      // Importăm și inițializăm WebSocketService
-      import("@/lib/websocket").then((module) => {
-        const websocketService = module.default;
+          // Importăm și inițializăm WebSocketService
+          const websocketModule = await import("@/lib/websocket");
+          const websocketService = websocketModule.default;
 
-        // Încercăm să stabilim o conexiune WebSocket
-        let connectionPromise = websocketService.ensureConnection();
+          // Încercăm să stabilim o conexiune WebSocket
+          let connectionPromise = websocketService.ensureConnection();
 
-        // Adăugăm un timeout pentru a nu aștepta la infinit
-        const connectionTimeout = setTimeout(() => {
-          console.log("Timeout în așteptarea conexiunii WebSocket, continuăm oricum");
-        }, 5000);
+          // Adăugăm un timeout pentru a nu aștepta la infinit
+          const connectionTimeout = setTimeout(() => {
+            console.log("Timeout în așteptarea conexiunii WebSocket, continuăm oricum");
+          }, 5000);
 
-        // Așteptăm conexiunea sau timeout-ul
-        connectionPromise
-          .then(() => {
+          try {
+            // Așteptăm conexiunea
+            await connectionPromise;
             console.log("WebSocket conectat pentru notificări");
             clearTimeout(connectionTimeout);
 
             // Adăugăm un handler pentru mesaje WebSocket
-            const removeHandler = websocketService.addMessageHandler(async (data: any) => {
+            const removeHandler = websocketService.addMessageHandler(async (data) => {
               console.log("Processing websocket message for notifications:", data);
 
               // Verificăm dacă este un mesaj valid
@@ -174,8 +177,7 @@ function App() {
               window.removeEventListener('test-notification', testNotificationHandler);
               setWebSocketInitialized(false);
             };
-          })
-          .catch(error => {
+          } catch (error) {
             console.error("Eroare la conectarea WebSocket pentru notificări:", error);
             clearTimeout(connectionTimeout);
 
@@ -185,17 +187,27 @@ function App() {
             // Putem folosi un polling pentru a verifica mesajele noi la intervale regulate
             const checkNewMessages = async () => {
               try {
-                const response = await fetch('/api/messages/unread', {
-                  headers: {
-                    'Authorization': `Bearer ${await getAuthToken()}`
-                  }
-                });
+                // Obținem token-ul de autentificare pentru cererea API
+                const firebaseModule = await import('./lib/firebase');
+                const auth = firebaseModule.auth;
+                let token = null;
+                
+                if (auth.currentUser) {
+                  token = await auth.currentUser.getIdToken();
+                }
+                
+                const headers: Record<string, string> = {};
+                if (token) {
+                  headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch('/api/messages/unread', { headers });
 
                 if (response.ok) {
                   const data = await response.json();
                   if (data.newMessages && data.newMessages.length > 0) {
                     // Procesăm mesajele noi
-                    data.newMessages.forEach((message: any) => {
+                    data.newMessages.forEach((message: {content?: string}) => {
                       NotificationHelper.forceMessageNotification(
                         message.content || 'Ați primit un mesaj nou'
                       );
@@ -218,40 +230,35 @@ function App() {
               clearInterval(pollingInterval);
               setWebSocketInitialized(false);
             };
-          });
-      }).catch(error => {
-        console.error("Eroare la importarea WebSocketService:", error);
-      });
-    } else {
-      console.warn("Acest browser nu suportă notificările");
-    }
-
-    // Helper pentru a obține token-ul de autentificare
-    async function getAuthToken() {
-      try {
-        // Presupunem că folosim Firebase Auth
-        if (typeof window !== 'undefined' && window.firebase && window.firebase.auth) {
-          const user = window.firebase.auth().currentUser;
-          if (user) {
-            return await user.getIdToken();
           }
+        } else {
+          console.warn("Acest browser nu suportă notificările");
         }
-        return null;
       } catch (error) {
-        console.error("Eroare la obținerea token-ului de autentificare:", error);
-        return null;
+        console.error("Eroare la inițializarea notificărilor:", error);
       }
-    }
+    };
+
+    // Apelăm funcția de inițializare
+    initializeNotifications();
   }, []);
 
+  return null; // Acest component nu randează nimic
+}
+
+function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Navigation />
-          <Router />
-          <CookieBanner />
-          <Toaster />
+          <NotificationProvider>
+            <AppNotificationInitializer />
+            <Navigation />
+            <Router />
+            <CookieBanner />
+            <NotificationPermissionDialog />
+            <Toaster />
+          </NotificationProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

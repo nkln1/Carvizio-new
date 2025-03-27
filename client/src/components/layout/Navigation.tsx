@@ -5,6 +5,7 @@ import { Mail } from "lucide-react";
 import LoginDropdown from "@/components/auth/LoginDropdown";
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -70,6 +71,7 @@ export default function Navigation() {
               <span className="hidden sm:inline">Contactează-ne</span>
               <span className="sm:hidden">Contact</span>
             </Button>
+            {auth.currentUser && <NotificationBell />}
             <LoginDropdown />
           </div>
         </div>

@@ -142,12 +142,17 @@ export function registerRoutes(app: Express): Server {
       
       if (fs.existsSync(swPath)) {
         console.log('Fișierul sw.js există, îl servim cu tipul application/javascript');
-        res.setHeader('Content-Type', 'application/javascript');
+        // Setăm explicit tipul MIME și alte headere importante pentru Service Worker
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('Service-Worker-Allowed', '/');
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        res.status(200).sendFile(swPath);
+        
+        // Citim fișierul și îl trimitem ca răspuns direct în loc de sendFile
+        const swContent = fs.readFileSync(swPath, 'utf8');
+        res.status(200).send(swContent);
         console.log('Service Worker servit din ' + swPath);
       } else {
         console.error('Fișierul sw.js nu a fost găsit la calea:', swPath);
@@ -159,6 +164,38 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Rută pentru Firebase Messaging Service Worker
+  app.get('/firebase-messaging-sw.js', (req, res) => {
+    console.log('!!!! RUTA FIREBASE-MESSAGING-SW.JS ACCESATĂ !!!!');
+    try {
+      const rootDir = process.cwd();
+      const swPath = path.join(rootDir, 'public', 'firebase-messaging-sw.js');
+      console.log('Calea către Firebase Messaging Service Worker:', swPath);
+      
+      if (fs.existsSync(swPath)) {
+        console.log('Fișierul firebase-messaging-sw.js există, îl servim cu tipul application/javascript');
+        // Setăm explicit tipul MIME și alte headere importante pentru Service Worker
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Service-Worker-Allowed', '/');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
+        // Citim fișierul și îl trimitem ca răspuns direct în loc de sendFile
+        const swContent = fs.readFileSync(swPath, 'utf8');
+        res.status(200).send(swContent);
+        console.log('Firebase Messaging Service Worker servit din ' + swPath);
+      } else {
+        console.error('Fișierul firebase-messaging-sw.js nu a fost găsit la calea:', swPath);
+        res.status(404).send('Firebase Messaging Service Worker nu a fost găsit');
+      }
+    } catch (error) {
+      console.error('Eroare la servirea Firebase Messaging Service Worker:', error);
+      res.status(500).send('Eroare internă la încărcarea Firebase Messaging Service Worker');
+    }
+  });
+  
   app.get('/sw-registration.js', (req, res) => {
     console.log('!!!! RUTA SW-REGISTRATION.JS ACCESATĂ !!!!');
     try {
@@ -168,11 +205,15 @@ export function registerRoutes(app: Express): Server {
       
       if (fs.existsSync(regPath)) {
         console.log('Fișierul sw-registration.js există, îl servim cu tipul application/javascript');
-        res.setHeader('Content-Type', 'application/javascript');
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        res.status(200).sendFile(regPath);
+        
+        // Citim fișierul și îl trimitem ca răspuns direct în loc de sendFile
+        const swContent = fs.readFileSync(regPath, 'utf8');
+        res.status(200).send(swContent);
         console.log('Service Worker Registration servit din ' + regPath);
       } else {
         console.error('Fișierul sw-registration.js nu a fost găsit la calea:', regPath);

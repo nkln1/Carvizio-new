@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth, isFirebaseInitialized, sendVerificationEmail } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import FirebaseMessaging from '@/lib/firebaseMessaging';
 
 interface User {
   id: number;
@@ -13,6 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isLoggedIn: boolean;
   signOut: () => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
 }
@@ -21,6 +23,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  isLoggedIn: false,
   signOut: async () => {},
   resendVerificationEmail: async () => {},
 });
@@ -179,8 +182,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }
 
+  // Calculăm dacă utilizatorul este autentificat
+  const isLoggedIn = !!user;
+
+  // Valoarea contextului
+  const contextValue = {
+    user,
+    loading,
+    isLoggedIn,
+    signOut,
+    resendVerificationEmail,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, resendVerificationEmail }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
