@@ -34,7 +34,14 @@
           window.addEventListener('load', () => {
             // Adăugăm un timestamp pentru a preveni cache-ul și pentru a forța reîncărcarea
             const timestamp = new Date().getTime();
-            navigator.serviceWorker.register(`/sw.js?t=${timestamp}`)
+            
+            // Definim opțiuni explicite pentru înregistrarea Service Worker-ului
+            const options = {
+              scope: '/'
+            };
+            
+            // Încercăm să înregistrăm Service Worker-ul cu type: 'module' pentru a forța MIME corect
+            navigator.serviceWorker.register(`/sw.js?t=${timestamp}`, options)
               .then(registration => {
                 console.log('Service Worker înregistrat cu succes:', registration.scope);
 
@@ -46,15 +53,24 @@
               })
               .catch(error => {
                 console.error('Eroare la înregistrarea Service Worker:', error);
+                console.log('Încercăm cale alternativă...');
+                
                 // Dacă prima încercare eșuează, încercăm cu o altă cale
-                return navigator.serviceWorker.register(`/client/public/sw.js?t=${timestamp}`)
+                return fetch('/sw.js')
+                  .then(response => {
+                    if (!response.ok) {
+                      throw new Error(`Server a răspuns cu ${response.status}: ${response.statusText}`);
+                    }
+                    console.log('SW.js este accesibil, verificăm Content-Type:', response.headers.get('Content-Type'));
+                    return navigator.serviceWorker.register(`/sw.js?t=${timestamp}&nocache=true`, options);
+                  })
                   .then(registration => {
-                    console.log('Service Worker înregistrat cu succes (cale alternativă):', registration.scope);
+                    console.log('Service Worker înregistrat cu succes (încercare secundară):', registration.scope);
                     window.swRegistration = registration;
                     checkPushSupport(registration);
                   })
                   .catch(secondError => {
-                    console.error('Eroare la înregistrarea Service Worker (a doua încercare):', secondError);
+                    console.error('Eroare completă la înregistrarea Service Worker:', secondError);
                   });
               });
           });

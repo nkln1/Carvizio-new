@@ -1,4 +1,3 @@
-
 import { Express } from 'express';
 import path from 'path';
 
@@ -7,7 +6,7 @@ export function setCustomMimeTypes(app: Express) {
   app.use((req, res, next) => {
     const url = req.url || '';
     const extension = path.extname(url).toLowerCase();
-    
+
     // Debugging pentru a vedea ce fișiere sunt cerute
     if (url.includes('sw.js')) {
       console.log(`[MIME Type Debug] Requested: ${url}, extension: ${extension}`);
@@ -46,14 +45,19 @@ export function setCustomMimeTypes(app: Express) {
     else if (extension && mimeTypes[extension]) {
       res.setHeader('Content-Type', mimeTypes[extension]);
     }
-    
+
     // Asigurăm că Service Worker-ul nu este cache-uit
     if (url.endsWith('sw.js')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
     }
-    
+
+    next();
+  });
+    // Asigurăm că sw.js este tratat corect ca JavaScript indiferent de extensie
+  app.get('/sw.js', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/javascript');
     next();
   });
 }

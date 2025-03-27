@@ -1,8 +1,12 @@
-// Service Worker principal pentru aplicație
-// Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
+// @ts-check
+/**
+ * Service Worker principal pentru aplicație
+ * Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
+ * @version 1.0.3
+ */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.2';
+const VERSION = 'v1.0.3';
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;

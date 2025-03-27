@@ -71,6 +71,30 @@ export default function NotificationTest() {
         });
       } else {
         toast({
+
+  // Funcție de testare pentru a verifica dacă Service Worker este încărcat corect
+  const testServiceWorkerMimeType = async () => {
+    try {
+      const response = await fetch('/sw.js');
+      const contentType = response.headers.get('Content-Type');
+      
+      toast({
+        title: 'Rezultat verificare Service Worker',
+        description: `Content-Type pentru sw.js: ${contentType || 'nedefinit'}`,
+        variant: contentType?.includes('javascript') ? 'default' : 'destructive'
+      });
+      
+      return contentType?.includes('javascript') || false;
+    } catch (error) {
+      toast({
+        title: 'Eroare la verificarea Service Worker',
+        description: `Eroare: ${error instanceof Error ? error.message : 'Necunoscută'}`,
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
           title: "Permisiune refuzată",
           description: "Nu vei putea primi notificări în browser până nu permiți acest lucru.",
           variant: "destructive"
