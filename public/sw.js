@@ -2,14 +2,25 @@
 /**
  * Service Worker principal pentru aplicație
  * Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
- * @version 1.0.3
+ * @version 1.0.4
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.3';
+const VERSION = 'v1.0.4';
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
+
+// Resurse importante de cache-uit
+const IMPORTANT_RESOURCES = [
+  '/',
+  '/index.html',
+  '/favicon.ico',
+  '/sounds/notification.mp3',
+  '/sounds/message.mp3',
+  '/sounds/request.mp3',
+  '/sounds/offer.mp3'
+];
 
 // La instalare, punem în cache resursele esențiale
 self.addEventListener('install', (event) => {
@@ -17,11 +28,7 @@ self.addEventListener('install', (event) => {
   
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        '/',
-        '/index.html',
-        '/favicon.ico'
-      ]);
+      return cache.addAll(IMPORTANT_RESOURCES);
     })
   );
   
@@ -208,17 +215,41 @@ function checkForNewMessages(userId, userRole, token) {
           
           // Dacă nu există clienți activi sau sunt minimizați, afișăm notificarea
           if (!hasActiveClients) {
-            return self.registration.showNotification('Mesaje noi', {
-              body: `Aveți ${unreadCount} mesaje necitite`,
-              icon: '/favicon.ico',
-              badge: '/favicon.ico',
-              tag: 'unread-messages',
-              requireInteraction: true,
-              data: {
-                url: userRole === 'service' ? '/service-dashboard?tab=mesaje' : '/client-dashboard?tab=mesaje',
-                timestamp: new Date().getTime()
-              }
-            });
+            // Verificăm dacă este disponibil sound în browser-ul utilizatorului
+            // Unele browsere mobile nu permit redarea sunetelor din Service Worker direct
+            try {
+              // Atunci când browserul suportă atributul sound, îl folosim
+              // Notă: Chrome nu suportă încă această proprietate, dar Firefox și Safari mobile o suportă
+              return self.registration.showNotification('Mesaje noi', {
+                body: `Aveți ${unreadCount} mesaje necitite`,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                tag: 'unread-messages',
+                requireInteraction: true,
+                vibrate: [200, 100, 200], // Vibrație pentru dispozitive mobile
+                sound: '/sounds/message.mp3', // Sunet pentru browsere care suportă acest atribut
+                data: {
+                  url: userRole === 'service' ? '/service-dashboard?tab=mesaje' : '/client-dashboard?tab=mesaje',
+                  timestamp: new Date().getTime(),
+                  shouldPlaySound: true, // Flag pentru scriptul principal să redea sunet
+                  soundUrl: '/sounds/message.mp3'
+                }
+              });
+            } catch (error) {
+              console.error('[Service Worker] Eroare la afișarea notificării cu sunet:', error);
+              // Fallback fără sunet
+              return self.registration.showNotification('Mesaje noi', {
+                body: `Aveți ${unreadCount} mesaje necitite`,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                tag: 'unread-messages',
+                requireInteraction: true,
+                data: {
+                  url: userRole === 'service' ? '/service-dashboard?tab=mesaje' : '/client-dashboard?tab=mesaje',
+                  timestamp: new Date().getTime()
+                }
+              });
+            }
           }
         });
     }

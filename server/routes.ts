@@ -111,6 +111,26 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 };
 
 export function registerRoutes(app: Express): Server {
+  
+  // Firebase Auth Middleware cu gestionare îmbunătățită a erorilor
+  const validateFirebaseToken = async (req: Request, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No token provided in request');
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.firebaseUser = decodedToken;
+      console.log('Firebase token verified successfully for user:', decodedToken.uid);
+      next();
+    } catch (error) {
+      console.error('Firebase token verification failed:', error);
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+  };
 
   // Adăugăm rute specifice pentru Service Worker
   app.get('/sw.js', (req, res) => {
@@ -189,6 +209,117 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send('Internal server error serving Service Worker test page');
     }
   });
+  
+  // API pentru verificarea mesajelor necitite - folosit de Service Worker
+  app.get('/api/service/unread-messages-count', validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Obține numărul de mesaje necitite
+      const unreadCount = await storage.getUnreadMessagesCount(serviceProvider.id, "service");
+      console.log(`Număr mesaje necitite pentru service provider ${serviceProvider.id}: ${unreadCount}`);
+      
+      // Răspunde cu numărul de mesaje necitite
+      res.json({ count: unreadCount });
+    } catch (error) {
+      console.error("Error getting unread messages count:", error);
+      res.status(500).json({ error: "Failed to get unread messages count" });
+    }
+  });
+  
+  app.get('/api/client/unread-messages-count', validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Obține numărul de mesaje necitite
+      const unreadCount = await storage.getUnreadMessagesCount(client.id, "client");
+      console.log(`Număr mesaje necitite pentru client ${client.id}: ${unreadCount}`);
+      
+      // Răspunde cu numărul de mesaje necitite
+      res.json({ count: unreadCount });
+    } catch (error) {
+      console.error("Error getting unread messages count:", error);
+      res.status(500).json({ error: "Failed to get unread messages count" });
+    }
+  });
+  
+  // API pentru obținerea preferințelor de notificări
+  app.get('/api/service/notification-preferences', validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Obține preferințele de notificări ale furnizorului de servicii
+      const preferences = await storage.getNotificationPreferences(serviceProvider.id);
+      
+      if (!preferences) {
+        // Dacă nu există preferințe, returnează valori implicite
+        return res.json({
+          id: 0,
+          serviceProviderId: serviceProvider.id,
+          emailNotificationsEnabled: true,
+          newRequestEmailEnabled: true,
+          acceptedOfferEmailEnabled: true,
+          newMessageEmailEnabled: true,
+          newReviewEmailEnabled: true,
+          browserNotificationsEnabled: true,
+          newRequestBrowserEnabled: true,
+          acceptedOfferBrowserEnabled: true,
+          newMessageBrowserEnabled: true,
+          newReviewBrowserEnabled: true,
+          browserPermission: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error getting notification preferences:", error);
+      res.status(500).json({ error: "Failed to get notification preferences" });
+    }
+  });
+  
+  // API pentru actualizarea preferințelor de notificări
+  app.post('/api/service/notification-preferences', validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Verifică dacă există deja preferințe
+      let preferences = await storage.getNotificationPreferences(serviceProvider.id);
+      
+      if (!preferences) {
+        // Dacă nu există, crează preferințe noi
+        const newPreferences = {
+          serviceProviderId: serviceProvider.id,
+          ...req.body
+        };
+        
+        preferences = await storage.createNotificationPreferences(newPreferences);
+        console.log(`Created notification preferences for service provider ${serviceProvider.id}`);
+      } else {
+        // Dacă există, actualizează preferințele
+        preferences = await storage.updateNotificationPreferences(preferences.id, req.body);
+        console.log(`Updated notification preferences for service provider ${serviceProvider.id}`);
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating notification preferences:", error);
+      res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
 
   // Configure session middleware
   app.use(
@@ -207,25 +338,7 @@ export function registerRoutes(app: Express): Server {
 
   app.use(json());
 
-  // Firebase Auth Middleware with improved error handling
-  const validateFirebaseToken = async (req: Request, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No token provided in request');
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const token = authHeader.split('Bearer ')[1];
-    try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      req.firebaseUser = decodedToken;
-      console.log('Firebase token verified successfully for user:', decodedToken.uid);
-      next();
-    } catch (error) {
-      console.error('Firebase token verification failed:', error);
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-  };
+  // Am mutat middleware-ul validateFirebaseToken la începutul funcției
 
   // User registration endpoint
   app.post("/api/auth/register", validateFirebaseToken, async (req, res) => {
@@ -2423,45 +2536,7 @@ export function registerRoutes(app: Express): Server {
     });
   });
 
-  // Notification Preferences API routes
-  app.get("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
-    try {
-      const { userType } = req.session;
-      
-      if (!userType || userType !== "service") {
-        return res.status(403).json({ error: "Unauthorized. Only service providers can access notification preferences." });
-      }
-      
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(404).json({ error: "Service provider not found" });
-      }
-      
-      const preferences = await storage.getNotificationPreferences(provider.id);
-      
-      // If no preferences exist yet, return default values
-      if (!preferences) {
-        return res.status(200).json({
-          emailNotificationsEnabled: true,
-          newRequestEmailEnabled: true,
-          acceptedOfferEmailEnabled: true,
-          newMessageEmailEnabled: true,
-          newReviewEmailEnabled: true,
-          browserNotificationsEnabled: true,
-          newRequestBrowserEnabled: true,
-          acceptedOfferBrowserEnabled: true,
-          newMessageBrowserEnabled: true,
-          newReviewBrowserEnabled: true,
-          browserPermission: false
-        });
-      }
-      
-      return res.status(200).json(preferences);
-    } catch (error) {
-      console.error("Error getting notification preferences:", error);
-      return res.status(500).json({ error: "Failed to get notification preferences" });
-    }
-  });
+  // Am eliminat ruta duplicată, folosind cea definită la linia 253
 
   app.post("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
     try {

@@ -1,8 +1,10 @@
-// Service Worker Registration Script
+// Service Worker Registration Script v1.1.0
 // Acest script trebuie inclus în pagina HTML pentru a înregistra Service Worker-ul
+// Versiunea actualizată include suport pentru sunete în notificări și gestionare mai bună a erorilor
 
 /**
  * Înregistrează Service Worker-ul pentru aplicație
+ * Versiunea actuală: 1.1.0
  */
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
@@ -136,16 +138,68 @@ function sendMessageToSW(message) {
 }
 
 /**
- * Afișează o notificare folosind Service Worker-ul
+ * Afișează o notificare folosind Service Worker-ul, cu opțiunea pentru sunet
  * @param {string} title - Titlul notificării
  * @param {Object} options - Opțiunile notificării
+ * @param {boolean} [options.playSound=false] - Dacă să se redea un sunet la afișarea notificării
+ * @param {string} [options.soundUrl='/notification-sound.mp3'] - URL-ul sunetului notificării
  * @returns {Promise} - Promisiune care se rezolvă când notificarea a fost afișată
  */
 function showNotificationViaSW(title, options = {}) {
+  // Dacă este disponibilă funcția globală, o folosim
   if (window.showNotificationViaSW) {
+    // Dacă se dorește redarea unui sunet, pregătim audio
+    if (options.playSound) {
+      const soundUrl = options.soundUrl || '/notification-sound.mp3';
+      
+      // Ștergem opțiunile specifice de sunet din options înainte de a trimite la SW
+      // pentru a evita erori de serializare în unele browsere
+      const { playSound, soundUrl: removedSoundUrl, ...cleanOptions } = options;
+      
+      // Promisiune pentru redarea sunetului
+      const soundPromise = new Promise((resolve) => {
+        try {
+          const audio = new Audio(soundUrl);
+          audio.volume = 0.5; // Volum moderat
+          
+          // Încercăm să redăm sunetul pe evenimentul de notificare
+          audio.onended = () => resolve(true);
+          audio.onerror = (e) => {
+            console.warn('Eroare la redarea sunetului notificării:', e);
+            resolve(false);
+          };
+          
+          // Folosim metoda play() care returnează o promisiune
+          const playPromise = audio.play();
+          
+          // Gestionăm promisiune (pentru browsere moderne)
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => console.log('Sunet notificare redat cu succes'))
+              .catch(error => {
+                // Auto-play blocat sau altă eroare
+                console.warn('Eroare la redarea sunetului (autoplay blocat?):', error);
+                resolve(false);
+              });
+          }
+        } catch (error) {
+          console.error('Excepție la inițializarea sunetului notificării:', error);
+          resolve(false);
+        }
+      });
+      
+      // Returnăm promisiunea pentru notificare, dar declanșăm și sunetul
+      return Promise.all([
+        window.showNotificationViaSW(title, cleanOptions), 
+        soundPromise
+      ]).then(([notificationResult]) => notificationResult);
+    }
+    
+    // Dacă nu este nevoie de sunet, doar afișăm notificarea
     return window.showNotificationViaSW(title, options);
   }
   
+  // Implementare fallback dacă funcția globală nu este disponibilă
   return new Promise((resolve, reject) => {
     if (!('Notification' in window)) {
       reject(new Error('Acest browser nu suportă notificări'));
@@ -158,6 +212,23 @@ function showNotificationViaSW(title, options = {}) {
     }
     
     try {
+      // Pregătim sunetul dacă este necesar
+      let audio;
+      if (options.playSound) {
+        try {
+          const soundUrl = options.soundUrl || '/notification-sound.mp3';
+          audio = new Audio(soundUrl);
+          audio.volume = 0.5;
+          audio.play().catch(e => console.warn('Eroare la redarea sunetului:', e));
+        } catch (audioError) {
+          console.warn('Nu s-a putut inițializa sunetul notificării:', audioError);
+        }
+        
+        // Eliminăm proprietățile legate de sunet înainte de a crea notificarea
+        const { playSound, soundUrl, ...cleanOptions } = options;
+        options = cleanOptions;
+      }
+      
       const notification = new Notification(title, options);
       resolve(notification);
     } catch (error) {

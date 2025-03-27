@@ -1,519 +1,473 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Service Worker și Notificări</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #0066cc;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: #f9f9f9;
-        }
-        .card h2 {
-            margin-top: 0;
-            color: #333;
-        }
-        button {
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
-            margin-bottom: 10px;
-        }
-        button:hover {
-            background-color: #0055aa;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-        .success {
-            background-color: #dff0d8;
-            color: #3c763d;
-            border: 1px solid #d6e9c6;
-        }
-        .error {
-            background-color: #f2dede;
-            color: #a94442;
-            border: 1px solid #ebccd1;
-        }
-        .warning {
-            background-color: #fcf8e3;
-            color: #8a6d3b;
-            border: 1px solid #faebcc;
-        }
-        .info {
-            background-color: #d9edf7;
-            color: #31708f;
-            border: 1px solid #bce8f1;
-        }
-        .btn-group {
-            margin-bottom: 15px;
-        }
-        .log-container {
-            background-color: #f5f5f5;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            height: 200px;
-            overflow-y: auto;
-            margin-top: 20px;
-        }
-        .log-entry {
-            margin: 5px 0;
-            font-family: monospace;
-        }
-        pre {
-            background-color: #f5f5f5;
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Service Worker și Notificări</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      color: #00aff5;
+      border-bottom: 2px solid #00aff5;
+      padding-bottom: 10px;
+    }
+    
+    h2 {
+      color: #444;
+      margin-top: 30px;
+    }
+    
+    section {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    button {
+      background-color: #00aff5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0095d9;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow: auto;
+      max-height: 200px;
+    }
+    
+    .status {
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .info {
+      background-color: #e2f0fd;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    #logs {
+      height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    
+    .log-item {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 3px;
+    }
+    
+    .log-info {
+      background-color: #f0f0f0;
+    }
+    
+    .log-error {
+      background-color: #ffeded;
+    }
+    
+    .log-success {
+      background-color: #efffef;
+    }
+  </style>
 </head>
 <body>
-    <h1>Test Service Worker și Notificări</h1>
+  <h1>Testare Service Worker și Notificări</h1>
+  
+  <section>
+    <h2>Status Service Worker</h2>
+    <div id="swStatus" class="status info">Verificare stare Service Worker...</div>
+    <button id="registerSW">Forțează înregistrarea Service Worker</button>
+    <button id="unregisterSW">Dezactivează Service Worker</button>
+  </section>
+  
+  <section>
+    <h2>Permisiuni Notificări</h2>
+    <div id="notificationStatus" class="status info">Verificare permisiuni notificări...</div>
+    <button id="requestPermission">Solicită permisiune notificări</button>
+  </section>
+  
+  <section>
+    <h2>Testare Notificări</h2>
+    <button id="simpleNotification">Notificare simplă</button>
+    <button id="soundNotification">Notificare cu sunet</button>
+    <button id="delayedNotification">Notificare întârziată (3s)</button>
+    <button id="testBackgroundNotification">Simulează notificare background</button>
+  </section>
+  
+  <section>
+    <h2>Testare Verificare Mesaje Background</h2>
+    <button id="startBackgroundCheck">Pornește verificare background</button>
+    <button id="stopBackgroundCheck">Oprește verificare background</button>
+  </section>
+  
+  <section>
+    <h2>Testare sunete</h2>
+    <button id="playNotificationSound">Redă sunet notificare</button>
+    <button id="playMessageSound">Redă sunet mesaj</button>
+    <button id="playRequestSound">Redă sunet cerere</button>
+    <button id="playOfferSound">Redă sunet ofertă</button>
+  </section>
+  
+  <section>
+    <h2>Logs</h2>
+    <pre id="logs"></pre>
+    <button id="clearLogs">Șterge loguri</button>
+  </section>
+  
+  <script src="/sw-registration.js"></script>
+  <script>
+    // Funcție pentru a actualiza logs
+    function log(message, type = 'info') {
+      const logs = document.getElementById('logs');
+      const logItem = document.createElement('div');
+      logItem.className = `log-item log-${type}`;
+      logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logs.appendChild(logItem);
+      logs.scrollTop = logs.scrollHeight;
+    }
     
-    <div class="card">
-        <h2>Status Service Worker</h2>
-        <div id="swStatus" class="status info">Verificare status Service Worker...</div>
-        <div class="btn-group">
-            <button id="checkSW">Verifică Service Worker</button>
-            <button id="registerSW">Înregistrează Service Worker</button>
-            <button id="unregisterSW">Dezactivează Service Worker</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Permisiuni Notificări</h2>
-        <div id="notificationPermission" class="status info">Verificare permisiuni...</div>
-        <div class="btn-group">
-            <button id="checkPermission">Verifică Permisiune</button>
-            <button id="requestPermission">Solicită Permisiune</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Test Notificări</h2>
-        <div class="btn-group">
-            <button id="testNotification">Testează Notificare Standard</button>
-            <button id="testSWNotification">Testează Notificare via Service Worker</button>
-            <button id="testBackgroundCheck">Pornește Verificare în Fundal</button>
-            <button id="stopBackgroundCheck">Oprește Verificare în Fundal</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Note de Utilizare</h2>
-        <ul>
-            <li>Această pagină este destinată testării Service Worker-ului și funcționalității de notificări.</li>
-            <li>Service Worker-ul permite verificarea mesajelor și afișarea notificărilor chiar și când tab-ul este inactiv.</li>
-            <li>Permisiunile de notificare sunt necesare pentru a afișa notificări în browser.</li>
-            <li>Verificarea în fundal va verifica periodic pentru mesaje noi (la fiecare 30 secunde).</li>
-        </ul>
-    </div>
-
-    <div class="card">
-        <h2>Log</h2>
-        <div id="logContainer" class="log-container"></div>
-        <button id="clearLog">Curăță Log</button>
-    </div>
-
-    <script>
-        // Funcție pentru adăugare în log
-        function log(message, type = 'info') {
-            const logContainer = document.getElementById('logContainer');
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry log-${type}`;
-            const timestamp = new Date().toLocaleTimeString();
-            logEntry.textContent = `[${timestamp}] ${message}`;
-            logContainer.appendChild(logEntry);
-            logContainer.scrollTop = logContainer.scrollHeight;
-            console.log(`[${type.toUpperCase()}] ${message}`);
+    // Verificarea stării Service Worker
+    function checkServiceWorkerStatus() {
+      const swStatus = document.getElementById('swStatus');
+      
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration()
+          .then(registration => {
+            if (registration) {
+              swStatus.className = 'status success';
+              swStatus.textContent = `Service Worker activ: ${registration.scope}`;
+              log(`Service Worker activ: ${registration.scope}`, 'success');
+            } else {
+              swStatus.className = 'status error';
+              swStatus.textContent = 'Service Worker nu este înregistrat';
+              log('Service Worker nu este înregistrat', 'error');
+            }
+          })
+          .catch(error => {
+            swStatus.className = 'status error';
+            swStatus.textContent = `Eroare la verificarea Service Worker: ${error.message}`;
+            log(`Eroare la verificarea Service Worker: ${error.message}`, 'error');
+          });
+      } else {
+        swStatus.className = 'status error';
+        swStatus.textContent = 'Acest browser nu suportă Service Workers';
+        log('Acest browser nu suportă Service Workers', 'error');
+      }
+    }
+    
+    // Verificarea permisiunilor de notificări
+    function checkNotificationPermission() {
+      const notificationStatus = document.getElementById('notificationStatus');
+      
+      if ('Notification' in window) {
+        const permission = Notification.permission;
+        
+        if (permission === 'granted') {
+          notificationStatus.className = 'status success';
+          notificationStatus.textContent = 'Permisiune pentru notificări acordată';
+          log('Permisiune pentru notificări acordată', 'success');
+        } else if (permission === 'denied') {
+          notificationStatus.className = 'status error';
+          notificationStatus.textContent = 'Permisiune pentru notificări respinsă';
+          log('Permisiune pentru notificări respinsă', 'error');
+        } else {
+          notificationStatus.className = 'status info';
+          notificationStatus.textContent = 'Permisiune pentru notificări necerută';
+          log('Permisiune pentru notificații necerută', 'info');
         }
-
-        // Funcție pentru actualizarea statusului Service Worker
-        async function updateServiceWorkerStatus() {
-            const swStatusEl = document.getElementById('swStatus');
-            
-            if (!('serviceWorker' in navigator)) {
-                swStatusEl.textContent = 'Service Worker nu este suportat de acest browser';
-                swStatusEl.className = 'status error';
-                return;
-            }
-
-            try {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                
-                if (registrations.length === 0) {
-                    swStatusEl.textContent = 'Service Worker nu este înregistrat';
-                    swStatusEl.className = 'status warning';
-                    return;
-                }
-
-                const registration = registrations[0];
-                const active = registration.active ? 'activ' : 'inactiv';
-                const waiting = registration.waiting ? ', în așteptare pentru actualizare' : '';
-                const installing = registration.installing ? ', instalare în curs' : '';
-                
-                swStatusEl.textContent = `Service Worker înregistrat și ${active}${waiting}${installing}. Scope: ${registration.scope}`;
-                swStatusEl.className = 'status success';
-                
-                window.swRegistration = registration;
-                
-                log(`Service Worker status: ${active}${waiting}${installing}`);
-            } catch (error) {
-                swStatusEl.textContent = `Eroare la verificarea Service Worker: ${error.message}`;
-                swStatusEl.className = 'status error';
-                log(`Eroare la verificarea Service Worker: ${error.message}`, 'error');
-            }
-        }
-
-        // Funcție pentru actualizarea statusului permisiunii de notificări
-        function updateNotificationPermissionStatus() {
-            const permissionEl = document.getElementById('notificationPermission');
-            
-            if (!('Notification' in window)) {
-                permissionEl.textContent = 'Notificările nu sunt suportate de acest browser';
-                permissionEl.className = 'status error';
-                return;
-            }
-            
-            const permission = Notification.permission;
-            
-            switch (permission) {
-                case 'granted':
-                    permissionEl.textContent = 'Permisiune acordată pentru notificări';
-                    permissionEl.className = 'status success';
-                    break;
-                case 'denied':
-                    permissionEl.textContent = 'Permisiune respinsă pentru notificări';
-                    permissionEl.className = 'status error';
-                    break;
-                case 'default':
-                    permissionEl.textContent = 'Permisiune nesolicitată pentru notificări';
-                    permissionEl.className = 'status warning';
-                    break;
-                default:
-                    permissionEl.textContent = `Status permisiune necunoscut: ${permission}`;
-                    permissionEl.className = 'status warning';
-            }
-            
-            log(`Status permisiune notificări: ${permission}`);
-        }
-
-        // Funcție pentru înregistrarea Service Worker
-        async function registerServiceWorker() {
-            try {
-                if (!('serviceWorker' in navigator)) {
-                    throw new Error('Service Worker nu este suportat de acest browser');
-                }
-                
-                log('Înregistrare Service Worker...');
-                
-                const registration = await navigator.serviceWorker.register('/sw.js');
-                
-                log(`Service Worker înregistrat cu succes cu scope: ${registration.scope}`);
-                window.swRegistration = registration;
-                
-                updateServiceWorkerStatus();
-                return registration;
-            } catch (error) {
-                log(`Eroare la înregistrarea Service Worker: ${error.message}`, 'error');
-                throw error;
-            }
-        }
-
-        // Funcție pentru dezactivarea Service Worker
-        async function unregisterServiceWorker() {
-            try {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                
-                if (registrations.length === 0) {
-                    log('Nu există Service Worker înregistrat pentru dezactivare');
-                    return;
-                }
-                
-                let success = false;
-                
-                for (const registration of registrations) {
-                    success = await registration.unregister();
-                    log(`Dezactivare Service Worker pentru scope ${registration.scope}: ${success ? 'succes' : 'eșec'}`);
-                }
-                
-                if (success) {
-                    log('Service Worker dezactivat cu succes');
-                } else {
-                    log('Dezactivare Service Worker eșuată', 'error');
-                }
-                
-                updateServiceWorkerStatus();
-            } catch (error) {
-                log(`Eroare la dezactivarea Service Worker: ${error.message}`, 'error');
-            }
-        }
-
-        // Funcție pentru solicitarea permisiunii pentru notificări
-        async function requestNotificationPermission() {
-            try {
-                if (!('Notification' in window)) {
-                    throw new Error('Notificările nu sunt suportate de acest browser');
-                }
-                
-                log('Solicitare permisiune pentru notificări...');
-                
-                const permission = await Notification.requestPermission();
-                
-                log(`Permisiune pentru notificări: ${permission}`);
-                
-                updateNotificationPermissionStatus();
-                return permission === 'granted';
-            } catch (error) {
-                log(`Eroare la solicitarea permisiunii pentru notificări: ${error.message}`, 'error');
-                return false;
-            }
-        }
-
-        // Funcție pentru testarea notificării standard
-        function testStandardNotification() {
-            try {
-                if (!('Notification' in window)) {
-                    throw new Error('Notificările nu sunt suportate de acest browser');
-                }
-                
-                if (Notification.permission !== 'granted') {
-                    log('Permisiune pentru notificări neacordată. Solicită permisiunea mai întâi.', 'warning');
-                    return;
-                }
-                
-                log('Afișare notificare standard...');
-                
-                const notification = new Notification('Test Notificare Standard', {
-                    body: 'Aceasta este o notificare de test standard.',
-                    icon: '/favicon.ico',
-                    tag: 'test-notification'
+      } else {
+        notificationStatus.className = 'status error';
+        notificationStatus.textContent = 'Acest browser nu suportă notificări';
+        log('Acest browser nu suportă notificări', 'error');
+      }
+    }
+    
+    // Forțează înregistrarea Service Worker
+    document.getElementById('registerSW').addEventListener('click', () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .then(registration => {
+            log(`Service Worker înregistrat cu succes: ${registration.scope}`, 'success');
+            checkServiceWorkerStatus();
+          })
+          .catch(error => {
+            log(`Eroare la înregistrarea Service Worker: ${error.message}`, 'error');
+          });
+      } else {
+        log('Acest browser nu suportă Service Workers', 'error');
+      }
+    });
+    
+    // Dezactivează Service Worker
+    document.getElementById('unregisterSW').addEventListener('click', () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration()
+          .then(registration => {
+            if (registration) {
+              registration.unregister()
+                .then(success => {
+                  if (success) {
+                    log('Service Worker dezactivat cu succes', 'success');
+                  } else {
+                    log('Eroare la dezactivarea Service Worker', 'error');
+                  }
+                  checkServiceWorkerStatus();
                 });
-                
-                notification.onclick = () => {
-                    log('Notificare accesată');
-                    window.focus();
-                    notification.close();
-                };
-                
-                notification.onclose = () => {
-                    log('Notificare închisă');
-                };
-                
-                notification.onerror = (error) => {
-                    log(`Eroare la afișarea notificării: ${error}`, 'error');
-                };
-                
-                log('Notificare standard afișată cu succes');
-            } catch (error) {
-                log(`Eroare la afișarea notificării standard: ${error.message}`, 'error');
+            } else {
+              log('Nu există un Service Worker activ pentru a-l dezactiva', 'info');
             }
+          });
+      } else {
+        log('Acest browser nu suportă Service Workers', 'error');
+      }
+    });
+    
+    // Solicită permisiune pentru notificări
+    document.getElementById('requestPermission').addEventListener('click', () => {
+      if ('Notification' in window) {
+        Notification.requestPermission()
+          .then(permission => {
+            log(`Răspuns solicitare permisiune: ${permission}`, permission === 'granted' ? 'success' : 'error');
+            checkNotificationPermission();
+          });
+      } else {
+        log('Acest browser nu suportă notificări', 'error');
+      }
+    });
+    
+    // Afișează notificare simplă
+    document.getElementById('simpleNotification').addEventListener('click', () => {
+      if (Notification.permission === 'granted') {
+        try {
+          showNotificationViaSW('Testare Notificare', {
+            body: 'Aceasta este o notificare de test simplă.',
+            tag: 'test-notification'
+          })
+          .then(() => {
+            log('Notificare afișată cu succes', 'success');
+          })
+          .catch(error => {
+            log(`Eroare la afișarea notificării: ${error.message}`, 'error');
+          });
+        } catch (error) {
+          log(`Excepție la afișarea notificării: ${error.message}`, 'error');
         }
-
-        // Funcție pentru testarea notificării via Service Worker
-        function testServiceWorkerNotification() {
-            try {
-                if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-                    throw new Error('Service Worker nu este activ');
-                }
-                
-                if (Notification.permission !== 'granted') {
-                    log('Permisiune pentru notificări neacordată. Solicită permisiunea mai întâi.', 'warning');
-                    return;
-                }
-                
-                log('Trimitere mesaj către Service Worker pentru afișare notificare...');
-                
-                // Folosim funcția din window dacă există (definită în client/index.html)
-                if (typeof window.showNotificationViaSW === 'function') {
-                    window.showNotificationViaSW('Test Notificare via Service Worker', {
-                        body: 'Aceasta este o notificare de test trimisă prin Service Worker.',
-                        icon: '/favicon.ico',
-                        tag: 'test-sw-notification',
-                        requireInteraction: true,
-                        data: {
-                            url: '/sw-test.html'
-                        }
-                    }).then(() => {
-                        log('Notificare via Service Worker afișată cu succes');
-                    }).catch(error => {
-                        log(`Eroare la afișarea notificării via Service Worker: ${error.message}`, 'error');
-                    });
-                } else {
-                    // Alternativ, putem trimite mesajul direct
-                    const messageChannel = new MessageChannel();
-                    
-                    messageChannel.port1.onmessage = (event) => {
-                        if (event.data.error) {
-                            log(`Eroare de la Service Worker: ${event.data.error}`, 'error');
-                        } else {
-                            log('Răspuns de la Service Worker pentru notificare:', event.data.success ? 'succes' : 'eșec');
-                        }
-                    };
-                    
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'TEST_NOTIFICATION',
-                        payload: {
-                            title: 'Test Notificare via Service Worker',
-                            body: 'Aceasta este o notificare de test trimisă direct către Service Worker.'
-                        }
-                    }, [messageChannel.port2]);
-                    
-                    log('Mesaj pentru testarea notificării trimis către Service Worker');
-                }
-            } catch (error) {
-                log(`Eroare la testarea notificării via Service Worker: ${error.message}`, 'error');
-            }
+      } else {
+        log('Permisiunea pentru notificări nu este acordată', 'error');
+      }
+    });
+    
+    // Afișează notificare cu sunet
+    document.getElementById('soundNotification').addEventListener('click', () => {
+      if (Notification.permission === 'granted') {
+        try {
+          showNotificationViaSW('Notificare cu Sunet', {
+            body: 'Această notificare ar trebui să aibă un sunet.',
+            tag: 'sound-notification',
+            playSound: true,
+            soundUrl: '/sounds/notification.mp3'
+          })
+          .then(() => {
+            log('Notificare cu sunet afișată cu succes', 'success');
+          })
+          .catch(error => {
+            log(`Eroare la afișarea notificării cu sunet: ${error.message}`, 'error');
+          });
+        } catch (error) {
+          log(`Excepție la afișarea notificării cu sunet: ${error.message}`, 'error');
         }
-
-        // Funcție pentru pornirea verificării în fundal
-        function startBackgroundCheck() {
-            try {
-                if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-                    throw new Error('Service Worker nu este activ');
-                }
-                
-                if (Notification.permission !== 'granted') {
-                    log('Permisiune pentru notificări neacordată. Solicită permisiunea mai întâi.', 'warning');
-                    return;
-                }
-                
-                log('Pornire verificare mesaje în fundal...');
-                
-                // Folosim funcția din window dacă există
-                if (typeof window.startBackgroundMessageCheck === 'function') {
-                    window.startBackgroundMessageCheck({
-                        userId: 1, // Doar pentru test, în aplicația reală ar trebui ID-ul utilizatorului
-                        userRole: 'service',
-                        token: 'test-token',
-                        interval: 30000 // 30 secunde
-                    }).then(() => {
-                        log('Verificare mesaje în fundal pornită cu succes');
-                    }).catch(error => {
-                        log(`Eroare la pornirea verificării în fundal: ${error.message}`, 'error');
-                    });
-                } else {
-                    // Alternativ, putem trimite mesajul direct
-                    const messageChannel = new MessageChannel();
-                    
-                    messageChannel.port1.onmessage = (event) => {
-                        if (event.data.error) {
-                            log(`Eroare de la Service Worker: ${event.data.error}`, 'error');
-                        } else {
-                            log('Răspuns de la Service Worker pentru pornirea verificării:', event.data.message || 'Succes');
-                        }
-                    };
-                    
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'START_BACKGROUND_MESSAGE_CHECK',
-                        payload: {
-                            userId: 1,
-                            userRole: 'service',
-                            token: 'test-token',
-                            interval: 30000
-                        }
-                    }, [messageChannel.port2]);
-                    
-                    log('Mesaj pentru pornirea verificării în fundal trimis către Service Worker');
-                }
-            } catch (error) {
-                log(`Eroare la pornirea verificării în fundal: ${error.message}`, 'error');
-            }
-        }
-
-        // Funcție pentru oprirea verificării în fundal
-        function stopBackgroundCheck() {
-            try {
-                if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-                    throw new Error('Service Worker nu este activ');
-                }
-                
-                log('Oprire verificare mesaje în fundal...');
-                
-                // Folosim funcția din window dacă există
-                if (typeof window.stopBackgroundMessageCheck === 'function') {
-                    window.stopBackgroundMessageCheck().then(() => {
-                        log('Verificare mesaje în fundal oprită cu succes');
-                    }).catch(error => {
-                        log(`Eroare la oprirea verificării în fundal: ${error.message}`, 'error');
-                    });
-                } else {
-                    // Alternativ, putem trimite mesajul direct
-                    const messageChannel = new MessageChannel();
-                    
-                    messageChannel.port1.onmessage = (event) => {
-                        if (event.data.error) {
-                            log(`Eroare de la Service Worker: ${event.data.error}`, 'error');
-                        } else {
-                            log('Răspuns de la Service Worker pentru oprirea verificării:', event.data.message || 'Succes');
-                        }
-                    };
-                    
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'STOP_BACKGROUND_MESSAGE_CHECK'
-                    }, [messageChannel.port2]);
-                    
-                    log('Mesaj pentru oprirea verificării în fundal trimis către Service Worker');
-                }
-            } catch (error) {
-                log(`Eroare la oprirea verificării în fundal: ${error.message}`, 'error');
-            }
-        }
-
-        // Inițializare
-        document.addEventListener('DOMContentLoaded', () => {
-            // Verifică statusul inițial
-            updateServiceWorkerStatus();
-            updateNotificationPermissionStatus();
-            
-            // Adaugă event listeners pentru butoane
-            document.getElementById('checkSW').addEventListener('click', updateServiceWorkerStatus);
-            document.getElementById('registerSW').addEventListener('click', registerServiceWorker);
-            document.getElementById('unregisterSW').addEventListener('click', unregisterServiceWorker);
-            
-            document.getElementById('checkPermission').addEventListener('click', updateNotificationPermissionStatus);
-            document.getElementById('requestPermission').addEventListener('click', requestNotificationPermission);
-            
-            document.getElementById('testNotification').addEventListener('click', testStandardNotification);
-            document.getElementById('testSWNotification').addEventListener('click', testServiceWorkerNotification);
-            document.getElementById('testBackgroundCheck').addEventListener('click', startBackgroundCheck);
-            document.getElementById('stopBackgroundCheck').addEventListener('click', stopBackgroundCheck);
-            
-            document.getElementById('clearLog').addEventListener('click', () => {
-                document.getElementById('logContainer').innerHTML = '';
-                log('Log curățat');
+      } else {
+        log('Permisiunea pentru notificări nu este acordată', 'error');
+      }
+    });
+    
+    // Afișează notificare întârziată
+    document.getElementById('delayedNotification').addEventListener('click', () => {
+      if (Notification.permission === 'granted') {
+        log('Notificare va fi afișată în 3 secunde...', 'info');
+        setTimeout(() => {
+          try {
+            showNotificationViaSW('Notificare Întârziată', {
+              body: 'Aceasta este o notificare întârziată.',
+              tag: 'delayed-notification'
+            })
+            .then(() => {
+              log('Notificare întârziată afișată cu succes', 'success');
+            })
+            .catch(error => {
+              log(`Eroare la afișarea notificării întârziate: ${error.message}`, 'error');
             });
-            
-            // Log inițial
-            log('Pagină de test încărcată');
+          } catch (error) {
+            log(`Excepție la afișarea notificării întârziate: ${error.message}`, 'error');
+          }
+        }, 3000);
+      } else {
+        log('Permisiunea pentru notificări nu este acordată', 'error');
+      }
+    });
+    
+    // Simulează notificare background
+    document.getElementById('testBackgroundNotification').addEventListener('click', () => {
+      if (Notification.permission === 'granted') {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          const messageChannel = new MessageChannel();
+          
+          messageChannel.port1.onmessage = function(event) {
+            if (event.data && event.data.type === 'TEST_NOTIFICATION_RESULT') {
+              if (event.data.success) {
+                log('Test notificare background reușit', 'success');
+              } else {
+                log(`Test notificare background eșuat: ${event.data.error}`, 'error');
+              }
+            }
+          };
+          
+          navigator.serviceWorker.controller.postMessage({
+            type: 'TEST_NOTIFICATION',
+            payload: {
+              title: 'Notificare Test Background',
+              body: 'Testare notificare ca și cum ar veni din background.',
+              tag: 'background-test'
+            }
+          }, [messageChannel.port2]);
+          
+          log('Mesaj trimis către Service Worker pentru test notificare background', 'info');
+        } else {
+          log('Service Worker nu este activ, nu se poate testa notificarea background', 'error');
+        }
+      } else {
+        log('Permisiunea pentru notificări nu este acordată', 'error');
+      }
+    });
+    
+    // Pornește verificare background
+    document.getElementById('startBackgroundCheck').addEventListener('click', () => {
+      try {
+        const dummyToken = 'test-token-' + Math.random().toString(36).substr(2, 9);
+        startBackgroundMessageCheck({
+          userId: 1,
+          userRole: 'service',
+          token: dummyToken,
+          interval: 10000 // 10 secunde pentru testare
+        })
+        .then(() => {
+          log('Verificare background pornită cu succes', 'success');
+        })
+        .catch(error => {
+          log(`Eroare la pornirea verificării background: ${error.message}`, 'error');
         });
-    </script>
+      } catch (error) {
+        log(`Excepție la pornirea verificării background: ${error.message}`, 'error');
+      }
+    });
+    
+    // Oprește verificare background
+    document.getElementById('stopBackgroundCheck').addEventListener('click', () => {
+      try {
+        stopBackgroundMessageCheck()
+        .then(() => {
+          log('Verificare background oprită cu succes', 'success');
+        })
+        .catch(error => {
+          log(`Eroare la oprirea verificării background: ${error.message}`, 'error');
+        });
+      } catch (error) {
+        log(`Excepție la oprirea verificării background: ${error.message}`, 'error');
+      }
+    });
+    
+    // Test sunete
+    function playSound(url) {
+      try {
+        const audio = new Audio(url);
+        audio.volume = 0.5;
+        
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              log(`Sunet redat cu succes: ${url}`, 'success');
+            })
+            .catch(error => {
+              log(`Eroare la redarea sunetului (posibil auto-play blocat): ${error.message}`, 'error');
+            });
+        }
+      } catch (error) {
+        log(`Excepție la redarea sunetului: ${error.message}`, 'error');
+      }
+    }
+    
+    document.getElementById('playNotificationSound').addEventListener('click', () => {
+      playSound('/sounds/notification.mp3');
+    });
+    
+    document.getElementById('playMessageSound').addEventListener('click', () => {
+      playSound('/sounds/message.mp3');
+    });
+    
+    document.getElementById('playRequestSound').addEventListener('click', () => {
+      playSound('/sounds/request.mp3');
+    });
+    
+    document.getElementById('playOfferSound').addEventListener('click', () => {
+      playSound('/sounds/offer.mp3');
+    });
+    
+    // Șterge loguri
+    document.getElementById('clearLogs').addEventListener('click', () => {
+      document.getElementById('logs').innerHTML = '';
+      log('Loguri șterse', 'info');
+    });
+    
+    // Inițializare
+    window.addEventListener('load', () => {
+      log('Pagină încărcată', 'info');
+      checkServiceWorkerStatus();
+      checkNotificationPermission();
+    });
+  </script>
 </body>
 </html>
