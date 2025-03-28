@@ -6,7 +6,7 @@
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.6';
+const VERSION = 'v1.0.7';
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
