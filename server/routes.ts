@@ -3130,6 +3130,88 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // API pentru verificarea cererilor noi pentru furnizorul de servicii
+  app.get('/api/service/new-requests', validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Obține cererile din zona furnizorului de servicii
+      const requestsInArea = await storage.getRequestsByLocation(serviceProvider.county, serviceProvider.city);
+      
+      // Obține cererile deja vizualizate de furnizorul de servicii
+      const viewedRequests = await storage.getViewedRequestsByServiceProvider(serviceProvider.id);
+      
+      // Filtrăm doar cererile nevizualizate
+      const newRequests = requestsInArea.filter(request => {
+        return !viewedRequests.some(viewed => viewed.requestId === request.id);
+      });
+      
+      res.json({ 
+        count: newRequests.length,
+        newRequests
+      });
+    } catch (error) {
+      console.error("Error checking new requests:", error);
+      res.status(500).json({ error: "Failed to check new requests" });
+    }
+  });
+
+  // API pentru verificarea ofertelor acceptate pentru furnizorul de servicii
+  app.get('/api/service/accepted-offers', validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Obține ofertele trimise de furnizorul de servicii
+      const sentOffers = await storage.getSentOffersByServiceProvider(serviceProvider.id);
+      
+      // Filtrăm ofertele acceptate
+      const acceptedOffers = sentOffers.filter(offer => offer.status === 'Accepted');
+      
+      // Obținem ofertele acceptate care au fost deja vizualizate
+      const viewedAcceptedOffers = await storage.getViewedAcceptedOffersByServiceProvider(serviceProvider.id);
+      
+      // Filtrăm ofertele acceptate nevizualizate
+      const newAcceptedOffers = acceptedOffers.filter(offer => {
+        return !viewedAcceptedOffers.some(viewed => viewed.offerId === offer.id);
+      });
+      
+      res.json({ 
+        count: newAcceptedOffers.length,
+        newAcceptedOffers
+      });
+    } catch (error) {
+      console.error("Error checking accepted offers:", error);
+      res.status(500).json({ error: "Failed to check accepted offers" });
+    }
+  });
+
+  // API pentru verificarea recenziilor noi pentru furnizorul de servicii
+  app.get('/api/service/new-reviews', validateFirebaseToken, async (req, res) => {
+    try {
+      const serviceProvider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+      if (!serviceProvider) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Verificăm recenziile noi - implementăm doar răspunsul de bază
+      // În viitor, aici se va adăuga logica pentru a verifica recenziile necitite
+      
+      res.json({ 
+        count: 0,
+        newReviews: []
+      });
+    } catch (error) {
+      console.error("Error checking new reviews:", error);
+      res.status(500).json({ error: "Failed to check new reviews" });
+    }
+  });
+
   // Adăugăm rutele pentru notificări FCM
   app.post('/api/notifications/register-token', validateFirebaseToken, async (req, res) => {
     // Delegăm cererea către handlerul din routes/notifications.ts
