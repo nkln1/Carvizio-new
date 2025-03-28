@@ -64,7 +64,10 @@ let backgroundCheckConfig = {
   checkInterval: 30000, // 30 secunde între verificări
   userId: null,
   userRole: null,
-  token: null
+  token: null,
+  lastNotifiedCount: 0, // Adăugăm un contor pentru ultimul număr de mesaje necitite notificate
+  lastNotificationTime: 0, // Timestamp pentru ultima notificare trimisă
+  notifiedMessageIds: [] // Lista IDs mesaje pentru care s-au trimis deja notificări
 };
 
 // Metodă pentru afișarea notificărilor
@@ -132,12 +135,20 @@ function startPeriodicMessageCheck(options = {}) {
     stopPeriodicMessageCheck(); // Oprim verificarea existentă înainte de a porni una nouă
   }
   
+  // Păstrăm valorile anterioare dacă există pentru a menține starea
+  let oldNotifiedCount = backgroundCheckConfig.lastNotifiedCount || 0;
+  let oldNotificationTime = backgroundCheckConfig.lastNotificationTime || 0;
+  
   backgroundCheckConfig = {
     isActive: true,
     userId: options.userId,
     userRole: options.userRole,
     token: options.token,
-    checkInterval: options.interval || 30000
+    checkInterval: options.interval || 30000,
+    lastNotifiedCount: oldNotifiedCount, // Păstrăm valoarea anterioară
+    lastNotificationTime: oldNotificationTime, // Păstrăm valoarea anterioară
+    notifiedMessageIds: backgroundCheckConfig.notifiedMessageIds || [], // Păstrăm lista anterioară
+    intervalId: null // Va fi setat mai jos
   };
   
   console.log('[Service Worker] Pornire verificare mesaje în fundal pentru utilizator:', backgroundCheckConfig.userId);
@@ -282,13 +293,29 @@ async function checkForNewMessages(userId, userRole, token) {
   })
   .then(data => {
     const unreadCount = data.count || 0;
+    const currentTimestamp = new Date().getTime();
     
     console.log('[Service Worker] Mesaje necitite:', unreadCount);
     
-    // Afișăm notificări doar dacă există mesaje necitite
-    if (unreadCount > 0) {
+    // Verificăm dacă avem un număr nou de mesaje necitite pentru a afișa notificarea
+    // Afișăm notificarea doar dacă:
+    // 1. Numărul de mesaje necitite a crescut față de ultima verificare
+    // 2. Sau au trecut cel puțin 5 minute de la ultima notificare
+    const isCountIncreased = unreadCount > backgroundCheckConfig.lastNotifiedCount;
+    const hasTimeElapsed = currentTimestamp - backgroundCheckConfig.lastNotificationTime > 5 * 60 * 1000; // 5 minute
+    
+    // Actualizăm contorul de mesaje necitite
+    backgroundCheckConfig.lastNotifiedCount = unreadCount;
+    
+    // Afișăm notificări doar dacă există mesaje necitite și condițiile sunt îndeplinite
+    if (unreadCount > 0 && (isCountIncreased || hasTimeElapsed)) {
+      // Actualizăm timestamp-ul ultimei notificări
+      backgroundCheckConfig.lastNotificationTime = currentTimestamp;
+      
+      console.log('[Service Worker] Condiții pentru afișarea notificării îndeplinite:',
+        { isCountIncreased, hasTimeElapsed, previousCount: backgroundCheckConfig.lastNotifiedCount });
+      
       // Afișăm notificarea indiferent dacă clientul este activ sau nu
-      // Am modificat logica aici pentru a asigura că notificările sunt întotdeauna afișate
       return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
         .then(clients => {
           // Debug pentru a vedea starea clienților
@@ -308,13 +335,13 @@ async function checkForNewMessages(userId, userRole, token) {
               body: `Aveți ${unreadCount} mesaje necitite`,
               icon: '/favicon.ico',
               badge: '/favicon.ico',
-              tag: 'unread-messages',
+              tag: 'unread-messages-' + currentTimestamp, // Tag unic pentru fiecare notificare
               requireInteraction: true,
               vibrate: [200, 100, 200], // Vibrație pentru dispozitive mobile
               sound: '/sounds/message.mp3', // Sunet pentru browsere care suportă acest atribut
               data: {
                 url: userRole === 'service' ? '/service-dashboard?tab=messages' : '/client-dashboard?tab=messages',
-                timestamp: new Date().getTime(),
+                timestamp: currentTimestamp,
                 shouldPlaySound: true, // Flag pentru scriptul principal să redea sunet
                 soundUrl: '/sounds/message.mp3'
               }
