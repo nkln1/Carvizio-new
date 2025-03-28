@@ -132,13 +132,8 @@ export default function NotificationPreferences() {
       updatedPreferences.newReviewEmailEnabled = false;
     }
 
-    // Dacă dezactivăm toate notificările browser, dezactivăm și preferințele individuale
-    if (key === 'browserNotificationsEnabled' && !value) {
-      updatedPreferences.newRequestBrowserEnabled = false;
-      updatedPreferences.acceptedOfferBrowserEnabled = false;
-      updatedPreferences.newMessageBrowserEnabled = false;
-      updatedPreferences.newReviewBrowserEnabled = false;
-    }
+    // Pentru browserNotificationsEnabled folosim acum implementarea directă 
+    // din onCheckedChange, dar menținem acest cod pentru compatibilitate
 
     updateMutation.mutate(updatedPreferences);
   };
@@ -399,88 +394,32 @@ export default function NotificationPreferences() {
               <div className="flex items-center justify-between py-2 border-b border-gray-100">
                 <div>
                   <Label htmlFor="browser-notifications-master" className="font-medium text-gray-900">
-                    Toate notificările browser
+                    Notificări Browser
                   </Label>
                   <p className="text-sm text-gray-500">
-                    Activează sau dezactivează toate notificările în browser
+                    Activează sau dezactivează toate notificările în browser (cereri, oferte, mesaje, recenzii)
                   </p>
                 </div>
                 <Switch 
                   id="browser-notifications-master"
                   checked={preferences.browserNotificationsEnabled}
                   disabled={!hasBrowserPermission}
-                  onCheckedChange={(checked) => handleToggleChange('browserNotificationsEnabled', checked)}
+                  onCheckedChange={(checked) => {
+                    // Actualizăm și preferințele individuale când se schimbă setarea master
+                    const updatedPreferences = {
+                      ...preferences,
+                      browserNotificationsEnabled: checked,
+                      // Actualizăm toate preferințele specifice în același timp
+                      newRequestBrowserEnabled: checked,
+                      acceptedOfferBrowserEnabled: checked,
+                      newMessageBrowserEnabled: checked,
+                      newReviewBrowserEnabled: checked
+                    };
+                    
+                    // Trimitem la server
+                    updateMutation.mutate(updatedPreferences);
+                  }}
                 />
-              </div>
-
-              <div className="space-y-3 pl-1">
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-request-browser" 
-                      className={`${!preferences.browserNotificationsEnabled || !hasBrowserPermission ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Cereri noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-request-browser"
-                    checked={preferences.newRequestBrowserEnabled}
-                    disabled={!preferences.browserNotificationsEnabled || !hasBrowserPermission}
-                    onCheckedChange={(checked) => handleToggleChange('newRequestBrowserEnabled', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="accepted-offer-browser" 
-                      className={`${!preferences.browserNotificationsEnabled || !hasBrowserPermission ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Oferte acceptate de clienți
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="accepted-offer-browser"
-                    checked={preferences.acceptedOfferBrowserEnabled}
-                    disabled={!preferences.browserNotificationsEnabled || !hasBrowserPermission}
-                    onCheckedChange={(checked) => handleToggleChange('acceptedOfferBrowserEnabled', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-message-browser" 
-                      className={`${!preferences.browserNotificationsEnabled || !hasBrowserPermission ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Mesaje noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-message-browser"
-                    checked={preferences.newMessageBrowserEnabled}
-                    disabled={!preferences.browserNotificationsEnabled || !hasBrowserPermission}
-                    onCheckedChange={(checked) => handleToggleChange('newMessageBrowserEnabled', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-review-browser" 
-                      className={`${!preferences.browserNotificationsEnabled || !hasBrowserPermission ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Recenzii noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-review-browser"
-                    checked={preferences.newReviewBrowserEnabled}
-                    disabled={!preferences.browserNotificationsEnabled || !hasBrowserPermission}
-                    onCheckedChange={(checked) => handleToggleChange('newReviewBrowserEnabled', checked)}
-                  />
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -203,30 +203,12 @@ class NotificationHelper {
 
     if (permission === 'granted') {
       console.log('Permisiune acordată, afișăm notificarea de test');
-      this.showNotification('Notificare de test', {
-        body: 'Aceasta este o notificare de test. Dacă vedeți acest mesaj, notificările în browser funcționează corect.',
+      // Afișăm o singură notificare cu mesajul simplu "Test notificare"
+      this.showNotification('Test notificare', {
         icon: '/favicon.ico',
         tag: 'test-notification',
         requireInteraction: true
       });
-
-      // Emitem și un eveniment de testare pentru a verifica și prin Service Worker
-      if (this.isServiceWorkerAvailable() && navigator.serviceWorker.controller) {
-        console.log('Testăm și notificarea prin Service Worker');
-        try {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'SHOW_NOTIFICATION',
-            payload: {
-              title: 'Test Service Worker',
-              body: 'Aceasta este o notificare de test prin Service Worker',
-              tag: 'test-sw-notification',
-              requireInteraction: true
-            }
-          });
-        } catch (error) {
-          console.error('Eroare la trimiterea mesajului de test către Service Worker:', error);
-        }
-      }
     } else {
       console.warn('Nu se poate testa notificarea - permisiunea nu este acordată');
       // Încercăm să solicităm permisiunea dacă nu este denial
