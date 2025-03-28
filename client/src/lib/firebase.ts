@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence, sendEmailVerification } from "firebase/auth";
-// Nu mai folosim Firebase Messaging direct, utilizăm implementarea custom prin Service Worker
-// import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,29 +15,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Definim manual dacă browser-ul suportă servicii de notificări
-export const messagingSupported = Promise.resolve(
-  typeof window !== 'undefined' && 
-  'serviceWorker' in navigator && 
-  'Notification' in window
-);
+// Încărcăm Messaging dacă este suportat (poate fi null în SSR sau dacă browserul nu suportă)
+export const messagingSupported = isSupported();
+export let messaging: any = null;
 
-// Obiect messaging stub pentru a evita erorile
-export const messaging = {
-  getToken: () => {
-    console.warn('Firebase Messaging nu mai este folosit direct. Se folosește Service Worker-ul propriu.');
-    return Promise.reject(new Error('Metoda nu este implementată'));
-  },
-  onMessage: () => {
-    console.warn('Firebase Messaging nu mai este folosit direct. Se folosește Service Worker-ul propriu.');
-    return () => {}; // Cleanup function
-  },
-  onTokenRefresh: (callback: () => void) => {
-    console.warn('Firebase Messaging nu mai este folosit direct. Se folosește Service Worker-ul propriu.');
-    // Nu facem nimic, doar prevenim erorile
-    return () => {}; // Cleanup function
-  }
-};
+// Inițializăm Messaging doar dacă browserul îl suportă
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  messagingSupported.then(isSupported => {
+    if (isSupported) {
+      console.log("Firebase Cloud Messaging este suportat în acest browser");
+      messaging = getMessaging(app);
+    } else {
+      console.warn("Firebase Cloud Messaging nu este suportat în acest browser");
+    }
+  }).catch(err => {
+    console.error("Eroare la verificarea suportului pentru Firebase Cloud Messaging:", err);
+  });
+}
 
 // Set persistence to LOCAL (survives browser restart)
 setPersistence(auth, browserLocalPersistence)
