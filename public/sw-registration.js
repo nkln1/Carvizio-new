@@ -1,29 +1,44 @@
-// Service Worker Registration Script v1.2.0
+// Service Worker Registration Script v1.3.0
 // Acest script trebuie inclus în pagina HTML pentru a înregistra Service Worker-ul
 // Versiunea actualizată include suport pentru sunete în notificări, gestionare mai bună a erorilor și autentificare
 
 /**
  * Înregistrează Service Worker-ul pentru aplicație
- * Versiunea actuală: 1.2.1
+ * Versiunea actuală: 1.3.0
  */
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
-        .then(function(registration) {
-          console.log('Service Worker înregistrat cu succes:', registration.scope);
-          window.swRegistration = registration;
-          
-          // Forțăm activarea imediată a Service Worker-ului dacă există unul în așteptare
-          if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-          
-          // Verificăm dacă browserul suportă notificări push
-          checkPushSupport(registration);
-          
-          // Configurăm ascultătorul pentru mesajele de la Service Worker
-          setupServiceWorkerMessageListener();
+    console.log('[SW-Registration] Începere înregistrare Service Worker...');
+    
+    // Adăugăm un parametru de timestamp pentru a evita cache-ul la încărcarea Service Worker-ului
+    const swUrl = `/sw.js?t=${Date.now()}&v=1.0.8`;
+    
+    navigator.serviceWorker.register(swUrl, { scope: '/' })
+      .then(function(registration) {
+        console.log('[SW-Registration] Service Worker înregistrat cu succes:', registration.scope);
+        window.swRegistration = registration;
+        
+        // Forțăm activarea imediată a Service Worker-ului dacă există unul în așteptare
+        if (registration.waiting) {
+          console.log('[SW-Registration] Service Worker în așteptare găsit, forțăm activarea');
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Verificăm starea Service Worker-ului și afișăm diagnostic
+        if (registration.installing) {
+          console.log('[SW-Registration] Service Worker se instalează...');
+          registration.installing.onstatechange = function() {
+            console.log('[SW-Registration] Stare Service Worker schimbată la:', this.state);
+          };
+        } else if (registration.active) {
+          console.log('[SW-Registration] Service Worker este activ');
+        }
+        
+        // Verificăm dacă browserul suportă notificări push
+        checkPushSupport(registration);
+        
+        // Configurăm ascultătorul pentru mesajele de la Service Worker
+        setupServiceWorkerMessageListener();
           
           // Expunem funcțiile către Window pentru a putea fi folosite de alte componente
           window.showNotificationViaSW = function(title, options = {}) {

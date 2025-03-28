@@ -39,9 +39,18 @@ class NotificationHelper {
    * Verifică dacă Service Worker-ul este disponibil
    */
   static isServiceWorkerAvailable(): boolean {
-    return 'serviceWorker' in navigator && 
-           !!navigator.serviceWorker.controller &&
-           typeof window.showNotificationViaSW === 'function';
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const hasController = !!navigator.serviceWorker?.controller;
+    const hasNotificationFunction = typeof window.showNotificationViaSW === 'function';
+    
+    console.log('[Diagnostic] Service Worker disponibilitate:', { 
+      hasServiceWorker, 
+      hasController, 
+      hasNotificationFunction,
+      serviceWorkerState: navigator.serviceWorker?.controller?.state
+    });
+    
+    return hasServiceWorker && hasController && hasNotificationFunction;
   }
 
   /**

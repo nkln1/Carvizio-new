@@ -303,20 +303,33 @@
         });
       }
 
-      // Înregistrează Service Worker-ul standard
-      registerServiceWorker();
-      
-      // Înregistrăm și Service Worker-ul specific pentru Firebase Messaging
-      if ('serviceWorker' in navigator) {
-        setTimeout(() => {
-          navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-            scope: '/firebase-cloud-messaging-push-scope'
-          }).then(function(registration) {
-            console.log('Firebase Messaging Service Worker înregistrat cu succes:', registration.scope);
-          }).catch(function(error) {
-            console.log('Eroare la înregistrarea Firebase Messaging Service Worker:', error);
+      // Înregistrează Service Worker-ul standard și forțează să folosească versiunea nouă
+      // Golim cache-ul pentru a asigura că se încarcă versiunea proaspătă
+      if ('caches' in window) {
+        caches.keys().then(function(cacheNames) {
+          cacheNames.forEach(function(cacheName) {
+            console.log('Ștergere cache vechi:', cacheName);
+            caches.delete(cacheName);
           });
-        }, 3000); // Adăugăm un delay pentru a evita conflictele
+        });
+      }
+      
+      // Forțăm reîncărcarea și reînregistrarea service worker-ului prin unregister înainte
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            console.log('Unregister service worker:', registration.scope);
+            registration.unregister();
+          }
+          
+          setTimeout(() => {
+            // După ce am curățat, înregistrăm Service Worker-ul din nou
+            registerServiceWorker();
+          }, 1000);
+        });
+      } else {
+        // Dacă nu există service workers anterioari, înregistrăm direct
+        registerServiceWorker();
       }
 
       // Expune funcțiile global pentru a fi folosite din alte părți ale aplicației
