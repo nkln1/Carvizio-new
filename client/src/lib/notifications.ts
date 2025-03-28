@@ -2,11 +2,19 @@
  * Helper pentru gestionarea notificărilor browser
  */
 
+// Interfață pentru opțiunile de verificare în fundal
+export interface BackgroundCheckOptions {
+  userId: number;
+  userRole: string;
+  token?: string;
+  interval?: number;
+}
+
 // Declarăm tipul pentru window pentru a evita erorile TypeScript
 declare global {
   interface Window {
     showNotificationViaSW?: (title: string, options?: NotificationOptions) => Promise<any>;
-    startBackgroundMessageCheck?: (options: any) => Promise<any>;
+    startBackgroundMessageCheck?: (options: BackgroundCheckOptions) => Promise<any>;
     stopBackgroundMessageCheck?: () => Promise<any>;
     swRegistration?: ServiceWorkerRegistration;
     getAuthToken?: () => Promise<string | null>;
@@ -212,22 +220,35 @@ class NotificationHelper {
 
     if (permission === 'granted') {
       console.log('Permisiune acordată, afișăm notificarea de test');
-      // Afișăm o singură notificare cu mesajul simplu "Test notificare"
+      
+      // Adăugăm un identificator unic la notificare pentru a preveni duplicarea
+      const uniqueId = Date.now();
+      const notificationTag = 'test-notification-' + uniqueId;
+      
+      // Asigurăm-ne că afișăm o singură notificare cu tag unic și nu trei notificări separate
       if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
         // Folosim Service Worker pentru notificare pentru a testa funcționalitatea
         window.showNotificationViaSW('Test notificare', {
-          body: 'Test notificare',
+          body: 'Test notificare realizat cu succes',
           icon: '/favicon.ico',
-          tag: 'test-notification-' + Date.now(), // Tag unic pentru evitarea fuziunii notificărilor
-          requireInteraction: true
+          tag: notificationTag, // Folosim același tag pentru toate trei notificările
+          requireInteraction: true,
+          data: {
+            id: uniqueId,
+            test: true
+          }
         });
       } else {
         // Fallback la API-ul standard de notificări dacă Service Worker nu este disponibil
         this.showNotification('Test notificare', {
-          body: 'Test notificare',
+          body: 'Test notificare realizat cu succes',
           icon: '/favicon.ico',
-          tag: 'test-notification-' + Date.now(),
-          requireInteraction: true
+          tag: notificationTag,
+          requireInteraction: true,
+          data: {
+            id: uniqueId,
+            test: true
+          }
         });
       }
     } else {
@@ -532,11 +553,21 @@ class NotificationHelper {
   /**
    * Pornește verificarea mesajelor în fundal folosind Service Worker sau polling
    * Această funcție va permite verificarea mesajelor chiar și când tab-ul este inactiv
-   * @param options Opțiuni pentru verificarea mesajelor în fundal
+   * @param userId ID-ul utilizatorului pentru care verificăm mesajele
+   * @param userRole Rolul utilizatorului ('client' sau 'service')
+   * @param token Tokenul de autentificare (opțional)
    */
-  static startBackgroundMessageCheck(options: BackgroundCheckOptions): Promise<any> {
+  static startBackgroundMessageCheck(userId: number, userRole: string, token?: string): Promise<any> {
     // Marcăm verificarea ca activă indiferent de Service Worker
     this.backgroundCheckActive = true;
+    
+    // Pregătim opțiunile pentru verificare
+    const options = {
+      userId, 
+      userRole, 
+      token,
+      interval: 30000 // 30 secunde între verificări
+    };
 
     // Verificăm dacă Service Worker este disponibil
     if (!this.isServiceWorkerAvailable()) {
@@ -554,13 +585,15 @@ class NotificationHelper {
         return;
       }
 
-      console.log('Pornire verificare mesaje în fundal pentru utilizator:', options.userId, 'rol:', options.userRole);
+      console.log('Pornire verificare mesaje în fundal pentru utilizator:', userId, 'rol:', userRole);
 
       // Obținem token-ul din localStorage, dacă nu este furnizat direct
-      if (!options.token) {
-        options.token = localStorage.getItem('firebase_auth_token') || '';
-        console.log('Folosim tokenul din localStorage pentru verificarea mesajelor în fundal, disponibil:', !!options.token);
+      if (!token) {
+        token = localStorage.getItem('firebase_auth_token') || '';
+        options.token = token;
+        console.log('Folosim tokenul din localStorage pentru verificarea mesajelor în fundal, disponibil:', !!token);
       }
+      
       window.startBackgroundMessageCheck(options)
         .then(() => {
           console.log('Verificare mesaje în fundal pornită cu succes');
@@ -602,15 +635,34 @@ class NotificationHelper {
   private static async startClientSidePolling(options: BackgroundCheckOptions) {
     this.clientSidePollingInterval = setInterval(async () => {
       try {
-        const token = await window.getAuthToken();
+        // Obținem tokenul de autentificare
+        let token = options.token;
+        if (!token && window.getAuthToken) {
+          token = await window.getAuthToken();
+        }
+        
+        // Verificăm dacă avem un token valid
+        if (!token) {
+          console.error('Nu am putut obține un token de autentificare pentru polling');
+          return;
+        }
+        
+        // Facem cererea API pentru verificarea mesajelor noi
         const response = await fetch(`/api/messages?userId=${options.userId}&userRole=${options.userRole}&token=${token}`);
         if (!response.ok) {
           console.error('Eroare la verificarea mesajelor prin polling:', response.status);
           return;
         }
+        
+        // Procesăm mesajele primite
         const newMessages = await response.json();
-        if (newMessages.length > 0) {
-          newMessages.forEach(msg => NotificationHelper.forceMessageNotification(msg.content));
+        if (newMessages && newMessages.length > 0) {
+          // Afișăm notificare pentru fiecare mesaj nou
+          newMessages.forEach((msg: any) => {
+            if (msg && msg.content) {
+              NotificationHelper.forceMessageNotification(msg.content);
+            }
+          });
         }
       } catch (error) {
         console.error('Eroare la verificarea mesajelor prin polling:', error);
