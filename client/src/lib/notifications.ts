@@ -494,26 +494,26 @@ class NotificationHelper {
       case 'NEW_MESSAGE':
         console.log('Verificăm preferința pentru mesaje noi:', preferences.newMessageBrowserEnabled);
         return preferences.newMessageBrowserEnabled !== false; // Implicit activat dacă nu există
-        
+
       case 'NEW_OFFER':
         console.log('Verificăm preferința pentru oferte noi');
         return true; // Nu există o preferință specifică pentru acest tip
-        
+
       case 'NEW_REQUEST':
         console.log('Verificăm preferința pentru cereri noi:', preferences.newRequestBrowserEnabled);
         return preferences.newRequestBrowserEnabled !== false;
-        
+
       case 'OFFER_STATUS_CHANGED':
         if (data.payload?.status === 'Accepted') {
           console.log('Verificăm preferința pentru oferte acceptate:', preferences.acceptedOfferBrowserEnabled);
           return preferences.acceptedOfferBrowserEnabled !== false;
         }
         return false;
-        
+
       case 'NEW_REVIEW':
         console.log('Verificăm preferința pentru recenzii noi:', preferences.newReviewBrowserEnabled);
         return preferences.newReviewBrowserEnabled !== false;
-        
+
       default:
         console.log('Tip de notificare necunoscut:', data.type);
         return false;
@@ -521,51 +521,49 @@ class NotificationHelper {
   }
 
   /**
-   * Pornește verificarea mesajelor în fundal folosind Service Worker
+   * Pornește verificarea mesajelor în fundal folosind Service Worker sau polling
    * Această funcție va permite verificarea mesajelor chiar și când tab-ul este inactiv
-   * @param userId ID-ul utilizatorului curent
-   * @param userRole Rolul utilizatorului ('client' sau 'service')
-   * @param token Token-ul de autentificare
+   * @param options Opțiuni pentru verificarea mesajelor în fundal
    */
-  static startBackgroundMessageCheck(userId: number, userRole: 'client' | 'service', token?: string): void {
-    // Verificăm dacă Service Worker-ul este disponibil
-    if (!this.isServiceWorkerAvailable() || !window.startBackgroundMessageCheck) {
-      console.warn('Service Worker nu este disponibil pentru verificarea mesajelor în fundal');
-      return;
+  static startBackgroundMessageCheck(options: BackgroundCheckOptions): Promise<any> {
+    // Marcăm verificarea ca activă indiferent de Service Worker
+    this.backgroundCheckActive = true;
+
+    // Verificăm dacă Service Worker este disponibil
+    if (!this.isServiceWorkerAvailable()) {
+      console.log('Service Worker nu este disponibil, folosim polling pentru verificarea mesajelor');
+      // Implementăm un fallback cu polling direct din client
+      this.startClientSidePolling(options);
+      return Promise.resolve({ success: true, message: 'Client-side polling started' });
     }
 
-    // Dacă verificarea este deja activă, o oprim mai întâi
-    if (this.backgroundCheckActive) {
-      this.stopBackgroundMessageCheck();
-    }
+    return new Promise<any>((resolve, reject) => {
+      if (typeof window.startBackgroundMessageCheck !== 'function') {
+        console.log('Funcția de verificare de fundal nu este disponibilă, folosim polling din client');
+        this.startClientSidePolling(options);
+        resolve({ success: true, message: 'Client-side polling started' });
+        return;
+      }
 
-    console.log('Pornire verificare mesaje în fundal pentru utilizator:', userId, 'rol:', userRole);
+      console.log('Pornire verificare mesaje în fundal pentru utilizator:', options.userId, 'rol:', options.userRole);
 
-    // Obținem token-ul din localStorage, dacă nu este furnizat direct
-    // Tokenul ar trebui să fie deja salvat în localStorage de către AuthContext
-    if (!token) {
-      token = localStorage.getItem('firebase_auth_token') || '';
-      console.log('Folosim tokenul din localStorage pentru verificarea mesajelor în fundal, disponibil:', !!token);
-    }
-
-    const options = {
-      userId,
-      userRole,
-      // Adăugăm token-ul doar dacă este disponibil (Service Worker-ul va încerca să îl obțină din localStorage dacă nu este furnizat)
-      ...(token ? { token } : {}),
-      interval: this.notificationSettings.backgroundCheckInterval
-    };
-
-    // Pornim verificarea și marcăm ca activă
-    window.startBackgroundMessageCheck(options)
-      .then(() => {
-        this.backgroundCheckActive = true;
-        console.log('Verificare mesaje în fundal pornită cu succes');
-      })
-      .catch(error => {
-        console.error('Eroare la pornirea verificării mesajelor în fundal:', error);
-      });
+      // Obținem token-ul din localStorage, dacă nu este furnizat direct
+      if (!options.token) {
+        options.token = localStorage.getItem('firebase_auth_token') || '';
+        console.log('Folosim tokenul din localStorage pentru verificarea mesajelor în fundal, disponibil:', !!options.token);
+      }
+      window.startBackgroundMessageCheck(options)
+        .then(() => {
+          console.log('Verificare mesaje în fundal pornită cu succes');
+          resolve({ success: true, message: 'Background check started successfully' });
+        })
+        .catch(error => {
+          console.error('Eroare la pornirea verificării mesajelor în fundal:', error);
+          reject(error);
+        });
+    });
   }
+
 
   /**
    * Oprește verificarea mesajelor în fundal
@@ -573,6 +571,8 @@ class NotificationHelper {
   static stopBackgroundMessageCheck(): void {
     if (!this.isServiceWorkerAvailable() || !window.stopBackgroundMessageCheck) {
       console.warn('Service Worker nu este disponibil pentru oprirea verificării mesajelor în fundal');
+      clearInterval(this.clientSidePollingInterval); // Stop client-side polling if active
+      this.backgroundCheckActive = false;
       return;
     }
 
@@ -586,6 +586,27 @@ class NotificationHelper {
           console.error('Eroare la oprirea verificării mesajelor în fundal:', error);
         });
     }
+  }
+
+  private static clientSidePollingInterval: any;
+
+  private static async startClientSidePolling(options: BackgroundCheckOptions) {
+    this.clientSidePollingInterval = setInterval(async () => {
+      try {
+        const token = await window.getAuthToken();
+        const response = await fetch(`/api/messages?userId=${options.userId}&userRole=${options.userRole}&token=${token}`);
+        if (!response.ok) {
+          console.error('Eroare la verificarea mesajelor prin polling:', response.status);
+          return;
+        }
+        const newMessages = await response.json();
+        if (newMessages.length > 0) {
+          newMessages.forEach(msg => NotificationHelper.forceMessageNotification(msg.content));
+        }
+      } catch (error) {
+        console.error('Eroare la verificarea mesajelor prin polling:', error);
+      }
+    }, options.interval || this.notificationSettings.backgroundCheckInterval);
   }
 
   /**
@@ -620,7 +641,7 @@ if (typeof window !== 'undefined') {
       return Promise.resolve();
     };
   }
-  
+
   // Adăugăm funcția pentru obținerea token-ului de autentificare pentru Service Worker
   if (!window.getAuthToken) {
     window.getAuthToken = async () => {
@@ -635,18 +656,18 @@ if (typeof window !== 'undefined') {
       }
     };
   }
-  
+
   // Adăugăm eveniment pentru ascultarea mesajelor de la Service Worker
   if (navigator.serviceWorker) {
     navigator.serviceWorker.addEventListener('message', async (event) => {
       console.log('Mesaj primit de la Service Worker:', event.data);
-      
+
       // Verificăm dacă este o cerere pentru token de autentificare
       if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
         try {
           const token = localStorage.getItem('authToken');
           console.log('Cerere token primită de la Service Worker, răspundem cu token:', token ? 'disponibil' : 'indisponibil');
-          
+
           // Răspundem cu tokenul
           if (event.source && 'postMessage' in event.source) {
             (event.source as ServiceWorker).postMessage({ 

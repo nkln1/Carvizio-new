@@ -4,15 +4,20 @@
 
 /**
  * Înregistrează Service Worker-ul pentru aplicație
- * Versiunea actuală: 1.2.0
+ * Versiunea actuală: 1.2.1
  */
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
         .then(function(registration) {
           console.log('Service Worker înregistrat cu succes:', registration.scope);
           window.swRegistration = registration;
+          
+          // Forțăm activarea imediată a Service Worker-ului dacă există unul în așteptare
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
           
           // Verificăm dacă browserul suportă notificări push
           checkPushSupport(registration);

@@ -1,13 +1,19 @@
 // Firebase Messaging Service Worker
-// Versiunea: 1.0.0
+// Versiunea: 1.0.1
 
 // Versiunea service worker-ului - modificați-o la fiecare actualizare importantă
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 console.log('[Firebase Messaging SW] Script încărcat, versiunea:', VERSION);
 
-// Importam modulele Firebase necesare din CDN
-importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
+// Evităm erorile cu try-catch
+try {
+  // Importam modulele Firebase necesare din CDN
+  importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
+  console.log('[Firebase Messaging SW] Module Firebase încărcate cu succes');
+} catch (error) {
+  console.error('[Firebase Messaging SW] Eroare la încărcarea modulelor Firebase:', error);
+}
 
 // Configurarea Firebase va fi preluată prin mesaje de la aplicație
 let firebaseConfig = null;

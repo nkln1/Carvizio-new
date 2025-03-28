@@ -319,7 +319,7 @@ async function checkForNewMessages(userId, userRole, token) {
   if (!authToken) {
     console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
     // Încercăm să accesăm clienții și să le solicităm tokenul direct
-    return self.clients.matchAll()
+    return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
         if (clients.length > 0) {
           console.log('[Service Worker] Încercăm să solicităm tokenul direct de la client');
@@ -329,14 +329,14 @@ async function checkForNewMessages(userId, userRole, token) {
               type: 'REQUEST_AUTH_TOKEN',
               payload: { forceRefresh: true }
             });
-            // Returnăm un promise eșuat, dar vom reîncerca cu tokenul actualizat data viitoare
-            return Promise.reject(new Error('Token-ul de autentificare lipsește, solicitat de la client'));
+            // Returnăm un promise rezolvat pentru a continua execuția
+            return Promise.resolve();
           } catch (err) {
             console.error('[Service Worker] Eroare la solicitarea tokenului:', err);
-            return Promise.reject(new Error('Nu s-a putut solicita tokenul de autentificare'));
+            return Promise.resolve();
           }
         } else {
-          return Promise.reject(new Error('Token-ul de autentificare lipsește și nu există clienți activi'));
+          return Promise.resolve();
         }
       });
   }
