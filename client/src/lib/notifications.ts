@@ -204,11 +204,23 @@ class NotificationHelper {
     if (permission === 'granted') {
       console.log('Permisiune acordată, afișăm notificarea de test');
       // Afișăm o singură notificare cu mesajul simplu "Test notificare"
-      this.showNotification('Test notificare', {
-        icon: '/favicon.ico',
-        tag: 'test-notification',
-        requireInteraction: true
-      });
+      if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+        // Folosim Service Worker pentru notificare pentru a testa funcționalitatea
+        window.showNotificationViaSW('Test notificare', {
+          body: 'Test notificare',
+          icon: '/favicon.ico',
+          tag: 'test-notification-' + Date.now(), // Tag unic pentru evitarea fuziunii notificărilor
+          requireInteraction: true
+        });
+      } else {
+        // Fallback la API-ul standard de notificări dacă Service Worker nu este disponibil
+        this.showNotification('Test notificare', {
+          body: 'Test notificare',
+          icon: '/favicon.ico',
+          tag: 'test-notification-' + Date.now(),
+          requireInteraction: true
+        });
+      }
     } else {
       console.warn('Nu se poate testa notificarea - permisiunea nu este acordată');
       // Încercăm să solicităm permisiunea dacă nu este denial
@@ -471,21 +483,22 @@ class NotificationHelper {
    * Verifică dacă trebuie să afișăm notificarea în funcție de preferințele utilizatorului
    */
   static shouldShowNotification(data: any, preferences: any): boolean {
-    // Verifică dacă notificările sunt activate global
+    // Verifică doar dacă notificările sunt activate global
+    // Am simplificat logica pentru a utiliza doar comutatorul principal de notificări
     if (!preferences.browserNotificationsEnabled) {
       return false;
     }
 
-    // Verifică tipul specific de notificare
+    // Verificăm dacă tipul este valid și return true pentru toate tipurile valide
     switch (data.type) {
       case 'NEW_MESSAGE':
-        return preferences.newMessageBrowserEnabled;
+        return true;
       case 'NEW_OFFER':
-        return preferences.newRequestBrowserEnabled;
+        return true;
       case 'NEW_REQUEST':
-        return preferences.newRequestBrowserEnabled;
+        return true;
       case 'OFFER_STATUS_CHANGED':
-        return preferences.acceptedOfferBrowserEnabled && data.payload?.status === 'Accepted';
+        return data.payload?.status === 'Accepted';
       default:
         return false;
     }

@@ -298,6 +298,16 @@ async function checkForNewMessages(userId, userRole, token) {
     authToken = await getAuthToken();
   }
   
+  // Obține preferințele de notificări
+  await getNotificationPreferences(authToken);
+  
+  // Verifică dacă notificările browser sunt activate
+  if (backgroundCheckConfig.notificationPreferences && 
+      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
+    return Promise.resolve();
+  }
+  
   // Verificăm dacă avem token
   if (!authToken) {
     console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
@@ -443,10 +453,10 @@ async function checkForNewRequests(userId, userRole, token) {
   await getNotificationPreferences(token);
   
   // Verifică dacă notificările pentru cereri noi sunt activate
+  // Acum verificăm doar setarea master browserNotificationsEnabled
   if (backgroundCheckConfig.notificationPreferences && 
-      (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled ||
-       !backgroundCheckConfig.notificationPreferences.newRequestBrowserEnabled)) {
-    console.log('[Service Worker] Notificările pentru cereri noi sunt dezactivate în preferințe');
+      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
     return Promise.resolve();
   }
   
@@ -536,10 +546,10 @@ async function checkForAcceptedOffers(userId, userRole, token) {
   await getNotificationPreferences(token);
   
   // Verifică dacă notificările pentru oferte acceptate sunt activate
+  // Acum verificăm doar setarea master browserNotificationsEnabled
   if (backgroundCheckConfig.notificationPreferences && 
-      (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled ||
-       !backgroundCheckConfig.notificationPreferences.acceptedOfferBrowserEnabled)) {
-    console.log('[Service Worker] Notificările pentru oferte acceptate sunt dezactivate în preferințe');
+      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
     return Promise.resolve();
   }
   
@@ -629,10 +639,10 @@ async function checkForNewReviews(userId, userRole, token) {
   await getNotificationPreferences(token);
   
   // Verifică dacă notificările pentru recenzii noi sunt activate
+  // Acum verificăm doar setarea master browserNotificationsEnabled
   if (backgroundCheckConfig.notificationPreferences && 
-      (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled ||
-       !backgroundCheckConfig.notificationPreferences.newReviewBrowserEnabled)) {
-    console.log('[Service Worker] Notificările pentru recenzii noi sunt dezactivate în preferințe');
+      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
     return Promise.resolve();
   }
   
