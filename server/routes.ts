@@ -15,6 +15,7 @@ import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
 import * as fs from 'fs';
 import * as path from 'path';
+import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -359,6 +360,85 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error updating notification preferences:", error);
       res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
+  
+  // Endpoint pentru înregistrarea token-ului FCM
+  app.post('/api/notifications/register-token', validateFirebaseToken, async (req, res) => {
+    try {
+      const { token, userId, userRole } = req.body;
+      
+      if (!token || !userId || !userRole) {
+        return res.status(400).json({ 
+          error: "Date incomplete", 
+          message: "Token FCM, ID utilizator și rol sunt obligatorii" 
+        });
+      }
+      
+      // Verificăm tipul de utilizator și preluăm documentul corespunzător
+      let user;
+      if (userRole === 'client') {
+        user = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+        if (!user || user.id !== userId) {
+          return res.status(403).json({ error: "Nu aveți permisiunea de a înregistra acest token" });
+        }
+      } else if (userRole === 'service') {
+        user = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
+        if (!user || user.id !== userId) {
+          return res.status(403).json({ error: "Nu aveți permisiunea de a înregistra acest token" });
+        }
+      } else {
+        return res.status(400).json({ error: "Rol utilizator invalid" });
+      }
+      
+      // Inițializăm Firebase Admin dacă este necesar
+      const admin = require('firebase-admin');
+      const firestore = admin.firestore();
+      
+      // Determinăm colecția în funcție de rolul utilizatorului
+      const collectionName = userRole === 'client' ? 'clients' : 'service_providers';
+      
+      // Referință la documentul Firestore pentru acest utilizator
+      const userDocRef = firestore.collection(collectionName).doc(userId.toString());
+      
+      // Obținem documentul pentru a vedea dacă există deja
+      const doc = await userDocRef.get();
+      
+      if (!doc.exists) {
+        // Dacă documentul nu există, îl creăm cu token-ul curent
+        await userDocRef.set({
+          fcmTokens: [token],
+          lastUpdated: new Date().toISOString()
+        });
+      } else {
+        // Dacă documentul există, actualizăm lista de token-uri
+        // Verificăm mai întâi dacă token-ul există deja
+        const userData = doc.data();
+        const tokens = userData.fcmTokens || [];
+        
+        if (!tokens.includes(token)) {
+          // Adăugăm token-ul doar dacă nu există deja
+          tokens.push(token);
+          
+          // Actualizăm documentul
+          await userDocRef.update({
+            fcmTokens: tokens,
+            lastUpdated: new Date().toISOString()
+          });
+        }
+      }
+      
+      console.log(`Token FCM înregistrat cu succes pentru ${userRole} ID ${userId}`);
+      res.status(200).json({ 
+        success: true,
+        message: "Token FCM înregistrat cu succes"
+      });
+    } catch (error) {
+      console.error("Eroare la înregistrarea token-ului FCM:", error);
+      res.status(500).json({ 
+        error: "Eroare la înregistrarea token-ului",
+        message: error instanceof Error ? error.message : "Eroare necunoscută"
+      });
     }
   });
 
@@ -3019,6 +3099,18 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to check unread messages" });
     }
   });
+
+  // Adăugăm rutele pentru notificări FCM
+  app.post('/api/notifications/send', validateFirebaseToken, async (req, res) => {
+    // Delegăm cererea către handlerul din routes/notifications.ts
+    await sendNotification(req, res);
+  });
+
+  app.post('/api/notifications/unregister-token', validateFirebaseToken, async (req, res) => {
+    // Delegăm cererea către handlerul din routes/notifications.ts
+    await unregisterToken(req, res);
+  });
+
   // Return the server at the end
   return httpServer;
 }
