@@ -324,6 +324,17 @@ async function checkForNewMessages(userId, userRole, token) {
       });
   }
   
+  // Obține preferințele de notificări
+  await getNotificationPreferences(token);
+  
+  // Verifică dacă notificările pentru mesaje noi sunt activate
+  if (backgroundCheckConfig.notificationPreferences && 
+      (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled ||
+       !backgroundCheckConfig.notificationPreferences.newMessageBrowserEnabled)) {
+    console.log('[Service Worker] Notificările pentru mesaje noi sunt dezactivate în preferințe');
+    return Promise.resolve();
+  }
+  
   // URL-ul pentru API-ul de verificare a mesajelor
   const apiUrl = userRole === 'service' 
     ? '/api/service/unread-messages-count' 

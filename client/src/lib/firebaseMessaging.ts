@@ -161,22 +161,22 @@ class FirebaseMessaging {
 
   /**
    * Actualizează/generează token-ul FCM și îl înregistrează pe server
+   * Aceasta este o metodă simulată care nu mai folosește Firebase Messaging direct
    */
   private async updateFCMToken(): Promise<void> {
     try {
-      // Verificăm inițializarea Firebase
-      if (!messaging) {
-        console.error('Firebase Messaging nu este inițializat');
-        return;
-      }
-
-      // Obținem token-ul curent
-      this.fcmToken = await messaging.getToken({ 
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        serviceWorkerRegistration: this.swRegistration 
-      });
+      // În loc să folosim Firebase Messaging, vom genera un ID unic pentru acest browser/dispozitiv
+      // și îl vom folosi ca "token FCM" pentru compatibilitate cu codul existent
       
-      console.log('Token FCM obținut:', this.fcmToken);
+      // Folosim un ID din localStorage sau generăm unul nou
+      let deviceId = localStorage.getItem('device_id');
+      if (!deviceId) {
+        deviceId = 'browser_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('device_id', deviceId);
+      }
+      
+      this.fcmToken = deviceId;
+      console.log('ID dispozitiv (simulare FCM token):', this.fcmToken);
       
       // Salvăm tokenul în cookies pentru a-l putea folosi la reîncărcarea paginii
       if (this.fcmToken) {
@@ -185,14 +185,8 @@ class FirebaseMessaging {
         // Înregistrăm tokenul pe server
         await this.registerTokenWithServer();
       }
-
-      // Configurăm reînnoirea automată a token-ului
-      messaging.onTokenRefresh(async () => {
-        console.log('Token FCM reînnoit');
-        await this.updateFCMToken();
-      });
     } catch (error) {
-      console.error('Eroare la obținerea/actualizarea token-ului FCM:', error);
+      console.error('Eroare la generarea/actualizarea ID-ului dispozitiv:', error);
     }
   }
 
@@ -231,29 +225,12 @@ class FirebaseMessaging {
 
   /**
    * Configurează ascultătorul pentru mesaje în prim-plan
+   * Această metodă este acum goală deoarece nu mai folosim Firebase Messaging
+   * În schimb, utilizăm Service Worker-ul nostru propriu
    */
   private setupForegroundListener(): void {
-    if (!messaging) return;
-
-    // Configurăm handler-ul pentru mesaje în prim-plan
-    messaging.onMessage((payload: any) => {
-      console.log('Mesaj primit în prim-plan:', payload);
-      
-      // Extragem datele din payload
-      const notificationTitle = payload.notification?.title || 'Notificare nouă';
-      const notificationOptions: NotificationOptions = {
-        body: payload.notification?.body || 'Aveți o notificare nouă',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: payload.data?.tag || 'default',
-        data: payload.data,
-        vibrate: [200, 100, 200],
-        requireInteraction: true
-      };
-
-      // Afișăm notificarea manual pentru mesajele în prim-plan
-      this.showNotification(notificationTitle, notificationOptions);
-    });
+    // Nu mai folosim onMessage, ascultăm evenimentele direct de la Service Worker în notificaiton.ts
+    console.log('Configurare ascultător mesaje în prim-plan prin Service Worker custom');
   }
 
   /**

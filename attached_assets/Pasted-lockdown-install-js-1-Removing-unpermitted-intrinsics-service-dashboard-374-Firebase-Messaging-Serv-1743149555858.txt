@@ -1,0 +1,1350 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+service-dashboard:374 Firebase Messaging Service Worker înregistrat cu succes: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/firebase-cloud-messaging-push-scope
+service-dashboard:5 [App] Încărcare aplicație...
+inpage.js:777 Uncaught (in promise) {code: -32603, message: 'document is not defined', data: {…}}code: -32603data: originalError: {}[[Prototype]]: Objectmessage: "document is not defined"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+TFe @ inpage.js:777
+await in TFe
+(anonymous) @ inpage.js:777
+hmr-disable.ts:161 [Mod Dezvoltare] HMR dezactivat - refresh manual necesar
+hmr-disable.ts:163 Toate conexiunile pentru Hot Module Replacement au fost blocate pentru stabilitate.
+chunk-RPCDYKBN.js?v=3fdd48e1:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+websocket.ts:35 Initializing WebSocket service...
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+sw.js?t=1743147193200:791 [Service Worker] Mesaj primit: {eventType: 'ping', eventId: '32450982388116584847', data: {…}}
+sw.js?t=1743147193200:1135 [Service Worker] Tip de mesaj necunoscut: undefined
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+firebase.ts:26 Firebase Cloud Messaging este suportat în acest browser
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:41
+initialize @ websocket.ts:38
+(anonymous) @ websocket.ts:23
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:46 WebSocket connection promise rejected, will use polling fallback: Error: WebSocket connection failed
+    at ws.onerror (websocket.ts:169:33)
+websocket.ts:234 Starting polling fallback for message updates
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 1 in 3000ms
+sw.js?t=1743148793845&v=1.0.6:1148 [Service Worker] Script încărcat cu versiunea: v1.0.6
+service-dashboard:106 Service Worker înregistrat cu succes: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/
+service-dashboard:152 Permisiune pentru notificări acordată anterior
+sw.js?t=1743148793845&v=1.0.6:27 [Service Worker] Instalare în curs...
+firebase.ts:47 Firebase auth state: Logged in
+firebase.ts:49 Email verified: true
+firebase.ts:39 Firebase persistence set to LOCAL
+AuthContext.tsx:84 Firebase persistence set to LOCAL
+AuthContext.tsx:84 Firebase persistence set to LOCAL
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:41 [Service Worker] Activare cu versiunea: v1.0.6
+sw.js?t=1743148793845&v=1.0.6:48 [Service Worker] Ștergere cache vechi: service-dashboard-cache-v1.0.7
+AuthContext.tsx:52 Token de autentificare actualizat și salvat pentru Service Worker
+AuthContext.tsx:52 Token de autentificare actualizat și salvat pentru Service Worker
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 2 in 6000ms
+App.tsx:42 [App] Încărcare aplicație...
+App.tsx:42 [App] Încărcare aplicație...
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+ServiceDashboard.tsx:81 Inițierea verificării mesajelor în fundal pentru utilizatorul 1
+notifications.ts:531 Pornire verificare mesaje în fundal pentru utilizator: 1 rol: service
+service-dashboard:282 [startBackgroundMessageCheck] Pornire verificare mesaje în fundal {userId: 1, userRole: 'service', token: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjMwYjIyMWFiNjU2MTdiY2…iXiTXYOgatOrBFgoF_YydAhwPzjya7NkSIajnVXQEiSTURoww', interval: 30000}
+service-dashboard:331 Service Worker este activ, trimitem comanda direct
+service-dashboard:239 Mesaj trimis către Service Worker: {type: 'START_BACKGROUND_MESSAGE_CHECK', payload: {…}, id: '1743148798711', timestamp: 1743148798711}
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'START_BACKGROUND_MESSAGE_CHECK', payload: {…}, id: '1743148798711', timestamp: 1743148798711}
+notifications.ts:56 Permisiune notificări browser: granted
+App.tsx:57 Stare permisiune notificări: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+App.tsx:57 Stare permisiune notificări: granted
+firebaseMessaging.ts:84 Service Worker Firebase deja înregistrat, îl folosim pe cel existent ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+firebaseMessaging.ts:84 Service Worker Firebase deja înregistrat, îl folosim pe cel existent ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+sw.js?t=1743148793845&v=1.0.6:193 [Service Worker] Pornire verificare notificări în fundal pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}}
+sw.js?t=1743148793845&v=1.0.6:1143 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}}
+sw.js?t=1743148793845&v=1.0.6:1143 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+websocket.ts:336 Using polling fallback after WebSocket connection failure
+App.tsx:82 WebSocket conectat pentru notificări
+websocket.ts:336 Using polling fallback after WebSocket connection failure
+App.tsx:82 WebSocket conectat pentru notificări
+firebaseMessaging.ts:195 Eroare la obținerea/actualizarea token-ului FCM: TypeError: messaging.getToken is not a function
+    at FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:174:39)
+    at FirebaseMessaging.initialize (firebaseMessaging.ts:59:18)
+    at async initializeNotifications (NotificationContext.tsx:46:24)
+updateFCMToken @ firebaseMessaging.ts:195
+initialize @ firebaseMessaging.ts:59
+await in initialize
+initializeNotifications @ NotificationContext.tsx:46
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+firebaseMessaging.ts:66 Eroare la inițializarea Firebase Messaging: TypeError: messaging.onMessage is not a function
+    at FirebaseMessaging.setupForegroundListener (firebaseMessaging.ts:239:15)
+    at FirebaseMessaging.initialize (firebaseMessaging.ts:62:12)
+    at async initializeNotifications (NotificationContext.tsx:46:24)
+initialize @ firebaseMessaging.ts:66
+await in initialize
+initializeNotifications @ NotificationContext.tsx:46
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+firebaseMessaging.ts:195 Eroare la obținerea/actualizarea token-ului FCM: TypeError: messaging.getToken is not a function
+    at FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:174:39)
+    at FirebaseMessaging.initialize (firebaseMessaging.ts:59:18)
+    at async initializeNotifications (NotificationContext.tsx:46:24)
+updateFCMToken @ firebaseMessaging.ts:195
+initialize @ firebaseMessaging.ts:59
+await in initialize
+initializeNotifications @ NotificationContext.tsx:46
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=3fdd48e1:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=3fdd48e1:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=3fdd48e1:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+firebaseMessaging.ts:66 Eroare la inițializarea Firebase Messaging: TypeError: messaging.onMessage is not a function
+    at FirebaseMessaging.setupForegroundListener (firebaseMessaging.ts:239:15)
+    at FirebaseMessaging.initialize (firebaseMessaging.ts:62:12)
+    at async initializeNotifications (NotificationContext.tsx:46:24)
+initialize @ firebaseMessaging.ts:66
+await in initialize
+initializeNotifications @ NotificationContext.tsx:46
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=3fdd48e1:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=3fdd48e1:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=3fdd48e1:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148798711', status: 'received', success: true}
+service-dashboard:227 Am primit răspuns de la Service Worker: {id: '1743148798711', status: 'received', success: true}
+notifications.ts:552 Verificare mesaje în fundal pornită cu succes
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148798711', status: 'completed', success: true, result: {…}}
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+service-dashboard:340 [stopBackgroundMessageCheck] Oprire verificare mesaje în fundal
+service-dashboard:239 Mesaj trimis către Service Worker: {type: 'STOP_BACKGROUND_MESSAGE_CHECK', id: '1743148799311', timestamp: 1743148799312}
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+ServiceDashboard.tsx:81 Inițierea verificării mesajelor în fundal pentru utilizatorul 1
+service-dashboard:340 [stopBackgroundMessageCheck] Oprire verificare mesaje în fundal
+service-dashboard:239 Mesaj trimis către Service Worker: {type: 'STOP_BACKGROUND_MESSAGE_CHECK', id: '1743148799328', timestamp: 1743148799328}
+notifications.ts:531 Pornire verificare mesaje în fundal pentru utilizator: 1 rol: service
+service-dashboard:282 [startBackgroundMessageCheck] Pornire verificare mesaje în fundal {userId: 1, userRole: 'service', token: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjMwYjIyMWFiNjU2MTdiY2…iXiTXYOgatOrBFgoF_YydAhwPzjya7NkSIajnVXQEiSTURoww', interval: 30000}
+service-dashboard:331 Service Worker este activ, trimitem comanda direct
+service-dashboard:239 Mesaj trimis către Service Worker: {type: 'START_BACKGROUND_MESSAGE_CHECK', payload: {…}, id: '1743148799329', timestamp: 1743148799330}
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'STOP_BACKGROUND_MESSAGE_CHECK', id: '1743148799311', timestamp: 1743148799312}
+sw.js?t=1743148793845&v=1.0.6:235 [Service Worker] Oprire verificare mesaje în fundal
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'STOP_BACKGROUND_MESSAGE_CHECK', id: '1743148799328', timestamp: 1743148799328}
+sw.js?t=1743148793845&v=1.0.6:235 [Service Worker] Oprire verificare mesaje în fundal
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'START_BACKGROUND_MESSAGE_CHECK', payload: {…}, id: '1743148799329', timestamp: 1743148799330}
+sw.js?t=1743148793845&v=1.0.6:193 [Service Worker] Pornire verificare notificări în fundal pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+firebaseMessaging.ts:84 Service Worker Firebase deja înregistrat, îl folosim pe cel existent ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148799311', status: 'received', success: true}
+service-dashboard:227 Am primit răspuns de la Service Worker: {id: '1743148799311', status: 'received', success: true}
+service-dashboard:356 [stopBackgroundMessageCheck] Verificare oprită cu succes {id: '1743148799311', status: 'received', success: true}
+notifications.ts:572 Verificare mesaje în fundal oprită cu succes
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148799311', status: 'completed', success: true, result: {…}}
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148799328', status: 'received', success: true}
+service-dashboard:227 Am primit răspuns de la Service Worker: {id: '1743148799328', status: 'received', success: true}
+service-dashboard:356 [stopBackgroundMessageCheck] Verificare oprită cu succes {id: '1743148799328', status: 'received', success: true}
+notifications.ts:572 Verificare mesaje în fundal oprită cu succes
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148799328', status: 'completed', success: true, result: {…}}
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148799329', status: 'received', success: true}
+service-dashboard:227 Am primit răspuns de la Service Worker: {id: '1743148799329', status: 'received', success: true}
+notifications.ts:552 Verificare mesaje în fundal pornită cu succes
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148799329', status: 'completed', success: true, result: {…}}
+firebaseMessaging.ts:195 Eroare la obținerea/actualizarea token-ului FCM: TypeError: messaging.getToken is not a function
+    at FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:174:39)
+    at FirebaseMessaging.initialize (firebaseMessaging.ts:59:18)
+    at async initializeNotifications (NotificationContext.tsx:46:24)
+updateFCMToken @ firebaseMessaging.ts:195
+initialize @ firebaseMessaging.ts:59
+await in initialize
+initializeNotifications @ NotificationContext.tsx:46
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=3fdd48e1:19328
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+firebaseMessaging.ts:66 Eroare la inițializarea Firebase Messaging: TypeError: messaging.onMessage is not a function
+    at FirebaseMessaging.setupForegroundListener (firebaseMessaging.ts:239:15)
+    at FirebaseMessaging.initialize (firebaseMessaging.ts:62:12)
+    at async initializeNotifications (NotificationContext.tsx:46:24)
+initialize @ firebaseMessaging.ts:66
+await in initialize
+initializeNotifications @ NotificationContext.tsx:46
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=3fdd48e1:19328
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}}
+sw.js?t=1743148793845&v=1.0.6:1143 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+App.tsx:164 Trimitem o notificare de test pentru a verifica funcționalitatea
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:117 Afișare notificare: Notificările sunt active {body: 'Vei primi notificări pentru mesaje noi și alte evenimente importante', icon: '/favicon.ico', requireInteraction: true}
+notifications.ts:130 Folosim Service Worker pentru notificare
+service-dashboard:239 Mesaj trimis către Service Worker: {type: 'SHOW_NOTIFICATION', payload: {…}, id: '1743148801807', timestamp: 1743148801807}
+App.tsx:164 Trimitem o notificare de test pentru a verifica funcționalitatea
+notifications.ts:34 Notificări browser suportate: true
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'SHOW_NOTIFICATION', payload: {…}, id: '1743148801807', timestamp: 1743148801807}
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148801807', status: 'received', success: true}
+service-dashboard:227 Am primit răspuns de la Service Worker: {id: '1743148801807', status: 'received', success: true}
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/messages/unread-count 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+countUnreadMessages @ NotificationContext.tsx:110
+initializeNotifications @ NotificationContext.tsx:51
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:117 Afișare notificare: Notificările sunt active {body: 'Vei primi notificări pentru mesaje noi și alte evenimente importante', icon: '/favicon.ico', requireInteraction: true}
+notifications.ts:130 Folosim Service Worker pentru notificare
+service-dashboard:239 Mesaj trimis către Service Worker: {type: 'SHOW_NOTIFICATION', payload: {…}, id: '1743148802820', timestamp: 1743148802820}
+sw.js?t=1743148793845&v=1.0.6:799 [Service Worker] Mesaj primit: {type: 'SHOW_NOTIFICATION', payload: {…}, id: '1743148802820', timestamp: 1743148802820}
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148802820', status: 'received', success: true}
+service-dashboard:227 Am primit răspuns de la Service Worker: {id: '1743148802820', status: 'received', success: true}
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/messages/unread-count 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+countUnreadMessages @ NotificationContext.tsx:110
+initializeNotifications @ NotificationContext.tsx:51
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=3fdd48e1:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=3fdd48e1:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=3fdd48e1:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/messages/unread-count 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+countUnreadMessages @ NotificationContext.tsx:110
+initializeNotifications @ NotificationContext.tsx:51
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:55
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=3fdd48e1:19328
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+sw.js?t=1743148793845&v=1.0.6:746 [Service Worker] Preferințe de notificări obținute: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 4
+sw.js?t=1743148793845&v=1.0.6:373 [Service Worker] Condiții pentru afișarea notificării îndeplinite: {isCountIncreased: true, hasTimeElapsed: true, previousCount: 4}
+sw.js?t=1743148793845&v=1.0.6:381 [Service Worker] Starea clienților activi: [{…}]
+sw.js?t=1743148793845&v=1.0.6:389 [Service Worker] Afișăm notificare pentru mesaje necitite: 4
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 3 in 6000ms
+sw.js?t=1743148793845&v=1.0.6:746 [Service Worker] Preferințe de notificări obținute: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 4
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+sw.js?t=1743148793845&v=1.0.6:497 [Service Worker] Condiții pentru afișarea notificării de cereri noi îndeplinite: {isCountIncreased: true, hasTimeElapsed: true, previousCount: 2}
+sw.js?t=1743148793845&v=1.0.6:746 [Service Worker] Preferințe de notificări obținute: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+sw.js?t=1743148793845&v=1.0.6:590 [Service Worker] Condiții pentru afișarea notificării de oferte acceptate îndeplinite: {isCountIncreased: true, hasTimeElapsed: true, previousCount: 2}
+sw.js?t=1743148793845&v=1.0.6:746 [Service Worker] Preferințe de notificări obținute: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:746 [Service Worker] Preferințe de notificări obținute: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:838 [Service Worker] Notificare afișată cu succes
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148801807', status: 'completed', success: true}
+sw.js?t=1743148793845&v=1.0.6:746 [Service Worker] Preferințe de notificări obținute: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+sw.js?t=1743148793845&v=1.0.6:838 [Service Worker] Notificare afișată cu succes
+notifications.ts:631 Mesaj primit de la Service Worker: {id: '1743148802820', status: 'completed', success: true}
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 4 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 5 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 6 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 4
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 7 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:336 Using polling fallback after WebSocket connection failure
+websocket.ts:336 Using polling fallback after WebSocket connection failure
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 8 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 9 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 10 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 11 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 0
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 12 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 13 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 14 in 6000ms
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 0
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 15 in 6000ms
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 16 in 6000ms
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 17 in 6000ms
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 1
+sw.js?t=1743148793845&v=1.0.6:373 [Service Worker] Condiții pentru afișarea notificării îndeplinite: {isCountIncreased: true, hasTimeElapsed: false, previousCount: 1}
+sw.js?t=1743148793845&v=1.0.6:381 [Service Worker] Starea clienților activi: [{…}]
+sw.js?t=1743148793845&v=1.0.6:389 [Service Worker] Afișăm notificare pentru mesaje necitite: 1
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 18 in 6000ms
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 19 in 6000ms
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:194 Reconnecting attempt 20 in 6000ms
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+placehold.co/600x400/e2e8f0/64748b?text=Your+Logo+Here:1 
+            
+            
+           GET https://placehold.co/600x400/e2e8f0/64748b?text=Your+Logo+Here net::ERR_CONNECTION_TIMED_OUT
+Image
+commitMount @ chunk-RPCDYKBN.js?v=3fdd48e1:8412
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:17102
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19353
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=3fdd48e1:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=3fdd48e1:554
+flush @ @tanstack_react-query.js?v=3fdd48e1:568
+batch @ @tanstack_react-query.js?v=3fdd48e1:586
+dispatch_fn @ @tanstack_react-query.js?v=3fdd48e1:999
+setData @ @tanstack_react-query.js?v=3fdd48e1:697
+onSuccess @ @tanstack_react-query.js?v=3fdd48e1:900
+resolve @ @tanstack_react-query.js?v=3fdd48e1:455
+Promise.then
+run @ @tanstack_react-query.js?v=3fdd48e1:497
+start @ @tanstack_react-query.js?v=3fdd48e1:535
+fetch @ @tanstack_react-query.js?v=3fdd48e1:929
+executeFetch_fn @ @tanstack_react-query.js?v=3fdd48e1:2247
+onSubscribe @ @tanstack_react-query.js?v=3fdd48e1:1934
+subscribe @ @tanstack_react-query.js?v=3fdd48e1:24
+(anonymous) @ @tanstack_react-query.js?v=3fdd48e1:3075
+subscribeToStore @ chunk-RPCDYKBN.js?v=3fdd48e1:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=3fdd48e1:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=3fdd48e1:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=3fdd48e1:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=3fdd48e1:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=3fdd48e1:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=3fdd48e1:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=3fdd48e1:19432
+commitRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=3fdd48e1:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=3fdd48e1:18718
+workLoop @ chunk-RPCDYKBN.js?v=3fdd48e1:197
+flushWork @ chunk-RPCDYKBN.js?v=3fdd48e1:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=3fdd48e1:384
+websocket.ts:72 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+websocket.ts:93 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 2
+sw.js?t=1743148793845&v=1.0.6:373 [Service Worker] Condiții pentru afișarea notificării îndeplinite: {isCountIncreased: true, hasTimeElapsed: false, previousCount: 2}
+sw.js?t=1743148793845&v=1.0.6:381 [Service Worker] Starea clienților activi: [{…}]
+sw.js?t=1743148793845&v=1.0.6:389 [Service Worker] Afișăm notificare pentru mesaje necitite: 2
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+hmr-disable.ts:67 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/ws' failed: 
+window.WebSocket @ hmr-disable.ts:67
+connect @ websocket.ts:95
+(anonymous) @ websocket.ts:200
+websocket.ts:166 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ websocket.ts:166
+websocket.ts:174 WebSocket connection closed with code 1006 and reason: 
+websocket.ts:208 Max reconnection attempts reached, switching to polling fallback
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 2
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 2
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 2
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 3
+sw.js?t=1743148793845&v=1.0.6:497 [Service Worker] Condiții pentru afișarea notificării de cereri noi îndeplinite: {isCountIncreased: true, hasTimeElapsed: false, previousCount: 3}
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:336 Using polling fallback after WebSocket connection failure
+websocket.ts:336 Using polling fallback after WebSocket connection failure
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 2
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+NotificationPreferences.tsx:91 Trimit cerere de actualizare a preferințelor: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 3
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+NotificationPreferences.tsx:99 Răspuns actualizare preferințe: {id: 1, serviceProviderId: 1, emailNotificationsEnabled: true, newRequestEmailEnabled: true, acceptedOfferEmailEnabled: true, …}
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:56 Permisiune notificări browser: granted
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 2
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 3
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+sw.js?t=1743148793845&v=1.0.6:290 [Service Worker] Verificare mesaje noi pentru utilizator: 1
+sw.js?t=1743148793845&v=1.0.6:440 [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:533 [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:626 [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+sw.js?t=1743148793845&v=1.0.6:356 [Service Worker] Mesaje necitite: 3
+sw.js?t=1743148793845&v=1.0.6:373 [Service Worker] Condiții pentru afișarea notificării îndeplinite: {isCountIncreased: true, hasTimeElapsed: false, previousCount: 3}
+sw.js?t=1743148793845&v=1.0.6:381 [Service Worker] Starea clienților activi: [{…}]
+sw.js?t=1743148793845&v=1.0.6:389 [Service Worker] Afișăm notificare pentru mesaje necitite: 3
+sw.js?t=1743148793845&v=1.0.6:666 [Service Worker] Recenzii noi: 0
+sw.js?t=1743148793845&v=1.0.6:480 [Service Worker] Cereri noi: 3
+sw.js?t=1743148793845&v=1.0.6:573 [Service Worker] Oferte acceptate noi: 2
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+notifications.ts:34 Notificări browser suportate: true
+notifications.ts:34 Notificări browser suportate: true
+websocket.ts:253 Polling for new messages...
+websocket.ts:257 No authentication token available for polling
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [Service Worker] Condiții pentru afișarea notificării de oferte acceptate îndeplinite: {isCountIncreased: false, hasTimeElapsed: true, previousCount: 2}
+ [Service Worker] Cereri noi: 3
+ Polling for new messages...
+ No authentication token available for polling
+ Polling for new messages...
+ No authentication token available for polling
+ Polling for new messages...
+ No authentication token available for polling
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ Polling for new messages...
+ No authentication token available for polling
+ Polling for new messages...
+ No authentication token available for polling
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Oferte acceptate noi: 2
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ Polling for new messages...
+ No authentication token available for polling
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Cereri noi: 3
+ Polling for new messages...
+ No authentication token available for polling
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Oferte acceptate noi: 2
+ Polling for new messages...
+ No authentication token available for polling
+ Polling for new messages...
+ No authentication token available for polling
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ Polling for new messages...
+ No authentication token available for polling
+ Polling for new messages...
+ No authentication token available for polling
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Condiții pentru afișarea notificării de cereri noi îndeplinite: {isCountIncreased: false, hasTimeElapsed: true, previousCount: 3}
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [Service Worker] Recenzii noi: 0
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Condiții pentru afișarea notificării îndeplinite: {isCountIncreased: false, hasTimeElapsed: true, previousCount: 3}
+ [Service Worker] Starea clienților activi: [{…}]
+ [Service Worker] Afișăm notificare pentru mesaje necitite: 3
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Recenzii noi: 0
+ [Service Worker] Oferte acceptate noi: 2
+ [Service Worker] Cereri noi: 3
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [Service Worker] Condiții pentru afișarea notificării de oferte acceptate îndeplinite: {isCountIncreased: false, hasTimeElapsed: true, previousCount: 2}
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Verificare mesaje noi pentru utilizator: 1
+ [Service Worker] Verificare cereri noi pentru furnizorul de servicii: 1
+ [Service Worker] Verificare oferte acceptate pentru furnizorul de servicii: 1
+ [Service Worker] Verificare recenzii noi pentru furnizorul de servicii: 1
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Mesaje necitite: 3
+ [Service Worker] Recenzii noi: 0
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [Service Worker] Cereri noi: 3
+ [Service Worker] Oferte acceptate noi: 2
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ Polling for new messages...
+ No authentication token available for polling
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+ [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
