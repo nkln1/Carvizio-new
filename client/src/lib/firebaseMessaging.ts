@@ -170,13 +170,10 @@ class FirebaseMessaging {
         return;
       }
 
-      // Obținem token-ul curent
-      this.fcmToken = await messaging.getToken({ 
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        serviceWorkerRegistration: this.swRegistration 
-      });
+      // În loc să folosim FCM pentru token, generăm un token unic pentru identificare
+      this.fcmToken = this.generateDeviceToken();
       
-      console.log('Token FCM obținut:', this.fcmToken);
+      console.log('Token FCM generat alternativ:', this.fcmToken);
       
       // Salvăm tokenul în cookies pentru a-l putea folosi la reîncărcarea paginii
       if (this.fcmToken) {
@@ -185,15 +182,25 @@ class FirebaseMessaging {
         // Înregistrăm tokenul pe server
         await this.registerTokenWithServer();
       }
-
-      // Configurăm reînnoirea automată a token-ului
-      messaging.onTokenRefresh(async () => {
-        console.log('Token FCM reînnoit');
-        await this.updateFCMToken();
-      });
     } catch (error) {
       console.error('Eroare la obținerea/actualizarea token-ului FCM:', error);
     }
+  }
+  
+  /**
+   * Generează un token unic pentru dispozitiv
+   */
+  private generateDeviceToken(): string {
+    // Generăm un ID unic folosind timestamp, random și informații despre browser
+    const timestamp = new Date().getTime();
+    const random = Math.floor(Math.random() * 1000000000);
+    const browserInfo = navigator.userAgent;
+    
+    // Creăm un hash simplu bazat pe aceste informații
+    const tokenData = `${timestamp}-${random}-${browserInfo}`;
+    
+    // Convertim în base64 pentru un format mai compact
+    return btoa(tokenData).substring(0, 40);
   }
 
   /**
@@ -233,25 +240,29 @@ class FirebaseMessaging {
    * Configurează ascultătorul pentru mesaje în prim-plan
    */
   private setupForegroundListener(): void {
-    if (!messaging) return;
-
-    // Configurăm handler-ul pentru mesaje în prim-plan
-    messaging.onMessage((payload: any) => {
-      console.log('Mesaj primit în prim-plan:', payload);
+    // Versiune simplificată care nu folosește Firebase Messaging
+    console.log('Înregistrând listener alternativ pentru mesaje în prim-plan');
+    
+    // În loc să folosim Firebase Messaging, creem propriul nostru EventListener
+    window.addEventListener('app-notification', (event: any) => {
+      console.log('Eveniment app-notification declanșat:', event.detail);
+      
+      const payload = event.detail;
+      if (!payload) return;
       
       // Extragem datele din payload
-      const notificationTitle = payload.notification?.title || 'Notificare nouă';
+      const notificationTitle = payload.title || 'Notificare nouă';
       const notificationOptions: NotificationOptions = {
-        body: payload.notification?.body || 'Aveți o notificare nouă',
+        body: payload.body || 'Aveți o notificare nouă',
         icon: '/favicon.ico',
         badge: '/favicon.ico',
-        tag: payload.data?.tag || 'default',
-        data: payload.data,
+        tag: payload.tag || 'default',
+        data: payload.data || {},
         vibrate: [200, 100, 200],
         requireInteraction: true
       };
 
-      // Afișăm notificarea manual pentru mesajele în prim-plan
+      // Afișăm notificarea
       this.showNotification(notificationTitle, notificationOptions);
     });
   }
