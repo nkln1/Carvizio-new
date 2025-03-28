@@ -179,8 +179,19 @@
         });
       }
 
-      // Înregistrează Service Worker-ul
+      // Înregistrează Service Worker-ul standard
       registerServiceWorker();
+      
+      // Înregistrăm și Service Worker-ul specific pentru Firebase Messaging
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/firebase-cloud-messaging-push-scope'
+        }).then(function(registration) {
+          console.log('Firebase Messaging Service Worker înregistrat cu succes:', registration.scope);
+        }).catch(function(error) {
+          console.log('Eroare la înregistrarea Firebase Messaging Service Worker:', error);
+        });
+      }
 
       // Expune funcțiile global pentru a fi folosite din alte părți ale aplicației
       window.showNotificationViaSW = showNotificationViaSW;

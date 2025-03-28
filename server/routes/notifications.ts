@@ -121,7 +121,7 @@ export async function sendNotification(req: Request, res: Response) {
     }
 
     // Preparăm mesajul pentru notificare
-    const message: admin.messaging.MulticastMessage | admin.messaging.Message = {
+    const messagePayload = {
       notification: {
         title,
         body,
@@ -156,7 +156,7 @@ export async function sendNotification(req: Request, res: Response) {
     // Trimitem către topic sau către utilizatori specifici
     if (topic) {
       response = await admin.messaging().send({
-        ...message,
+        ...messagePayload,
         topic,
       });
     } else {
@@ -187,10 +187,27 @@ export async function sendNotification(req: Request, res: Response) {
       }
       
       // Trimitem mesaj către toate token-urile găsite
-      response = await admin.messaging().sendMulticast({
-        ...message,
-        tokens: userTokens,
-      });
+      if (userTokens.length > 0) {
+        // Pentru versiunile noi de Firebase Admin SDK folosim send pentru fiecare token
+        // și consolidăm rezultatele
+        const promises = userTokens.map(token => 
+          admin.messaging().send({
+            ...messagePayload,
+            token
+          })
+        );
+        
+        const results = await Promise.all(promises);
+        response = {
+          successCount: results.length,
+          failureCount: 0,
+          responses: results.map((messageId, index) => ({
+            success: true,
+            messageId,
+            originalIndex: index
+          }))
+        };
+      }
     }
 
     res.status(200).json({ 

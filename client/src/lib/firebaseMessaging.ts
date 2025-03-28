@@ -73,12 +73,23 @@ class FirebaseMessaging {
    */
   private async registerServiceWorker(): Promise<void> {
     try {
-      // Înregistrăm service worker-ul
-      this.swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-        scope: '/'
-      });
+      // Înregistrăm service worker-ul - asigurăm-ne că folosim calea corectă
+      // În producție, firebase-messaging-sw.js ar trebui să fie în directorul rădăcină
+      const swUrl = '/firebase-messaging-sw.js';
       
-      console.log('Service Worker Firebase înregistrat cu succes', this.swRegistration);
+      // Verificăm dacă avem deja un service worker înregistrat
+      const existingRegistration = await navigator.serviceWorker.getRegistration(swUrl);
+      
+      if (existingRegistration) {
+        console.log('Service Worker Firebase deja înregistrat, îl folosim pe cel existent', existingRegistration);
+        this.swRegistration = existingRegistration;
+      } else {
+        // Înregistrăm un nou service worker
+        this.swRegistration = await navigator.serviceWorker.register(swUrl, {
+          scope: '/'
+        });
+        console.log('Service Worker Firebase înregistrat cu succes', this.swRegistration);
+      }
       
       // Trimite configurația Firebase către Service Worker
       this.sendConfigToServiceWorker();
@@ -90,7 +101,17 @@ class FirebaseMessaging {
       });
     } catch (error) {
       console.error('Eroare la înregistrarea service worker-ului Firebase:', error);
-      throw error;
+      
+      // Încercăm o soluție alternativă folosind service worker-ul existent
+      try {
+        const existingRegistration = await navigator.serviceWorker.ready;
+        console.log('Folosim service worker-ul existent ca fallback', existingRegistration);
+        this.swRegistration = existingRegistration;
+        this.sendConfigToServiceWorker();
+      } catch (fallbackError) {
+        console.error('Eroare și la soluția de fallback:', fallbackError);
+        throw error; // Aruncăm eroarea originală
+      }
     }
   }
 

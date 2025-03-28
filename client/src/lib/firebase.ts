@@ -83,9 +83,22 @@ export const requestFCMPermissionAndToken = async (): Promise<string | null> => 
     }
 
     // Obținem tokenul FCM, specificând Service Worker-ul nostru
+    // Încercăm să obținem Service Worker-ul specific pentru Firebase Messaging sau folosim oricare activ
+    let swRegistration;
+    try {
+      swRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (!swRegistration) {
+        // Ca fallback, obținem oricare service worker activ
+        swRegistration = await navigator.serviceWorker.ready;
+      }
+    } catch (err) {
+      console.warn("Eroare la obținerea Service Worker-ului:", err);
+      // Continuăm fără a specifica Service Worker-ul
+    }
+    
     const token = await getToken(messaging, {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: await navigator.serviceWorker.getRegistration('/firebase-cloud-messaging-push-scope')
+      serviceWorkerRegistration: swRegistration
     });
 
     if (token) {

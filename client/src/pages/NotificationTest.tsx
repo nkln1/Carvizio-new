@@ -159,7 +159,7 @@ export default function NotificationTest() {
           <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center mb-2">
               <h3 className="font-semibold text-lg">Stare notificări</h3>
-              <Badge variant={isEnabled ? "success" : "destructive"} className="ml-2">
+              <Badge variant={isEnabled ? "default" : "destructive"} className={`ml-2 ${isEnabled ? "bg-green-500 hover:bg-green-600" : ""}`}>
                 {isEnabled ? "Activate" : "Dezactivate"}
               </Badge>
             </div>

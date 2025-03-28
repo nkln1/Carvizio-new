@@ -3101,6 +3101,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Adăugăm rutele pentru notificări FCM
+  app.post('/api/notifications/register-token', validateFirebaseToken, async (req, res) => {
+    // Delegăm cererea către handlerul din routes/notifications.ts
+    await registerToken(req, res);
+  });
+
   app.post('/api/notifications/send', validateFirebaseToken, async (req, res) => {
     // Delegăm cererea către handlerul din routes/notifications.ts
     await sendNotification(req, res);
