@@ -98,6 +98,24 @@
       function sendMessageToSW(message) {
         return new Promise((resolve, reject) => {
           if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+            // Returnăm o eroare mai prietenoasă, folosind fallback acolo unde este posibil
+            console.warn('Service Worker nu este disponibil sau activat');
+            
+            // Pentru notificări, folosim fallback-ul nativ
+            if (message.type === 'SHOW_NOTIFICATION' && Notification.permission === 'granted') {
+              try {
+                console.log('Folosim notificarea nativă ca fallback');
+                const notification = new Notification(
+                  message.payload.title, 
+                  message.payload.options || {}
+                );
+                resolve({ success: true, method: 'native' });
+              } catch (err) {
+                reject(new Error('Nu s-a putut afișa notificarea: ' + err.message));
+              }
+              return;
+            }
+            
             reject(new Error('Service Worker nu este disponibil'));
             return;
           }
@@ -106,25 +124,69 @@
           const messageId = new Date().getTime().toString();
           message.id = messageId;
 
-          // Setăm un timeout pentru a evita blocarea
-          const timeout = setTimeout(() => {
-            reject(new Error('Timeout la trimiterea mesajului către Service Worker'));
-          }, 2000);
+          // Implementăm strategia de retry
+          let retries = 0;
+          const maxRetries = 2;
+          const timeoutDuration = 3000; // 3 secunde
 
-          // Ascultător pentru răspuns
-          const messageListener = event => {
-            if (event.data && event.data.id === messageId) {
+          const attemptSend = () => {
+            // Setăm un timeout pentru a evita blocarea
+            const timeout = setTimeout(() => {
+              if (retries < maxRetries) {
+                console.log(`Încercare ${retries + 1}/${maxRetries + 1} eșuată, reîncercăm...`);
+                retries++;
+                navigator.serviceWorker.removeEventListener('message', messageListener);
+                attemptSend(); // Încercăm din nou
+              } else {
+                console.warn('Toate încercările au eșuat. Încercăm un fallback dacă este disponibil.');
+                navigator.serviceWorker.removeEventListener('message', messageListener);
+                
+                // Pentru notificări, folosim fallback-ul nativ
+                if (message.type === 'SHOW_NOTIFICATION' && Notification.permission === 'granted') {
+                  try {
+                    console.log('Folosim notificarea nativă ca fallback după eșecul Service Worker');
+                    const notification = new Notification(
+                      message.payload.title, 
+                      message.payload.options || {}
+                    );
+                    resolve({ success: true, method: 'native-fallback' });
+                  } catch (err) {
+                    reject(new Error('Timeout și fallback eșuat: ' + err.message));
+                  }
+                } else {
+                  reject(new Error('Timeout la trimiterea mesajului către Service Worker după multiple încercări'));
+                }
+              }
+            }, timeoutDuration);
+
+            // Ascultător pentru răspuns
+            const messageListener = event => {
+              if (event.data && event.data.id === messageId) {
+                clearTimeout(timeout);
+                navigator.serviceWorker.removeEventListener('message', messageListener);
+                console.log('Am primit răspuns de la Service Worker:', event.data);
+                resolve(event.data);
+              }
+            };
+
+            // Adăugăm ascultătorul
+            navigator.serviceWorker.addEventListener('message', messageListener);
+
+            try {
+              // Trimitem mesajul cu un timestamp pentru a-l face unic
+              message.timestamp = new Date().getTime();
+              navigator.serviceWorker.controller.postMessage(message);
+              console.log('Mesaj trimis către Service Worker:', message);
+            } catch (error) {
               clearTimeout(timeout);
               navigator.serviceWorker.removeEventListener('message', messageListener);
-              resolve(event.data);
+              console.error('Eroare la trimiterea mesajului către Service Worker:', error);
+              reject(error);
             }
           };
 
-          // Adăugăm ascultătorul
-          navigator.serviceWorker.addEventListener('message', messageListener);
-
-          // Trimitem mesajul
-          navigator.serviceWorker.controller.postMessage(message);
+          // Prima încercare
+          attemptSend();
         });
       }
 

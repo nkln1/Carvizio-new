@@ -384,28 +384,121 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('message', (event) => {
   console.log('[Service Worker] Mesaj primit:', event.data);
   
+  // Răspundem imediat pentru a preveni timeout-urile
+  if (event.data.id) {
+    // Trimitem un răspuns inițial înainte de procesare
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          id: event.data.id,
+          status: 'received',
+          success: true
+        });
+      });
+    }).catch(err => {
+      console.error('[Service Worker] Eroare la trimiterea răspunsului de confirmare:', err);
+    });
+  }
+  
   // Tratăm diferitele tipuri de mesaje
   switch (event.data.type) {
     case 'SHOW_NOTIFICATION':
-      event.waitUntil(handleShowNotification(event));
+      // Folosim try-catch pentru a preveni terminarea Service Worker-ului
+      try {
+        // Extragem datele
+        const title = event.data.payload?.title || 'Notificare nouă';
+        const options = event.data.payload?.options || {};
+        
+        // Afișăm notificarea
+        self.registration.showNotification(title, {
+          badge: '/favicon.ico',
+          icon: '/favicon.ico',
+          requireInteraction: true,
+          ...options,
+          data: {
+            ...(options.data || {}),
+            timestamp: new Date().getTime()
+          }
+        })
+        .then(() => {
+          console.log('[Service Worker] Notificare afișată cu succes');
+          // Trimitem confirmarea de succes
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id,
+                  status: 'completed',
+                  success: true
+                });
+              });
+            });
+          }
+        })
+        .catch(error => {
+          console.error('[Service Worker] Eroare la afișarea notificării:', error);
+          // Trimitem eroarea înapoi
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id,
+                  status: 'error',
+                  error: error.message
+                });
+              });
+            });
+          }
+        });
+      } catch (error) {
+        console.error('[Service Worker] Excepție la procesarea notificării:', error);
+      }
       break;
       
     case 'START_BACKGROUND_MESSAGE_CHECK':
-      const result = startPeriodicMessageCheck(event.data.payload);
-      if (event.ports && event.ports[0]) {
-        event.ports[0].postMessage(result);
+      try {
+        const result = startPeriodicMessageCheck(event.data.payload);
+        // Trimitem rezultatul înapoi
+        if (event.data.id) {
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                id: event.data.id,
+                status: 'completed',
+                success: true,
+                result
+              });
+            });
+          });
+        }
+      } catch (error) {
+        console.error('[Service Worker] Eroare la pornirea verificării de fundal:', error);
       }
       break;
       
     case 'STOP_BACKGROUND_MESSAGE_CHECK':
-      const stopResult = stopPeriodicMessageCheck();
-      if (event.ports && event.ports[0]) {
-        event.ports[0].postMessage(stopResult);
+      try {
+        const stopResult = stopPeriodicMessageCheck();
+        // Trimitem rezultatul înapoi
+        if (event.data.id) {
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                id: event.data.id,
+                status: 'completed',
+                success: true,
+                result: stopResult
+              });
+            });
+          });
+        }
+      } catch (error) {
+        console.error('[Service Worker] Eroare la oprirea verificării de fundal:', error);
       }
       break;
       
     case 'TEST_NOTIFICATION':
-      event.waitUntil(
+      try {
         self.registration.showNotification(
           event.data.payload?.title || 'Test Service Worker', 
           {
@@ -417,24 +510,36 @@ self.addEventListener('message', (event) => {
           }
         )
         .then(() => {
-          if (event.ports && event.ports[0]) {
-            event.ports[0].postMessage({ 
-              type: 'TEST_NOTIFICATION_RESULT', 
-              success: true 
+          console.log('[Service Worker] Test notificare reușit');
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id, 
+                  type: 'TEST_NOTIFICATION_RESULT', 
+                  status: 'completed',
+                  success: true 
+                });
+              });
             });
           }
         })
         .catch(error => {
           console.error('[Service Worker] Eroare la testarea notificării:', error);
-          if (event.ports && event.ports[0]) {
-            event.ports[0].postMessage({ 
-              type: 'TEST_NOTIFICATION_RESULT', 
-              success: false, 
-              error: error.message 
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id,
+                  type: 'TEST_NOTIFICATION_RESULT', 
+                  status: 'error',
+                  success: false, 
+                  error: error.message 
+                });
+              });
             });
           }
-        })
-      );
+        });
       break;
       
     case 'PAGE_LOADED':
