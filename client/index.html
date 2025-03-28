@@ -41,7 +41,7 @@
             };
             
             // Încercăm să înregistrăm Service Worker-ul cu type: 'module' pentru a forța MIME corect
-            navigator.serviceWorker.register(`/sw.js?t=${timestamp}`, options)
+            navigator.serviceWorker.register(`/sw.js?t=${timestamp}&v=1.0.6`, options)
               .then(registration => {
                 console.log('Service Worker înregistrat cu succes:', registration.scope);
 
@@ -62,7 +62,7 @@
                       throw new Error(`Server a răspuns cu ${response.status}: ${response.statusText}`);
                     }
                     console.log('SW.js este accesibil, verificăm Content-Type:', response.headers.get('Content-Type'));
-                    return navigator.serviceWorker.register(`/sw.js?t=${timestamp}&nocache=true`, options);
+                    return navigator.serviceWorker.register(`/sw.js?t=${timestamp}&nocache=true&v=1.0.6`, options);
                   })
                   .then(registration => {
                     console.log('Service Worker înregistrat cu succes (încercare secundară):', registration.scope);
@@ -219,11 +219,56 @@
 
       // Funcție pentru a porni verificarea periodică a mesajelor în Service Worker
       function startBackgroundMessageCheck(options = {}) {
-        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-          console.warn('Service Worker nu este disponibil pentru verificarea periodică a mesajelor');
-          return Promise.reject(new Error('Service Worker nu este disponibil'));
+        console.log('[startBackgroundMessageCheck] Pornire verificare mesaje în fundal', options);
+        
+        if (!('serviceWorker' in navigator)) {
+          console.warn('Service Worker API nu este suportat în acest browser');
+          return Promise.reject(new Error('Service Worker API nu este suportat'));
         }
-
+        
+        if (!navigator.serviceWorker.controller) {
+          console.warn('Service Worker nu este încă activ, încercăm să forțăm activarea');
+          
+          // Încercăm să verificăm înregistrarea existentă
+          return navigator.serviceWorker.getRegistration('/')
+            .then(registration => {
+              if (!registration) {
+                console.error('Nu există nicio înregistrare de Service Worker');
+                return Promise.reject(new Error('Service Worker nu este înregistrat'));
+              }
+              
+              console.log('Am găsit o înregistrare de Service Worker:', registration.scope);
+              console.log('Stare Service Worker:', registration.active ? 'Activ' : 'Inactiv');
+              
+              // Incearcă să activeze service worker-ul dacă există dar nu e activ
+              if (registration.waiting) {
+                console.log('Service Worker în așteptare, îl activăm forțat');
+                registration.waiting.postMessage({type: 'SKIP_WAITING'});
+              }
+              
+              // Așteptăm puțin și reîncercăm să trimitem mesajul
+              return new Promise((resolve) => {
+                setTimeout(() => {
+                  if (navigator.serviceWorker.controller) {
+                    console.log('Service Worker acum este activ, trimitem mesajul');
+                    resolve(sendMessageToSW({
+                      type: 'START_BACKGROUND_MESSAGE_CHECK',
+                      payload: options
+                    }));
+                  } else {
+                    console.warn('Service Worker tot nu este activ după așteptare');
+                    resolve(Promise.reject(new Error('Service Worker nu a putut fi activat')));
+                  }
+                }, 1000);
+              });
+            })
+            .catch(error => {
+              console.error('Eroare la verificarea înregistrării Service Worker:', error);
+              return Promise.reject(error);
+            });
+        }
+        
+        console.log('Service Worker este activ, trimitem comanda direct');
         return sendMessageToSW({
           type: 'START_BACKGROUND_MESSAGE_CHECK',
           payload: options
@@ -232,12 +277,29 @@
 
       // Funcție pentru a opri verificarea periodică a mesajelor
       function stopBackgroundMessageCheck() {
-        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-          return Promise.resolve(); // Nimic de făcut dacă SW nu e disponibil
+        console.log('[stopBackgroundMessageCheck] Oprire verificare mesaje în fundal');
+        
+        if (!('serviceWorker' in navigator)) {
+          console.warn('Service Worker API nu este suportat în acest browser');
+          return Promise.resolve();
+        }
+        
+        if (!navigator.serviceWorker.controller) {
+          console.warn('Service Worker nu este activ, nu este nevoie să oprim verificarea');
+          return Promise.resolve();
         }
 
         return sendMessageToSW({
           type: 'STOP_BACKGROUND_MESSAGE_CHECK'
+        })
+        .then(response => {
+          console.log('[stopBackgroundMessageCheck] Verificare oprită cu succes', response);
+          return response;
+        })
+        .catch(error => {
+          console.error('[stopBackgroundMessageCheck] Eroare la oprirea verificării', error);
+          // Returnăm resolved promise pentru a evita întreruperea lanțului de promisiuni
+          return Promise.resolve();
         });
       }
 

@@ -6,7 +6,7 @@
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.7';
+const VERSION = 'v1.0.6'; // Actualizat la 28 martie 2025
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
@@ -55,6 +55,14 @@ self.addEventListener('activate', (event) => {
   
   // Facem Service Worker-ul să preia controlul tuturor paginilor imediat
   self.clients.claim();
+});
+
+// Ascultăm pentru mesajul 'SKIP_WAITING' pentru a activa imediat service worker-ul
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[Service Worker] Primire comandă SKIP_WAITING, activare imediată');
+    self.skipWaiting();
+  }
 });
 
 // Configurare pentru verificarea mesajelor în fundal
