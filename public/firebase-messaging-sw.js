@@ -18,17 +18,17 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'FCM_CONFIG') {
     console.log('[Firebase Messaging SW] A primit configurația FCM');
     firebaseConfig = event.data.config;
-    
+
     // Inițializăm Firebase dacă nu a fost deja inițializat
     if (!firebaseInitialized && firebaseConfig) {
       try {
         firebase.initializeApp(firebaseConfig);
         firebaseInitialized = true;
         console.log('[Firebase Messaging SW] Firebase inițializat cu succes');
-        
+
         // Configurăm handler-ul pentru mesaje background după inițializarea Firebase
         setupBackgroundMessageHandler();
-        
+
         // Trimitem un răspuns înapoi la client
         event.ports[0]?.postMessage({ 
           success: true, 
@@ -36,7 +36,7 @@ self.addEventListener('message', (event) => {
         });
       } catch (error) {
         console.error('[Firebase Messaging SW] Eroare la inițializarea Firebase:', error);
-        
+
         // Trimitem eroarea înapoi la client
         event.ports[0]?.postMessage({ 
           success: false, 
@@ -80,7 +80,7 @@ self.addEventListener('message', (event) => {
 function setupBackgroundMessageHandler() {
   const messaging = getMessaging();
   if (!messaging) return;
-  
+
   messaging.onBackgroundMessage((payload) => {
     console.log('[Firebase Messaging SW] Mesaj primit în fundal:', payload);
 
@@ -101,8 +101,15 @@ function setupBackgroundMessageHandler() {
       requireInteraction: true
     };
 
-    // Afișăm notificarea
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+    // Afișăm notificarea și adăugăm un log detaliat
+    console.log('[Firebase Messaging SW] Afișez notificare:', notificationTitle, notificationOptions);
+    return self.registration.showNotification(notificationTitle, notificationOptions).then(() => {
+      console.log('[Firebase Messaging SW] Notificare afișată cu succes');
+      return Promise.resolve();
+    }).catch(error => {
+      console.error('[Firebase Messaging SW] Eroare la afișarea notificării:', error);
+      return Promise.reject(error);
+    });
   });
 }
 
@@ -124,11 +131,11 @@ self.addEventListener('notificationclick', (event) => {
         const matchingClient = clientList.find(client => {
           const clientUrl = new URL(client.url);
           const targetUrl = new URL(urlToOpen, self.location.origin);
-          
+
           // Comparăm pathname-ul (ignorăm query parameters pentru o potrivire mai bună)
           return clientUrl.pathname === targetUrl.pathname;
         });
-        
+
         // Dacă există un client potrivit, îl focalizăm
         if (matchingClient) {
           return matchingClient.focus().then(client => {
@@ -138,7 +145,7 @@ self.addEventListener('notificationclick', (event) => {
             }
           });
         }
-        
+
         // Dacă nu există un client potrivit, deschidem un tab nou
         return self.clients.openWindow(urlToOpen);
       })

@@ -36,7 +36,7 @@ const defaultValues = {
   acceptedOfferEmailEnabled: true,
   newMessageEmailEnabled: true,
   newReviewEmailEnabled: true,
-  
+
   browserNotificationsEnabled: true,
   newRequestBrowserEnabled: true,
   acceptedOfferBrowserEnabled: true,
@@ -49,16 +49,16 @@ export default function NotificationPreferences() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("email");
-  
+
   // Stare locală pentru permisiunea browser-ului
   const [hasBrowserPermission, setHasBrowserPermission] = useState<boolean>(false);
   const [requestingPermission, setRequestingPermission] = useState<boolean>(false);
 
   // Folosim NotificationHelper pentru verificarea suportului notificărilor
-  
+
   // Verificăm dacă API-ul de notificări este disponibil
   const notificationsAvailable = NotificationHelper.isSupported();
-  
+
   // Obținem preferințele de notificări
   const { data: preferences, isLoading, error } = useQuery<NotificationPreferences>({
     queryKey: ['/api/service/notification-preferences'],
@@ -70,7 +70,7 @@ export default function NotificationPreferences() {
     if (notificationsAvailable) {
       const currentPermission = NotificationHelper.checkPermission();
       setHasBrowserPermission(currentPermission === 'granted');
-      
+
       // Actualizăm starea când se schimbă preferințele
       if (preferences) {
         // Sincronizăm permisiunea reală cu cea din baza de date
@@ -79,7 +79,7 @@ export default function NotificationPreferences() {
             handleToggleChange('browserPermission', currentPermission === 'granted');
           }, 500);
         }
-        
+
         setHasBrowserPermission(currentPermission === 'granted');
       }
     }
@@ -141,13 +141,13 @@ export default function NotificationPreferences() {
   // Manipulator pentru solicitarea permisiunii de notificări browser
   const handleRequestPermission = async () => {
     if (!notificationsAvailable) return;
-    
+
     try {
       setRequestingPermission(true);
       // Folosim NotificationHelper pentru solicitarea permisiunii
       const granted = await NotificationHelper.requestPermission();
       setHasBrowserPermission(granted);
-      
+
       // Test notificare dacă permisiunea a fost acordată
       if (granted) {
         setTimeout(() => {
@@ -157,14 +157,14 @@ export default function NotificationPreferences() {
           });
         }, 500);
       }
-      
+
       // Actualizăm și în backend
       if (preferences) {
         const updatedPreferences = {
           ...preferences,
           browserPermission: granted
         };
-        
+
         updateMutation.mutate(updatedPreferences);
       }
     } catch (error) {
@@ -368,7 +368,7 @@ export default function NotificationPreferences() {
                   </div>
                 </div>
               )}
-              
+
               {notificationsAvailable && hasBrowserPermission && (
                 <div className="bg-green-50 p-4 rounded-md mb-4">
                   <div className="flex flex-col gap-3">
@@ -415,7 +415,38 @@ export default function NotificationPreferences() {
                       newMessageBrowserEnabled: checked,
                       newReviewBrowserEnabled: checked
                     };
-                    
+
+                    // Actualizare service worker dacă este activat
+                    if (checked && hasBrowserPermission) {
+                      console.log('Activăm verificare notificări în Service Worker');
+                      // Reinițializăm Service Worker-ul și verificarea în fundal
+                      import('../../lib/notifications').then(module => {
+                        const NotificationHelper = module.default;
+                        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+
+                        if (userData.id && userData.role) {
+                          const token = localStorage.getItem('authToken');
+                          NotificationHelper.stopBackgroundMessageCheck();
+                          setTimeout(() => {
+                            NotificationHelper.startBackgroundMessageCheck(userData.id, userData.role, token || undefined);
+                            console.log('Verificarea notificărilor a fost repornită');
+
+                            // Test notificare
+                            NotificationHelper.showNotification('Test notificări', {
+                              body: 'Notificările sunt acum active',
+                              requireInteraction: true
+                            });
+                          }, 500);
+                        }
+                      });
+                    } else if (!checked) {
+                      console.log('Dezactivăm verificare notificări în Service Worker');
+                      import('../../lib/notifications').then(module => {
+                        const NotificationHelper = module.default;
+                        NotificationHelper.stopBackgroundMessageCheck();
+                      });
+                    }
+
                     // Trimitem la server
                     updateMutation.mutate(updatedPreferences);
                   }}

@@ -25,13 +25,13 @@ const IMPORTANT_RESOURCES = [
 // La instalare, punem în cache resursele esențiale
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Instalare în curs...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(IMPORTANT_RESOURCES);
     })
   );
-  
+
   // Forțăm Service Worker-ul să devină activ imediat
   self.skipWaiting();
 });
@@ -39,7 +39,7 @@ self.addEventListener('install', (event) => {
 // La activare, ștergem cache-urile vechi
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activare cu versiunea:', VERSION);
-  
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -52,7 +52,7 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  
+
   // Facem Service Worker-ul să preia controlul tuturor paginilor imediat
   self.clients.claim();
 });
@@ -101,7 +101,7 @@ function handleShowNotification(event) {
     }
     return Promise.reject(new Error('Date lipsă pentru afișarea notificării'));
   }
-  
+
   // Verifică dacă payload există în event.data
   const payload = event.data.payload;
   if (!payload) {
@@ -113,17 +113,17 @@ function handleShowNotification(event) {
     }
     return Promise.reject(new Error('Payload lipsă pentru afișarea notificației'));
   }
-  
+
   const title = payload.title || 'Notificare';
   const options = payload.options || {};
-  
+
   console.log('[Service Worker] Afișez notificare cu opțiunile:', JSON.stringify(options));
-  
+
   // Verificăm dacă trebuie să redăm un sunet
   if (options.data && options.data.shouldPlaySound) {
     console.log('[Service Worker] Ar trebui să redau sunetul notificării:', options.data.soundUrl);
   }
-  
+
   return self.registration.showNotification(title, {
     badge: '/favicon.ico',
     icon: '/favicon.ico',
@@ -154,7 +154,7 @@ function startPeriodicMessageCheck(options = {}) {
   if (backgroundCheckConfig.isActive) {
     stopPeriodicMessageCheck(); // Oprim verificarea existentă înainte de a porni una nouă
   }
-  
+
   // Păstrăm valorile anterioare dacă există pentru a menține starea
   let oldNotifiedCount = backgroundCheckConfig.lastNotifiedCount || 0;
   let oldNotificationTime = backgroundCheckConfig.lastNotificationTime || 0;
@@ -165,7 +165,7 @@ function startPeriodicMessageCheck(options = {}) {
   let oldNewReviewsCount = backgroundCheckConfig.lastNewReviewsCount || 0;
   let oldNewReviewNotificationTime = backgroundCheckConfig.lastNewReviewNotificationTime || 0;
   let oldNotificationPreferences = backgroundCheckConfig.notificationPreferences || null;
-  
+
   backgroundCheckConfig = {
     isActive: true,
     userId: options.userId,
@@ -189,14 +189,14 @@ function startPeriodicMessageCheck(options = {}) {
     notificationPreferences: oldNotificationPreferences,
     intervalId: null // Va fi setat mai jos
   };
-  
+
   console.log('[Service Worker] Pornire verificare notificări în fundal pentru utilizator:', backgroundCheckConfig.userId);
-  
+
   // Prima verificare imediată
   if (backgroundCheckConfig.userRole === 'service') {
     // Pentru furnizori de servicii, verificăm toate tipurile de notificări
     checkForNewMessages(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
-    
+
     // Verificăm și cererile, ofertele și recenziile (doar pentru service providers)
     checkForNewRequests(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
     checkForAcceptedOffers(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
@@ -205,13 +205,13 @@ function startPeriodicMessageCheck(options = {}) {
     // Pentru clienți, verificăm doar mesajele
     checkForNewMessages(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
   }
-  
+
   // Programăm verificări periodice
   backgroundCheckConfig.intervalId = setInterval(() => {
     if (backgroundCheckConfig.isActive) {
       // Verificăm mesajele noi
       checkForNewMessages(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
-      
+
       // Verificăm și celelalte notificări doar pentru service providers
       if (backgroundCheckConfig.userRole === 'service') {
         checkForNewRequests(backgroundCheckConfig.userId, backgroundCheckConfig.userRole, backgroundCheckConfig.token);
@@ -220,7 +220,7 @@ function startPeriodicMessageCheck(options = {}) {
       }
     }
   }, backgroundCheckConfig.checkInterval);
-  
+
   return { success: true, message: 'Verificare notificări în fundal pornită' };
 }
 
@@ -230,10 +230,10 @@ function stopPeriodicMessageCheck() {
     clearInterval(backgroundCheckConfig.intervalId);
     backgroundCheckConfig.intervalId = null;
   }
-  
+
   backgroundCheckConfig.isActive = false;
   console.log('[Service Worker] Oprire verificare mesaje în fundal');
-  
+
   return { success: true, message: 'Verificare mesaje în fundal oprită' };
 }
 
@@ -246,11 +246,11 @@ async function getAuthToken() {
       console.warn('[Service Worker] Nu s-au găsit clienți conectați');
       return null;
     }
-    
+
     // Cerem tokenul de la client
     const tokenResponsePromise = new Promise((resolve) => {
       const channel = new MessageChannel();
-      
+
       // Configurăm portul pentru a primi răspunsul
       channel.port1.onmessage = (event) => {
         if (event.data && event.data.token) {
@@ -260,18 +260,18 @@ async function getAuthToken() {
           resolve(null);
         }
       };
-      
+
       // Trimitem cererea către client
       clientList[0].postMessage({
         type: 'GET_AUTH_TOKEN'
       }, [channel.port2]);
     });
-    
+
     // Așteptăm răspunsul cu timeout de 1 secundă
     const timeoutPromise = new Promise((resolve) => {
       setTimeout(() => resolve(null), 1000);
     });
-    
+
     // Returnăm primul rezultat - fie tokenul, fie null după timeout
     return Promise.race([tokenResponsePromise, timeoutPromise]);
   } catch (error) {
@@ -286,28 +286,35 @@ async function checkForNewMessages(userId, userRole, token) {
     console.error('[Service Worker] Date lipsă pentru verificarea mesajelor');
     return Promise.reject(new Error('Date lipsă pentru verificarea mesajelor'));
   }
-  
+
   console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId);
-  
+
   // Încercăm să folosim tokenul furnizat direct din apel
   let authToken = token;
-  
+
   // Dacă nu avem token, încercăm să-l obținem din localStorage prin client
   if (!authToken) {
     console.log('[Service Worker] Tokenul nu a fost furnizat, încerc obținerea din localStorage');
     authToken = await getAuthToken();
   }
-  
+
   // Obține preferințele de notificări
   await getNotificationPreferences(authToken);
-  
+
   // Verifică dacă notificările browser sunt activate
-  if (backgroundCheckConfig.notificationPreferences && 
-      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
-    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
-    return Promise.resolve();
+  if (backgroundCheckConfig.notificationPreferences) {
+    if (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+      console.log('[Service Worker] Notificările browser sunt dezactivate global în preferințe');
+      return Promise.resolve();
+    }
+
+    // Pentru verificări specifice pe tipul de notificare
+    console.log('[Service Worker] Verificare preferințe specifice pentru mesaje:', 
+      backgroundCheckConfig.notificationPreferences.newMessageBrowserEnabled);
+  } else {
+    console.log('[Service Worker] Nu există preferințe de notificări salvate, folosim valorile implicite (activate)');
   }
-  
+
   // Verificăm dacă avem token
   if (!authToken) {
     console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
@@ -333,12 +340,12 @@ async function checkForNewMessages(userId, userRole, token) {
         }
       });
   }
-  
+
   // URL-ul pentru API-ul de verificare a mesajelor
   const apiUrl = userRole === 'service' 
     ? '/api/service/unread-messages-count' 
     : '/api/client/unread-messages-count';
-  
+
   return fetch(apiUrl, {
     headers: {
       'Authorization': `Bearer ${authToken}`,
@@ -349,40 +356,40 @@ async function checkForNewMessages(userId, userRole, token) {
     if (!response.ok) {
       throw new Error(`Răspuns invalid de la server: ${response.status}`);
     }
-    
+
     // Verificăm content-type pentru a evita erori de parsare JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       console.warn('[Service Worker] Răspunsul nu este JSON valid:', contentType);
       throw new Error('Răspunsul nu este în format JSON valid');
     }
-    
+
     return response.json();
   })
   .then(data => {
     const unreadCount = data.count || 0;
     const currentTimestamp = new Date().getTime();
-    
+
     console.log('[Service Worker] Mesaje necitite:', unreadCount);
-    
+
     // Verificăm dacă avem un număr nou de mesaje necitite pentru a afișa notificarea
     // Afișăm notificarea doar dacă:
     // 1. Numărul de mesaje necitite a crescut față de ultima verificare
     // 2. Sau au trecut cel puțin 5 minute de la ultima notificare
     const isCountIncreased = unreadCount > backgroundCheckConfig.lastNotifiedCount;
     const hasTimeElapsed = currentTimestamp - backgroundCheckConfig.lastNotificationTime > 5 * 60 * 1000; // 5 minute
-    
+
     // Actualizăm contorul de mesaje necitite
     backgroundCheckConfig.lastNotifiedCount = unreadCount;
-    
+
     // Afișăm notificări doar dacă există mesaje necitite și condițiile sunt îndeplinite
     if (unreadCount > 0 && (isCountIncreased || hasTimeElapsed)) {
       // Actualizăm timestamp-ul ultimei notificări
       backgroundCheckConfig.lastNotificationTime = currentTimestamp;
-      
+
       console.log('[Service Worker] Condiții pentru afișarea notificării îndeplinite:',
         { isCountIncreased, hasTimeElapsed, previousCount: backgroundCheckConfig.lastNotifiedCount });
-      
+
       // Afișăm notificarea indiferent dacă clientul este activ sau nu
       return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
         .then(clients => {
@@ -393,7 +400,7 @@ async function checkForNewMessages(userId, userRole, token) {
           } else {
             console.log('[Service Worker] Nu există clienți activi');
           }
-          
+
           // Afișăm întotdeauna notificarea, indiferent de starea clienților
           try {
             console.log('[Service Worker] Afișăm notificare pentru mesaje necitite:', unreadCount);
@@ -446,23 +453,29 @@ async function checkForNewRequests(userId, userRole, token) {
     console.log('[Service Worker] Verificarea cererilor noi este disponibilă doar pentru furnizorii de servicii');
     return Promise.resolve();
   }
-  
+
   console.log('[Service Worker] Verificare cereri noi pentru furnizorul de servicii:', userId);
-  
+
   // Obține preferințele de notificări
   await getNotificationPreferences(token);
-  
+
   // Verifică dacă notificările pentru cereri noi sunt activate
-  // Acum verificăm doar setarea master browserNotificationsEnabled
-  if (backgroundCheckConfig.notificationPreferences && 
-      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
-    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
-    return Promise.resolve();
+  if (backgroundCheckConfig.notificationPreferences) {
+    if (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+      console.log('[Service Worker] Notificările browser sunt dezactivate global în preferințe');
+      return Promise.resolve();
+    }
+
+    // Pentru verificări specifice pe tipul de notificare
+    console.log('[Service Worker] Verificare preferințe specifice pentru cereri noi:', 
+      backgroundCheckConfig.notificationPreferences.newRequestBrowserEnabled);
+  } else {
+    console.log('[Service Worker] Nu există preferințe de notificări salvate, folosim valorile implicite (activate)');
   }
-  
+
   // URL-ul pentru API-ul de verificare a cererilor noi
   const apiUrl = '/api/service/new-requests';
-  
+
   return fetch(apiUrl, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -473,40 +486,40 @@ async function checkForNewRequests(userId, userRole, token) {
     if (!response.ok) {
       throw new Error(`Răspuns invalid de la server: ${response.status}`);
     }
-    
+
     // Verificăm content-type pentru a evita erori de parsare JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       console.warn('[Service Worker] Răspunsul nu este JSON valid:', contentType);
       throw new Error('Răspunsul nu este în format JSON valid');
     }
-    
+
     return response.json();
   })
   .then(data => {
     const newRequestsCount = data.count || 0;
     const currentTimestamp = new Date().getTime();
-    
+
     console.log('[Service Worker] Cereri noi:', newRequestsCount);
-    
+
     // Verificăm dacă avem cereri noi pentru a afișa notificarea
     // Afișăm notificarea doar dacă:
     // 1. Numărul de cereri noi a crescut față de ultima verificare
     // 2. Sau au trecut cel puțin 5 minute de la ultima notificare
     const isCountIncreased = newRequestsCount > backgroundCheckConfig.lastNewRequestsCount;
     const hasTimeElapsed = currentTimestamp - backgroundCheckConfig.lastNewRequestNotificationTime > 5 * 60 * 1000; // 5 minute
-    
+
     // Actualizăm contorul de cereri noi
     backgroundCheckConfig.lastNewRequestsCount = newRequestsCount;
-    
+
     // Afișăm notificări doar dacă există cereri noi și condițiile sunt îndeplinite
     if (newRequestsCount > 0 && (isCountIncreased || hasTimeElapsed)) {
       // Actualizăm timestamp-ul ultimei notificări
       backgroundCheckConfig.lastNewRequestNotificationTime = currentTimestamp;
-      
+
       console.log('[Service Worker] Condiții pentru afișarea notificării de cereri noi îndeplinite:',
         { isCountIncreased, hasTimeElapsed, previousCount: backgroundCheckConfig.lastNewRequestsCount });
-      
+
       // Afișăm notificarea indiferent dacă clientul este activ sau nu
       return self.registration.showNotification('Cereri noi', {
         body: `Aveți ${newRequestsCount} cereri noi în zona dvs.`,
@@ -539,23 +552,29 @@ async function checkForAcceptedOffers(userId, userRole, token) {
     console.log('[Service Worker] Verificarea ofertelor acceptate este disponibilă doar pentru furnizorii de servicii');
     return Promise.resolve();
   }
-  
+
   console.log('[Service Worker] Verificare oferte acceptate pentru furnizorul de servicii:', userId);
-  
+
   // Obține preferințele de notificări
   await getNotificationPreferences(token);
-  
+
   // Verifică dacă notificările pentru oferte acceptate sunt activate
-  // Acum verificăm doar setarea master browserNotificationsEnabled
-  if (backgroundCheckConfig.notificationPreferences && 
-      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
-    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
-    return Promise.resolve();
+  if (backgroundCheckConfig.notificationPreferences) {
+    if (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+      console.log('[Service Worker] Notificările browser sunt dezactivate global în preferințe');
+      return Promise.resolve();
+    }
+
+    // Pentru verificări specifice pe tipul de notificare
+    console.log('[Service Worker] Verificare preferințe specifice pentru oferte acceptate:', 
+      backgroundCheckConfig.notificationPreferences.acceptedOfferBrowserEnabled);
+  } else {
+    console.log('[Service Worker] Nu există preferințe de notificări salvate, folosim valorile implicite (activate)');
   }
-  
+
   // URL-ul pentru API-ul de verificare a ofertelor acceptate
   const apiUrl = '/api/service/accepted-offers';
-  
+
   return fetch(apiUrl, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -566,40 +585,40 @@ async function checkForAcceptedOffers(userId, userRole, token) {
     if (!response.ok) {
       throw new Error(`Răspuns invalid de la server: ${response.status}`);
     }
-    
+
     // Verificăm content-type pentru a evita erori de parsare JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       console.warn('[Service Worker] Răspunsul nu este JSON valid:', contentType);
       throw new Error('Răspunsul nu este în format JSON valid');
     }
-    
+
     return response.json();
   })
   .then(data => {
     const acceptedOffersCount = data.count || 0;
     const currentTimestamp = new Date().getTime();
-    
+
     console.log('[Service Worker] Oferte acceptate noi:', acceptedOffersCount);
-    
+
     // Verificăm dacă avem oferte acceptate noi pentru a afișa notificarea
     // Afișăm notificarea doar dacă:
     // 1. Numărul de oferte acceptate a crescut față de ultima verificare
     // 2. Sau au trecut cel puțin 5 minute de la ultima notificare
     const isCountIncreased = acceptedOffersCount > backgroundCheckConfig.lastAcceptedOffersCount;
     const hasTimeElapsed = currentTimestamp - backgroundCheckConfig.lastAcceptedOfferNotificationTime > 5 * 60 * 1000; // 5 minute
-    
+
     // Actualizăm contorul de oferte acceptate
     backgroundCheckConfig.lastAcceptedOffersCount = acceptedOffersCount;
-    
+
     // Afișăm notificări doar dacă există oferte acceptate și condițiile sunt îndeplinite
     if (acceptedOffersCount > 0 && (isCountIncreased || hasTimeElapsed)) {
       // Actualizăm timestamp-ul ultimei notificări
       backgroundCheckConfig.lastAcceptedOfferNotificationTime = currentTimestamp;
-      
+
       console.log('[Service Worker] Condiții pentru afișarea notificării de oferte acceptate îndeplinite:',
         { isCountIncreased, hasTimeElapsed, previousCount: backgroundCheckConfig.lastAcceptedOffersCount });
-      
+
       // Afișăm notificarea indiferent dacă clientul este activ sau nu
       return self.registration.showNotification('Oferte acceptate', {
         body: `Aveți ${acceptedOffersCount} oferte noi acceptate`,
@@ -632,23 +651,29 @@ async function checkForNewReviews(userId, userRole, token) {
     console.log('[Service Worker] Verificarea recenziilor noi este disponibilă doar pentru furnizorii de servicii');
     return Promise.resolve();
   }
-  
+
   console.log('[Service Worker] Verificare recenzii noi pentru furnizorul de servicii:', userId);
-  
+
   // Obține preferințele de notificări
   await getNotificationPreferences(token);
-  
+
   // Verifică dacă notificările pentru recenzii noi sunt activate
-  // Acum verificăm doar setarea master browserNotificationsEnabled
-  if (backgroundCheckConfig.notificationPreferences && 
-      !backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
-    console.log('[Service Worker] Notificările browser sunt dezactivate în preferințe');
-    return Promise.resolve();
+  if (backgroundCheckConfig.notificationPreferences) {
+    if (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
+      console.log('[Service Worker] Notificările browser sunt dezactivate global în preferințe');
+      return Promise.resolve();
+    }
+
+    // Pentru verificări specifice pe tipul de notificare
+    console.log('[Service Worker] Verificare preferințe specifice pentru recenzii noi:', 
+      backgroundCheckConfig.notificationPreferences.newReviewBrowserEnabled);
+  } else {
+    console.log('[Service Worker] Nu există preferințe de notificări salvate, folosim valorile implicite (activate)');
   }
-  
+
   // URL-ul pentru API-ul de verificare a recenziilor noi
   const apiUrl = '/api/service/new-reviews';
-  
+
   return fetch(apiUrl, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -659,40 +684,40 @@ async function checkForNewReviews(userId, userRole, token) {
     if (!response.ok) {
       throw new Error(`Răspuns invalid de la server: ${response.status}`);
     }
-    
+
     // Verificăm content-type pentru a evita erori de parsare JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       console.warn('[Service Worker] Răspunsul nu este JSON valid:', contentType);
       throw new Error('Răspunsul nu este în format JSON valid');
     }
-    
+
     return response.json();
   })
   .then(data => {
     const newReviewsCount = data.count || 0;
     const currentTimestamp = new Date().getTime();
-    
+
     console.log('[Service Worker] Recenzii noi:', newReviewsCount);
-    
+
     // Verificăm dacă avem recenzii noi pentru a afișa notificarea
     // Afișăm notificarea doar dacă:
     // 1. Numărul de recenzii noi a crescut față de ultima verificare
     // 2. Sau au trecut cel puțin 5 minute de la ultima notificare
     const isCountIncreased = newReviewsCount > backgroundCheckConfig.lastNewReviewsCount;
     const hasTimeElapsed = currentTimestamp - backgroundCheckConfig.lastNewReviewNotificationTime > 5 * 60 * 1000; // 5 minute
-    
+
     // Actualizăm contorul de recenzii noi
     backgroundCheckConfig.lastNewReviewsCount = newReviewsCount;
-    
+
     // Afișăm notificări doar dacă există recenzii noi și condițiile sunt îndeplinite
     if (newReviewsCount > 0 && (isCountIncreased || hasTimeElapsed)) {
       // Actualizăm timestamp-ul ultimei notificări
       backgroundCheckConfig.lastNewReviewNotificationTime = currentTimestamp;
-      
+
       console.log('[Service Worker] Condiții pentru afișarea notificării de recenzii noi îndeplinite:',
         { isCountIncreased, hasTimeElapsed, previousCount: backgroundCheckConfig.lastNewReviewsCount });
-      
+
       // Afișăm notificarea indiferent dacă clientul este activ sau nu
       return self.registration.showNotification('Recenzii noi', {
         body: `Aveți ${newReviewsCount} recenzii noi de la clienți`,
@@ -724,15 +749,15 @@ async function getNotificationPreferences(token) {
     console.warn('[Service Worker] Nu se pot obține preferințele de notificări fără token');
     return null;
   }
-  
+
   // Dacă avem deja preferințele în configurare, le returnăm
   if (backgroundCheckConfig.notificationPreferences) {
     return backgroundCheckConfig.notificationPreferences;
   }
-  
+
   // URL-ul pentru API-ul de obținere a preferințelor
   const apiUrl = '/api/service/notification-preferences';
-  
+
   try {
     const response = await fetch(apiUrl, {
       headers: {
@@ -740,24 +765,24 @@ async function getNotificationPreferences(token) {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       console.warn('[Service Worker] Nu s-au putut obține preferințele de notificări:', response.status);
       return null;
     }
-    
+
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       console.warn('[Service Worker] Răspunsul pentru preferințe nu este JSON valid:', contentType);
       return null;
     }
-    
+
     const preferences = await response.json();
     console.log('[Service Worker] Preferințe de notificări obținute:', preferences);
-    
+
     // Salvăm preferințele în configurare
     backgroundCheckConfig.notificationPreferences = preferences;
-    
+
     return preferences;
   } catch (error) {
     console.error('[Service Worker] Eroare la obținerea preferințelor de notificări:', error);
@@ -768,13 +793,13 @@ async function getNotificationPreferences(token) {
 // Ascultăm evenimentele de notificare (când utilizatorul face click pe notificare)
 self.addEventListener('notificationclick', (event) => {
   console.log('[Service Worker] Click pe notificare');
-  
+
   // Închide notificarea
   event.notification.close();
-  
+
   // Extragem URL-ul către care să redirecționăm utilizatorul
   const urlToOpen = event.notification.data?.url || '/';
-  
+
   // Verificăm dacă există un client deschis și îl focalizăm
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -783,11 +808,11 @@ self.addEventListener('notificationclick', (event) => {
         const matchingClient = clients.find(client => {
           const clientUrl = new URL(client.url);
           const targetUrl = new URL(urlToOpen, self.location.origin);
-          
+
           // Comparăm pathname-ul (ignorăm query parameters)
           return clientUrl.pathname === targetUrl.pathname;
         });
-        
+
         // Dacă există un client potrivit, îl focalizăm
         if (matchingClient) {
           return matchingClient.focus().then(client => {
@@ -797,7 +822,7 @@ self.addEventListener('notificationclick', (event) => {
             }
           });
         }
-        
+
         // Dacă nu există un client potrivit, deschidem un tab nou
         return self.clients.openWindow(urlToOpen);
       })
@@ -807,7 +832,7 @@ self.addEventListener('notificationclick', (event) => {
 // Ascultăm mesajele de la pagină
 self.addEventListener('message', (event) => {
   console.log('[Service Worker] Mesaj primit:', event.data);
-  
+
   // Răspundem imediat pentru a preveni timeout-urile
   if (event.data.id) {
     // Trimitem un răspuns inițial înainte de procesare
@@ -823,7 +848,7 @@ self.addEventListener('message', (event) => {
       console.error('[Service Worker] Eroare la trimiterea răspunsului de confirmare:', err);
     });
   }
-  
+
   // Tratăm diferitele tipuri de mesaje
   switch (event.data.type) {
     case 'SHOW_NOTIFICATION':
@@ -832,7 +857,7 @@ self.addEventListener('message', (event) => {
         // Extragem datele
         const title = event.data.payload?.title || 'Notificare nouă';
         const options = event.data.payload?.options || {};
-        
+
         // Afișăm notificarea
         self.registration.showNotification(title, {
           badge: '/favicon.ico',
@@ -878,7 +903,7 @@ self.addEventListener('message', (event) => {
         console.error('[Service Worker] Excepție la procesarea notificării:', error);
       }
       break;
-      
+
     case 'START_BACKGROUND_MESSAGE_CHECK':
       try {
         const result = startPeriodicMessageCheck(event.data.payload);
@@ -899,13 +924,13 @@ self.addEventListener('message', (event) => {
         console.error('[Service Worker] Eroare la pornirea verificării de fundal:', error);
       }
       break;
-    
+
     case 'CHECK_NEW_REQUESTS':
       try {
         const userId = event.data.payload?.userId;
         const userRole = event.data.payload?.userRole;
         const token = event.data.payload?.token;
-        
+
         checkForNewRequests(userId, userRole, token)
           .then(result => {
             if (event.data.id) {
@@ -950,13 +975,13 @@ self.addEventListener('message', (event) => {
         }
       }
       break;
-    
+
     case 'CHECK_ACCEPTED_OFFERS':
       try {
         const userId = event.data.payload?.userId;
         const userRole = event.data.payload?.userRole;
         const token = event.data.payload?.token;
-        
+
         checkForAcceptedOffers(userId, userRole, token)
           .then(result => {
             if (event.data.id) {
@@ -1001,13 +1026,13 @@ self.addEventListener('message', (event) => {
         }
       }
       break;
-    
+
     case 'CHECK_NEW_REVIEWS':
       try {
         const userId = event.data.payload?.userId;
         const userRole = event.data.payload?.userRole;
         const token = event.data.payload?.token;
-        
+
         checkForNewReviews(userId, userRole, token)
           .then(result => {
             if (event.data.id) {
@@ -1052,7 +1077,7 @@ self.addEventListener('message', (event) => {
         }
       }
       break;
-      
+
     case 'STOP_BACKGROUND_MESSAGE_CHECK':
       try {
         const stopResult = stopPeriodicMessageCheck();
@@ -1073,7 +1098,7 @@ self.addEventListener('message', (event) => {
         console.error('[Service Worker] Eroare la oprirea verificării de fundal:', error);
       }
       break;
-      
+
     case 'TEST_NOTIFICATION':
       try {
         self.registration.showNotification(
@@ -1121,16 +1146,16 @@ self.addEventListener('message', (event) => {
         console.error('[Service Worker] Excepție la testarea notificării:', error);
       }
       break;
-      
+
     case 'PAGE_LOADED':
       console.log('[Service Worker] Pagină încărcată');
       break;
-      
+
     case 'GET_AUTH_TOKEN':
       // Tratăm cererea de token, dar portul de răspuns a fost deja setat în getAuthToken()
       console.log('[Service Worker] Primită cerere GET_AUTH_TOKEN');
       break;
-      
+
     case 'AUTH_TOKEN_RESPONSE':
       // Răspuns cu token de la pagină
       if (event.data.token) {
@@ -1143,12 +1168,12 @@ self.addEventListener('message', (event) => {
         console.warn('[Service Worker] Răspuns de token primit, dar tokenul lipsește');
       }
       break;
-      
+
     case 'REQUEST_AUTH_TOKEN':
       // Cerere de la service worker către client pentru token
       console.log('[Service Worker] Cerere primită pentru token auth');
       break;
-      
+
     default:
       console.log('[Service Worker] Tip de mesaj necunoscut:', event.data.type);
   }

@@ -483,23 +483,39 @@ class NotificationHelper {
    * Verifică dacă trebuie să afișăm notificarea în funcție de preferințele utilizatorului
    */
   static shouldShowNotification(data: any, preferences: any): boolean {
-    // Verifică doar dacă notificările sunt activate global
-    // Am simplificat logica pentru a utiliza doar comutatorul principal de notificări
-    if (!preferences.browserNotificationsEnabled) {
+    // Verificăm întâi setarea globală
+    if (!preferences || !preferences.browserNotificationsEnabled) {
+      console.log('Notificările browser sunt dezactivate global');
       return false;
     }
 
-    // Verificăm dacă tipul este valid și return true pentru toate tipurile valide
+    // Verificăm dacă tipul este valid și respectă preferințele specifice
     switch (data.type) {
       case 'NEW_MESSAGE':
-        return true;
+        console.log('Verificăm preferința pentru mesaje noi:', preferences.newMessageBrowserEnabled);
+        return preferences.newMessageBrowserEnabled !== false; // Implicit activat dacă nu există
+        
       case 'NEW_OFFER':
-        return true;
+        console.log('Verificăm preferința pentru oferte noi');
+        return true; // Nu există o preferință specifică pentru acest tip
+        
       case 'NEW_REQUEST':
-        return true;
+        console.log('Verificăm preferința pentru cereri noi:', preferences.newRequestBrowserEnabled);
+        return preferences.newRequestBrowserEnabled !== false;
+        
       case 'OFFER_STATUS_CHANGED':
-        return data.payload?.status === 'Accepted';
+        if (data.payload?.status === 'Accepted') {
+          console.log('Verificăm preferința pentru oferte acceptate:', preferences.acceptedOfferBrowserEnabled);
+          return preferences.acceptedOfferBrowserEnabled !== false;
+        }
+        return false;
+        
+      case 'NEW_REVIEW':
+        console.log('Verificăm preferința pentru recenzii noi:', preferences.newReviewBrowserEnabled);
+        return preferences.newReviewBrowserEnabled !== false;
+        
       default:
+        console.log('Tip de notificare necunoscut:', data.type);
         return false;
     }
   }
