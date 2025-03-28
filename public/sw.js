@@ -6,7 +6,7 @@
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.4';
+const VERSION = 'v1.0.5';
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
@@ -232,7 +232,27 @@ async function checkForNewMessages(userId, userRole, token) {
   // Verificăm dacă avem token
   if (!authToken) {
     console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
-    return Promise.reject(new Error('Token-ul de autentificare lipsește'));
+    // Încercăm să accesăm clienții și să le solicităm tokenul direct
+    return self.clients.matchAll()
+      .then(clients => {
+        if (clients.length > 0) {
+          console.log('[Service Worker] Încercăm să solicităm tokenul direct de la client');
+          try {
+            // Trimitem un mesaj către client pentru a solicita tokenul
+            clients[0].postMessage({
+              type: 'REQUEST_AUTH_TOKEN',
+              payload: { forceRefresh: true }
+            });
+            // Returnăm un promise eșuat, dar vom reîncerca cu tokenul actualizat data viitoare
+            return Promise.reject(new Error('Token-ul de autentificare lipsește, solicitat de la client'));
+          } catch (err) {
+            console.error('[Service Worker] Eroare la solicitarea tokenului:', err);
+            return Promise.reject(new Error('Nu s-a putut solicita tokenul de autentificare'));
+          }
+        } else {
+          return Promise.reject(new Error('Token-ul de autentificare lipsește și nu există clienți activi'));
+        }
+      });
   }
   
   // URL-ul pentru API-ul de verificare a mesajelor
@@ -419,6 +439,29 @@ self.addEventListener('message', (event) => {
       
     case 'PAGE_LOADED':
       console.log('[Service Worker] Pagină încărcată');
+      break;
+      
+    case 'GET_AUTH_TOKEN':
+      // Tratăm cererea de token, dar portul de răspuns a fost deja setat în getAuthToken()
+      console.log('[Service Worker] Primită cerere GET_AUTH_TOKEN');
+      break;
+      
+    case 'AUTH_TOKEN_RESPONSE':
+      // Răspuns cu token de la pagină
+      if (event.data.token) {
+        console.log('[Service Worker] Token de autentificare primit de la pagină');
+        // Actualizăm token-ul în configurația de verificare
+        if (backgroundCheckConfig.isActive) {
+          backgroundCheckConfig.token = event.data.token;
+        }
+      } else {
+        console.warn('[Service Worker] Răspuns de token primit, dar tokenul lipsește');
+      }
+      break;
+      
+    case 'REQUEST_AUTH_TOKEN':
+      // Cerere de la service worker către client pentru token
+      console.log('[Service Worker] Cerere primită pentru token auth');
       break;
       
     default:

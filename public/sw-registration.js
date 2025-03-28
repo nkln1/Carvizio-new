@@ -95,7 +95,13 @@ function registerServiceWorker() {
               
               const messageChannel = new MessageChannel();
               
+              // Adăugăm un timeout pentru mesajul către Service Worker
+              const timeoutId = setTimeout(() => {
+                reject(new Error("Timeout la trimiterea mesajului către Service Worker"));
+              }, 5000); // 5 secunde timeout
+              
               messageChannel.port1.onmessage = function(event) {
+                clearTimeout(timeoutId); // Anulăm timeout-ul când primim un răspuns
                 if (event.data.error) {
                   reject(event.data.error);
                 } else {
@@ -103,11 +109,16 @@ function registerServiceWorker() {
                 }
               };
               
-              // Trimitem mesaj către Service Worker pentru a începe verificarea mesajelor în fundal
-              navigator.serviceWorker.controller.postMessage({
-                type: 'START_BACKGROUND_MESSAGE_CHECK',
-                payload: options
-              }, [messageChannel.port2]);
+              try {
+                // Trimitem mesaj către Service Worker pentru a începe verificarea mesajelor în fundal
+                navigator.serviceWorker.controller.postMessage({
+                  type: 'START_BACKGROUND_MESSAGE_CHECK',
+                  payload: options
+                }, [messageChannel.port2]);
+              } catch (error) {
+                clearTimeout(timeoutId);
+                reject(error);
+              }
             });
           };
           
@@ -120,7 +131,14 @@ function registerServiceWorker() {
               
               const messageChannel = new MessageChannel();
               
+              // Adăugăm un timeout pentru mesajul către Service Worker
+              const timeoutId = setTimeout(() => {
+                resolve(); // În cazul opririi, rezolvăm promisiunea chiar și în caz de timeout
+                console.warn('Timeout la oprirea verificării mesajelor în fundal, considerăm că a fost oprită');
+              }, 3000); // 3 secunde timeout
+              
               messageChannel.port1.onmessage = function(event) {
+                clearTimeout(timeoutId); // Anulăm timeout-ul când primim un răspuns
                 if (event.data.error) {
                   reject(event.data.error);
                 } else {
@@ -128,10 +146,16 @@ function registerServiceWorker() {
                 }
               };
               
-              // Trimitem mesaj către Service Worker pentru a opri verificarea mesajelor în fundal
-              navigator.serviceWorker.controller.postMessage({
-                type: 'STOP_BACKGROUND_MESSAGE_CHECK'
-              }, [messageChannel.port2]);
+              try {
+                // Trimitem mesaj către Service Worker pentru a opri verificarea mesajelor în fundal
+                navigator.serviceWorker.controller.postMessage({
+                  type: 'STOP_BACKGROUND_MESSAGE_CHECK'
+                }, [messageChannel.port2]);
+              } catch (error) {
+                clearTimeout(timeoutId);
+                console.warn('Eroare la oprirea verificării mesajelor:', error);
+                resolve(); // Rezolvăm totuși promisiunea
+              }
             });
           };
           

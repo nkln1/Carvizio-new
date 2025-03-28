@@ -9,6 +9,7 @@ declare global {
     startBackgroundMessageCheck?: (options: any) => Promise<any>;
     stopBackgroundMessageCheck?: () => Promise<any>;
     swRegistration?: ServiceWorkerRegistration;
+    getAuthToken?: () => Promise<string | null>;
   }
 }
 
@@ -607,6 +608,48 @@ if (typeof window !== 'undefined') {
       console.warn('Service Worker nu este disponibil, nu este necesară oprirea verificării mesajelor în fundal');
       return Promise.resolve();
     };
+  }
+  
+  // Adăugăm funcția pentru obținerea token-ului de autentificare pentru Service Worker
+  if (!window.getAuthToken) {
+    window.getAuthToken = async () => {
+      try {
+        // Implementare simplificată: preluăm tokenul din localStorage
+        const authToken = localStorage.getItem('authToken');
+        console.log('Furnizăm token de autentificare către Service Worker', authToken ? 'Token găsit' : 'Token lipsă');
+        return authToken;
+      } catch (error) {
+        console.error('Eroare la obținerea token-ului de autentificare:', error);
+        return null;
+      }
+    };
+  }
+  
+  // Adăugăm eveniment pentru ascultarea mesajelor de la Service Worker
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      console.log('Mesaj primit de la Service Worker:', event.data);
+      
+      // Verificăm dacă este o cerere pentru token de autentificare
+      if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
+        try {
+          const token = localStorage.getItem('authToken');
+          console.log('Cerere token primită de la Service Worker, răspundem cu token:', token ? 'disponibil' : 'indisponibil');
+          
+          // Răspundem cu tokenul
+          if (event.source && 'postMessage' in event.source) {
+            (event.source as ServiceWorker).postMessage({ 
+              type: 'AUTH_TOKEN_RESPONSE', 
+              token: token 
+            });
+          } else {
+            console.warn('Nu se poate răspunde la cererea de token, source invalid:', event.source);
+          }
+        } catch (error) {
+          console.error('Eroare la procesarea cererii de token:', error);
+        }
+      }
+    });
   }
 }
 

@@ -341,18 +341,48 @@ export function registerRoutes(app: Express): Server {
       // Verifică dacă există deja preferințe
       let preferences = await storage.getNotificationPreferences(serviceProvider.id);
       
+      // Extragem doar câmpurile necesare și eliminăm timestamp-urile care pot cauza probleme
+      const { 
+        emailNotificationsEnabled, 
+        newRequestEmailEnabled, 
+        acceptedOfferEmailEnabled, 
+        newMessageEmailEnabled, 
+        newReviewEmailEnabled,
+        browserNotificationsEnabled,
+        newRequestBrowserEnabled,
+        acceptedOfferBrowserEnabled,
+        newMessageBrowserEnabled,
+        newReviewBrowserEnabled,
+        browserPermission
+      } = req.body;
+      
+      // Construim obiectul de preferințe fără createdAt/updatedAt
+      const cleanPreferences = {
+        emailNotificationsEnabled, 
+        newRequestEmailEnabled, 
+        acceptedOfferEmailEnabled, 
+        newMessageEmailEnabled, 
+        newReviewEmailEnabled,
+        browserNotificationsEnabled,
+        newRequestBrowserEnabled,
+        acceptedOfferBrowserEnabled,
+        newMessageBrowserEnabled,
+        newReviewBrowserEnabled,
+        browserPermission
+      };
+      
       if (!preferences) {
         // Dacă nu există, crează preferințe noi
         const newPreferences = {
           serviceProviderId: serviceProvider.id,
-          ...req.body
+          ...cleanPreferences
         };
         
         preferences = await storage.createNotificationPreferences(newPreferences);
         console.log(`Created notification preferences for service provider ${serviceProvider.id}`);
       } else {
         // Dacă există, actualizează preferințele
-        preferences = await storage.updateNotificationPreferences(preferences.id, req.body);
+        preferences = await storage.updateNotificationPreferences(preferences.id, cleanPreferences);
         console.log(`Updated notification preferences for service provider ${serviceProvider.id}`);
       }
       
