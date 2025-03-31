@@ -79,10 +79,10 @@ export default function ServiceDashboard() {
           if (NotificationHelper.isSupported() && NotificationHelper.checkPermission() === 'granted') {
             try {
               console.log("Inițierea verificării mesajelor în fundal pentru utilizatorul", user.id);
-
+              
               // Pornim verificarea pe fundal folosind Service Worker
               NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
-
+              
               // Doar logăm în consolă că notificările sunt active, fără toast
               console.log("Notificări active - vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.");
             } catch (error) {
@@ -276,13 +276,21 @@ console.log('Navigating to service profile with username:', userProfile.username
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
-              {/* Notification Bell removed here */}
-              <Button variant="link" asChild>
-                <a href="/contact" className="text-slate-600 hover:text-slate-900">
-                  Contactează-ne
-                </a>
-              </Button>
-              <UserButton /> {/* Assuming UserButton component exists */}
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  onClick={() => handleTabChange(item.id)}
+                  className={`relative ${activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}`}
+                >
+                  {item.label}
+                  {item.count > 0 && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
+                      {item.count}
+                    </span>
+                  )}
+                </Button>
+              ))}
             </div>
 
             <div className="md:hidden">
