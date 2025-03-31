@@ -5,7 +5,6 @@ import { Mail } from "lucide-react";
 import LoginDropdown from "@/components/auth/LoginDropdown";
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
-import NotificationBell from "@/components/ui/NotificationBell";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -19,11 +18,12 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { data: unreadData } = useQuery({
-    queryKey: ['/api/messages/unread'],
-    enabled: !!auth.currentUser
-  });
-  const unreadClientsCount = unreadData?.count ?? 0;
+  // Query dezactivat pentru notificări deoarece am eliminat clopoțelul
+  // const { data: unreadData } = useQuery({
+  //   queryKey: ['/api/messages/unread'],
+  //   enabled: !!auth.currentUser
+  // });
+  // const unreadClientsCount = unreadData?.count ?? 0;
 
   const handleContactClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -71,7 +71,6 @@ export default function Navigation() {
               <span className="hidden sm:inline">Contactează-ne</span>
               <span className="sm:hidden">Contact</span>
             </Button>
-            {auth.currentUser && <NotificationBell />}
             <LoginDropdown />
           </div>
         </div>
