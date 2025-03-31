@@ -429,38 +429,89 @@ export default function NotificationPreferences() {
                     // Actualizare service worker dacă este activat
                     if (checked && hasBrowserPermission) {
                       console.log('Activăm verificare notificări în Service Worker');
-                      // Reinițializăm Service Worker-ul și verificarea în fundal
-                      import('../../lib/notifications').then(module => {
-                        const NotificationHelper = module.default;
-                        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                      
+                      // Încărcăm modulul de notificări și repornim verificarea în fundal
+                      import('../../lib/notifications').then(async module => {
+                        try {
+                          const NotificationHelper = module.default;
+                          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
-                        if (userData.id && userData.role) {
-                          const token = localStorage.getItem('authToken');
-                          // Mai întâi oprim orice verificare existentă
-                          NotificationHelper.stopBackgroundMessageCheck();
-                          
-                          // Apoi pornim verificarea după un scurt delay
-                          setTimeout(() => {
-                            NotificationHelper.startBackgroundMessageCheck(userData.id, userData.role, token || undefined);
-                            console.log('Verificarea notificărilor a fost repornită');
+                          if (userData.id && userData.role) {
+                            console.log('Repornim verificarea notificărilor pentru utilizator:', userData.id, userData.role);
                             
-                            // Notificare de confirmare pentru utilizator doar când activează manual verificarea
-                            NotificationHelper.showNotification('Notificări activate', {
-                              body: 'Vei primi notificări pentru mesaje noi, cereri și oferte acceptate',
-                              requireInteraction: false,
-                              silent: false
+                            // Obținem token-ul de autentificare
+                            const token = localStorage.getItem('authToken');
+                            
+                            // 1. Mai întâi oprim orice verificare existentă (preventiv)
+                            await NotificationHelper.stopBackgroundMessageCheck();
+                            
+                            // Resetăm și înregistrăm din nou service worker-ul dacă este cazul
+                            if ('serviceWorker' in navigator) {
+                              try {
+                                // Verificăm dacă există un service worker înregistrat
+                                const registrations = await navigator.serviceWorker.getRegistrations();
+                                
+                                if (registrations.length === 0) {
+                                  console.log('Nu există service worker înregistrat, reîncărcăm pagina');
+                                  // Reîncărcăm pagina pentru a reînregistra service worker-ul
+                                  setTimeout(() => window.location.reload(), 300);
+                                  return;
+                                }
+                              } catch (error) {
+                                console.error('Eroare la verificarea service worker:', error);
+                              }
+                            }
+                            
+                            // 2. Pornirea verificării cu delay pentru a permite oprirea completă
+                            console.log('Repornire verificare notificări după o scurtă pauză...');
+                            
+                            setTimeout(async () => {
+                              try {
+                                // Pornim verificarea în fundal
+                                const result = await NotificationHelper.startBackgroundMessageCheck(userData.id, userData.role, token || undefined);
+                                console.log('Rezultat pornire verificare notificări:', result);
+                                
+                                // Notificare de confirmare pentru utilizator
+                                NotificationHelper.showNotification('Notificări activate', {
+                                  body: 'Vei primi notificări pentru mesaje noi, cereri și oferte acceptate',
+                                  requireInteraction: false,
+                                  silent: false
+                                });
+                              } catch (error) {
+                                console.error('Eroare la pornirea verificării notificărilor:', error);
+                                toast({
+                                  title: "Eroare la activarea notificărilor",
+                                  description: "Nu s-au putut activa notificările. Încercați să reîncărcați pagina.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }, 800); // Creștem delay-ul pentru a da timp service worker-ului să se reseteze
+                          } else {
+                            console.error('Lipsesc datele utilizatorului pentru pornirea notificărilor');
+                            toast({
+                              title: "Eroare la activarea notificărilor",
+                              description: "Datele de utilizator nu sunt disponibile. Încercați să vă reconectați.",
+                              variant: "destructive",
                             });
-                          }, 500);
+                          }
+                        } catch (error) {
+                          console.error('Eroare la activarea notificărilor:', error);
                         }
                       });
                     } else if (!checked) {
                       console.log('Dezactivăm verificare notificări în Service Worker');
+                      
                       // Resetăm backgroundCheckActive la false pentru a ne asigura că polling-ul nu se reia
                       import('../../lib/notifications').then(module => {
-                        const NotificationHelper = module.default;
-                        console.log('Oprire notificări browser - apel NotificationHelper.stopBackgroundMessageCheck()');
-                        // Oprim verificarea în Service Worker
-                        NotificationHelper.stopBackgroundMessageCheck();
+                        try {
+                          const NotificationHelper = module.default;
+                          console.log('Oprire notificări browser - apel NotificationHelper.stopBackgroundMessageCheck()');
+                          
+                          // Oprim verificarea în Service Worker
+                          NotificationHelper.stopBackgroundMessageCheck();
+                        } catch (error) {
+                          console.error('Eroare la oprirea notificărilor:', error);
+                        }
                       });
                     }
 

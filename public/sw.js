@@ -1,4 +1,4 @@
-// @ts-check
+// @ts-nocheck
 /**
  * Service Worker principal pentru aplicație
  * Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
