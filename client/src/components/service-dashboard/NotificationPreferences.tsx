@@ -431,11 +431,12 @@ export default function NotificationPreferences() {
                           setTimeout(() => {
                             NotificationHelper.startBackgroundMessageCheck(userData.id, userData.role, token || undefined);
                             console.log('Verificarea notificărilor a fost repornită');
-
-                            // Test notificare
-                            NotificationHelper.showNotification('Test notificări', {
-                              body: 'Notificările sunt acum active',
-                              requireInteraction: true
+                            
+                            // Notificare de confirmare pentru utilizator doar când activează manual verificarea
+                            NotificationHelper.showNotification('Notificări activate', {
+                              body: 'Vei primi notificări pentru mesaje noi, cereri și oferte acceptate',
+                              requireInteraction: false,
+                              silent: false
                             });
                           }, 500);
                         }

@@ -83,12 +83,8 @@ export default function ServiceDashboard() {
               // Pornim verificarea pe fundal folosind Service Worker
               NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
               
-              // Afișăm un toast de confirmare
-              toast({
-                title: "Notificări active",
-                description: "Vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.",
-                variant: "default",
-              });
+              // Doar logăm în consolă că notificările sunt active, fără toast
+              console.log("Notificări active - vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.");
             } catch (error) {
               console.error("Eroare la inițierea verificării mesajelor în fundal:", error);
             }

@@ -157,18 +157,11 @@ function AppNotificationInitializer() {
             };
 
             window.addEventListener('test-notification', testNotificationHandler);
-
-            // Test manual de notificare la inițializare pentru a ne asigura că funcționează
-            setTimeout(() => {
-              if (hasPermission) {
-                console.log("Trimitem o notificare de test pentru a verifica funcționalitatea");
-                NotificationHelper.showNotification('Notificările sunt active', {
-                  body: 'Vei primi notificări pentru mesaje noi și alte evenimente importante',
-                  icon: '/favicon.ico',
-                  requireInteraction: true
-                });
-              }
-            }, 3000);
+            
+            // Doar afișăm un mesaj în consolă că notificările sunt active, fără a afișa notificări inițiale
+            if (hasPermission) {
+              console.log("Notificările sunt active și configurate corect");
+            }
 
             // Clean-up la unmount
             return () => {
