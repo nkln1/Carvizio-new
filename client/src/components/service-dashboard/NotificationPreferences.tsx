@@ -426,49 +426,86 @@ export default function NotificationPreferences() {
                       variant: "default",
                     });
 
-                    // Actualizare service worker dacă este activat
-                    if (checked && hasBrowserPermission) {
-                      console.log('Activăm verificare notificări în Service Worker');
-                      
-                      // Încărcăm modulul de notificări și repornim verificarea în fundal
-                      import('../../lib/notifications').then(async module => {
-                        try {
-                          const NotificationHelper = module.default;
-                          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-
-                          if (userData.id && userData.role) {
+                    // Mai întâi trimitem preferințele la server și așteptăm finalizarea
+                    // Stocăm o referință la preferințele actualizate pentru a le folosi după actualizare
+                    const prefsToUpdate = { ...updatedPreferences };
+                    
+                    // Dezactivăm callback-ul switch-ului temporar pentru a preveni dubla activare
+                    updateMutation.mutate(updatedPreferences, {
+                      onSuccess: async () => {
+                        console.log('Preferințe actualizate cu succes:', prefsToUpdate.browserNotificationsEnabled);
+                        
+                        // Actualizare service worker după ce preferințele au fost salvate
+                        if (checked && hasBrowserPermission) {
+                          console.log('Activăm verificare notificări în Service Worker după actualizarea preferințelor');
+                          
+                          try {
+                            // Încărcăm modulul de notificări
+                            const NotificationsModule = await import('../../lib/notifications');
+                            const NotificationHelper = NotificationsModule.default;
+                            
+                            // Obținem datele utilizatorului
+                            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                            if (!userData.id || !userData.role) {
+                              throw new Error('Datele utilizatorului lipsesc');
+                            }
+                            
                             console.log('Repornim verificarea notificărilor pentru utilizator:', userData.id, userData.role);
                             
-                            // Obținem token-ul de autentificare
-                            const token = localStorage.getItem('authToken');
+                            // Obținem tokenul de autentificare și ne asigurăm că este valabil
+                            const token = localStorage.getItem('firebase_auth_token') || localStorage.getItem('authToken');
+                            if (!token) {
+                              console.error('Token de autentificare lipsește, nu se poate porni verificarea');
+                              throw new Error('Token de autentificare lipsește');
+                            }
                             
-                            // 1. Mai întâi oprim orice verificare existentă (preventiv)
+                            console.log('Token de autentificare disponibil:', !!token);
+                            
+                            // 1. Mai întâi oprim orice verificare existentă
                             await NotificationHelper.stopBackgroundMessageCheck();
+                            console.log('Verificările existente au fost oprite cu succes');
                             
-                            // Resetăm și înregistrăm din nou service worker-ul dacă este cazul
+                            // 2. Verificăm starea service worker-ului
                             if ('serviceWorker' in navigator) {
-                              try {
-                                // Verificăm dacă există un service worker înregistrat
-                                const registrations = await navigator.serviceWorker.getRegistrations();
-                                
-                                if (registrations.length === 0) {
-                                  console.log('Nu există service worker înregistrat, reîncărcăm pagina');
-                                  // Reîncărcăm pagina pentru a reînregistra service worker-ul
-                                  setTimeout(() => window.location.reload(), 300);
-                                  return;
-                                }
-                              } catch (error) {
-                                console.error('Eroare la verificarea service worker:', error);
+                              const registrations = await navigator.serviceWorker.getRegistrations();
+                              
+                              if (registrations.length === 0) {
+                                console.log('Nu există service worker înregistrat, reîncărcăm pagina');
+                                toast({
+                                  title: "Reîncărcare necesară",
+                                  description: "Se reîncarcă pagina pentru a reactiva notificările...",
+                                  variant: "default",
+                                });
+                                setTimeout(() => window.location.reload(), 1500);
+                                return;
+                              } else {
+                                console.log('Service worker activ găsit:', registrations[0].active?.state);
                               }
                             }
                             
-                            // 2. Pornirea verificării cu delay pentru a permite oprirea completă
-                            console.log('Repornire verificare notificări după o scurtă pauză...');
+                            // 3. Pornirea verificării după un delay pentru a asigura starea corectă
+                            console.log('Pornirea verificării de notificări după un delay...');
                             
+                            // Semnalăm utilizatorului că procesul este în curs
+                            toast({
+                              title: "Activare notificări",
+                              description: "Se activează sistemul de notificări...",
+                              variant: "default",
+                            });
+                            
+                            // Amânăm pornirea verificării pentru a permite sistemului să se stabilizeze
                             setTimeout(async () => {
                               try {
-                                // Pornim verificarea în fundal
-                                const result = await NotificationHelper.startBackgroundMessageCheck(userData.id, userData.role, token || undefined);
+                                // Forțăm reîmprospătarea token-ului înainte de a porni verificarea
+                                const refreshedToken = localStorage.getItem('firebase_auth_token') || localStorage.getItem('authToken');
+                                
+                                // Pornim verificarea în fundal cu tokenul reîmprospătat
+                                const result = await NotificationHelper.startBackgroundMessageCheck(
+                                  userData.id, 
+                                  userData.role, 
+                                  refreshedToken || token
+                                );
+                                
                                 console.log('Rezultat pornire verificare notificări:', result);
                                 
                                 // Notificare de confirmare pentru utilizator
@@ -476,6 +513,13 @@ export default function NotificationPreferences() {
                                   body: 'Vei primi notificări pentru mesaje noi, cereri și oferte acceptate',
                                   requireInteraction: false,
                                   silent: false
+                                });
+                                
+                                // Confirmăm utilizatorului și în interfață
+                                toast({
+                                  title: "Notificări activate cu succes",
+                                  description: "Vei primi notificări pentru activitatea nouă",
+                                  variant: "default",
                                 });
                               } catch (error) {
                                 console.error('Eroare la pornirea verificării notificărilor:', error);
@@ -485,38 +529,47 @@ export default function NotificationPreferences() {
                                   variant: "destructive",
                                 });
                               }
-                            }, 800); // Creștem delay-ul pentru a da timp service worker-ului să se reseteze
-                          } else {
-                            console.error('Lipsesc datele utilizatorului pentru pornirea notificărilor');
+                            }, 1200); // Creștem delay-ul pentru a asigura stabilitatea
+                          } catch (error) {
+                            console.error('Eroare la procesul de activare a notificărilor:', error);
                             toast({
                               title: "Eroare la activarea notificărilor",
-                              description: "Datele de utilizator nu sunt disponibile. Încercați să vă reconectați.",
+                              description: error instanceof Error ? error.message : "Eroare neașteptată la activarea notificărilor",
                               variant: "destructive",
                             });
                           }
-                        } catch (error) {
-                          console.error('Eroare la activarea notificărilor:', error);
-                        }
-                      });
-                    } else if (!checked) {
-                      console.log('Dezactivăm verificare notificări în Service Worker');
-                      
-                      // Resetăm backgroundCheckActive la false pentru a ne asigura că polling-ul nu se reia
-                      import('../../lib/notifications').then(module => {
-                        try {
-                          const NotificationHelper = module.default;
-                          console.log('Oprire notificări browser - apel NotificationHelper.stopBackgroundMessageCheck()');
+                        } else if (!checked) {
+                          console.log('Dezactivăm verificare notificări în Service Worker');
                           
-                          // Oprim verificarea în Service Worker
-                          NotificationHelper.stopBackgroundMessageCheck();
-                        } catch (error) {
-                          console.error('Eroare la oprirea notificărilor:', error);
+                          // Oprirea notificărilor este mai simplă și nu necesită verificări extensive
+                          import('../../lib/notifications').then(module => {
+                            try {
+                              const NotificationHelper = module.default;
+                              console.log('Oprire notificări browser');
+                              
+                              // Oprim verificarea în Service Worker
+                              NotificationHelper.stopBackgroundMessageCheck();
+                              
+                              toast({
+                                title: "Notificări dezactivate",
+                                description: "Nu vei mai primi notificări în browser",
+                                variant: "default",
+                              });
+                            } catch (error) {
+                              console.error('Eroare la oprirea notificărilor:', error);
+                            }
+                          });
                         }
-                      });
-                    }
-
-                    // Trimitem la server
-                    updateMutation.mutate(updatedPreferences);
+                      },
+                      onError: (error) => {
+                        console.error('Eroare la actualizarea preferințelor:', error);
+                        toast({
+                          title: "Eroare",
+                          description: "Nu s-au putut actualiza preferințele. Încercați din nou.",
+                          variant: "destructive",
+                        });
+                      }
+                    });
                   }}
                 />
               </div>
