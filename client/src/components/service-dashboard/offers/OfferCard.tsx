@@ -9,7 +9,7 @@ interface OfferCardProps {
   onView: (offer: AcceptedOfferWithClient) => void;
   onMessage: (offer: AcceptedOfferWithClient) => void;
   onCall: (offer: AcceptedOfferWithClient) => void;
-  onCancel: (offerId: number) => void;
+  onCancel?: (offerId: number) => void; // Făcut opțional pentru a păstra coerența cu OfferDetailsDialog
   isNew: boolean;
 }
 

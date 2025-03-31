@@ -15,7 +15,7 @@ interface OfferDetailsDialogProps {
   offer: AcceptedOfferWithClient | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCancel: (offerId: number) => void;
+  onCancel?: (offerId: number) => void; // Butonul de anulare a fost eliminat, deci funcția este opțională
 }
 
 export function OfferDetailsDialog({
@@ -123,15 +123,6 @@ export function OfferDetailsDialog({
                       <span>{format(new Date(offer.createdAt), "dd.MM.yyyy HH:mm")}</span>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="destructive"
-                    onClick={() => onCancel(offer.id)}
-                  >
-                    Anulează Oferta
-                  </Button>
                 </div>
               </div>
             </ScrollArea>
