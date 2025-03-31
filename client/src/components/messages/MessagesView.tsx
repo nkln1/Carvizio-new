@@ -41,8 +41,11 @@ export default function MessagesView({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Scroll doar în interiorul containerului de mesaje, fără a afecta scroll-ul paginii întregi
     if (endOfMessagesRef.current && messagesContainerRef.current) {
-      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+      // Folosim scrollTo al containerului în loc de scrollIntoView care afectează toată pagina
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
 
@@ -52,8 +55,18 @@ export default function MessagesView({
     setIsSending(true);
     try {
       await handleSendMessage();
+      
+      // Focus pe textarea și scroll doar în containerul de mesaje
       if (textareaRef.current) {
         textareaRef.current.focus();
+      }
+      
+      // Scroll manual în containerul de mesaje, fără a afecta pagina
+      if (messagesContainerRef.current) {
+        const container = messagesContainerRef.current;
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight;
+        }, 100); // Un mic delay pentru a permite mesajului să fie adăugat în DOM
       }
     } catch (error) {
       console.error('Error sending message:', error);
