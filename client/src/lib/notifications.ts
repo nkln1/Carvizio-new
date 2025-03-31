@@ -25,7 +25,8 @@ class NotificationHelper {
   private static debugMode = true;
   private static notificationQueue: any[] = [];
   private static isProcessingQueue = false;
-  private static backgroundCheckActive = false;
+  // Modificăm de la private la public pentru a permite accesul din alte părți ale codului
+  public static backgroundCheckActive = false;
   private static notificationSettings = {
     enabled: true,
     silentMode: false,

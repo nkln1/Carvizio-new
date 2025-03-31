@@ -444,10 +444,65 @@ export default function NotificationPreferences() {
                             const NotificationsModule = await import('../../lib/notifications');
                             const NotificationHelper = NotificationsModule.default;
                             
-                            // Obținem datele utilizatorului
-                            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                            if (!userData.id || !userData.role) {
-                              throw new Error('Datele utilizatorului lipsesc');
+                            // Obținem datele utilizatorului din toate sursele posibile
+                            let userData;
+                            
+                            try {
+                              // Prima sursă: localStorage userData
+                              userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                              
+                              // A doua sursă: verificăm în preferences pentru serviceProviderId
+                              if (!userData.id && preferences.serviceProviderId) {
+                                userData = {
+                                  ...userData,
+                                  id: preferences.serviceProviderId,
+                                  role: 'service' // Pentru dashboard-ul furnizorului, știm că rolul este 'service'
+                                };
+                                console.log('Folosim ID-ul din preferințele notificărilor:', userData.id);
+                              }
+                              
+                              // A treia sursă: verificăm în sessionStorage
+                              if (!userData.id || !userData.role) {
+                                const sessionData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+                                if (sessionData.id) {
+                                  userData = {
+                                    ...userData,
+                                    ...sessionData
+                                  };
+                                  console.log('Folosim date utilizator din sessionStorage:', userData.id);
+                                }
+                              }
+                              
+                              // Dacă încă nu avem datele, dar avem serviceProviderId, folosim asta
+                              if (!userData.id && !userData.role && preferences.serviceProviderId) {
+                                userData = {
+                                  id: preferences.serviceProviderId,
+                                  role: 'service'
+                                };
+                                console.log('Folosim service provider ID ca ultimă soluție:', userData.id);
+                              }
+                              
+                              // Verificăm final dacă avem datele necesare
+                              if (!userData.id || !userData.role) {
+                                throw new Error('Datele utilizatorului lipsesc și nu pot fi recuperate');
+                              }
+                              
+                              // Salvăm datele recuperate în localStorage pentru viitoare utilizări
+                              localStorage.setItem('userData', JSON.stringify(userData));
+                              console.log('Date utilizator salvate pentru refolosire:', userData);
+                            
+                            } catch (parseError) {
+                              console.error('Eroare la procesarea datelor utilizatorului:', parseError);
+                              // Încercăm să obținem cel puțin ID-ul din preferințe
+                              if (preferences.serviceProviderId) {
+                                userData = {
+                                  id: preferences.serviceProviderId,
+                                  role: 'service'
+                                };
+                                console.log('Folosim ID serviciu din preferințe după eroare:', userData.id);
+                              } else {
+                                throw new Error('Nu s-au putut recupera datele utilizatorului');
+                              }
                             }
                             
                             console.log('Repornim verificarea notificărilor pentru utilizator:', userData.id, userData.role);
