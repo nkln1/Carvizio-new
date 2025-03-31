@@ -226,15 +226,42 @@ function startPeriodicMessageCheck(options = {}) {
 
 // Oprește verificarea periodică a mesajelor
 function stopPeriodicMessageCheck() {
+  // Verificăm și înregistrăm starea verificării înainte de oprire
+  console.log('[Service Worker] Oprire verificare mesaje în fundal. Stare actuală:', {
+    isActive: backgroundCheckConfig.isActive,
+    hasIntervalId: !!backgroundCheckConfig.intervalId
+  });
+
+  // Oprim intervalul dacă există
   if (backgroundCheckConfig.intervalId) {
     clearInterval(backgroundCheckConfig.intervalId);
     backgroundCheckConfig.intervalId = null;
+    console.log('[Service Worker] Interval de verificare oprit');
+  } else {
+    console.log('[Service Worker] Nu există un interval activ pentru verificare');
   }
 
+  // Resetăm complet starea verificării
   backgroundCheckConfig.isActive = false;
-  console.log('[Service Worker] Oprire verificare mesaje în fundal');
+  
+  // Notificăm toate ferestrele/tab-urile active că am oprit verificarea
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'BACKGROUND_CHECK_STATUS',
+        isActive: false,
+        message: 'Verificare mesaje în fundal oprită'
+      });
+    });
+  });
 
-  return { success: true, message: 'Verificare mesaje în fundal oprită' };
+  console.log('[Service Worker] Verificarea mesajelor în fundal a fost oprită complet');
+  
+  return { 
+    success: true, 
+    message: 'Verificare mesaje în fundal oprită cu succes',
+    timestamp: new Date().toISOString()
+  };
 }
 
 // Obține tokenul din localStorage (pentru verificări din fundal)
@@ -1080,22 +1107,46 @@ self.addEventListener('message', (event) => {
 
     case 'STOP_BACKGROUND_MESSAGE_CHECK':
       try {
+        console.log('[Service Worker] Primită comandă de oprire a verificării mesajelor în fundal');
+        
+        // Oprim verificarea periodică
         const stopResult = stopPeriodicMessageCheck();
-        // Trimitem rezultatul înapoi
-        if (event.data.id) {
-          self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
-              client.postMessage({
-                id: event.data.id,
-                status: 'completed',
-                success: true,
-                result: stopResult
-              });
+        
+        // Trimitem rezultatul înapoi către toate clientele conectate
+        self.clients.matchAll().then(clients => {
+          console.log(`[Service Worker] Notificăm ${clients.length} clienți despre oprirea verificării`);
+          
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'BACKGROUND_CHECK_STATUS',
+              status: 'stopped',
+              success: true,
+              timestamp: new Date().toISOString(),
+              result: stopResult,
+              source: 'service-worker',
+              id: event.data.id || null
             });
+          });
+        });
+        
+        // Confirmăm canalului care a inițiat comanda (dacă există)
+        if (event.ports && event.ports[0]) {
+          console.log('[Service Worker] Răspuns direct către portul care a inițiat oprirea');
+          event.ports[0].postMessage({
+            success: true,
+            result: stopResult
           });
         }
       } catch (error) {
         console.error('[Service Worker] Eroare la oprirea verificării de fundal:', error);
+        
+        // Chiar și în caz de eroare, încercăm să oprim verificarea și să notificăm clientul
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({
+            success: false,
+            error: error.message || 'Eroare necunoscută la oprirea verificării'
+          });
+        }
       }
       break;
 

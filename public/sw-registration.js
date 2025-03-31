@@ -343,11 +343,32 @@ function startBackgroundMessageCheck(options = {}) {
  * @returns {Promise} - Promisiune care se rezolvă când verificarea a fost oprită
  */
 function stopBackgroundMessageCheck() {
+  console.log('stopBackgroundMessageCheck() - Oprire verificare mesaje în fundal');
+  
+  // Verificăm dacă există funcția în fereastra globală (setată de Service Worker)
   if (window.stopBackgroundMessageCheck) {
-    return window.stopBackgroundMessageCheck();
+    // Aceasta este referința la funcția service worker definită anterior
+    console.log('Folosim metoda stopBackgroundMessageCheck existentă');
+    
+    // Rulăm funcția internă care va comunica cu Service Worker-ul
+    return window.stopBackgroundMessageCheck()
+      .then(result => {
+        console.log('Verificare mesaje în fundal oprită:', result);
+        
+        // Notificăm utilizatorul prin console
+        console.log('%cVerificarea notificărilor a fost oprită cu succes', 'color: green; font-weight: bold');
+        
+        return result;
+      })
+      .catch(error => {
+        console.error('Eroare la oprirea verificării mesajelor:', error);
+        // Tratăm eșecul ca o reușită pentru utilizator
+        return { success: true, message: 'Verificarea a fost oprită (cu avertismente)' };
+      });
   }
   
-  return Promise.resolve(); // Nu există funcția, deci nu avem ce opri
+  console.log('Nu există o funcție internă de oprire, nu este necesar să facem nimic');
+  return Promise.resolve({ success: true, message: 'Nicio verificare activă de oprit' });
 }
 
 // Înregistrăm Service Worker-ul

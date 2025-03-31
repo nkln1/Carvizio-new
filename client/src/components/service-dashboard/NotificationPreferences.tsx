@@ -417,6 +417,15 @@ export default function NotificationPreferences() {
                       newReviewBrowserEnabled: checked
                     };
 
+                    // Afișăm un toast pentru a informa utilizatorul despre schimbarea stării
+                    toast({
+                      title: checked ? "Notificări activate" : "Notificări dezactivate",
+                      description: checked 
+                        ? "Vei primi notificări pentru mesaje noi, cereri și oferte acceptate" 
+                        : "Nu vei mai primi notificări în browser",
+                      variant: "default",
+                    });
+
                     // Actualizare service worker dacă este activat
                     if (checked && hasBrowserPermission) {
                       console.log('Activăm verificare notificări în Service Worker');
@@ -427,7 +436,10 @@ export default function NotificationPreferences() {
 
                         if (userData.id && userData.role) {
                           const token = localStorage.getItem('authToken');
+                          // Mai întâi oprim orice verificare existentă
                           NotificationHelper.stopBackgroundMessageCheck();
+                          
+                          // Apoi pornim verificarea după un scurt delay
                           setTimeout(() => {
                             NotificationHelper.startBackgroundMessageCheck(userData.id, userData.role, token || undefined);
                             console.log('Verificarea notificărilor a fost repornită');
@@ -443,8 +455,11 @@ export default function NotificationPreferences() {
                       });
                     } else if (!checked) {
                       console.log('Dezactivăm verificare notificări în Service Worker');
+                      // Resetăm backgroundCheckActive la false pentru a ne asigura că polling-ul nu se reia
                       import('../../lib/notifications').then(module => {
                         const NotificationHelper = module.default;
+                        console.log('Oprire notificări browser - apel NotificationHelper.stopBackgroundMessageCheck()');
+                        // Oprim verificarea în Service Worker
                         NotificationHelper.stopBackgroundMessageCheck();
                       });
                     }

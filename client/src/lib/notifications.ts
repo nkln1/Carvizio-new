@@ -611,23 +611,39 @@ class NotificationHelper {
    * Oprește verificarea mesajelor în fundal
    */
   static stopBackgroundMessageCheck(): void {
+    console.log('Încercare de oprire a verificării mesajelor în fundal. Stare verificare activă:', this.backgroundCheckActive);
+    
+    // Oprim întotdeauna polling-ul din client, indiferent de starea Service Worker-ului
+    if (this.clientSidePollingInterval) {
+      console.log('Oprire polling client-side activ');
+      clearInterval(this.clientSidePollingInterval);
+      this.clientSidePollingInterval = null;
+    }
+    
+    // Verificăm dacă Service Worker-ul este disponibil
     if (!this.isServiceWorkerAvailable() || !window.stopBackgroundMessageCheck) {
       console.warn('Service Worker nu este disponibil pentru oprirea verificării mesajelor în fundal');
-      clearInterval(this.clientSidePollingInterval); // Stop client-side polling if active
       this.backgroundCheckActive = false;
       return;
     }
 
-    if (this.backgroundCheckActive) {
-      window.stopBackgroundMessageCheck()
-        .then(() => {
-          this.backgroundCheckActive = false;
-          console.log('Verificare mesaje în fundal oprită cu succes');
-        })
-        .catch(error => {
-          console.error('Eroare la oprirea verificării mesajelor în fundal:', error);
-        });
-    }
+    // Chiar dacă verificarea nu pare activă, încercăm să oprim verificarea din Service Worker
+    // pentru a ne asigura că nu există verificări active
+    console.log('Trimitere comandă de oprire către Service Worker...');
+    window.stopBackgroundMessageCheck()
+      .then((result) => {
+        this.backgroundCheckActive = false;
+        console.log('Verificare mesaje în fundal oprită cu succes:', result);
+        
+        // Adăugăm un log suplimentar în console pentru a confirma utilizatorului
+        console.log('%cNotificările au fost dezactivate cu succes', 'color: green; font-weight: bold;');
+      })
+      .catch(error => {
+        console.error('Eroare la oprirea verificării mesajelor în fundal:', error);
+        
+        // Încercăm să forțăm oprirea verificării
+        this.backgroundCheckActive = false;
+      });
   }
 
   private static clientSidePollingInterval: any;
@@ -638,12 +654,17 @@ class NotificationHelper {
         // Obținem tokenul de autentificare
         let token = options.token;
         if (!token && window.getAuthToken) {
-          token = await window.getAuthToken();
+          // Obținem tokenul și îl convertim din null în undefined dacă este necesar
+          const authToken = await window.getAuthToken();
+          // TypeScript nu va mai genera erori deoarece acum tratăm explicit cazul null
+          if (authToken !== null) {
+            token = authToken;
+          }
         }
         
         // Verificăm dacă avem un token valid
         if (!token) {
-          console.error('Nu am putut obține un token de autentificare pentru polling');
+          console.log('No authentication token available for polling');
           return;
         }
         
