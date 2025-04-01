@@ -20,7 +20,9 @@ export class EmailService {
 
   constructor() {
     this.apiKey = process.env.ELASTIC_EMAIL_API_KEY || '';
-    this.fromEmail = 'no-reply@serviceauto.ro';
+    // Folosim adresa de email de la contul Elastic Email (cea cu care s-a făcut înregistrarea)
+    // În modul de testare, only putem trimite către și de la această adresă
+    this.fromEmail = 'nikelino6@yahoo.com';
     this.fromName = 'Service Auto App';
     
     if (!this.apiKey) {
@@ -77,7 +79,7 @@ export class EmailService {
         console.error('[Email Service] Account/load test failed:', response.data);
       }
     } catch (error) {
-      console.error('[Email Service] Error calling account/load:', error?.message);
+      console.error('[Email Service] Error calling account/load:', error instanceof Error ? error.message : String(error));
       
       if (axios.isAxiosError(error)) {
         console.error('  Status:', error.response?.status);
@@ -106,7 +108,7 @@ export class EmailService {
         console.error('[Email Service] Verify account test failed:', response.data);
       }
     } catch (error) {
-      console.error('[Email Service] Error calling verifyaccount:', error?.message);
+      console.error('[Email Service] Error calling verifyaccount:', error instanceof Error ? error.message : String(error));
       
       if (axios.isAxiosError(error)) {
         console.error('  Status:', error.response?.status);
@@ -201,12 +203,28 @@ export class EmailService {
         return false;
       }
 
+      // IMPORTANT: În modul de testare Elastic Email, putem trimite email-uri doar către adresa de email
+      // care a fost folosită pentru a crea contul Elastic Email (nikelino6@yahoo.com)
+      // În producție, acest cod va fi modificat pentru a trimite către serviceProvider.email
+      const destinationEmail = process.env.NODE_ENV === 'production' 
+        ? serviceProvider.email 
+        : 'nikelino6@yahoo.com';
+      
+      // Adăugăm o notă despre email-ul original în modul de test
+      let modifiedHtmlContent = htmlContent;
+      if (process.env.NODE_ENV !== 'production' && serviceProvider.email !== destinationEmail) {
+        modifiedHtmlContent += `<div style="margin-top: 20px; padding: 10px; background-color: #ffffcc; border: 1px solid #ffcc00; color: #333;">
+          <p><strong>Notă:</strong> În modul de testare, acest email a fost trimis către ${destinationEmail} 
+          în loc de adresa originală: ${serviceProvider.email}</p>
+        </div>`;
+      }
+
       // Trimite emailul
       return await this.sendEmail({
-        to: serviceProvider.email,
+        to: destinationEmail,
         subject,
-        bodyHtml: htmlContent,
-        bodyText: textContent
+        bodyHtml: modifiedHtmlContent,
+        bodyText: textContent ? textContent + `\n\nNOTĂ TEST: Email original destinat pentru: ${serviceProvider.email}` : undefined
       });
     } catch (error) {
       console.error('[Email Service] Error sending service notification email:', error);

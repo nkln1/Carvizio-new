@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
 import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews, insertReviewSchema } from "@shared/schema";
-import { getEmailNotificationService } from './services';
+import { getEmailNotificationService, emailService } from './services';
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -274,15 +274,16 @@ export function registerRoutes(app: Express): Server {
       
       // Test de trimitere email - test pentru depanare
       try {
-        const { emailService } = require('./services');
         console.log('[DEBUG] Testăm trimiterea unui email de test direct din endpoint');
+        // Folosim adresa de email pentru testare de la Elastic Email (doar aceasta funcționează în modul de test)
         const testResult = await emailService.sendEmail({
-          to: serviceProvider.email,
+          to: 'nikelino6@yahoo.com', // Adresa folosită la înregistrarea contului Elastic Email
           subject: 'Test email de la Service Auto',
           bodyHtml: `
             <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
               <h2 style="color: #0080ff;">Test Email</h2>
               <p>Acesta este un email de test pentru a verifica funcționarea serviciului de email.</p>
+              <p>Email original: ${serviceProvider.email}</p>
               <p>Timestamp: ${new Date().toISOString()}</p>
             </div>
           `,
