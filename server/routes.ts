@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
 import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews, insertReviewSchema } from "@shared/schema";
+import { getEmailNotificationService } from './services';
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -94,6 +95,13 @@ interface IStorage {
     getWorkingHours: any;
     getServiceProviderByUsername: any;
     createReview: any;
+    updateReview: any;
+    deleteReview: any;
+    getServiceProviderAverageRating: any;
+    getNotificationPreferences: any;
+    createNotificationPreferences: any;
+    updateNotificationPreferences: any;
+    getServiceProviderReviews: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -887,7 +895,13 @@ export function registerRoutes(app: Express): Server {
           }));
         }
       });
-
+      
+      // Odată ce cererea a fost creată, încercăm să trimitem notificări email
+      // Nu le trimitem încă, vom implementa această funcționalitate complet după ce rezolvăm problemele de compilare
+      // din interfața de storage și serviciile de notificare
+      
+      console.log("[Email] New request created, waiting for email notification service implementation");
+      
       res.status(201).json(request);
     } catch (error: any) {
       console.error("Error creating request:", error);
@@ -1434,6 +1448,23 @@ export function registerRoutes(app: Express): Server {
 
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
       await storage.updateRequest(offer.requestId, { status: "Rezolvat" });
+      
+      // Obține detaliile cererii pentru notificarea email
+      const request = await storage.getRequest(offer.requestId);
+      
+      // Trimite notificare prin email (considerat critic, se trimite instant)
+      try {
+        const emailNotificationService = getEmailNotificationService();
+        if (request) {
+          await emailNotificationService.notifyOfferAccepted(offer.serviceProviderId, updatedOffer, request);
+          console.log(`[Email] Sent offer accepted notification to service provider ${offer.serviceProviderId}`);
+        } else {
+          console.error("[Email] Cannot send notification - request not found");
+        }
+      } catch (error) {
+        console.error("[Email] Error sending email notification for accepted offer:", error);
+        // Continuă cu răspunsul, chiar dacă notificarea a eșuat
+      }
 
       // Send notifications through WebSocket with improved error handling
       wss.clients.forEach((client) => {
@@ -1642,6 +1673,33 @@ export function registerRoutes(app: Express): Server {
           }));
         }
       });
+      
+      // Trimitem notificare prin email dacă destinatarul este un service provider
+      try {
+        if (message.receiverRole === "service") {
+          // Obținem informații despre expeditor și solicitare pentru email
+          const senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
+          const request = await storage.getRequest(requestId);
+          
+          if (request) {
+            try {
+              const emailNotificationService = getEmailNotificationService();
+              await emailNotificationService.notifyNewMessage(
+                message.receiverId, 
+                message, 
+                request,
+                senderName
+              );
+              console.log(`[Email] Sent message notification to service provider ${message.receiverId}`);
+            } catch (error) {
+              console.error("[Email] Error sending email notification for new message:", error);
+              // Continuăm cu restul fluxului, chiar dacă notificarea prin email eșuează
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error preparing message email notification:", error);
+      }
       
       // Send push notification via Firebase Cloud Messaging
       try {
@@ -2686,6 +2744,18 @@ export function registerRoutes(app: Express): Server {
 
       // Create the review
       const review = await storage.createReview(reviewData);
+      
+      // Trimite notificare email despre recenzia nouă (considerat non-critic, poate fi grupat)
+      try {
+        const emailNotificationService = getEmailNotificationService();
+        const clientName = client.name;
+        
+        await emailNotificationService.notifyNewReview(serviceProviderId, review, clientName);
+        console.log(`[Email] Sent review notification to service provider ${serviceProviderId}`);
+      } catch (error) {
+        console.error("[Email] Error sending email notification for new review:", error);
+        // Continuăm cu răspunsul, chiar dacă notificarea prin email eșuează
+      }
 
       console.log("Review created successfully:", review);
       res.status(201).json(review);

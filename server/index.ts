@@ -4,6 +4,8 @@ import { setupVite, serveStatic } from "./vite";
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import { setCustomMimeTypes } from "./mimeTypes";
+import { initializeServices } from "./services";
+import { DatabaseStorage } from "./storage";
 
 const app = express();
 const server = http.createServer(app);
@@ -98,6 +100,13 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 (async () => {
   // Aplicăm configurarea MIME types ÎNAINTE de a înregistra rutele
   setCustomMimeTypes(app); // Add MIME type configuration
+  
+  // Inițializare storage
+  const storage = new DatabaseStorage();
+  
+  // Inițializare servicii
+  const services = initializeServices(storage);
+  console.log('Services initialized successfully');
   
   registerRoutes(app);
 
