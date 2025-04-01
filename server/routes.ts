@@ -272,6 +272,27 @@ export function registerRoutes(app: Express): Server {
       const unreadCount = await storage.getUnreadMessagesCount(serviceProvider.id, "service");
       console.log(`Număr mesaje necitite pentru service provider ${serviceProvider.id}: ${unreadCount}`);
       
+      // Test de trimitere email - test pentru depanare
+      try {
+        const { emailService } = require('./services');
+        console.log('[DEBUG] Testăm trimiterea unui email de test direct din endpoint');
+        const testResult = await emailService.sendEmail({
+          to: serviceProvider.email,
+          subject: 'Test email de la Service Auto',
+          bodyHtml: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+              <h2 style="color: #0080ff;">Test Email</h2>
+              <p>Acesta este un email de test pentru a verifica funcționarea serviciului de email.</p>
+              <p>Timestamp: ${new Date().toISOString()}</p>
+            </div>
+          `,
+          bodyText: 'Acesta este un email de test pentru a verifica funcționarea serviciului de email.'
+        });
+        console.log('[DEBUG] Rezultat test email:', testResult);
+      } catch (emailError) {
+        console.error('[DEBUG] Eroare la testarea emailului:', emailError);
+      }
+      
       // Răspunde cu numărul de mesaje necitite
       res.json({ count: unreadCount });
     } catch (error) {
