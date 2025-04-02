@@ -22,7 +22,8 @@ export class EmailService {
     this.apiKey = process.env.ELASTIC_EMAIL_API_KEY || '';
     // Utilizăm un email verificat și dedicat pentru trimiterea notificărilor
     // Acum că utilizăm un cont plătit, putem trimite către orice adresă
-    this.fromEmail = 'notificari@serviceauto.ro';
+    // Actualizat la 2 aprilie 2025: folosim adresa verificată din contul Elastic Email
+    this.fromEmail = 'notificari@carvizio.ro';
     this.fromName = 'Service Auto App';
     
     if (!this.apiKey) {
@@ -35,6 +36,35 @@ export class EmailService {
       
       // Rulăm un test la inițializare pentru a verifica API-ul
       this.testElasticEmailConnection();
+      
+      // Actualizat la 2 aprilie 2025: test suplimentar pentru a verifica trimiterea emailurilor
+      this.sendTestEmail();
+    }
+  }
+  
+  /**
+   * Trimite un email de test pentru a verifica funcționalitatea
+   */
+  private async sendTestEmail() {
+    try {
+      console.log('[Email Service] Sending test email...');
+      
+      await this.sendEmail({
+        to: "nikelino6@yahoo.com", // Adresa de test a proprietarului
+        subject: "Test Email Service - " + new Date().toISOString(),
+        bodyHtml: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #0080ff;">Test Email Service</h2>
+            <p>Acesta este un email de test trimis la ${new Date().toLocaleString()}.</p>
+            <p>Dacă ai primit acest email, serviciul funcționează corect.</p>
+            <p>API Key utilizat: ${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}</p>
+            <p>From email: ${this.fromEmail}</p>
+          </div>
+        `,
+        bodyText: `Test Email Service - ${new Date().toLocaleString()}\n\nAcesta este un email de test. Dacă ai primit acest email, serviciul funcționează corect.`
+      });
+    } catch (error) {
+      console.error('[Email Service] Failed to send test email:', error);
     }
   }
   
@@ -46,12 +76,59 @@ export class EmailService {
       console.log('[Email Service] Testing Elastic Email API connection...');
       console.log(`[Email Service] API Key length: ${this.apiKey.length} characters`);
       
-      // Testăm accesul prin două puncte de intrare diferite ale API-ului
-      console.log('[Email Service] Testing account/load endpoint...');
-      await this.testAccountLoad();
+      // Actualizat la 2 aprilie 2025: testăm direct endpoint-ul pentru trimiterea email-urilor
+      console.log('[Email Service] Testing email endpoints...');
       
-      console.log('[Email Service] Testing account/verifyaccount endpoint...');
-      await this.testVerifyAccount();
+      // Pregătim parametrii pentru un test simplu
+      const params = new URLSearchParams();
+      params.append('apikey', this.apiKey);
+      params.append('subject', 'API Connection Test');
+      params.append('from', this.fromEmail);
+      params.append('fromName', this.fromName);
+      params.append('to', 'no-reply@serviceauto.ro'); // Adresă internă pentru test
+      params.append('bodyHtml', '<p>This is a test email to verify API connectivity.</p>');
+      
+      try {
+        // Verificăm doar validitatea API-ului fără a trimite efectiv email-ul
+        const pingResult = await axios.get(`https://api.elasticemail.com/v2/email/ping?apikey=${this.apiKey}`);
+        
+        if (pingResult.data && pingResult.data.success) {
+          console.log('[Email Service] API ping successful!');
+        } else {
+          console.error('[Email Service] API ping failed:', pingResult.data);
+        }
+      } catch (pingError) {
+        console.error('[Email Service] API ping error:', pingError);
+        
+        if (axios.isAxiosError(pingError)) {
+          console.error('  Status:', pingError.response?.status);
+          console.error('  Status Text:', pingError.response?.statusText);
+          console.error('  Response data:', pingError.response?.data);
+        }
+      }
+      
+      // Verificăm și starea contului
+      try {
+        const statusParams = new URLSearchParams();
+        statusParams.append('apikey', this.apiKey);
+        
+        const statusResult = await axios.get('https://api.elasticemail.com/v2/account/status?' + statusParams.toString());
+        
+        if (statusResult.data && statusResult.data.success) {
+          console.log('[Email Service] Account status check successful!');
+          console.log('[Email Service] Account status:', statusResult.data.data);
+        } else {
+          console.error('[Email Service] Account status check failed:', statusResult.data);
+        }
+      } catch (statusError) {
+        console.error('[Email Service] Account status check error:', statusError);
+        
+        if (axios.isAxiosError(statusError)) {
+          console.error('  Status:', statusError.response?.status);
+          console.error('  Status Text:', statusError.response?.statusText);
+          console.error('  Response data:', statusError.response?.data);
+        }
+      }
       
     } catch (error) {
       console.error('[Email Service] Overall error testing Elastic Email API:', error);

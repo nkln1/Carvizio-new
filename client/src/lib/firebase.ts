@@ -65,6 +65,33 @@ export const sendVerificationEmail = async () => {
   }
 };
 
+/**
+ * Obține token-ul de autentificare Firebase pentru utilizatorul curent
+ * @returns Promise<string | null> - Token-ul sau null în caz de eroare
+ */
+export const getFirebaseToken = async (): Promise<string | null> => {
+  try {
+    // Verificăm dacă Firebase Auth este inițializat și avem un utilizator autentificat
+    if (!auth || !auth.currentUser) {
+      console.warn('[getFirebaseToken] Nu există un utilizator autentificat în Firebase');
+      return null;
+    }
+
+    // Obținem token-ul de la utilizatorul curent
+    const token = await auth.currentUser.getIdToken(true);
+    console.log('[getFirebaseToken] Token obținut cu succes', 
+      token ? `(lungime ${token.length})` : 'invalid');
+    
+    // Stocăm token-ul pentru a fi disponibil și prin localStorage (pentru compatibilitate)
+    localStorage.setItem('firebase_auth_token', token);
+    
+    return token;
+  } catch (error) {
+    console.error('[getFirebaseToken] Eroare la obținerea token-ului Firebase:', error);
+    return null;
+  }
+};
+
 // Funcția pentru obținerea și înregistrarea tokenului FCM
 export const requestFCMPermissionAndToken = async (): Promise<string | null> => {
   if (!messaging) {

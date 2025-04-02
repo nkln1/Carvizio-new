@@ -273,26 +273,55 @@ async function getAuthToken() {
       // Configurăm portul pentru a primi răspunsul
       channel.port1.onmessage = (event) => {
         if (event.data && event.data.token) {
+          console.log('[Service Worker] Token primit de la client', 
+                      typeof event.data.token === 'string' ? `(lungime ${event.data.token.length})` : 'invalid');
           resolve(event.data.token);
+        } else if (event.data && event.data.error) {
+          console.warn('[Service Worker] Eroare primită de la client:', event.data.error);
+          resolve(null);
         } else {
-          console.warn('[Service Worker] Nu s-a putut obține tokenul de autentificare din localStorage');
+          console.warn('[Service Worker] Nu s-a primit token valid de la client:', event.data);
           resolve(null);
         }
       };
 
-      // Trimitem cererea către client
-      clientList[0].postMessage({
-        type: 'GET_AUTH_TOKEN'
-      }, [channel.port2]);
+      // Adăugăm handler pentru erori de comunicare
+      channel.port1.onerror = (err) => {
+        console.error('[Service Worker] Eroare de comunicare cu clientul:', err);
+        resolve(null);
+      };
+
+      // Trimitem cererea către client (pagina web)
+      try {
+        console.log('[Service Worker] Solicit token de la client...');
+        clientList[0].postMessage(
+          { type: 'GET_AUTH_TOKEN', timestamp: new Date().toISOString() },
+          [channel.port2]
+        );
+      } catch (postError) {
+        console.error('[Service Worker] Eroare la trimiterea cererii de token:', postError);
+        resolve(null);
+      }
     });
 
-    // Așteptăm răspunsul cu timeout de 1 secundă
+    // Așteptăm răspunsul cu un timeout pentru a evita blocarea prea lungă
     const timeoutPromise = new Promise((resolve) => {
-      setTimeout(() => resolve(null), 1000);
+      setTimeout(() => {
+        console.warn('[Service Worker] Timeout la așteptarea tokenului');
+        resolve(null);
+      }, 3000); // Am mărit la 3 secunde timeout pentru a permite procesarea
     });
 
-    // Returnăm primul rezultat - fie tokenul, fie null după timeout
-    return Promise.race([tokenResponsePromise, timeoutPromise]);
+    // Folosim race pentru a returna primul rezultat (tokenul sau timeout)
+    const token = await Promise.race([tokenResponsePromise, timeoutPromise]);
+    
+    // Verificăm validitatea token-ului
+    if (!token || token === 'undefined' || token === 'null') {
+      console.warn('[Service Worker] Token invalid sau lipsă obținut');
+      return null;
+    }
+    
+    return token;
   } catch (error) {
     console.error('[Service Worker] Eroare la obținerea tokenului:', error);
     return null;

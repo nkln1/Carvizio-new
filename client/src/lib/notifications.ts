@@ -1,6 +1,8 @@
 /**
  * Helper pentru gestionarea notificărilor browser
  */
+// Importăm funcția pentru a obține token-ul de autentificare Firebase
+import { auth, getFirebaseToken } from '../lib/firebase';
 
 // Interfață pentru opțiunile de verificare în fundal
 export interface BackgroundCheckOptions {
@@ -842,17 +844,38 @@ if (typeof window !== 'undefined') {
   if (!window.getAuthToken) {
     window.getAuthToken = async () => {
       try {
-        // Încercăm toate sursele posibile pentru token
-        const authToken = localStorage.getItem('firebase_auth_token') || 
-                        localStorage.getItem('authToken') || 
-                        sessionStorage.getItem('firebase_auth_token') || 
-                        sessionStorage.getItem('authToken');
-                        
+        // Actualizat la 2 aprilie 2025: Implementare îmbunătățită
+        let authToken: string | null = null;
+        
+        // 1. Încercăm să obținem token-ul Firebase folosind helper-ul
+        try {
+          authToken = await getFirebaseToken();
+          if (authToken) {
+            console.log('[getAuthToken] Token obținut direct de la Firebase');
+          }
+        } catch (firebaseError) {
+          console.error('[getAuthToken] Eroare la obținerea token-ului din Firebase:', firebaseError);
+        }
+        
+        // 2. Dacă nu am reușit cu Firebase, încercăm din storage
+        if (!authToken) {
+          authToken = localStorage.getItem('firebase_auth_token') || 
+                      localStorage.getItem('authToken') || 
+                      sessionStorage.getItem('firebase_auth_token') || 
+                      sessionStorage.getItem('authToken');
+          
+          if (authToken) {
+            console.log('[getAuthToken] Token obținut din storage');
+          }
+        }
+        
+        // Logăm rezultatul final
         console.log('[getAuthToken] Furnizăm token de autentificare către Service Worker', 
                     authToken ? 'Token găsit (lungime ' + authToken.length + ')' : 'Token lipsă');
         
+        // Verificăm validitatea
         if (!authToken || authToken === 'undefined' || authToken === 'null') {
-          console.warn('[getAuthToken] Nu s-a găsit un token valid în storage');
+          console.warn('[getAuthToken] Nu s-a găsit un token valid');
           return null;
         }
         
@@ -875,10 +898,29 @@ if (typeof window !== 'undefined') {
           console.log('[ServiceWorker Message Listener] Cerere GET_AUTH_TOKEN primită');
           
           // Folosim aceeași logică ca în getAuthToken pentru a fi consecvenți
-          const token = localStorage.getItem('firebase_auth_token') || 
-                       localStorage.getItem('authToken') || 
-                       sessionStorage.getItem('firebase_auth_token') || 
-                       sessionStorage.getItem('authToken');
+          let token: string | null = null;
+          
+          // Încercăm mai întâi să obținem direct de la Firebase
+          try {
+            token = await getFirebaseToken();
+            if (token) {
+              console.log('[ServiceWorker Message Listener] Token obținut direct de la Firebase pentru GET_AUTH_TOKEN');
+            }
+          } catch (e) {
+            console.error('[ServiceWorker Message Listener] Eroare la obținerea tokenului Firebase:', e);
+          }
+          
+          // Fallback la storage dacă nu am obținut din Firebase
+          if (!token) {
+            token = localStorage.getItem('firebase_auth_token') || 
+                    localStorage.getItem('authToken') || 
+                    sessionStorage.getItem('firebase_auth_token') || 
+                    sessionStorage.getItem('authToken');
+                    
+            if (token) {
+              console.log('[ServiceWorker Message Listener] Token obținut din storage pentru GET_AUTH_TOKEN');
+            }
+          }
                       
           console.log('[ServiceWorker Message Listener] Răspundem cu token:', 
                       token ? `disponibil (${token.length} caractere)` : 'indisponibil');
@@ -909,14 +951,33 @@ if (typeof window !== 'undefined') {
           }
         }
       } else if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
-        // Menține și handler-ul vechi pentru compatibilitate 
+        // Actualizat la 2 aprilie 2025 - Folosim implementarea îmbunătățită pentru getAuthToken
         try {
-          // Folosim aceeași logică ca în getAuthToken pentru a fi consecvenți
-          const token = localStorage.getItem('firebase_auth_token') || 
-                      localStorage.getItem('authToken') || 
-                      sessionStorage.getItem('firebase_auth_token') || 
-                      sessionStorage.getItem('authToken');
-                      
+          // Obținem tokenul folosind aceeași logică îmbunătățită
+          let token: string | null = null;
+          
+          // 1. Mai întâi încercăm să obținem direct din Firebase folosind helper-ul
+          try {
+            token = await getFirebaseToken();
+            if (token) {
+              console.log('[ServiceWorker Message Listener] Token obținut direct de la Firebase');
+            }
+          } catch (firebaseError) {
+            console.error('[ServiceWorker Message Listener] Eroare Firebase:', firebaseError);
+          }
+          
+          // 2. Dacă nu am reușit, folosim storage
+          if (!token) {
+            token = localStorage.getItem('firebase_auth_token') || 
+                  localStorage.getItem('authToken') || 
+                  sessionStorage.getItem('firebase_auth_token') || 
+                  sessionStorage.getItem('authToken');
+            
+            if (token) {
+              console.log('[ServiceWorker Message Listener] Token obținut din storage');
+            }
+          }
+          
           console.log('[ServiceWorker Message Listener] Cerere REQUEST_AUTH_TOKEN primită, răspundem cu token:', 
                       token ? `disponibil (${token.length} caractere)` : 'indisponibil');
 
