@@ -300,8 +300,14 @@ Mulțumim că folosești platforma Service Auto!
   async notifyNewRequest(serviceProviderId: number, request: Request, instant: boolean = true) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
-    if (!preferences || !preferences.emailNotificationsEnabled || !preferences.newRequestEmailEnabled) {
+    console.log(`[EmailNotificationService] Preferences for new request, service ${serviceProviderId}:`, preferences);
+    
+    if (!preferences) {
+      console.log(`[EmailNotificationService] No notification preferences found for service ${serviceProviderId}, assuming default enabled`);
+      // Continuă cu valorile implicite (enabled)
+    } else if (!preferences.emailNotificationsEnabled || !preferences.newRequestEmailEnabled) {
       console.log(`[EmailNotificationService] New request notifications disabled for service ${serviceProviderId}`);
+      console.log(`[EmailNotificationService] emailNotificationsEnabled: ${preferences.emailNotificationsEnabled}, newRequestEmailEnabled: ${preferences.newRequestEmailEnabled}`);
       return;
     }
 
@@ -339,8 +345,14 @@ Mulțumim că folosești platforma Service Auto!
   async notifyOfferAccepted(serviceProviderId: number, offer: SentOffer, request: Request) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
-    if (!preferences || !preferences.emailNotificationsEnabled || !preferences.acceptedOfferEmailEnabled) {
+    console.log(`[EmailNotificationService] Preferences for offer accepted, service ${serviceProviderId}:`, preferences);
+    
+    if (!preferences) {
+      console.log(`[EmailNotificationService] No notification preferences found for service ${serviceProviderId}, assuming default enabled`);
+      // Continuă cu valorile implicite (enabled)
+    } else if (!preferences.emailNotificationsEnabled || !preferences.acceptedOfferEmailEnabled) {
       console.log(`[EmailNotificationService] Offer accepted notifications disabled for service ${serviceProviderId}`);
+      console.log(`[EmailNotificationService] emailNotificationsEnabled: ${preferences.emailNotificationsEnabled}, acceptedOfferEmailEnabled: ${preferences.acceptedOfferEmailEnabled}`);
       return;
     }
 
@@ -358,8 +370,14 @@ Mulțumim că folosești platforma Service Auto!
   async notifyNewMessage(serviceProviderId: number, message: Message, request: Request, senderName: string, instant: boolean = true) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
-    if (!preferences || !preferences.emailNotificationsEnabled || !preferences.newMessageEmailEnabled) {
+    console.log(`[EmailNotificationService] Preferences for service ${serviceProviderId}:`, preferences);
+    
+    if (!preferences) {
+      console.log(`[EmailNotificationService] No notification preferences found for service ${serviceProviderId}, assuming default enabled`);
+      // Continuă cu valorile implicite (enabled)
+    } else if (!preferences.emailNotificationsEnabled || !preferences.newMessageEmailEnabled) {
       console.log(`[EmailNotificationService] New message notifications disabled for service ${serviceProviderId}`);
+      console.log(`[EmailNotificationService] emailNotificationsEnabled: ${preferences.emailNotificationsEnabled}, newMessageEmailEnabled: ${preferences.newMessageEmailEnabled}`);
       return;
     }
 
@@ -478,8 +496,14 @@ Ai primit acest email deoarece ești înregistrat pe platforma Service Auto.
   async notifyNewReview(serviceProviderId: number, review: Review, clientName: string, instant: boolean = true) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
-    if (!preferences || !preferences.emailNotificationsEnabled || !preferences.newReviewEmailEnabled) {
+    console.log(`[EmailNotificationService] Preferences for review, service ${serviceProviderId}:`, preferences);
+    
+    if (!preferences) {
+      console.log(`[EmailNotificationService] No notification preferences found for service ${serviceProviderId}, assuming default enabled`);
+      // Continuă cu valorile implicite (enabled)
+    } else if (!preferences.emailNotificationsEnabled || !preferences.newReviewEmailEnabled) {
       console.log(`[EmailNotificationService] New review notifications disabled for service ${serviceProviderId}`);
+      console.log(`[EmailNotificationService] emailNotificationsEnabled: ${preferences.emailNotificationsEnabled}, newReviewEmailEnabled: ${preferences.newReviewEmailEnabled}`);
       return;
     }
 

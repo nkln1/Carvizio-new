@@ -303,20 +303,56 @@ class WebSocketService {
 
   private async getAuthToken(): Promise<string | null> {
     try {
-      // Check if Firebase auth is available
+      console.log('Attempting to get auth token for WebSocket connection...');
+      
+      // Check if Firebase auth is available through the window.firebase
       if (typeof window !== 'undefined' && window.firebase && window.firebase.auth) {
+        console.log('Firebase auth available through window.firebase');
         const user = window.firebase.auth().currentUser;
         if (user) {
-          return await user.getIdToken();
+          console.log('Current user found in Firebase auth, requesting ID token');
+          const token = await user.getIdToken();
+          console.log('Firebase token obtained successfully');
+          return token;
+        } else {
+          console.log('No current user found in Firebase auth');
         }
+      } else {
+        console.log('Firebase auth not available through window.firebase');
+      }
+
+      // Try to use the getFirebaseToken helper if available
+      try {
+        const { auth, getFirebaseToken } = await import('../lib/firebase');
+        console.log('Firebase helper module imported successfully');
+        
+        if (auth.currentUser) {
+          console.log('Current user found in auth module, requesting token');
+          const token = await getFirebaseToken();
+          if (token) {
+            console.log('Token obtained via getFirebaseToken helper');
+            return token;
+          }
+        } else {
+          console.log('No current user in auth module');
+        }
+      } catch (importError) {
+        console.log('Error importing firebase helpers:', importError);
       }
 
       // Try to find token in localStorage as fallback
       if (typeof localStorage !== 'undefined') {
+        console.log('Checking localStorage for auth token');
         const token = localStorage.getItem('authToken');
-        if (token) return token;
+        if (token) {
+          console.log('Auth token found in localStorage');
+          return token;
+        } else {
+          console.log('No auth token in localStorage');
+        }
       }
 
+      console.log('No authentication token available through any method');
       return null;
     } catch (error) {
       console.error('Error getting auth token:', error);
