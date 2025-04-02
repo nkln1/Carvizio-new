@@ -259,96 +259,71 @@ function stopPeriodicMessageCheck() {
 // Obține tokenul din localStorage (pentru verificări din fundal)
 async function getAuthToken() {
   try {
-    // Verificăm dacă avem clienți activi
-    const clientList = await self.clients.matchAll({ 
-      type: 'window', 
-      includeUncontrolled: true 
-    });
-    
+    // Folosim clients.matchAll pentru a accesa fereastra clientului
+    const clientList = await self.clients.matchAll();
     if (clientList.length === 0) {
       console.warn('[Service Worker] Nu s-au găsit clienți conectați');
       return null;
     }
 
-    // Logăm numărul de clienți disponibili pentru debugging
-    console.log(`[Service Worker] ${clientList.length} clienți găsiți. Solicit token de la primul client.`);
-
-    // Îmbunătățim promisiunea de răspuns
+    // Cerem tokenul de la client
     const tokenResponsePromise = new Promise((resolve) => {
-      // Folosim MessageChannel pentru comunicare bidirecțională
       const channel = new MessageChannel();
 
-      // Configurăm handler pentru răspuns
+      // Configurăm portul pentru a primi răspunsul
       channel.port1.onmessage = (event) => {
-        console.log('[Service Worker] Răspuns primit de la client:', 
-                   event.data ? JSON.stringify(event.data).substring(0, 50) + '...' : 'null');
-        
         if (event.data && event.data.token) {
-          const tokenLength = typeof event.data.token === 'string' ? event.data.token.length : 'invalid';
-          console.log(`[Service Worker] Token primit valid, lungime: ${tokenLength}`);
+          console.log('[Service Worker] Token primit de la client', 
+                      typeof event.data.token === 'string' ? `(lungime ${event.data.token.length})` : 'invalid');
           resolve(event.data.token);
+        } else if (event.data && event.data.error) {
+          console.warn('[Service Worker] Eroare primită de la client:', event.data.error);
+          resolve(null);
         } else {
-          console.warn('[Service Worker] Nu am primit un token valid:', event.data);
+          console.warn('[Service Worker] Nu s-a primit token valid de la client:', event.data);
           resolve(null);
         }
       };
 
-      // Configurăm handler pentru erori
+      // Adăugăm handler pentru erori de comunicare
       channel.port1.onerror = (err) => {
-        console.error('[Service Worker] Eroare la comunicarea prin MessageChannel:', err);
+        console.error('[Service Worker] Eroare de comunicare cu clientul:', err);
         resolve(null);
       };
 
-      // Trimitem cererea către client cu un identificator pentru depanare
-      const messageId = new Date().getTime();
+      // Trimitem cererea către client (pagina web)
       try {
-        console.log(`[Service Worker] Solicit token de la client (ID cerere: ${messageId})...`);
-        
-        // Adăugăm un ID de cerere pentru tracking
+        console.log('[Service Worker] Solicit token de la client...');
         clientList[0].postMessage(
-          { 
-            type: 'GET_AUTH_TOKEN', 
-            timestamp: new Date().toISOString(),
-            messageId: messageId 
-          },
+          { type: 'GET_AUTH_TOKEN', timestamp: new Date().toISOString() },
           [channel.port2]
         );
-        
-        console.log(`[Service Worker] Cerere de token trimisă cu succes (ID: ${messageId})`);
       } catch (postError) {
-        console.error(`[Service Worker] Eroare la trimiterea cererii de token (ID: ${messageId}):`, postError);
+        console.error('[Service Worker] Eroare la trimiterea cererii de token:', postError);
         resolve(null);
       }
     });
 
-    // Folosim un timeout mai lung (5 secunde) pentru a permite comunicarea
+    // Așteptăm răspunsul cu un timeout pentru a evita blocarea prea lungă
     const timeoutPromise = new Promise((resolve) => {
       setTimeout(() => {
-        console.warn('[Service Worker] Timeout la așteptarea tokenului (5s)');
+        console.warn('[Service Worker] Timeout la așteptarea tokenului');
         resolve(null);
-      }, 5000); 
+      }, 3000); // Am mărit la 3 secunde timeout pentru a permite procesarea
     });
 
-    // Așteptăm răspunsul sau timeout
-    console.log('[Service Worker] Aștept token sau timeout...');
+    // Folosim race pentru a returna primul rezultat (tokenul sau timeout)
     const token = await Promise.race([tokenResponsePromise, timeoutPromise]);
     
-    // Validăm token-ul primit
-    if (!token) {
-      console.warn('[Service Worker] Nu s-a primit token (null sau undefined)');
+    // Verificăm validitatea token-ului
+    if (!token || token === 'undefined' || token === 'null') {
+      console.warn('[Service Worker] Token invalid sau lipsă obținut');
       return null;
     }
     
-    if (token === 'undefined' || token === 'null') {
-      console.warn('[Service Worker] Token invalid primit (string "undefined" sau "null")');
-      return null;
-    }
-    
-    // Token valid primit
-    console.log('[Service Worker] Token valid obținut pentru autentificare');
     return token;
   } catch (error) {
-    console.error('[Service Worker] Eroare la procesul de obținere a tokenului:', error);
+    console.error('[Service Worker] Eroare la obținerea tokenului:', error);
     return null;
   }
 }

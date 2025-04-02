@@ -21,20 +21,54 @@ function setupServiceWorkerMessageListener() {
       // Service Worker-ul cere token-ul de autentificare
       const token = localStorage.getItem('firebase_auth_token');
       const expiresAt = localStorage.getItem('firebase_auth_token_expires');
+      const messageId = event.data.messageId || 'unknown';
       
-      console.log('Service Worker solicită token-ul de autentificare, disponibil:', !!token);
+      console.log(`[SW-Registration] Răspund la cererea de token (ID: ${messageId}), disponibil: ${!!token}`);
       
       // Verificăm validitatea tokenului
       let isValid = false;
       if (token && expiresAt) {
         const now = Date.now();
         isValid = now < parseInt(expiresAt, 10);
+        
+        if (!isValid) {
+          console.warn(`[SW-Registration] Tokenul din localStorage a expirat la ${new Date(parseInt(expiresAt, 10)).toISOString()}`);
+        }
+      } else {
+        console.warn('[SW-Registration] Nu există token sau dată de expirare în localStorage');
       }
       
-      // Răspundem la solicitare
+      // Dacă avem un token valid, îl trimitem înapoi
+      // Răspundem la solicitare folosind port-ul de comunicare
       if (event.ports && event.ports[0]) {
-        event.ports[0].postMessage({
-          token: isValid ? token : null
+        try {
+          console.log(`[SW-Registration] Trimit răspuns pentru cererea ${messageId}: ${isValid ? 'token valid' : 'token invalid'}`);
+          
+          // Convertim explicit la string pentru a preveni probleme de serializare
+          const tokenToSend = isValid ? String(token) : null;
+          
+          event.ports[0].postMessage({
+            token: tokenToSend,
+            messageId: messageId  // Reflectăm ID-ul înapoi pentru debugging
+          });
+          
+          console.log(`[SW-Registration] Răspuns trimis cu succes pentru cererea ${messageId}`);
+        } catch (err) {
+          console.error(`[SW-Registration] Eroare la trimiterea răspunsului: ${err.message}`);
+        }
+      } else {
+        console.error('[SW-Registration] Nu există port de comunicare pentru răspuns!');
+      }
+    } else if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
+      // Această cerere este pentru reîncărcarea tokenului când Service Worker-ul întâmpină probleme
+      console.log('[SW-Registration] Cerere de reîncărcare token primită de la Service Worker');
+      
+      // Încercăm să obținem un token Firebase nou și să-l salvăm
+      if (typeof window.getAuthToken === 'function') {
+        window.getAuthToken().then(newToken => {
+          console.log('[SW-Registration] Token nou obținut și salvat în localStorage');
+        }).catch(err => {
+          console.error('[SW-Registration] Eroare la obținerea unui token nou:', err);
         });
       }
     }
