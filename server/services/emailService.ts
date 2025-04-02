@@ -20,9 +20,9 @@ export class EmailService {
 
   constructor() {
     this.apiKey = process.env.ELASTIC_EMAIL_API_KEY || '';
-    // Folosim adresa de email de la contul Elastic Email (cea cu care s-a făcut înregistrarea)
-    // În modul de testare, only putem trimite către și de la această adresă
-    this.fromEmail = 'nikelino6@yahoo.com';
+    // Utilizăm un email verificat și dedicat pentru trimiterea notificărilor
+    // Acum că utilizăm un cont plătit, putem trimite către orice adresă
+    this.fromEmail = 'notificari@serviceauto.ro';
     this.fromName = 'Service Auto App';
     
     if (!this.apiKey) {
@@ -203,28 +203,18 @@ export class EmailService {
         return false;
       }
 
-      // IMPORTANT: În modul de testare Elastic Email, putem trimite email-uri doar către adresa de email
-      // care a fost folosită pentru a crea contul Elastic Email (nikelino6@yahoo.com)
-      // În producție, acest cod va fi modificat pentru a trimite către serviceProvider.email
-      const destinationEmail = process.env.NODE_ENV === 'production' 
-        ? serviceProvider.email 
-        : 'nikelino6@yahoo.com';
+      // Acum că utilizăm un cont plătit Elastic Email, trimitem direct către adresa de email a service provider-ului
+      const destinationEmail = serviceProvider.email;
       
-      // Adăugăm o notă despre email-ul original în modul de test
+      // Nu mai este nevoie de note suplimentare, deoarece trimitem direct la destinația corectă
       let modifiedHtmlContent = htmlContent;
-      if (process.env.NODE_ENV !== 'production' && serviceProvider.email !== destinationEmail) {
-        modifiedHtmlContent += `<div style="margin-top: 20px; padding: 10px; background-color: #ffffcc; border: 1px solid #ffcc00; color: #333;">
-          <p><strong>Notă:</strong> În modul de testare, acest email a fost trimis către ${destinationEmail} 
-          în loc de adresa originală: ${serviceProvider.email}</p>
-        </div>`;
-      }
 
       // Trimite emailul
       return await this.sendEmail({
         to: destinationEmail,
         subject,
         bodyHtml: modifiedHtmlContent,
-        bodyText: textContent ? textContent + `\n\nNOTĂ TEST: Email original destinat pentru: ${serviceProvider.email}` : undefined
+        bodyText: textContent
       });
     } catch (error) {
       console.error('[Email Service] Error sending service notification email:', error);

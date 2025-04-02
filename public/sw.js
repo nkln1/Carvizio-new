@@ -2,11 +2,25 @@
 /**
  * Service Worker principal pentru aplicație
  * Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
- * @version 1.0.8
+ * @version 1.0.9
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.8'; // Actualizat la 29 martie 2025
+const VERSION = 'v1.0.9'; // Actualizat la 2 aprilie 2025
+
+// Configurația pentru verificarea mesajelor în fundal
+const backgroundCheckConfig = {
+  isActive: false,        // Dacă verificarea este activă
+  userId: null,           // ID-ul utilizatorului curent
+  userRole: null,         // Rolul utilizatorului (client sau service)
+  token: null,            // Token-ul de autentificare
+  interval: 30000,        // Intervalul de verificare (în ms)
+  checkInterval: null,    // Referința la interval
+  lastCheckTime: null,    // Ultima dată când s-a verificat
+  notificationPreferences: null, // Preferințele de notificări
+  pendingToken: false,    // Dacă există o cerere de token în curs
+  retryCount: 0           // Numărul de încercări eșuate
+};
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
@@ -65,30 +79,8 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Configurare pentru verificarea mesajelor în fundal
-let backgroundCheckConfig = {
-  isActive: false,
-  intervalId: null,
-  checkInterval: 30000, // 30 secunde între verificări
-  userId: null,
-  userRole: null,
-  token: null,
-  // Notificări mesaje
-  lastNotifiedCount: 0, // Contor pentru ultimul număr de mesaje necitite notificate
-  lastNotificationTime: 0, // Timestamp pentru ultima notificare trimisă
-  notifiedMessageIds: [], // Lista IDs mesaje pentru care s-au trimis deja notificări
-  // Notificări cereri noi
-  lastNewRequestsCount: 0, // Contor pentru ultimul număr de cereri noi
-  lastNewRequestNotificationTime: 0, // Timestamp pentru ultima notificare de cereri noi
-  // Notificări oferte acceptate 
-  lastAcceptedOffersCount: 0, // Contor pentru ultimul număr de oferte acceptate
-  lastAcceptedOfferNotificationTime: 0, // Timestamp pentru ultima notificare de oferte acceptate
-  // Notificări recenzii noi
-  lastNewReviewsCount: 0, // Contor pentru ultimul număr de recenzii noi
-  lastNewReviewNotificationTime: 0, // Timestamp pentru ultima notificare de recenzii noi
-  // Notificări preferințe
-  notificationPreferences: null // Preferințele utilizatorului pentru notificări
-};
+// Obiectul backgroundCheckConfig a fost mutat la începutul fișierului 
+// pentru o mai bună vizibilitate și pentru a evita duplicarea
 
 // Metodă pentru afișarea notificărilor
 function handleShowNotification(event) {

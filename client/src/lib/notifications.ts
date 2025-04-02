@@ -870,7 +870,46 @@ if (typeof window !== 'undefined') {
       console.log('[ServiceWorker Message Listener] Mesaj primit:', event.data?.type || 'fără tip');
 
       // Verificăm dacă este o cerere pentru token de autentificare
-      if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
+      if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
+        try {
+          console.log('[ServiceWorker Message Listener] Cerere GET_AUTH_TOKEN primită');
+          
+          // Folosim aceeași logică ca în getAuthToken pentru a fi consecvenți
+          const token = localStorage.getItem('firebase_auth_token') || 
+                       localStorage.getItem('authToken') || 
+                       sessionStorage.getItem('firebase_auth_token') || 
+                       sessionStorage.getItem('authToken');
+                      
+          console.log('[ServiceWorker Message Listener] Răspundem cu token:', 
+                      token ? `disponibil (${token.length} caractere)` : 'indisponibil');
+
+          // Trimitem răspunsul prin portul de mesaje primit
+          if (event.ports && event.ports.length > 0) {
+            event.ports[0].postMessage({ 
+              token: token,
+              timestamp: new Date().toISOString()
+            });
+            console.log('[ServiceWorker Message Listener] Răspuns trimis prin MessageChannel');
+          } else if (event.source && 'postMessage' in event.source) {
+            // Fallback - dacă nu avem port, încercăm să răspundem direct către sursă
+            (event.source as ServiceWorker).postMessage({ 
+              type: 'AUTH_TOKEN_RESPONSE', 
+              token: token, 
+              timestamp: new Date().toISOString()
+            });
+            console.log('[ServiceWorker Message Listener] Răspuns trimis direct către sursă');
+          } else {
+            console.warn('[ServiceWorker Message Listener] Nu putem trimite răspunsul - lipsește portul și sursa');
+          }
+        } catch (error) {
+          console.error('[ServiceWorker Message Listener] Eroare la procesarea cererii GET_AUTH_TOKEN:', error);
+          // Încercăm să trimitem o eroare înapoi
+          if (event.ports && event.ports.length > 0) {
+            event.ports[0].postMessage({ error: 'Eroare la obținerea tokenului' });
+          }
+        }
+      } else if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
+        // Menține și handler-ul vechi pentru compatibilitate 
         try {
           // Folosim aceeași logică ca în getAuthToken pentru a fi consecvenți
           const token = localStorage.getItem('firebase_auth_token') || 
@@ -878,7 +917,7 @@ if (typeof window !== 'undefined') {
                       sessionStorage.getItem('firebase_auth_token') || 
                       sessionStorage.getItem('authToken');
                       
-          console.log('[ServiceWorker Message Listener] Cerere token primită, răspundem cu token:', 
+          console.log('[ServiceWorker Message Listener] Cerere REQUEST_AUTH_TOKEN primită, răspundem cu token:', 
                       token ? `disponibil (${token.length} caractere)` : 'indisponibil');
 
           // Răspundem cu tokenul doar dacă avem o sursă validă
