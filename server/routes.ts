@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
 import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews, insertReviewSchema } from "@shared/schema";
-import { getEmailNotificationService, emailService } from './services';
 import { json } from "express";
 import session from "express-session";
 import { db } from "./db";
@@ -95,13 +94,6 @@ interface IStorage {
     getWorkingHours: any;
     getServiceProviderByUsername: any;
     createReview: any;
-    updateReview: any;
-    deleteReview: any;
-    getServiceProviderAverageRating: any;
-    getNotificationPreferences: any;
-    createNotificationPreferences: any;
-    updateNotificationPreferences: any;
-    getServiceProviderReviews: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -271,28 +263,6 @@ export function registerRoutes(app: Express): Server {
       // Obține numărul de mesaje necitite
       const unreadCount = await storage.getUnreadMessagesCount(serviceProvider.id, "service");
       console.log(`Număr mesaje necitite pentru service provider ${serviceProvider.id}: ${unreadCount}`);
-      
-      // Test de trimitere email - test pentru depanare
-      try {
-        console.log('[DEBUG] Testăm trimiterea unui email de test direct din endpoint');
-        // Folosim adresa de email pentru testare de la Elastic Email (doar aceasta funcționează în modul de test)
-        const testResult = await emailService.sendEmail({
-          to: 'nikelino6@yahoo.com', // Adresa folosită la înregistrarea contului Elastic Email
-          subject: 'Test email de la Service Auto',
-          bodyHtml: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-              <h2 style="color: #0080ff;">Test Email</h2>
-              <p>Acesta este un email de test pentru a verifica funcționarea serviciului de email.</p>
-              <p>Email original: ${serviceProvider.email}</p>
-              <p>Timestamp: ${new Date().toISOString()}</p>
-            </div>
-          `,
-          bodyText: 'Acesta este un email de test pentru a verifica funcționarea serviciului de email.'
-        });
-        console.log('[DEBUG] Rezultat test email:', testResult);
-      } catch (emailError) {
-        console.error('[DEBUG] Eroare la testarea emailului:', emailError);
-      }
       
       // Răspunde cu numărul de mesaje necitite
       res.json({ count: unreadCount });
@@ -917,13 +887,7 @@ export function registerRoutes(app: Express): Server {
           }));
         }
       });
-      
-      // Odată ce cererea a fost creată, încercăm să trimitem notificări email
-      // Nu le trimitem încă, vom implementa această funcționalitate complet după ce rezolvăm problemele de compilare
-      // din interfața de storage și serviciile de notificare
-      
-      console.log("[Email] New request created, waiting for email notification service implementation");
-      
+
       res.status(201).json(request);
     } catch (error: any) {
       console.error("Error creating request:", error);
@@ -1470,23 +1434,6 @@ export function registerRoutes(app: Express): Server {
 
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
       await storage.updateRequest(offer.requestId, { status: "Rezolvat" });
-      
-      // Obține detaliile cererii pentru notificarea email
-      const request = await storage.getRequest(offer.requestId);
-      
-      // Trimite notificare prin email (considerat critic, se trimite instant)
-      try {
-        const emailNotificationService = getEmailNotificationService();
-        if (request) {
-          await emailNotificationService.notifyOfferAccepted(offer.serviceProviderId, updatedOffer, request);
-          console.log(`[Email] Sent offer accepted notification to service provider ${offer.serviceProviderId}`);
-        } else {
-          console.error("[Email] Cannot send notification - request not found");
-        }
-      } catch (error) {
-        console.error("[Email] Error sending email notification for accepted offer:", error);
-        // Continuă cu răspunsul, chiar dacă notificarea a eșuat
-      }
 
       // Send notifications through WebSocket with improved error handling
       wss.clients.forEach((client) => {
@@ -1695,33 +1642,6 @@ export function registerRoutes(app: Express): Server {
           }));
         }
       });
-      
-      // Trimitem notificare prin email dacă destinatarul este un service provider
-      try {
-        if (message.receiverRole === "service") {
-          // Obținem informații despre expeditor și solicitare pentru email
-          const senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
-          const request = await storage.getRequest(requestId);
-          
-          if (request) {
-            try {
-              const emailNotificationService = getEmailNotificationService();
-              await emailNotificationService.notifyNewMessage(
-                message.receiverId, 
-                message, 
-                request,
-                senderName
-              );
-              console.log(`[Email] Sent message notification to service provider ${message.receiverId}`);
-            } catch (error) {
-              console.error("[Email] Error sending email notification for new message:", error);
-              // Continuăm cu restul fluxului, chiar dacă notificarea prin email eșuează
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error preparing message email notification:", error);
-      }
       
       // Send push notification via Firebase Cloud Messaging
       try {
@@ -1947,13 +1867,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Get request to verify the connection
-      const requestData = await storage.getRequest(requestId);
-      if (!requestData) {
+      const request = await storage.getRequest(requestId);
+      if (!request) {
         return res.status(404).json({ error: "Request not found" });
       }
 
       // Get receiver (client) information
-      const receiver = await storage.getClient(requestData.clientId);
+      const receiver = await storage.getClient(request.clientId);
       if (!receiver) {
         return res.status(404).json({ error: "Client not found" });
       }
@@ -1975,28 +1895,6 @@ export function registerRoutes(app: Express): Server {
         senderName: sender.companyName,
         receiverName: receiver.name
       };
-      
-      // Obținem informații despre cerere pentru notificări email
-      // Folosim requestData existent pentru a evita redeclararea variabilei request
-      
-      // Trimitem notificare prin email către client
-      try {
-        const { emailNotificationService } = require('./services/emailNotificationService');
-        
-        // Apelăm metoda de notificare pentru client
-        await emailNotificationService.notifyClientNewMessage(
-          receiver.id,                  // ID-ul clientului care primește mesajul
-          message,                      // Obiectul mesaj complet
-          requestData,                  // Cererea asociată
-          sender.companyName,           // Numele expeditorului (service provider)
-          true                          // Trimite instant (nu așteaptă digest)
-        );
-        
-        console.log(`[Message Endpoint] Email notification sent to client ${receiver.id} for new message`);
-      } catch (emailError) {
-        console.error('[Message Endpoint] Error sending email notification:', emailError);
-        // Continuăm procesul chiar dacă avem eroare la trimiterea email-ului
-      }
 
       // Send notification through WebSocket with improved error handling
       wss.clients.forEach((client) => {
@@ -2051,7 +1949,7 @@ export function registerRoutes(app: Express): Server {
                   type: 'new_message',
                   url: deepLink,
                   timestamp: new Date().getTime().toString(),
-                  requestTitle: requestData.title || 'Cerere service'
+                  requestTitle: request.title || 'Cerere service'
                 },
                 tokens: userData.fcmTokens,
                 // Android configuration
@@ -2546,32 +2444,6 @@ export function registerRoutes(app: Express): Server {
         ...message,
         senderName: client.name
       };
-      
-      // Trimitem notificare prin email către service provider
-      try {
-        // Obținem datele service provider-ului
-        const serviceProvider = await storage.getServiceProvider(receiverId);
-        
-        if (serviceProvider && serviceProvider.email) {
-          const { emailNotificationService } = require('./services/emailNotificationService');
-          
-          // Apelăm metoda de notificare directă pentru service
-          await emailNotificationService.notifyServiceNewMessage(
-            receiverId,                      // ID-ul service provider-ului
-            message,                         // Obiectul mesaj
-            request,                         // Cererea asociată
-            client.name,                     // Numele clientului
-            true                             // Trimite instant (nu așteaptă digest)
-          );
-          
-          console.log(`[Message Endpoint] Email notification sent to service ${receiverId} for new message from client ${client.id}`);
-        } else {
-          console.log(`[Message Endpoint] Service ${receiverId} not found or has no email address`);
-        }
-      } catch (emailError) {
-        console.error('[Message Endpoint] Error sending email notification to service:', emailError);
-        // Continuăm procesul chiar dacă avem eroare la trimiterea email-ului
-      }
 
       // Send real-time notification through WebSocket
       const messageNotification = {
@@ -2814,18 +2686,6 @@ export function registerRoutes(app: Express): Server {
 
       // Create the review
       const review = await storage.createReview(reviewData);
-      
-      // Trimite notificare email despre recenzia nouă (considerat non-critic, poate fi grupat)
-      try {
-        const emailNotificationService = getEmailNotificationService();
-        const clientName = client.name;
-        
-        await emailNotificationService.notifyNewReview(serviceProviderId, review, clientName);
-        console.log(`[Email] Sent review notification to service provider ${serviceProviderId}`);
-      } catch (error) {
-        console.error("[Email] Error sending email notification for new review:", error);
-        // Continuăm cu răspunsul, chiar dacă notificarea prin email eșuează
-      }
 
       console.log("Review created successfully:", review);
       res.status(201).json(review);
@@ -3348,90 +3208,7 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error) {
       console.error("Error checking new reviews:", error);
-    }
-  });
-  
-  // API pentru testarea trimiterii emailurilor
-  app.post("/api/service/test-email-notification", async (req, res) => {
-    try {
-      // Obținem datele din cerere
-      const { email, messageType, senderName } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ error: "Email address is required" });
-      }
-      
-      const { emailService } = require('./services/emailService');
-      const { emailNotificationService } = require('./services/emailNotificationService');
-      
-      // În funcție de tipul de mesaj, trimitem un email de test diferit
-      if (messageType === 'new_message') {
-        // Simulăm un mesaj
-        const mockMessage = {
-          id: 9999,
-          content: "Acesta este un mesaj de test pentru verificarea notificărilor prin email.",
-          createdAt: new Date(),
-          isRead: false
-        };
-        
-        // Simulăm o cerere
-        const mockRequest = {
-          id: 9999,
-          title: "Cerere de test",
-          description: "Aceasta este o cerere de test pentru verificarea notificărilor prin email.",
-          cities: ["București"],
-          county: "București"
-        };
-        
-        // Trimitem un email de test pentru mesaj nou
-        await emailNotificationService.notifyClientNewMessage(
-          9999, // ID fals pentru client
-          mockMessage as any, 
-          mockRequest as any, 
-          senderName || "Service Test", 
-          true
-        );
-        
-        console.log(`[Test] Email notification sent to ${email}`);
-        return res.json({ success: true, message: `Test email sent to ${email}` });
-      } else {
-        // Trimitem un email de test simplu
-        await emailService.sendEmail({
-          to: email,
-          subject: "Test Email Notification",
-          bodyHtml: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-              <h2 style="color: #0080ff;">Test Notificări Email</h2>
-              <p>Salut,</p>
-              <p>Acesta este un email de test pentru a verifica dacă sistemul de notificări prin email funcționează corect.</p>
-              <p>Timestamp: ${new Date().toISOString()}</p>
-              <p style="margin-top: 20px; color: #666; font-size: 14px;">
-                Sistemul de notificări email funcționează corect!
-              </p>
-            </div>
-          `,
-          bodyText: `
-            Test Notificări Email
-            
-            Salut,
-            
-            Acesta este un email de test pentru a verifica dacă sistemul de notificări prin email funcționează corect.
-            
-            Timestamp: ${new Date().toISOString()}
-            
-            Sistemul de notificări email funcționează corect!
-          `
-        });
-        
-        console.log(`[Test] Simple test email sent to ${email}`);
-        return res.json({ success: true, message: `Simple test email sent to ${email}` });
-      }
-    } catch (error) {
-      console.error("Error sending test email:", error);
-      return res.status(500).json({ 
-        error: "Failed to send test email", 
-        details: error instanceof Error ? error.message : "Unknown error" 
-      });
+      res.status(500).json({ error: "Failed to check new reviews" });
     }
   });
 

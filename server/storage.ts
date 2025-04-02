@@ -1345,47 +1345,6 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-
-  /**
-   * Șterge o recenzie după ID
-   */
-  async deleteReview(id: number): Promise<void> {
-    try {
-      await db.delete(reviews).where(eq(reviews.id, id));
-      console.log(`Deleted review with ID ${id}`);
-    } catch (error) {
-      console.error('Error deleting review:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Calculează rating-ul mediu pentru un service provider
-   */
-  async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
-    try {
-      // Obține toate recenziile pentru service provider
-      const serviceReviews = await db
-        .select()
-        .from(reviews)
-        .where(eq(reviews.serviceProviderId, serviceProviderId));
-      
-      // Dacă nu există recenzii, returnează 0
-      if (serviceReviews.length === 0) {
-        return 0;
-      }
-      
-      // Calculează media ratings-urilor
-      const totalRating = serviceReviews.reduce((sum, review) => sum + review.rating, 0);
-      const averageRating = totalRating / serviceReviews.length;
-      
-      // Rotunjește la 1 decimală (ex: 4.2)
-      return Math.round(averageRating * 10) / 10;
-    } catch (error) {
-      console.error('Error calculating service provider average rating:', error);
-      return 0;
-    }
-  }
 }
 
 export const storage = new DatabaseStorage();

@@ -2,25 +2,11 @@
 /**
  * Service Worker principal pentru aplicație
  * Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
- * @version 1.0.9
+ * @version 1.0.8
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.9'; // Actualizat la 2 aprilie 2025
-
-// Configurația pentru verificarea mesajelor în fundal
-const backgroundCheckConfig = {
-  isActive: false,        // Dacă verificarea este activă
-  userId: null,           // ID-ul utilizatorului curent
-  userRole: null,         // Rolul utilizatorului (client sau service)
-  token: null,            // Token-ul de autentificare
-  interval: 30000,        // Intervalul de verificare (în ms)
-  checkInterval: null,    // Referința la interval
-  lastCheckTime: null,    // Ultima dată când s-a verificat
-  notificationPreferences: null, // Preferințele de notificări
-  pendingToken: false,    // Dacă există o cerere de token în curs
-  retryCount: 0           // Numărul de încercări eșuate
-};
+const VERSION = 'v1.0.8'; // Actualizat la 29 martie 2025
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;
@@ -79,8 +65,30 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Obiectul backgroundCheckConfig a fost mutat la începutul fișierului 
-// pentru o mai bună vizibilitate și pentru a evita duplicarea
+// Configurare pentru verificarea mesajelor în fundal
+let backgroundCheckConfig = {
+  isActive: false,
+  intervalId: null,
+  checkInterval: 30000, // 30 secunde între verificări
+  userId: null,
+  userRole: null,
+  token: null,
+  // Notificări mesaje
+  lastNotifiedCount: 0, // Contor pentru ultimul număr de mesaje necitite notificate
+  lastNotificationTime: 0, // Timestamp pentru ultima notificare trimisă
+  notifiedMessageIds: [], // Lista IDs mesaje pentru care s-au trimis deja notificări
+  // Notificări cereri noi
+  lastNewRequestsCount: 0, // Contor pentru ultimul număr de cereri noi
+  lastNewRequestNotificationTime: 0, // Timestamp pentru ultima notificare de cereri noi
+  // Notificări oferte acceptate 
+  lastAcceptedOffersCount: 0, // Contor pentru ultimul număr de oferte acceptate
+  lastAcceptedOfferNotificationTime: 0, // Timestamp pentru ultima notificare de oferte acceptate
+  // Notificări recenzii noi
+  lastNewReviewsCount: 0, // Contor pentru ultimul număr de recenzii noi
+  lastNewReviewNotificationTime: 0, // Timestamp pentru ultima notificare de recenzii noi
+  // Notificări preferințe
+  notificationPreferences: null // Preferințele utilizatorului pentru notificări
+};
 
 // Metodă pentru afișarea notificărilor
 function handleShowNotification(event) {
@@ -259,96 +267,42 @@ function stopPeriodicMessageCheck() {
 // Obține tokenul din localStorage (pentru verificări din fundal)
 async function getAuthToken() {
   try {
-    // Verificăm dacă avem clienți activi
-    const clientList = await self.clients.matchAll({ 
-      type: 'window', 
-      includeUncontrolled: true 
-    });
-    
+    // Folosim clients.matchAll pentru a accesa fereastra clientului
+    const clientList = await self.clients.matchAll();
     if (clientList.length === 0) {
       console.warn('[Service Worker] Nu s-au găsit clienți conectați');
       return null;
     }
 
-    // Logăm numărul de clienți disponibili pentru debugging
-    console.log(`[Service Worker] ${clientList.length} clienți găsiți. Solicit token de la primul client.`);
-
-    // Îmbunătățim promisiunea de răspuns
+    // Cerem tokenul de la client
     const tokenResponsePromise = new Promise((resolve) => {
-      // Folosim MessageChannel pentru comunicare bidirecțională
       const channel = new MessageChannel();
 
-      // Configurăm handler pentru răspuns
+      // Configurăm portul pentru a primi răspunsul
       channel.port1.onmessage = (event) => {
-        console.log('[Service Worker] Răspuns primit de la client:', 
-                   event.data ? JSON.stringify(event.data).substring(0, 50) + '...' : 'null');
-        
         if (event.data && event.data.token) {
-          const tokenLength = typeof event.data.token === 'string' ? event.data.token.length : 'invalid';
-          console.log(`[Service Worker] Token primit valid, lungime: ${tokenLength}`);
           resolve(event.data.token);
         } else {
-          console.warn('[Service Worker] Nu am primit un token valid:', event.data);
+          console.warn('[Service Worker] Nu s-a putut obține tokenul de autentificare din localStorage');
           resolve(null);
         }
       };
 
-      // Configurăm handler pentru erori
-      channel.port1.onerror = (err) => {
-        console.error('[Service Worker] Eroare la comunicarea prin MessageChannel:', err);
-        resolve(null);
-      };
-
-      // Trimitem cererea către client cu un identificator pentru depanare
-      const messageId = new Date().getTime();
-      try {
-        console.log(`[Service Worker] Solicit token de la client (ID cerere: ${messageId})...`);
-        
-        // Adăugăm un ID de cerere pentru tracking
-        clientList[0].postMessage(
-          { 
-            type: 'GET_AUTH_TOKEN', 
-            timestamp: new Date().toISOString(),
-            messageId: messageId 
-          },
-          [channel.port2]
-        );
-        
-        console.log(`[Service Worker] Cerere de token trimisă cu succes (ID: ${messageId})`);
-      } catch (postError) {
-        console.error(`[Service Worker] Eroare la trimiterea cererii de token (ID: ${messageId}):`, postError);
-        resolve(null);
-      }
+      // Trimitem cererea către client
+      clientList[0].postMessage({
+        type: 'GET_AUTH_TOKEN'
+      }, [channel.port2]);
     });
 
-    // Folosim un timeout mai lung (5 secunde) pentru a permite comunicarea
+    // Așteptăm răspunsul cu timeout de 1 secundă
     const timeoutPromise = new Promise((resolve) => {
-      setTimeout(() => {
-        console.warn('[Service Worker] Timeout la așteptarea tokenului (5s)');
-        resolve(null);
-      }, 5000); 
+      setTimeout(() => resolve(null), 1000);
     });
 
-    // Așteptăm răspunsul sau timeout
-    console.log('[Service Worker] Aștept token sau timeout...');
-    const token = await Promise.race([tokenResponsePromise, timeoutPromise]);
-    
-    // Validăm token-ul primit
-    if (!token) {
-      console.warn('[Service Worker] Nu s-a primit token (null sau undefined)');
-      return null;
-    }
-    
-    if (token === 'undefined' || token === 'null') {
-      console.warn('[Service Worker] Token invalid primit (string "undefined" sau "null")');
-      return null;
-    }
-    
-    // Token valid primit
-    console.log('[Service Worker] Token valid obținut pentru autentificare');
-    return token;
+    // Returnăm primul rezultat - fie tokenul, fie null după timeout
+    return Promise.race([tokenResponsePromise, timeoutPromise]);
   } catch (error) {
-    console.error('[Service Worker] Eroare la procesul de obținere a tokenului:', error);
+    console.error('[Service Worker] Eroare la obținerea tokenului:', error);
     return null;
   }
 }

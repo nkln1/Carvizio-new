@@ -21,54 +21,20 @@ function setupServiceWorkerMessageListener() {
       // Service Worker-ul cere token-ul de autentificare
       const token = localStorage.getItem('firebase_auth_token');
       const expiresAt = localStorage.getItem('firebase_auth_token_expires');
-      const messageId = event.data.messageId || 'unknown';
       
-      console.log(`[SW-Registration] Răspund la cererea de token (ID: ${messageId}), disponibil: ${!!token}`);
+      console.log('Service Worker solicită token-ul de autentificare, disponibil:', !!token);
       
       // Verificăm validitatea tokenului
       let isValid = false;
       if (token && expiresAt) {
         const now = Date.now();
         isValid = now < parseInt(expiresAt, 10);
-        
-        if (!isValid) {
-          console.warn(`[SW-Registration] Tokenul din localStorage a expirat la ${new Date(parseInt(expiresAt, 10)).toISOString()}`);
-        }
-      } else {
-        console.warn('[SW-Registration] Nu există token sau dată de expirare în localStorage');
       }
       
-      // Dacă avem un token valid, îl trimitem înapoi
-      // Răspundem la solicitare folosind port-ul de comunicare
+      // Răspundem la solicitare
       if (event.ports && event.ports[0]) {
-        try {
-          console.log(`[SW-Registration] Trimit răspuns pentru cererea ${messageId}: ${isValid ? 'token valid' : 'token invalid'}`);
-          
-          // Convertim explicit la string pentru a preveni probleme de serializare
-          const tokenToSend = isValid ? String(token) : null;
-          
-          event.ports[0].postMessage({
-            token: tokenToSend,
-            messageId: messageId  // Reflectăm ID-ul înapoi pentru debugging
-          });
-          
-          console.log(`[SW-Registration] Răspuns trimis cu succes pentru cererea ${messageId}`);
-        } catch (err) {
-          console.error(`[SW-Registration] Eroare la trimiterea răspunsului: ${err.message}`);
-        }
-      } else {
-        console.error('[SW-Registration] Nu există port de comunicare pentru răspuns!');
-      }
-    } else if (event.data && event.data.type === 'REQUEST_AUTH_TOKEN') {
-      // Această cerere este pentru reîncărcarea tokenului când Service Worker-ul întâmpină probleme
-      console.log('[SW-Registration] Cerere de reîncărcare token primită de la Service Worker');
-      
-      // Încercăm să obținem un token Firebase nou și să-l salvăm
-      if (typeof window.getAuthToken === 'function') {
-        window.getAuthToken().then(newToken => {
-          console.log('[SW-Registration] Token nou obținut și salvat în localStorage');
-        }).catch(err => {
-          console.error('[SW-Registration] Eroare la obținerea unui token nou:', err);
+        event.ports[0].postMessage({
+          token: isValid ? token : null
         });
       }
     }
@@ -226,77 +192,18 @@ function registerServiceWorker() {
 }
 
 /**
- * Verifică dacă browserul suportă notificări push și solicită permisiunile necesare
+ * Verifică dacă browserul suportă notificări push
  * @param {ServiceWorkerRegistration} registration - Înregistrarea Service Worker-ului
  */
 function checkPushSupport(registration) {
-  // Mai întâi verificăm dacă browserul suportă notificări
-  if (!('Notification' in window)) {
-    console.warn('Acest browser nu suportă notificații');
-    return;
-  }
-
-  // Verificăm dacă browserul suportă și API-ul Push pentru Service Worker
   if ('PushManager' in window) {
     console.log('Acest browser suportă notificări push');
     
-    // Verificăm și actualizăm permisiunile pentru notificări
-    if (Notification.permission === 'granted') {
-      console.log('Permisiuni pentru notificări deja acordate');
-      
-      // Testăm notificarea pentru a verifica integrarea completă
-      testAuthTokenCommunication(registration);
-    } else if (Notification.permission !== 'denied') {
-      // Solicităm permisiunea pentru notificări dacă nu e deja respinsă
-      console.log('Solicităm permisiunea pentru notificări...');
-      Notification.requestPermission().then(function(permission) {
-        if (permission === 'granted') {
-          console.log('Permisiune pentru notificări acordată!');
-          
-          // Testăm comunicarea cu Service Worker-ul pentru verificarea autentificării
-          testAuthTokenCommunication(registration);
-        } else {
-          console.warn('Permisiune pentru notificări respinsă');
-        }
-      });
-    } else {
-      console.warn('Permisiunile pentru notificații au fost respinse anterior');
-    }
+    // Aici putem adăuga logica pentru a abona utilizatorul la notificări push
+    // Exemplu: registration.pushManager.subscribe({...});
   } else {
-    console.warn('Acest browser nu suportă notificații push');
+    console.warn('Acest browser nu suportă notificări push');
   }
-}
-
-/**
- * Testează comunicarea pentru token de autentificare cu Service Worker-ul
- * @param {ServiceWorkerRegistration} registration - Înregistrarea Service Worker-ului
- */
-function testAuthTokenCommunication(registration) {
-  if (!registration.active) {
-    console.warn('Service Worker nu este activ pentru test comunicare token');
-    return;
-  }
-  
-  console.log('Testare comunicare token cu Service Worker...');
-  
-  // Creăm un MessageChannel pentru a primi răspunsul
-  const messageChannel = new MessageChannel();
-  
-  // Configurăm handler-ul pentru răspuns
-  messageChannel.port1.onmessage = function(event) {
-    console.log('Răspuns de la Service Worker pentru test token:', event.data);
-    if (event.data && event.data.token) {
-      console.log('✅ Test comunicare token reușit! - Token disponibil');
-    } else {
-      console.warn('⚠️ Test comunicare token incomplet - Token indisponibil');
-    }
-  };
-  
-  // Trimitem cererea de test
-  registration.active.postMessage({
-    type: 'GET_AUTH_TOKEN',
-    test: true
-  }, [messageChannel.port2]);
 }
 
 /**
