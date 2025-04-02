@@ -394,6 +394,83 @@ Mulțumim că folosești platforma Service Auto!
     }
     */
   }
+  
+  /**
+   * Notifică un client despre un mesaj nou de la un service provider
+   */
+  async notifyClientNewMessage(clientId: number, message: Message, request: Request, senderName: string, instant: boolean = true) {
+    try {
+      // Obținem detaliile clientului
+      const client = await this.storage.getClient(clientId);
+      if (!client || !client.email) {
+        console.log(`[EmailNotificationService] Client ${clientId} not found or has no email address`);
+        return;
+      }
+      
+      // Construim conținutul email-ului
+      const subject = `Mesaj nou de la ${senderName}`;
+      
+      // Adresa HTML pentru email
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #0080ff;">Mesaj nou pe Service Auto</h2>
+          <p>Salut ${client.name},</p>
+          <p>Ai primit un mesaj nou de la <strong>${senderName}</strong> referitor la cererea ta:</p>
+          
+          <div style="margin: 20px 0; padding: 15px; background-color: #f7f7f7; border-left: 4px solid #0080ff; border-radius: 3px;">
+            <p style="margin: 0; font-weight: bold;">Cerere: ${request.title}</p>
+            <p style="margin: 10px 0; font-style: italic;">${message.content.substring(0, 150)}${message.content.length > 150 ? '...' : ''}</p>
+          </div>
+          
+          <a href="https://serviceauto.ro/dashboard/client/mesaje/${request.id}" 
+             style="display: inline-block; background-color: #0080ff; color: white; padding: 10px 20px; 
+                    text-decoration: none; border-radius: 5px; margin-top: 15px;">
+            Răspunde acum
+          </a>
+          
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            Ai primit acest email deoarece ești înregistrat pe platforma Service Auto.
+          </p>
+        </div>
+      `;
+      
+      // Versiunea text pentru email
+      const textContent = `
+Mesaj nou pe Service Auto
+
+Salut ${client.name},
+
+Ai primit un mesaj nou de la ${senderName} referitor la cererea ta:
+
+Cerere: ${request.title}
+Mesaj: ${message.content.substring(0, 150)}${message.content.length > 150 ? '...' : ''}
+
+Pentru a răspunde, accesează:
+https://serviceauto.ro/dashboard/client/mesaje/${request.id}
+
+Ai primit acest email deoarece ești înregistrat pe platforma Service Auto.
+      `;
+      
+      // Trimite email-ul
+      await emailService.sendEmail({
+        to: client.email,
+        subject,
+        bodyHtml: htmlContent,
+        bodyText: textContent
+      });
+      
+      console.log(`[EmailNotificationService] Email notification sent to client ${clientId} about new message from ${senderName}`);
+    } catch (error) {
+      console.error(`[EmailNotificationService] Error sending email to client ${clientId}:`, error);
+    }
+  }
+  
+  /**
+   * Metode publice pentru a fi apelate direct din routes.ts
+   */
+  async notifyServiceNewMessage(serviceProviderId: number, message: Message, request: Request, clientName: string, instant = true) {
+    return this.notifyNewMessage(serviceProviderId, message, request, clientName, instant);
+  }
 
   /**
    * Notifică un service provider despre o recenzie nouă

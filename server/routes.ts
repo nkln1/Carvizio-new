@@ -1947,13 +1947,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Get request to verify the connection
-      const request = await storage.getRequest(requestId);
-      if (!request) {
+      const requestData = await storage.getRequest(requestId);
+      if (!requestData) {
         return res.status(404).json({ error: "Request not found" });
       }
 
       // Get receiver (client) information
-      const receiver = await storage.getClient(request.clientId);
+      const receiver = await storage.getClient(requestData.clientId);
       if (!receiver) {
         return res.status(404).json({ error: "Client not found" });
       }
@@ -1975,6 +1975,28 @@ export function registerRoutes(app: Express): Server {
         senderName: sender.companyName,
         receiverName: receiver.name
       };
+      
+      // Obținem informații despre cerere pentru notificări email
+      // Folosim requestData existent pentru a evita redeclararea variabilei request
+      
+      // Trimitem notificare prin email către client
+      try {
+        const { emailNotificationService } = require('./services/emailNotificationService');
+        
+        // Apelăm metoda de notificare pentru client
+        await emailNotificationService.notifyClientNewMessage(
+          receiver.id,                  // ID-ul clientului care primește mesajul
+          message,                      // Obiectul mesaj complet
+          requestData,                  // Cererea asociată
+          sender.companyName,           // Numele expeditorului (service provider)
+          true                          // Trimite instant (nu așteaptă digest)
+        );
+        
+        console.log(`[Message Endpoint] Email notification sent to client ${receiver.id} for new message`);
+      } catch (emailError) {
+        console.error('[Message Endpoint] Error sending email notification:', emailError);
+        // Continuăm procesul chiar dacă avem eroare la trimiterea email-ului
+      }
 
       // Send notification through WebSocket with improved error handling
       wss.clients.forEach((client) => {
@@ -2029,7 +2051,7 @@ export function registerRoutes(app: Express): Server {
                   type: 'new_message',
                   url: deepLink,
                   timestamp: new Date().getTime().toString(),
-                  requestTitle: request.title || 'Cerere service'
+                  requestTitle: requestData.title || 'Cerere service'
                 },
                 tokens: userData.fcmTokens,
                 // Android configuration
@@ -2524,6 +2546,32 @@ export function registerRoutes(app: Express): Server {
         ...message,
         senderName: client.name
       };
+      
+      // Trimitem notificare prin email către service provider
+      try {
+        // Obținem datele service provider-ului
+        const serviceProvider = await storage.getServiceProvider(receiverId);
+        
+        if (serviceProvider && serviceProvider.email) {
+          const { emailNotificationService } = require('./services/emailNotificationService');
+          
+          // Apelăm metoda de notificare directă pentru service
+          await emailNotificationService.notifyServiceNewMessage(
+            receiverId,                      // ID-ul service provider-ului
+            message,                         // Obiectul mesaj
+            request,                         // Cererea asociată
+            client.name,                     // Numele clientului
+            true                             // Trimite instant (nu așteaptă digest)
+          );
+          
+          console.log(`[Message Endpoint] Email notification sent to service ${receiverId} for new message from client ${client.id}`);
+        } else {
+          console.log(`[Message Endpoint] Service ${receiverId} not found or has no email address`);
+        }
+      } catch (emailError) {
+        console.error('[Message Endpoint] Error sending email notification to service:', emailError);
+        // Continuăm procesul chiar dacă avem eroare la trimiterea email-ului
+      }
 
       // Send real-time notification through WebSocket
       const messageNotification = {
@@ -3300,7 +3348,90 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error) {
       console.error("Error checking new reviews:", error);
-      res.status(500).json({ error: "Failed to check new reviews" });
+    }
+  });
+  
+  // API pentru testarea trimiterii emailurilor
+  app.post("/api/service/test-email-notification", async (req, res) => {
+    try {
+      // Obținem datele din cerere
+      const { email, messageType, senderName } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email address is required" });
+      }
+      
+      const { emailService } = require('./services/emailService');
+      const { emailNotificationService } = require('./services/emailNotificationService');
+      
+      // În funcție de tipul de mesaj, trimitem un email de test diferit
+      if (messageType === 'new_message') {
+        // Simulăm un mesaj
+        const mockMessage = {
+          id: 9999,
+          content: "Acesta este un mesaj de test pentru verificarea notificărilor prin email.",
+          createdAt: new Date(),
+          isRead: false
+        };
+        
+        // Simulăm o cerere
+        const mockRequest = {
+          id: 9999,
+          title: "Cerere de test",
+          description: "Aceasta este o cerere de test pentru verificarea notificărilor prin email.",
+          cities: ["București"],
+          county: "București"
+        };
+        
+        // Trimitem un email de test pentru mesaj nou
+        await emailNotificationService.notifyClientNewMessage(
+          9999, // ID fals pentru client
+          mockMessage as any, 
+          mockRequest as any, 
+          senderName || "Service Test", 
+          true
+        );
+        
+        console.log(`[Test] Email notification sent to ${email}`);
+        return res.json({ success: true, message: `Test email sent to ${email}` });
+      } else {
+        // Trimitem un email de test simplu
+        await emailService.sendEmail({
+          to: email,
+          subject: "Test Email Notification",
+          bodyHtml: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+              <h2 style="color: #0080ff;">Test Notificări Email</h2>
+              <p>Salut,</p>
+              <p>Acesta este un email de test pentru a verifica dacă sistemul de notificări prin email funcționează corect.</p>
+              <p>Timestamp: ${new Date().toISOString()}</p>
+              <p style="margin-top: 20px; color: #666; font-size: 14px;">
+                Sistemul de notificări email funcționează corect!
+              </p>
+            </div>
+          `,
+          bodyText: `
+            Test Notificări Email
+            
+            Salut,
+            
+            Acesta este un email de test pentru a verifica dacă sistemul de notificări prin email funcționează corect.
+            
+            Timestamp: ${new Date().toISOString()}
+            
+            Sistemul de notificări email funcționează corect!
+          `
+        });
+        
+        console.log(`[Test] Simple test email sent to ${email}`);
+        return res.json({ success: true, message: `Simple test email sent to ${email}` });
+      }
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      return res.status(500).json({ 
+        error: "Failed to send test email", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
