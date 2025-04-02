@@ -19,6 +19,8 @@ import NotificationTest from "./pages/NotificationTest";
 import NotificationPermissionDialog from "@/components/NotificationPermissionDialog";
 import { useEffect, useState } from "react";
 import React from "react";
+import TestEmailButton from "@/components/TestEmailButton";
+import TestEmail from "@/pages/TestEmail";
 
 function Router() {
   return (
@@ -30,6 +32,7 @@ function Router() {
       <Route path="/cookie-policy" component={CookiePolicy} />
       <Route path="/terms-and-conditions" component={TermsAndConditions} />
       <Route path="/test-notificari" component={NotificationTest} />
+      <Route path="/test-email" component={TestEmail} />
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>

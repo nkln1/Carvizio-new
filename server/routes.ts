@@ -3378,6 +3378,25 @@ export function registerRoutes(app: Express): Server {
     // Delegăm cererea către handlerul din routes/notifications.ts
     await unregisterToken(req, res);
   });
+  
+  // Rută de test pentru trimiterea de email (pentru debugging)
+  app.get("/api/test-email", async (req, res) => {
+    try {
+      console.log("Testăm trimiterea email-ului...");
+      const result = await EmailService.sendEmail(
+        "test@example.com", // Înlocuiește cu email-ul tău pentru testare
+        "Test Email de la Auto Service App",
+        "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
+        "Acesta este un email de test. Sistemul de email funcționează corect!"
+      );
+      
+      console.log("Rezultat trimitere test email:", result);
+      res.json({ success: result, message: result ? "Email trimis cu succes" : "Eroare la trimiterea email-ului" });
+    } catch (error) {
+      console.error("Eroare la testarea serviciului de email:", error);
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
 
   // Return the server at the end
   return httpServer;
