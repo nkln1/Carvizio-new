@@ -18,6 +18,7 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import NotificationTest from "./pages/NotificationTest";
 import NotificationPermissionDialog from "@/components/NotificationPermissionDialog";
 import { useEffect, useState } from "react";
+import React from "react";
 
 function Router() {
   return (
@@ -35,10 +36,11 @@ function Router() {
   );
 }
 
-function AppNotificationInitializer() {
-  const [webSocketInitialized, setWebSocketInitialized] = useState(false);
+// Folosim React.memo pentru a evita rerenderizările inutile
+const AppNotificationInitializer: React.FC = React.memo(() => {
+  const [webSocketInitialized, setWebSocketInitialized] = React.useState(false);
   
-  useEffect(() => {
+  React.useEffect(() => {
     console.log("[App] Încărcare aplicație...");
 
     // Pentru a evita problemele cu hook-urile, importăm direct tote modulele necesare
@@ -237,9 +239,9 @@ function AppNotificationInitializer() {
   }, []);
 
   return null; // Acest component nu randează nimic
-}
+});
 
-function App() {
+const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

@@ -16,6 +16,7 @@ import { wss } from './index';
 import * as fs from 'fs';
 import * as path from 'path';
 import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
+import { EmailService } from './services/emailService';
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -110,6 +111,8 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
     return userRole === "client" ? "Unknown Client" : "Unknown Service Provider";
   }
 };
+
+
 
 export function registerRoutes(app: Express): Server {
   
@@ -888,6 +891,59 @@ export function registerRoutes(app: Express): Server {
         }
       });
 
+      // După crearea cererii, găsim furnizorii de servicii din zona specificată pentru a trimite notificări prin email
+      try {
+        // Găsim toate serviciile din această zonă
+        const firestore = admin.firestore();
+        // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
+        const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
+        
+        // Căutăm toți furnizorii de servicii în aceeași zonă
+        const serviceProvidersSnapshot = await firestore
+          .collection('service_providers_data') // Colecția cu date despre furnizori
+          .where('county', '==', request.county)
+          .where('city', '==', cityStr) // Verificăm orașul exact
+          .get();
+          
+        // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
+        const emailPromises = [];
+        
+        for (const doc of serviceProvidersSnapshot.docs) {
+          const serviceProviderData = doc.data();
+          const serviceProviderId = parseInt(doc.id);
+          
+          // Verificăm preferințele de notificări
+          const preferences = await storage.getNotificationPreferences(serviceProviderId);
+          
+          // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
+          if (!preferences || 
+              (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled)) {
+            
+            // Obținem datele furnizorului din baza de date
+            const serviceProvider = await storage.getServiceProvider(serviceProviderId);
+            if (serviceProvider) {
+              // Trimitem email de notificare
+              emailPromises.push(
+                EmailService.sendNewRequestNotification(
+                  serviceProvider,
+                  request.title,
+                  client.name
+                )
+              );
+              console.log(`Email de notificare pentru cerere nouă trimis către ${serviceProvider.companyName}`);
+            }
+          }
+        }
+        
+        // Așteptăm trimiterea tuturor email-urilor (fără a bloca răspunsul)
+        Promise.all(emailPromises).catch(err => {
+          console.error("Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", err);
+        });
+      } catch (emailError) {
+        // Doar înregistrăm eroarea, nu împiedicăm crearea cererii
+        console.error("Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", emailError);
+      }
+
       res.status(201).json(request);
     } catch (error: any) {
       console.error("Error creating request:", error);
@@ -1435,6 +1491,39 @@ export function registerRoutes(app: Express): Server {
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
       await storage.updateRequest(offer.requestId, { status: "Rezolvat" });
 
+      // Trimitem notificare prin email furnizorului de servicii
+      try {
+        // Obținem datele furnizorului de servicii
+        const serviceProvider = await storage.getServiceProvider(offer.serviceProviderId);
+        
+        if (serviceProvider) {
+          // Verificăm preferințele pentru notificări
+          const preferences = await storage.getNotificationPreferences(serviceProvider.id);
+          
+          // Dacă preferințele permit trimiterea de email-uri pentru oferte acceptate
+          if (!preferences || 
+              (preferences.emailNotificationsEnabled && preferences.acceptedOfferEmailEnabled)) {
+            
+            // Obținem detaliile cererii pentru a include în email
+            const request = await storage.getRequest(offer.requestId);
+            const offerTitle = offer.title || (request ? request.title : "Ofertă service auto");
+            
+            // Trimitem email de notificare
+            EmailService.sendOfferAcceptedNotification(
+              serviceProvider,
+              offerTitle, 
+              client.name
+            ).catch(err => {
+              console.error("Eroare la trimiterea email-ului de notificare pentru oferta acceptată:", err);
+            });
+            
+            console.log(`Email de notificare pentru ofertă acceptată trimis către ${serviceProvider.companyName}`);
+          }
+        }
+      } catch (emailError) {
+        console.error("Eroare la trimiterea email-ului de notificare pentru ofertă acceptată:", emailError);
+      }
+
       // Send notifications through WebSocket with improved error handling
       wss.clients.forEach((client) => {
         try {
@@ -1631,6 +1720,43 @@ export function registerRoutes(app: Express): Server {
         senderName: await getUserDisplayName(message.senderId, message.senderRole, storage),
         receiverName: await getUserDisplayName(message.receiverId, message.receiverRole, storage)
       };
+
+      // Trimitem notificare prin email pentru noul mesaj (doar dacă destinatarul este furnizor de servicii)
+      try {
+        if (message.receiverRole === "service") {
+          // Obținem datele furnizorului de servicii
+          const serviceProvider = await storage.getServiceProvider(message.receiverId);
+          
+          if (serviceProvider) {
+            // Verificăm preferințele pentru notificări
+            const preferences = await storage.getNotificationPreferences(serviceProvider.id);
+            
+            // Dacă preferințele permit trimiterea de email-uri pentru mesaje noi
+            if (!preferences || 
+                (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled)) {
+              
+              // Obținem detaliile cererii pentru a include în email
+              const request = await storage.getRequest(requestId);
+              const senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
+              const requestTitle = request ? request.title : "Cerere service auto";
+              
+              // Trimitem email de notificare
+              EmailService.sendNewMessageNotification(
+                serviceProvider,
+                message.content,
+                senderName,
+                requestTitle
+              ).catch(err => {
+                console.error("Eroare la trimiterea email-ului de notificare pentru mesaj nou:", err);
+              });
+              
+              console.log(`Email de notificare pentru mesaj nou trimis către ${serviceProvider.companyName}`);
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error("Eroare la trimiterea email-ului de notificare pentru mesaj nou:", emailError);
+      }
 
       // Send real-time notification via WebSocket
       wss.clients.forEach((client) => {
@@ -2686,6 +2812,31 @@ export function registerRoutes(app: Express): Server {
 
       // Create the review
       const review = await storage.createReview(reviewData);
+
+      // Trimitem notificare prin email pentru noua recenzie
+      try {
+        // Verificăm preferințele pentru notificări
+        const preferences = await storage.getNotificationPreferences(serviceProviderId);
+        
+        // Dacă preferințele permit trimiterea de email-uri pentru recenzii noi
+        if (!preferences || 
+            (preferences.emailNotificationsEnabled && preferences.newReviewEmailEnabled)) {
+          
+          // Trimitem email de notificare
+          EmailService.sendNewReviewNotification(
+            serviceProvider,
+            client.name,
+            rating,
+            comment
+          ).catch(err => {
+            console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", err);
+          });
+          
+          console.log(`Email de notificare pentru recenzie nouă trimis către ${serviceProvider.companyName}`);
+        }
+      } catch (emailError) {
+        console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", emailError);
+      }
 
       console.log("Review created successfully:", review);
       res.status(201).json(review);
