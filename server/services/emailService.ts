@@ -17,8 +17,8 @@ interface EmailPayload {
 
 export class EmailService {
   private static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
-  // Folosim un email verificat de Elastic Email (nu putem folosi domenii arbitrare fără verificare SPF/DKIM)
-  private static fromEmail = 'user@elasticemail.com'; // Acesta va fi înlocuit cu adresa verificată a utilizatorului
+  // Folosim adresa de email verificată în contul Elastic Email
+  private static fromEmail = 'notificari@carvizio.ro'; // Adresa verificată pentru domeniul carvizio.ro
   private static fromName = 'Auto Service App';
   private static baseUrl = 'https://api.elasticemail.com/v2';
 

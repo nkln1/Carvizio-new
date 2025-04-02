@@ -239,7 +239,10 @@ const AppNotificationInitializer: React.FC = () => {
   }, []);
 
   return null; // Acest component nu randează nimic
-});
+};
+
+// Optimizăm componenta folosind React.memo pentru a preveni re-renderurile inutile
+const AppNotificationInitializerMemo = React.memo(AppNotificationInitializer);
 
 const App = () => {
   return (
@@ -247,7 +250,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <NotificationProvider>
-            <AppNotificationInitializer />
+            <AppNotificationInitializerMemo />
             <Navigation />
             <Router />
             <CookieBanner />
