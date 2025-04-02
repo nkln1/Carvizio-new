@@ -5,26 +5,22 @@
 import fetch from 'node-fetch';
 import { type ServiceProvider } from '@shared/schema';
 
-// Tipuri pentru serviciul de email
+// Tipuri pentru serviciul de email - conform documentație Elastic Email API v2
 interface EmailPayload {
-  Recipients: {
-    To: string[];
-  };
-  Content: {
-    From: string;
-    Subject: string;
-    Body: {
-      Text?: string;
-      HTML?: string;
-    };
-  };
+  To: string; // Adresa email destinatar
+  From: string; // Adresa email expeditor
+  FromName?: string; // Nume afișat expeditor
+  Subject: string; // Subiectul email-ului
+  BodyHTML: string; // Conținutul HTML al email-ului
+  BodyText?: string; // Conținutul Text al email-ului (opțional)
 }
 
 export class EmailService {
   private static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
-  private static fromEmail = 'noreply@auto-service-app.ro';
+  // Folosim un email verificat de Elastic Email (nu putem folosi domenii arbitrare fără verificare SPF/DKIM)
+  private static fromEmail = 'user@elasticemail.com'; // Acesta va fi înlocuit cu adresa verificată a utilizatorului
   private static fromName = 'Auto Service App';
-  private static baseUrl = 'https://api.elasticemail.com/v4';
+  private static baseUrl = 'https://api.elasticemail.com/v2';
 
   /**
    * Trimite un email folosind Elastic Email API
@@ -47,30 +43,34 @@ export class EmailService {
       }
 
       const payload: EmailPayload = {
-        Recipients: {
-          To: [to]
-        },
-        Content: {
-          From: `${this.fromName} <${this.fromEmail}>`,
-          Subject: subject,
-          Body: {
-            HTML: htmlContent
-          }
-        }
+        To: to,
+        From: this.fromEmail,
+        FromName: this.fromName,
+        Subject: subject,
+        BodyHTML: htmlContent,
+        BodyText: textContent
       };
 
-      // Adăugăm textContent dacă este furnizat
-      if (textContent) {
-        payload.Content.Body.Text = textContent;
+      // Construim URL-ul cu parametrii pentru a folosi application/x-www-form-urlencoded 
+      // în loc de application/json care pare să funcționeze mai bine cu API-ul v2
+      const params = new URLSearchParams();
+      params.append('apikey', this.apiKey || '');
+      params.append('to', payload.To);
+      params.append('from', payload.From);
+      params.append('fromName', payload.FromName || '');
+      params.append('subject', payload.Subject);
+      params.append('bodyHtml', payload.BodyHTML);
+      if (payload.BodyText) {
+        params.append('bodyText', payload.BodyText);
       }
 
-      const response = await fetch(`${this.baseUrl}/emails/transactional`, {
+      const response = await fetch(`${this.baseUrl}/email/send`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-ElasticEmail-ApiKey': this.apiKey
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-ElasticEmail-ApiKey': this.apiKey || ''
         },
-        body: JSON.stringify(payload)
+        body: params
       });
 
       if (!response.ok) {

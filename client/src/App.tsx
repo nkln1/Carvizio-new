@@ -36,8 +36,8 @@ function Router() {
   );
 }
 
-// Folosim React.memo pentru a evita rerenderizările inutile
-const AppNotificationInitializer: React.FC = React.memo(() => {
+// Component pentru inițializarea notificărilor
+const AppNotificationInitializer: React.FC = () => {
   const [webSocketInitialized, setWebSocketInitialized] = React.useState(false);
   
   React.useEffect(() => {
