@@ -297,7 +297,7 @@ Mulțumim că folosești platforma Service Auto!
   /**
    * Notifică un service provider despre o cerere nouă
    */
-  async notifyNewRequest(serviceProviderId: number, request: Request, instant: boolean = false) {
+  async notifyNewRequest(serviceProviderId: number, request: Request, instant: boolean = true) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
     if (!preferences || !preferences.emailNotificationsEnabled || !preferences.newRequestEmailEnabled) {
@@ -312,6 +312,15 @@ Mulțumim că folosești platforma Service Auto!
       createdAt: new Date()
     };
 
+    // TEMPORAR: Pentru testare, toate notificările sunt trimise instant
+    console.log(`[EmailNotificationService] TEST MODE - Sending instant request notification to service ${serviceProviderId}`);
+    await this.sendInstantRequestNotification(serviceProviderId, { 
+      serviceProviderId, 
+      request 
+    });
+    
+    // DEZACTIVAT TEMPORAR PENTRU TESTARE
+    /* 
     // Dacă este instant, trimite imediat, altfel pune în coadă
     if (instant) {
       await this.sendInstantRequestNotification(serviceProviderId, { 
@@ -321,6 +330,7 @@ Mulțumim că folosești platforma Service Auto!
     } else {
       this.queueNotification(notification);
     }
+    */
   }
 
   /**
@@ -345,7 +355,7 @@ Mulțumim că folosești platforma Service Auto!
   /**
    * Notifică un service provider despre un mesaj nou
    */
-  async notifyNewMessage(serviceProviderId: number, message: Message, request: Request, senderName: string, instant: boolean = false) {
+  async notifyNewMessage(serviceProviderId: number, message: Message, request: Request, senderName: string, instant: boolean = true) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
     if (!preferences || !preferences.emailNotificationsEnabled || !preferences.newMessageEmailEnabled) {
@@ -360,6 +370,17 @@ Mulțumim că folosești platforma Service Auto!
       createdAt: new Date()
     };
 
+    // TEMPORAR: Pentru testare, toate notificările sunt trimise instant
+    console.log(`[EmailNotificationService] TEST MODE - Sending instant message notification to service ${serviceProviderId}`);
+    await this.sendInstantMessageNotification(serviceProviderId, { 
+      serviceProviderId, 
+      message, 
+      request, 
+      senderName 
+    });
+    
+    // DEZACTIVAT TEMPORAR PENTRU TESTARE
+    /*
     // Dacă este instant, trimite imediat, altfel pune în coadă
     if (instant) {
       await this.sendInstantMessageNotification(serviceProviderId, { 
@@ -371,12 +392,13 @@ Mulțumim că folosești platforma Service Auto!
     } else {
       this.queueNotification(notification);
     }
+    */
   }
 
   /**
    * Notifică un service provider despre o recenzie nouă
    */
-  async notifyNewReview(serviceProviderId: number, review: Review, clientName: string, instant: boolean = false) {
+  async notifyNewReview(serviceProviderId: number, review: Review, clientName: string, instant: boolean = true) {
     // Verifică preferințele de notificare
     const preferences = await this.storage.getNotificationPreferences(serviceProviderId);
     if (!preferences || !preferences.emailNotificationsEnabled || !preferences.newReviewEmailEnabled) {
@@ -391,6 +413,16 @@ Mulțumim că folosești platforma Service Auto!
       createdAt: new Date()
     };
 
+    // TEMPORAR: Pentru testare, toate notificările sunt trimise instant
+    console.log(`[EmailNotificationService] TEST MODE - Sending instant review notification to service ${serviceProviderId}`);
+    await this.sendInstantReviewNotification(serviceProviderId, { 
+      serviceProviderId, 
+      review, 
+      clientName 
+    });
+    
+    // DEZACTIVAT TEMPORAR PENTRU TESTARE
+    /*
     // Dacă este instant, trimite imediat, altfel pune în coadă
     if (instant) {
       await this.sendInstantReviewNotification(serviceProviderId, { 
@@ -401,6 +433,7 @@ Mulțumim că folosești platforma Service Auto!
     } else {
       this.queueNotification(notification);
     }
+    */
   }
 
   /**
