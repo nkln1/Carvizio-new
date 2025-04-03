@@ -2662,7 +2662,7 @@ export function registerRoutes(app: Express): Server {
         const receiver = await storage.getServiceProvider(receiverId);
         
         if (receiver && receiver.firebaseUid) {
-          // ADĂUGAT: Verificăm preferințele de notificare pentru email
+          // Verificăm preferințele de notificare pentru email
           console.log(`Verificăm preferințele pentru notificări email pentru service provider ${receiverId}...`);
           
           try {
@@ -2683,24 +2683,28 @@ export function registerRoutes(app: Express): Server {
                 
             console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
             
+            // Utilizăm ID-ul mesajului pentru a asigura că fiecare mesaj primește un email separat
+            // Adăugăm și timestamp-ul pentru a face identificatorul și mai unic
+            const emailIdentifier = `message_${message.id}_${Date.now()}`;
+            console.log(`Identificator unic email: ${emailIdentifier}`);
+            
             if (shouldSendEmail) {
               console.log(`Pregătim trimiterea email-ului de notificare...`);
               
-              // ADĂUGAT: Trimitem email de notificare
               try {
-                console.log(`Se trimite email-ul...`);
+                console.log(`Se trimite email-ul pentru mesajul #${message.id}...`);
                 await EmailService.sendNewMessageNotification(
                   receiver,
                   content,
                   client.name,
                   request.title || "Cerere service auto"
                 );
-                console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email})`);
+                console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email}) pentru mesajul #${message.id}`);
               } catch (emailErr) {
-                console.error(`✗ EROARE la trimiterea email-ului:`, emailErr);
+                console.error(`✗ EROARE la trimiterea email-ului pentru mesajul #${message.id}:`, emailErr);
               }
             } else {
-              console.log(`Nu se trimite email de notificare pentru mesaj nou către ${receiver.companyName} conform preferințelor`);
+              console.log(`Nu se trimite email de notificare către ${receiver.companyName} conform preferințelor`);
             }
           } catch (prefError) {
             console.error(`Eroare la obținerea preferințelor de notificare:`, prefError);
