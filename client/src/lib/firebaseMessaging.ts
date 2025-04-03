@@ -1,10 +1,5 @@
-import { messaging, isFirebaseInitialized } from './firebase';
+import { messaging, messagingSupported, isFirebaseInitialized } from './firebase';
 import Cookie from 'js-cookie';
-
-// Verificăm dacă Firebase Messaging este suportat în browser
-const messagingSupported = typeof window !== 'undefined' && 
-                          'serviceWorker' in navigator && 
-                          'Notification' in window;
 
 /**
  * Clasa pentru gestionarea mesajelor Firebase și a notificărilor push

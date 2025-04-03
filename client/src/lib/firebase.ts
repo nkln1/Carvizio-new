@@ -12,21 +12,6 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-
-// Generează un token unic pentru dispozitiv
-function generateDeviceToken(): string {
-  // Generăm un ID unic folosind timestamp, random și informații despre browser
-  const timestamp = new Date().getTime();
-  const random = Math.floor(Math.random() * 1000000000);
-  const browserInfo = navigator.userAgent;
-  
-  // Creăm un hash simplu bazat pe aceste informații
-  const tokenData = `${timestamp}-${random}-${browserInfo}`;
-  
-  // Convertim în base64 pentru un format mai compact
-  return btoa(tokenData).substring(0, 40);
-}
-
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
@@ -97,13 +82,6 @@ export const requestFCMPermissionAndToken = async (): Promise<string | null> => 
       }
     }
 
-    // Verificăm întâi dacă avem un token salvat în cookie
-    const savedToken = Cookie.get('fcm_token');
-    if (savedToken) {
-      console.log("Folosim token FCM din cookie:", savedToken);
-      return savedToken;
-    }
-
     // Obținem tokenul FCM, specificând Service Worker-ul nostru
     // Încercăm să obținem Service Worker-ul specific pentru Firebase Messaging sau folosim oricare activ
     let swRegistration;
@@ -118,32 +96,23 @@ export const requestFCMPermissionAndToken = async (): Promise<string | null> => 
       // Continuăm fără a specifica Service Worker-ul
     }
     
-    // Generăm un token unic de dispozitiv dacă FCM nu e disponibil
-    if (!messaging) {
-      const deviceToken = generateDeviceToken();
-      Cookie.set('fcm_token', deviceToken, { expires: 30, secure: true, sameSite: 'Strict' });
-      return deviceToken;
-    }
-    
-    // Încercăm să obținem token FCM
-    try {
-      const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        serviceWorkerRegistration: swRegistration
-      });
+    const token = await getToken(messaging, {
+      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: swRegistration
+    });
 
-      if (token) {
-        console.log("Token FCM obținut:", token);
-        return token;
-      } else {
-        console.warn("Nu s-a putut obține tokenul FCM");
-        return null;
-      }
-    } catch (error) {
-      console.error("Eroare la obținerea tokenului FCM:", error);
+    if (token) {
+      console.log("Token FCM obținut:", token);
+      return token;
+    } else {
+      console.warn("Nu s-a putut obține tokenul FCM");
       return null;
     }
+  } catch (error) {
+    console.error("Eroare la obținerea tokenului FCM:", error);
+    return null;
   }
+};
 
 // Configurarea handler-ului pentru mesaje în prim-plan
 export const setupFCMForegroundListener = (callback: (payload: any) => void) => {

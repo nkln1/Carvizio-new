@@ -79,10 +79,10 @@ export default function ServiceDashboard() {
           if (NotificationHelper.isSupported() && NotificationHelper.checkPermission() === 'granted') {
             try {
               console.log("Inițierea verificării mesajelor în fundal pentru utilizatorul", user.id);
-
+              
               // Pornim verificarea pe fundal folosind Service Worker
               NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
-
+              
               // Doar logăm în consolă că notificările sunt active, fără toast
               console.log("Notificări active - vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.");
             } catch (error) {
@@ -163,39 +163,6 @@ export default function ServiceDashboard() {
       setNewRequestsCount(newCount);
     }
   }, [requests, viewedRequestIds]);
-
-  useEffect(() => {
-    // Actualizăm titlul paginii
-    document.title = 'Service Dashboard - AutoMaster';
-
-    // Inițializăm service worker-ul pentru notificări
-    if ('serviceWorker' in navigator) {
-      // Verificăm dacă avem un serviciu worker înregistrat
-      navigator.serviceWorker.getRegistration('/sw.js')
-        .then(registration => {
-          if (!registration) {
-            console.log('Se înregistrează service worker-ul pentru notificări...');
-            return navigator.serviceWorker.register('/sw.js');
-          }
-          return registration;
-        })
-        .then(registration => {
-          console.log('Service worker înregistrat cu succes:', registration);
-
-          // Solicităm permisiunea pentru notificări dacă nu avem deja
-          if (Notification.permission !== 'granted') {
-            return Notification.requestPermission();
-          }
-          return Notification.permission;
-        })
-        .then(permission => {
-          console.log('Permisiune notificări:', permission);
-        })
-        .catch(error => {
-          console.error('Eroare la înregistrarea service worker-ului:', error);
-        });
-    }
-  }, []);
 
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
