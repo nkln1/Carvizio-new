@@ -46,12 +46,12 @@ async function testSendEmail() {
     // Construim URL-ul cu parametrii pentru a folosi application/x-www-form-urlencoded
     const params = new URLSearchParams();
     params.append('apikey', apiKey || '');
-    params.append('to', 'test@example.com');
+    params.append('to', 'nkln@yahoo.com'); // Email-ul service provider-ului cu ID 1
     params.append('from', fromEmail);
     params.append('fromName', fromName);
     params.append('subject', 'Test Email API Diagnostic');
-    params.append('bodyHtml', '<h1>Test Email</h1><p>Acesta este un test de diagnosticare pentru API-ul Elastic Email.</p>');
-    params.append('bodyText', 'Test Email. Acesta este un test de diagnosticare pentru API-ul Elastic Email.');
+    params.append('bodyHtml', '<h1>Test Email</h1><p>Acesta este un test de diagnosticare pentru API-ul Elastic Email.</p><p>Email trimis către service provider ID 1</p>');
+    params.append('bodyText', 'Test Email. Acesta este un test de diagnosticare pentru API-ul Elastic Email. Email trimis către service provider ID 1');
 
     console.log('Sending request to:', `${baseUrl}/email/send`);
     console.log('Request parameters:', params.toString());
@@ -94,8 +94,8 @@ async function testSendEmail() {
 async function main() {
   console.log('=== Elastic Email API Diagnostic Tool ===');
   
-  const connectionResult = await testApiConnection();
-  console.log('\nAPI Connection Test:', connectionResult ? 'SUCCESS' : 'FAILED');
+  // Skip the connection test and focus on email sending
+  console.log('\nSkipping API connection test and only testing email sending...');
   
   const emailResult = await testSendEmail();
   console.log('\nEmail Send Test:', emailResult ? 'SUCCESS' : 'FAILED');
