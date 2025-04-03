@@ -130,20 +130,20 @@ export const requestFCMPermissionAndToken = async (): Promise<string | null> => 
       const token = await getToken(messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
         serviceWorkerRegistration: swRegistration
-    });
+      });
 
-    if (token) {
-      console.log("Token FCM obținut:", token);
-      return token;
-    } else {
-      console.warn("Nu s-a putut obține tokenul FCM");
+      if (token) {
+        console.log("Token FCM obținut:", token);
+        return token;
+      } else {
+        console.warn("Nu s-a putut obține tokenul FCM");
+        return null;
+      }
+    } catch (error) {
+      console.error("Eroare la obținerea tokenului FCM:", error);
       return null;
     }
-  } catch (error) {
-    console.error("Eroare la obținerea tokenului FCM:", error);
-    return null;
   }
-};
 
 // Configurarea handler-ului pentru mesaje în prim-plan
 export const setupFCMForegroundListener = (callback: (payload: any) => void) => {
