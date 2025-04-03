@@ -54,7 +54,8 @@ class FCMHelper {
     }
 
     try {
-      const response = await fetch('/api/fcm/register-token', {
+      // Încercăm prima dată endpoint-ul standard
+      let response = await fetch('/api/fcm/register-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,11 +67,41 @@ class FCMHelper {
         })
       });
 
+      // Dacă primul endpoint nu merge, încercăm endpoint-ul alternativ
+      if (!response.ok) {
+        console.warn("Endpoint-ul standard nu funcționează, încercăm alternativa");
+        response = await fetch('/api/notifications/register-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: token,
+            userId: this.userId,
+            userRole: this.userRole
+          })
+        });
+      }
+
       if (!response.ok) {
         throw new Error(`Eroare la înregistrarea tokenului: ${response.status}`);
       }
 
       console.log("Token FCM înregistrat cu succes pe server");
+      
+      // Pornim verificarea mesajelor în fundal dacă funcția este disponibilă
+      if (window.startBackgroundMessageCheck) {
+        window.startBackgroundMessageCheck({
+          userId: this.userId,
+          userRole: this.userRole,
+          token: token,
+          interval: 30000 // Verifică la fiecare 30 secunde
+        }).then(result => {
+          console.log("Verificare mesaje în fundal pornită:", result);
+        }).catch(err => {
+          console.error("Eroare la pornirea verificării mesajelor în fundal:", err);
+        });
+      }
     } catch (error) {
       console.error("Eroare la înregistrarea tokenului FCM pe server:", error);
     }

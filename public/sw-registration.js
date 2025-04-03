@@ -1,375 +1,159 @@
-// @ts-nocheck
-// Service Worker Registration Script v1.3.0
-// Acest script trebuie inclus în pagina HTML pentru a înregistra Service Worker-ul
-// Versiunea actualizată include suport pentru sunete în notificări, gestionare mai bună a erorilor și autentificare
+// Service Worker Registration Script
+// Acest script se ocupă cu înregistrarea service worker-ului și gestionarea notificărilor
 
-/**
- * Înregistrează Service Worker-ul pentru aplicație
- * Versiunea actuală: 1.3.0
- */
-/**
- * Configurează ascultătorul pentru mesajele primite de la Service Worker
- * Tratează în special solicitările de token de autentificare
- */
-function setupServiceWorkerMessageListener() {
-  // Configurăm ascultătorul pentru mesajele din Service Worker
-  navigator.serviceWorker.addEventListener('message', function(event) {
-    console.log('Mesaj primit de la Service Worker:', event.data);
-    
-    // Verificăm tipul mesajului
-    if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
-      // Service Worker-ul cere token-ul de autentificare
-      const token = localStorage.getItem('firebase_auth_token');
-      const expiresAt = localStorage.getItem('firebase_auth_token_expires');
-      
-      console.log('Service Worker solicită token-ul de autentificare, disponibil:', !!token);
-      
-      // Verificăm validitatea tokenului
-      let isValid = false;
-      if (token && expiresAt) {
-        const now = Date.now();
-        isValid = now < parseInt(expiresAt, 10);
-      }
-      
-      // Răspundem la solicitare
-      if (event.ports && event.ports[0]) {
-        event.ports[0].postMessage({
-          token: isValid ? token : null
-        });
-      }
-    }
-  });
-}
+(function() {
+  'use strict';
 
-function registerServiceWorker() {
+  // Verifică dacă browserul suportă Service Workers
   if ('serviceWorker' in navigator) {
-    console.log('[SW-Registration] Începere înregistrare Service Worker...');
-    
-    // Adăugăm un parametru de timestamp pentru a evita cache-ul la încărcarea Service Worker-ului
-    const swUrl = `/sw.js?t=${Date.now()}&v=1.0.8`;
-    
-    navigator.serviceWorker.register(swUrl, { scope: '/' })
-      .then(function(registration) {
-        console.log('[SW-Registration] Service Worker înregistrat cu succes:', registration.scope);
-        window.swRegistration = registration;
-        
-        // Forțăm activarea imediată a Service Worker-ului dacă există unul în așteptare
-        if (registration.waiting) {
-          console.log('[SW-Registration] Service Worker în așteptare găsit, forțăm activarea');
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
-        
-        // Verificăm starea Service Worker-ului și afișăm diagnostic
-        if (registration.installing) {
-          console.log('[SW-Registration] Service Worker se instalează...');
-          registration.installing.onstatechange = function() {
-            console.log('[SW-Registration] Stare Service Worker schimbată la:', this.state);
-          };
-        } else if (registration.active) {
-          console.log('[SW-Registration] Service Worker este activ');
-        }
-        
-        // Verificăm dacă browserul suportă notificări push
-        checkPushSupport(registration);
-        
-        // Configurăm ascultătorul pentru mesajele de la Service Worker
-        setupServiceWorkerMessageListener();
-          
-        // Expunem funcțiile către Window pentru a putea fi folosite de alte componente
-        window.showNotificationViaSW = function(title, options = {}) {
-          return new Promise((resolve, reject) => {
-            if (!navigator.serviceWorker.controller) {
-              console.warn('Service Worker nu este activ, folosim notificări standard');
-              try {
-                const notification = new Notification(title, options);
-                resolve(notification);
-              } catch (error) {
-                reject(error);
-              }
-              return;
-            }
-            
-            const messageChannel = new MessageChannel();
-            
-            messageChannel.port1.onmessage = function(event) {
-              if (event.data.error) {
-                reject(event.data.error);
-              } else {
-                resolve(event.data.success);
-              }
-            };
-            
-            // Trimitem mesaj către Service Worker pentru a afișa notificarea
-            navigator.serviceWorker.controller.postMessage({
-              type: 'SHOW_NOTIFICATION',
-              payload: { title, options }
-            }, [messageChannel.port2]);
-          });
-        };
-        
-        window.startBackgroundMessageCheck = function(options = {}) {
-          return new Promise((resolve, reject) => {
-            if (!navigator.serviceWorker.controller) {
-              reject(new Error('Service Worker nu este activ'));
-              return;
-            }
-            
-            const messageChannel = new MessageChannel();
-            
-            // Adăugăm un timeout pentru mesajul către Service Worker
-            const timeoutId = setTimeout(() => {
-              reject(new Error("Timeout la trimiterea mesajului către Service Worker"));
-            }, 5000); // 5 secunde timeout
-            
-            messageChannel.port1.onmessage = function(event) {
-              clearTimeout(timeoutId); // Anulăm timeout-ul când primim un răspuns
-              if (event.data.error) {
-                reject(event.data.error);
-              } else {
-                resolve(event.data.success);
-              }
-            };
-            
-            try {
-              // Trimitem mesaj către Service Worker pentru a începe verificarea mesajelor în fundal
-              navigator.serviceWorker.controller.postMessage({
-                type: 'START_BACKGROUND_MESSAGE_CHECK',
-                payload: options
-              }, [messageChannel.port2]);
-            } catch (error) {
-              clearTimeout(timeoutId);
-              reject(error);
-            }
-          });
-        };
-        
-        window.stopBackgroundMessageCheck = function() {
-          return new Promise((resolve, reject) => {
-            if (!navigator.serviceWorker.controller) {
-              resolve(); // Nu există Service Worker activ, deci nu avem ce opri
-              return;
-            }
-            
-            const messageChannel = new MessageChannel();
-            
-            // Adăugăm un timeout pentru mesajul către Service Worker
-            const timeoutId = setTimeout(() => {
-              resolve(); // În cazul opririi, rezolvăm promisiunea chiar și în caz de timeout
-              console.warn('Timeout la oprirea verificării mesajelor în fundal, considerăm că a fost oprită');
-            }, 3000); // 3 secunde timeout
-            
-            messageChannel.port1.onmessage = function(event) {
-              clearTimeout(timeoutId); // Anulăm timeout-ul când primim un răspuns
-              if (event.data.error) {
-                reject(event.data.error);
-              } else {
-                resolve(event.data.success);
-              }
-            };
-            
-            try {
-              // Trimitem mesaj către Service Worker pentru a opri verificarea mesajelor în fundal
-              navigator.serviceWorker.controller.postMessage({
-                type: 'STOP_BACKGROUND_MESSAGE_CHECK'
-              }, [messageChannel.port2]);
-            } catch (error) {
-              clearTimeout(timeoutId);
-              console.warn('Eroare la oprirea verificării mesajelor:', error);
-              resolve(); // Rezolvăm totuși promisiunea
-            }
-          });
-        };
-        
-        // Transmitem mesajul către Service Worker pentru a-i comunica că pagina este încărcată
-        sendMessageToSW({ type: 'PAGE_LOADED' });
+    console.log('Service Workers sunt suportați de acest browser');
+
+    // Înregistrează service worker-ul principal
+    registerServiceWorker('/sw.js')
+      .then(registration => {
+        console.log('Service Worker înregistrat cu succes:', registration);
+        setupNotificationHelpers(registration);
       })
-      .catch(function(error) {
+      .catch(error => {
         console.error('Eroare la înregistrarea Service Worker:', error);
       });
+
+    // Înregistrează service worker-ul Firebase dacă există
+    if (window.location.pathname.includes('dashboard')) {
+      registerServiceWorker('/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log('Firebase Messaging Service Worker înregistrat:', registration);
+        })
+        .catch(error => {
+          console.error('Eroare la înregistrarea Firebase Service Worker:', error);
+        });
+    }
   } else {
     console.warn('Acest browser nu suportă Service Workers');
   }
-}
 
-/**
- * Verifică dacă browserul suportă notificări push
- * @param {ServiceWorkerRegistration} registration - Înregistrarea Service Worker-ului
- */
-function checkPushSupport(registration) {
-  if ('PushManager' in window) {
-    console.log('Acest browser suportă notificări push');
-    
-    // Aici putem adăuga logica pentru a abona utilizatorul la notificări push
-    // Exemplu: registration.pushManager.subscribe({...});
-  } else {
-    console.warn('Acest browser nu suportă notificări push');
+  /**
+   * Înregistrează un service worker
+   * @param {string} path - Calea către fișierul service worker
+   * @returns {Promise<ServiceWorkerRegistration>} - Promisiune cu înregistrarea
+   */
+  function registerServiceWorker(path) {
+    return navigator.serviceWorker.register(path, {
+      scope: path === '/firebase-messaging-sw.js' ? '/' : '/'
+    });
   }
-}
 
-/**
- * Trimite un mesaj către Service Worker
- * @param {Object} message - Mesajul de trimis
- */
-function sendMessageToSW(message) {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage(message);
-  } else {
-    console.warn('Nu există un Service Worker activ pentru a trimite mesaje');
-  }
-}
-
-/**
- * Afișează o notificare folosind Service Worker-ul, cu opțiunea pentru sunet
- * @param {string} title - Titlul notificării
- * @param {Object} options - Opțiunile notificării
- * @param {boolean} [options.playSound=false] - Dacă să se redea un sunet la afișarea notificării
- * @param {string} [options.soundUrl='/notification-sound.mp3'] - URL-ul sunetului notificării
- * @returns {Promise} - Promisiune care se rezolvă când notificarea a fost afișată
- */
-function showNotificationViaSW(title, options = {}) {
-  // Dacă este disponibilă funcția globală, o folosim
-  if (window.showNotificationViaSW) {
-    // Dacă se dorește redarea unui sunet, pregătim audio
-    if (options.playSound) {
-      const soundUrl = options.soundUrl || '/sounds/notification.mp3';
-      console.log('Folosesc sunet pentru notificare din:', soundUrl);
-      
-      // Ștergem opțiunile specifice de sunet din options înainte de a trimite la SW
-      // și adăugăm datele despre sunet în data pentru a le trimite corect service worker-ului
-      const { playSound, soundUrl: removedSoundUrl, ...cleanOptions } = options;
-      
-      // Asigurăm-ne că avem un obiect data pentru a putea adăuga informațiile despre sunet
-      cleanOptions.data = cleanOptions.data || {};
-      cleanOptions.data.shouldPlaySound = true;
-      cleanOptions.data.soundUrl = soundUrl;
-      
-      // Promisiune pentru redarea sunetului
-      const soundPromise = new Promise((resolve) => {
-        try {
-          const audio = new Audio(soundUrl);
-          audio.volume = 0.5; // Volum moderat
-          
-          // Încercăm să redăm sunetul pe evenimentul de notificare
-          audio.onended = () => resolve(true);
-          audio.onerror = (e) => {
-            console.warn('Eroare la redarea sunetului notificării:', e);
-            resolve(false);
-          };
-          
-          // Folosim metoda play() care returnează o promisiune
-          const playPromise = audio.play();
-          
-          // Gestionăm promisiune (pentru browsere moderne)
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => console.log('Sunet notificare redat cu succes'))
-              .catch(error => {
-                // Auto-play blocat sau altă eroare
-                console.warn('Eroare la redarea sunetului (autoplay blocat?):', error);
-                resolve(false);
-              });
+  /**
+   * Configurează helper-ele pentru notificări
+   * @param {ServiceWorkerRegistration} registration - Înregistrarea service worker-ului
+   */
+  function setupNotificationHelpers(registration) {
+    // Adaugă funcția pentru afișarea notificărilor prin Service Worker
+    window.showNotificationViaSW = function(title, options = {}) {
+      return new Promise((resolve, reject) => {
+        // Verifică dacă service worker-ul este activ
+        if (!navigator.serviceWorker.controller) {
+          console.warn('Service Worker nu este activ, folosim API-ul standard Notification');
+          try {
+            new Notification(title, options);
+            resolve();
+          } catch (error) {
+            reject(error);
           }
-        } catch (error) {
-          console.error('Excepție la inițializarea sunetului notificării:', error);
-          resolve(false);
+          return;
         }
+
+        // Creează un canal de comunicare
+        const messageChannel = new MessageChannel();
+
+        // Configurează portul pentru răspunsul de la service worker
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.error) {
+            reject(event.data.error);
+          } else {
+            resolve(event.data);
+          }
+        };
+
+        // Trimite mesajul către service worker
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SHOW_NOTIFICATION',
+          payload: { title, options }
+        }, [messageChannel.port2]);
       });
-      
-      // Returnăm promisiunea pentru notificare, dar declanșăm și sunetul
-      return Promise.all([
-        window.showNotificationViaSW(title, cleanOptions), 
-        soundPromise
-      ]).then(([notificationResult]) => notificationResult);
-    }
-    
-    // Dacă nu este nevoie de sunet, doar afișăm notificarea
-    return window.showNotificationViaSW(title, options);
-  }
-  
-  // Implementare fallback dacă funcția globală nu este disponibilă
-  return new Promise((resolve, reject) => {
-    if (!('Notification' in window)) {
-      reject(new Error('Acest browser nu suportă notificări'));
-      return;
-    }
-    
-    if (Notification.permission !== 'granted') {
-      reject(new Error('Permisiunea pentru notificări nu este acordată'));
-      return;
-    }
-    
-    try {
-      // Pregătim sunetul dacă este necesar
-      let audio;
-      if (options.playSound) {
-        try {
-          const soundUrl = options.soundUrl || '/sounds/notification.mp3';
-          console.log('Încercare redare sunet din fallback:', soundUrl);
-          audio = new Audio(soundUrl);
-          audio.volume = 0.5;
-          audio.play().catch(e => console.warn('Eroare la redarea sunetului:', e));
-        } catch (audioError) {
-          console.warn('Nu s-a putut inițializa sunetul notificării:', audioError);
+    };
+
+    // Adaugă funcția pentru a porni verificarea mesajelor în fundal
+    window.startBackgroundMessageCheck = function(options = {}) {
+      return new Promise((resolve, reject) => {
+        if (!navigator.serviceWorker.controller) {
+          reject(new Error('Service Worker nu este activ'));
+          return;
         }
-        
-        // Eliminăm proprietățile legate de sunet înainte de a crea notificarea
-        const { playSound, soundUrl, ...cleanOptions } = options;
-        options = cleanOptions;
-      }
-      
-      const notification = new Notification(title, options);
-      resolve(notification);
-    } catch (error) {
-      reject(error);
+
+        // Creează un canal de comunicare
+        const messageChannel = new MessageChannel();
+
+        // Configurează portul pentru răspunsul de la service worker
+        messageChannel.port1.onmessage = (event) => {
+          resolve(event.data);
+        };
+
+        // Trimite mesajul către service worker
+        navigator.serviceWorker.controller.postMessage({
+          type: 'START_BACKGROUND_MESSAGE_CHECK',
+          payload: options
+        }, [messageChannel.port2]);
+      });
+    };
+
+    // Adaugă funcția pentru a opri verificarea mesajelor în fundal
+    window.stopBackgroundMessageCheck = function() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.serviceWorker.controller) {
+          reject(new Error('Service Worker nu este activ'));
+          return;
+        }
+
+        // Creează un canal de comunicare
+        const messageChannel = new MessageChannel();
+
+        // Configurează portul pentru răspunsul de la service worker
+        messageChannel.port1.onmessage = (event) => {
+          resolve(event.data);
+        };
+
+        // Trimite mesajul către service worker
+        navigator.serviceWorker.controller.postMessage({
+          type: 'STOP_BACKGROUND_MESSAGE_CHECK'
+        }, [messageChannel.port2]);
+      });
+    };
+
+    // Informează service worker-ul că pagina a fost încărcată
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'PAGE_LOADED'
+      });
+    }
+  }
+
+  // Ascultă pentru evenimentele de control al service worker-ului
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('Service Worker controller a fost schimbat');
+
+    // Reîncărcăm pagina pentru a asigura funcționarea corectă cu noul service worker
+    // window.location.reload();
+  });
+
+  // Ascultă pentru mesajele de la service worker
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    console.log('Mesaj primit de la Service Worker:', event.data);
+
+    // Procesăm mesajele primite de la service worker
+    if (event.data && event.data.type === 'NOTIFICATION_CLICKED') {
+      // Gestionăm click-ul pe notificare
+      console.log('Utilizatorul a făcut click pe notificare:', event.data.payload);
     }
   });
-}
-
-/**
- * Pornește verificarea mesajelor în fundal
- * @param {Object} options - Opțiunile pentru verificarea mesajelor
- * @returns {Promise} - Promisiune care se rezolvă când verificarea a fost pornită
- */
-function startBackgroundMessageCheck(options = {}) {
-  if (window.startBackgroundMessageCheck) {
-    return window.startBackgroundMessageCheck(options);
-  }
-  
-  return Promise.reject(new Error('Funcția de verificare a mesajelor în fundal nu este disponibilă'));
-}
-
-/**
- * Oprește verificarea mesajelor în fundal
- * @returns {Promise} - Promisiune care se rezolvă când verificarea a fost oprită
- */
-function stopBackgroundMessageCheck() {
-  console.log('stopBackgroundMessageCheck() - Oprire verificare mesaje în fundal');
-  
-  // Verificăm dacă există funcția în fereastra globală (setată de Service Worker)
-  if (window.stopBackgroundMessageCheck) {
-    // Aceasta este referința la funcția service worker definită anterior
-    console.log('Folosim metoda stopBackgroundMessageCheck existentă');
-    
-    // Rulăm funcția internă care va comunica cu Service Worker-ul
-    return window.stopBackgroundMessageCheck()
-      .then(result => {
-        console.log('Verificare mesaje în fundal oprită:', result);
-        
-        // Notificăm utilizatorul prin console
-        console.log('%cVerificarea notificărilor a fost oprită cu succes', 'color: green; font-weight: bold');
-        
-        return result;
-      })
-      .catch(error => {
-        console.error('Eroare la oprirea verificării mesajelor:', error);
-        // Tratăm eșecul ca o reușită pentru utilizator
-        return { success: true, message: 'Verificarea a fost oprită (cu avertismente)' };
-      });
-  }
-  
-  console.log('Nu există o funcție internă de oprire, nu este necesar să facem nimic');
-  return Promise.resolve({ success: true, message: 'Nicio verificare activă de oprit' });
-}
-
-// Înregistrăm Service Worker-ul
-registerServiceWorker();
+})();

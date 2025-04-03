@@ -243,7 +243,7 @@ function stopPeriodicMessageCheck() {
 
   // Resetăm complet starea verificării
   backgroundCheckConfig.isActive = false;
-  
+
   // Notificăm toate ferestrele/tab-urile active că am oprit verificarea
   self.clients.matchAll().then(clients => {
     clients.forEach(client => {
@@ -256,7 +256,7 @@ function stopPeriodicMessageCheck() {
   });
 
   console.log('[Service Worker] Verificarea mesajelor în fundal a fost oprită complet');
-  
+
   return { 
     success: true, 
     message: 'Verificare mesaje în fundal oprită cu succes',
@@ -309,75 +309,40 @@ async function getAuthToken() {
 
 // Verifică dacă există mesaje noi pentru utilizator
 async function checkForNewMessages(userId, userRole, token) {
-  if (!userId || !userRole) {
+  if (!userId || !userRole || !token) {
     console.error('[Service Worker] Date lipsă pentru verificarea mesajelor');
     return Promise.reject(new Error('Date lipsă pentru verificarea mesajelor'));
   }
 
   console.log('[Service Worker] Verificare mesaje noi pentru utilizator:', userId);
 
-  // Încercăm să folosim tokenul furnizat direct din apel
-  let authToken = token;
+  // URL-ul pentru API-ul de verificare a mesajelor - începem cu endpoint-ul general
+  let apiUrl = '/api/messages/unread-count';
 
-  // Dacă nu avem token, încercăm să-l obținem din localStorage prin client
-  if (!authToken) {
-    console.log('[Service Worker] Tokenul nu a fost furnizat, încerc obținerea din localStorage');
-    authToken = await getAuthToken();
-  }
-
-  // Obține preferințele de notificări
-  await getNotificationPreferences(authToken);
-
-  // Verifică dacă notificările browser sunt activate
-  if (backgroundCheckConfig.notificationPreferences) {
-    if (!backgroundCheckConfig.notificationPreferences.browserNotificationsEnabled) {
-      console.log('[Service Worker] Notificările browser sunt dezactivate global în preferințe');
-      return Promise.resolve();
-    }
-
-    // Pentru verificări specifice pe tipul de notificare
-    console.log('[Service Worker] Verificare preferințe specifice pentru mesaje:', 
-      backgroundCheckConfig.notificationPreferences.newMessageBrowserEnabled);
-  } else {
-    console.log('[Service Worker] Nu există preferințe de notificări salvate, folosim valorile implicite (activate)');
-  }
-
-  // Verificăm dacă avem token
-  if (!authToken) {
-    console.warn('[Service Worker] Token-ul de autentificare lipsește, nu se pot verifica mesajele');
-    // Încercăm să accesăm clienții și să le solicităm tokenul direct
-    return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clients => {
-        if (clients.length > 0) {
-          console.log('[Service Worker] Încercăm să solicităm tokenul direct de la client');
-          try {
-            // Trimitem un mesaj către client pentru a solicita tokenul
-            clients[0].postMessage({
-              type: 'REQUEST_AUTH_TOKEN',
-              payload: { forceRefresh: true }
-            });
-            // Returnăm un promise rezolvat pentru a continua execuția
-            return Promise.resolve();
-          } catch (err) {
-            console.error('[Service Worker] Eroare la solicitarea tokenului:', err);
-            return Promise.resolve();
-          }
-        } else {
-          return Promise.resolve();
-        }
-      });
-  }
-
-  // URL-ul pentru API-ul de verificare a mesajelor
-  const apiUrl = userRole === 'service' 
+  // Backup URL-uri specifice rolului dacă cel general nu funcționează
+  const roleSpecificApiUrl = userRole === 'service' 
     ? '/api/service/unread-messages-count' 
     : '/api/client/unread-messages-count';
 
+  // Încercăm primul endpoint
   return fetch(apiUrl, {
     headers: {
-      'Authorization': `Bearer ${authToken}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
+  })
+  .then(response => {
+    if (!response.ok) {
+      console.log('[Service Worker] Endpoint principal nu răspunde, încercăm alternativa');
+      // Dacă primul endpoint eșuează, încercăm endpoint-ul specific rolului
+      return fetch(roleSpecificApiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+    return response;
   })
   .then(response => {
     if (!response.ok) {
@@ -1108,14 +1073,14 @@ self.addEventListener('message', (event) => {
     case 'STOP_BACKGROUND_MESSAGE_CHECK':
       try {
         console.log('[Service Worker] Primită comandă de oprire a verificării mesajelor în fundal');
-        
+
         // Oprim verificarea periodică
         const stopResult = stopPeriodicMessageCheck();
-        
+
         // Trimitem rezultatul înapoi către toate clientele conectate
         self.clients.matchAll().then(clients => {
           console.log(`[Service Worker] Notificăm ${clients.length} clienți despre oprirea verificării`);
-          
+
           clients.forEach(client => {
             client.postMessage({
               type: 'BACKGROUND_CHECK_STATUS',
@@ -1128,7 +1093,7 @@ self.addEventListener('message', (event) => {
             });
           });
         });
-        
+
         // Confirmăm canalului care a inițiat comanda (dacă există)
         if (event.ports && event.ports[0]) {
           console.log('[Service Worker] Răspuns direct către portul care a inițiat oprirea');
@@ -1139,7 +1104,7 @@ self.addEventListener('message', (event) => {
         }
       } catch (error) {
         console.error('[Service Worker] Eroare la oprirea verificării de fundal:', error);
-        
+
         // Chiar și în caz de eroare, încercăm să oprim verificarea și să notificăm clientul
         if (event.ports && event.ports[0]) {
           event.ports[0].postMessage({

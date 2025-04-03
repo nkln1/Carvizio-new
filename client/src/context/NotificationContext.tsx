@@ -42,6 +42,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Determinăm rolul utilizatorului
         const userRole = user.role === 'service' ? 'service' : 'client';
         
+        console.log("Inițializăm notificările pentru utilizatorul:", user.id, "cu rolul:", userRole);
+        
         // Inițializăm Firebase Messaging
         const result = await firebaseMessaging.initialize(user.id, userRole);
         setIsEnabled(result);
@@ -49,6 +51,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         // Actualizăm numărul de mesaje necitite
         await countUnreadMessages();
+        
+        // Configurăm verificarea periodică a mesajelor necitite
+        const checkInterval = setInterval(() => {
+          if (isLoggedIn && user) {
+            countUnreadMessages();
+          }
+        }, 30000); // Verifică la fiecare 30 secunde
+        
+        // Curățăm intervalul la unmount
+        return () => {
+          clearInterval(checkInterval);
+        };
       }
     };
 
