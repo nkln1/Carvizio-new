@@ -2662,6 +2662,50 @@ export function registerRoutes(app: Express): Server {
         const receiver = await storage.getServiceProvider(receiverId);
         
         if (receiver && receiver.firebaseUid) {
+          // ADĂUGAT: Verificăm preferințele de notificare pentru email
+          console.log(`Verificăm preferințele pentru notificări email pentru service provider ${receiverId}...`);
+          
+          try {
+            const preferences = await storage.getNotificationPreferences(receiverId);
+            
+            console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+            if (preferences) {
+              console.log(`Preferințe specifice pentru service provider ID ${receiverId}:`);
+              console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+              console.log(`- Notificări email pentru mesaje noi: ${preferences.newMessageEmailEnabled ? 'DA' : 'NU'}`);
+            } else {
+              console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+            }
+            
+            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+            const shouldSendEmail = !preferences || 
+                (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
+                
+            console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+            
+            if (shouldSendEmail) {
+              console.log(`Pregătim trimiterea email-ului de notificare...`);
+              
+              // ADĂUGAT: Trimitem email de notificare
+              try {
+                console.log(`Se trimite email-ul...`);
+                await EmailService.sendNewMessageNotification(
+                  receiver,
+                  content,
+                  client.name,
+                  request.title || "Cerere service auto"
+                );
+                console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email})`);
+              } catch (emailErr) {
+                console.error(`✗ EROARE la trimiterea email-ului:`, emailErr);
+              }
+            } else {
+              console.log(`Nu se trimite email de notificare pentru mesaj nou către ${receiver.companyName} conform preferințelor`);
+            }
+          } catch (prefError) {
+            console.error(`Eroare la obținerea preferințelor de notificare:`, prefError);
+          }
+          
           // Obținem token-urile FCM asociate cu service provider-ul
           const db = admin.firestore();
           const userCollection = 'service_providers';
