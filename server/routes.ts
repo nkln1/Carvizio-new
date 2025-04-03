@@ -927,7 +927,8 @@ export function registerRoutes(app: Express): Server {
                 EmailService.sendNewRequestNotification(
                   serviceProvider,
                   request.title,
-                  client.name
+                  client.name,
+                  `request_${request.id}_${Date.now()}`
                 )
               );
               console.log(`Email de notificare pentru cerere nouă trimis către ${serviceProvider.companyName}`);
@@ -1539,7 +1540,8 @@ export function registerRoutes(app: Express): Server {
               await EmailService.sendOfferAcceptedNotification(
                 serviceProvider,
                 offerTitle, 
-                client.name
+                client.name,
+                `offer_${offer.id}_${Date.now()}`
               );
               console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
             } catch (err) {
@@ -1803,7 +1805,8 @@ export function registerRoutes(app: Express): Server {
                   serviceProvider,
                   message.content,
                   senderName,
-                  requestTitle
+                  requestTitle,
+                  `message_${message.id}_${Date.now()}`
                 );
                 console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
               } catch (err) {
@@ -2697,7 +2700,8 @@ export function registerRoutes(app: Express): Server {
                   receiver,
                   content,
                   client.name,
-                  request.title || "Cerere service auto"
+                  request.title || "Cerere service auto",
+                  `message_${message.id}_${Date.now()}`
                 );
                 console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email}) pentru mesajul #${message.id}`);
               } catch (emailErr) {
@@ -2952,7 +2956,8 @@ export function registerRoutes(app: Express): Server {
               serviceProvider,
               client.name,
               rating,
-              comment
+              comment,
+              `review_${createdReview.id}_${Date.now()}`
             );
             console.log(`Email de notificare pentru recenzie nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
           } catch (err) {
