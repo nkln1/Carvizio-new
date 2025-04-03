@@ -21,6 +21,15 @@ export class EmailService {
   private static fromEmail = 'notificari@carvizio.ro'; // Adresa verificată pentru domeniul carvizio.ro
   private static fromName = 'Auto Service App';
   private static baseUrl = 'https://api.elasticemail.com/v2';
+  
+  // Getteri pentru diagnosticare (nu expunem API Key)
+  public static getFromEmail(): string {
+    return this.fromEmail;
+  }
+  
+  public static getBaseUrl(): string {
+    return this.baseUrl;
+  }
 
   /**
    * Trimite un email folosind Elastic Email API
@@ -39,8 +48,12 @@ export class EmailService {
     try {
       if (!this.apiKey) {
         console.error('API key pentru Elastic Email nu este configurat');
-        return false;
+        throw new Error('API key pentru Elastic Email nu este configurat');
       }
+
+      console.log('EmailService.sendEmail - Trimitem email către:', to);
+      console.log('EmailService.sendEmail - Subiect:', subject);
+      console.log('EmailService.sendEmail - API Key configurată:', !!this.apiKey);
 
       const payload: EmailPayload = {
         To: to,
@@ -64,6 +77,9 @@ export class EmailService {
         params.append('bodyText', payload.BodyText);
       }
 
+      console.log('EmailService.sendEmail - URL:', `${this.baseUrl}/email/send`);
+      console.log('EmailService.sendEmail - Parametri pregătiți pentru trimitere');
+
       const response = await fetch(`${this.baseUrl}/email/send`, {
         method: 'POST',
         headers: {
@@ -73,18 +89,47 @@ export class EmailService {
         body: params
       });
 
+      console.log('EmailService.sendEmail - Răspuns primit, status:', response.status);
+      
+      const contentType = response.headers.get('content-type');
+      console.log('EmailService.sendEmail - Content-Type răspuns:', contentType);
+
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          // Încercăm să parsăm răspunsul ca JSON dacă este posibil
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            // Altfel obținem textul răspunsului
+            errorData = await response.text();
+          }
+        } catch (parseError) {
+          console.error('Eroare la parsarea răspunsului de eroare:', parseError);
+          errorData = 'Nu am putut parsa răspunsul de eroare';
+        }
+        
         console.error('Eroare la trimiterea email-ului:', errorData);
-        return false;
+        throw new Error(`Eroare API Elastic Email: ${JSON.stringify(errorData)}`);
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          data = await response.text();
+        }
+      } catch (parseError) {
+        console.warn('Nu am putut parsa răspunsul ca JSON:', parseError);
+        data = 'Răspuns neașteptat, posibil succes dar format necunoscut';
+      }
+      
       console.log('Email trimis cu succes:', data);
       return true;
     } catch (error) {
       console.error('Excepție la trimiterea email-ului:', error);
-      return false;
+      throw error; // Propagăm eroarea pentru a o putea examina în apelant
     }
   }
 

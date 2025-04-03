@@ -3383,19 +3383,67 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/test-email", async (req, res) => {
     try {
       console.log("Testăm trimiterea email-ului...");
-      const result = await EmailService.sendEmail(
-        "test@example.com", // Înlocuiește cu email-ul tău pentru testare
-        "Test Email de la Auto Service App",
-        "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
-        "Acesta este un email de test. Sistemul de email funcționează corect!"
-      );
+      console.log("API Key present:", !!process.env.ELASTIC_EMAIL_API_KEY);
+      console.log("Using email:", "test@example.com");
       
-      console.log("Rezultat trimitere test email:", result);
-      res.json({ success: result, message: result ? "Email trimis cu succes" : "Eroare la trimiterea email-ului" });
+      try {
+        const result = await EmailService.sendEmail(
+          "test@example.com", // Înlocuiește cu email-ul tău pentru testare
+          "Test Email de la Auto Service App",
+          "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
+          "Acesta este un email de test. Sistemul de email funcționează corect!"
+        );
+        
+        console.log("Rezultat trimitere test email:", result);
+        res.json({ success: result, message: result ? "Email trimis cu succes" : "Eroare la trimiterea email-ului" });
+      } catch (emailError) {
+        console.error("Excepție în timpul trimiterii email-ului:", emailError);
+        res.status(500).json({ 
+          success: false, 
+          error: String(emailError),
+          apiKeyPresent: !!process.env.ELASTIC_EMAIL_API_KEY,
+          details: emailError.message || "No detailed error message available"
+        });
+      }
     } catch (error) {
       console.error("Eroare la testarea serviciului de email:", error);
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ 
+        success: false, 
+        error: String(error),
+        apiKeyPresent: !!process.env.ELASTIC_EMAIL_API_KEY 
+      });
     }
+  });
+  
+  // Adăugăm o nouă rută pentru diagnosticare email
+  app.get("/api/email-diagnostics", (req, res) => {
+    // Verificăm prezența cheii API
+    const apiKeyPresent = !!process.env.ELASTIC_EMAIL_API_KEY;
+    const apiKeyLength = process.env.ELASTIC_EMAIL_API_KEY ? process.env.ELASTIC_EMAIL_API_KEY.length : 0;
+    
+    // Extragem prima și ultima parte a cheii pentru verificare (nu expunem cheia completă)
+    let apiKeyHint = 'not set';
+    if (process.env.ELASTIC_EMAIL_API_KEY && apiKeyLength > 8) {
+      apiKeyHint = `${process.env.ELASTIC_EMAIL_API_KEY.substring(0, 4)}...${process.env.ELASTIC_EMAIL_API_KEY.substring(apiKeyLength - 4)}`;
+    }
+    
+    // Verificăm setările EmailService
+    const fromEmail = EmailService.getFromEmail();
+    const baseUrl = EmailService.getBaseUrl();
+    
+    res.json({
+      emailConfigStatus: {
+        apiKeyPresent,
+        apiKeyLength,
+        apiKeyHint,
+        fromEmail,
+        baseUrl,
+        elasticEmailEnvVar: process.env.ELASTIC_EMAIL_API_KEY ? 'set' : 'not set'
+      },
+      environmentVariables: {
+        nodeEnv: process.env.NODE_ENV
+      }
+    });
   });
 
   // Return the server at the end
