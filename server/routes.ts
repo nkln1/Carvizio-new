@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertClientSchema, insertServiceProviderSchema, insertCarSchema, insertRequestSchema, clients, reviews, insertReviewSchema } from "@shared/schema";
 import { json } from "express";
 import session from "express-session";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { auth as firebaseAdmin } from "firebase-admin";
 import admin from "firebase-admin";
 import { eq, and } from 'drizzle-orm';
@@ -3646,6 +3646,79 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ 
         success: false, 
         error: String(error)
+      });
+    }
+  });
+
+  // Advanced health check endpoint without authentication
+  app.get("/api/health/check", async (req, res) => {
+    try {
+      // Check database connection
+      let dbStatus = "unknown";
+      let dbError = null;
+      
+      try {
+        // Use direct pool query
+        const client = await pool.connect();
+        try {
+          const result = await client.query('SELECT NOW()');
+          console.log("Raw DB query result:", result.rows[0]);
+          dbStatus = "connected";
+        } finally {
+          client.release();
+        }
+      } catch (error: any) {
+        console.error("Database health check error (raw):", error);
+        dbError = {
+          message: error.message,
+          code: error.code || 'unknown'
+        };
+        dbStatus = "error";
+      }
+
+      // Get memory usage
+      const memoryUsage = process.memoryUsage();
+
+      // Get uptime
+      const uptime = process.uptime();
+
+      // Get database URL (redacted for security)
+      const dbUrl = process.env.DATABASE_URL 
+        ? `${process.env.DATABASE_URL.split('@')[0].split(':')[0]}:***@${process.env.DATABASE_URL.split('@')[1] || 'unknown'}`
+        : 'not set';
+
+      // Create response
+      const healthData = {
+        status: "ok",
+        message: "Server is running",
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV || "development",
+        database: {
+          status: dbStatus,
+          error: dbError,
+          url_hint: dbUrl
+        },
+        system: {
+          uptime: uptime,
+          memory: {
+            rss: Math.round(memoryUsage.rss / 1024 / 1024),
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+            external: Math.round(memoryUsage.external / 1024 / 1024),
+            unit: "MB"
+          },
+          node_version: process.version
+        }
+      };
+
+      res.json(healthData);
+    } catch (error: any) {
+      console.error("Health check error:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error performing health check",
+        error: error.message,
+        timestamp: new Date().toISOString(),
       });
     }
   });
