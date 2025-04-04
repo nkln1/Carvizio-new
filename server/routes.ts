@@ -2196,6 +2196,31 @@ export function registerRoutes(app: Express): Server {
         console.error('Error sending FCM notification:', fcmError);
         // Don't fail the entire request if FCM notification fails
       }
+      
+      // Send email notification to client
+      try {
+        // We're sending from a service provider to a client, so the client receives the notification
+        const EmailService = require('./services/emailService').EmailService;
+        
+        // Generate a unique ID for this notification to prevent duplication
+        const uniqueMessageId = `message_${message.id}_${Date.now()}`;
+        
+        console.log(`Trimitere notificare email pentru mesaj nou către client ${receiver.name} (${receiver.email})`);
+        
+        // Send the email notification
+        await EmailService.sendNewMessageNotification(
+          receiver, // receiver information (client)
+          content, // message content
+          sender.companyName, // sender name
+          request.title, // request or offer title
+          uniqueMessageId // unique message ID
+        );
+        
+        console.log(`Notificare email pentru mesaj nou trimisă cu succes către ${receiver.email}`);
+      } catch (emailError) {
+        console.error('Eroare la trimiterea notificării prin email:', emailError);
+        // Don't fail the entire request if email notification fails
+      }
 
       res.json(enrichedMessage);
     } catch (error) {
