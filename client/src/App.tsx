@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import React from "react";
 import TestEmailButton from "@/components/TestEmailButton";
 import TestEmail from "@/pages/TestEmail";
+import EmailDiagnosticPage from "@/pages/EmailDiagnosticPage";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/terms-and-conditions" component={TermsAndConditions} />
       <Route path="/test-notificari" component={NotificationTest} />
       <Route path="/test-email" component={TestEmail} />
+      <Route path="/email-diagnostic" component={EmailDiagnosticPage} />
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>

@@ -3588,6 +3588,11 @@ export function registerRoutes(app: Express): Server {
     const fromEmail = EmailService.getFromEmail();
     const baseUrl = EmailService.getBaseUrl();
     
+    // Obținem diagnosticul direct din serviciul de email
+    const emailServiceDiagnostics = EmailService.getConfigDiagnostics ? 
+      EmailService.getConfigDiagnostics() : 
+      { hasApiKey: apiKeyPresent, apiKeyLength, fromEmail, baseUrl };
+    
     res.json({
       emailConfigStatus: {
         apiKeyPresent,
@@ -3595,12 +3600,54 @@ export function registerRoutes(app: Express): Server {
         apiKeyHint,
         fromEmail,
         baseUrl,
-        elasticEmailEnvVar: process.env.ELASTIC_EMAIL_API_KEY ? 'set' : 'not set'
+        elasticEmailEnvVar: process.env.ELASTIC_EMAIL_API_KEY ? 'set' : 'not set',
+        serviceConfig: emailServiceDiagnostics
       },
       environmentVariables: {
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: process.env.NODE_ENV,
+        apiKeyEnvVar: 'ELASTIC_EMAIL_API_KEY'
       }
     });
+  });
+  
+  // Adăugăm o rută pentru trimiterea unui email de test
+  app.post("/api/send-test-email", validateFirebaseToken, async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ success: false, error: "Adresa de email este obligatorie" });
+      }
+      
+      console.log(`Se trimite email de test către: ${email}`);
+      
+      const result = await EmailService.sendEmail(
+        email,
+        "Test notificare - Auto Service App",
+        `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4a5568;">Email de test</h2>
+          <p>Bună ziua,</p>
+          <p>Acesta este un email de test pentru a verifica funcționalitatea sistemului de notificări.</p>
+          <p>Dacă primiți acest email, înseamnă că sistemul de notificări prin email funcționează corect.</p>
+          <hr>
+          <p style="color: #718096; font-size: 0.9em;">Acest email a fost trimis automat de aplicația Auto Service.</p>
+        </div>
+        `,
+        "Acesta este un email de test pentru a verifica funcționalitatea sistemului de notificări.",
+        "Email de test direct din aplicație"
+      );
+      
+      res.json({ 
+        success: result, 
+        message: result ? "Email de test trimis cu succes" : "Eroare la trimiterea email-ului" 
+      });
+    } catch (error) {
+      console.error("Eroare la trimiterea email-ului de test:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: String(error)
+      });
+    }
   });
 
   // Return the server at the end
