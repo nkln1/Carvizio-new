@@ -927,7 +927,8 @@ export function registerRoutes(app: Express): Server {
                 EmailService.sendNewRequestNotification(
                   serviceProvider,
                   request.title,
-                  client.name
+                  client.name,
+                  `request_${request.id}_${Date.now()}`
                 )
               );
               console.log(`Email de notificare pentru cerere nouă trimis către ${serviceProvider.companyName}`);
@@ -1493,31 +1494,61 @@ export function registerRoutes(app: Express): Server {
 
       // Trimitem notificare prin email furnizorului de servicii
       try {
+        console.log(`=== PROCES EMAIL NOTIFICARE OFERTĂ ACCEPTATĂ ===`);
+        console.log(`Service Provider ID: ${offer.serviceProviderId}`);
+        
         // Obținem datele furnizorului de servicii
         const serviceProvider = await storage.getServiceProvider(offer.serviceProviderId);
         
         if (serviceProvider) {
+          console.log(`Service Provider găsit: ${serviceProvider.companyName} (${serviceProvider.email})`);
+          
           // Verificăm preferințele pentru notificări
+          console.log(`Verificăm preferințele pentru notificări email...`);
           const preferences = await storage.getNotificationPreferences(serviceProvider.id);
           
-          // Dacă preferințele permit trimiterea de email-uri pentru oferte acceptate
-          if (!preferences || 
-              (preferences.emailNotificationsEnabled && preferences.acceptedOfferEmailEnabled)) {
+          console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+          if (preferences) {
+            console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
+            console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+            console.log(`- Notificări email pentru oferte acceptate: ${preferences.acceptedOfferEmailEnabled ? 'DA' : 'NU'}`);
+          } else {
+            console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+          }
+          
+          // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+          const shouldSendEmail = !preferences || 
+              (preferences.emailNotificationsEnabled && preferences.acceptedOfferEmailEnabled);
+              
+          console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+          
+          if (shouldSendEmail) {
+            console.log(`Pregătim trimiterea email-ului de notificare...`);
             
             // Obținem detaliile cererii pentru a include în email
             const request = await storage.getRequest(offer.requestId);
             const offerTitle = offer.title || (request ? request.title : "Ofertă service auto");
             
-            // Trimitem email de notificare
-            EmailService.sendOfferAcceptedNotification(
-              serviceProvider,
-              offerTitle, 
-              client.name
-            ).catch(err => {
-              console.error("Eroare la trimiterea email-ului de notificare pentru oferta acceptată:", err);
-            });
+            console.log(`Informații pentru email:`);
+            console.log(`- Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+            console.log(`- Titlu ofertă: "${offerTitle}"`);
+            console.log(`- Client: ${client.name}`);
             
-            console.log(`Email de notificare pentru ofertă acceptată trimis către ${serviceProvider.companyName}`);
+            // Trimitem email de notificare
+            try {
+              console.log(`Se trimite email-ul...`);
+              await EmailService.sendOfferAcceptedNotification(
+                serviceProvider,
+                offerTitle, 
+                client.name,
+                `offer_${offer.id}_${Date.now()}`
+              );
+              console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+            } catch (err) {
+              console.error(`✗ EROARE la trimiterea email-ului:`, err);
+            }
+          } else {
+            console.log(`Nu se trimite email de notificare pentru ofertă acceptată către ${serviceProvider.companyName} conform preferințelor`);
           }
         }
       } catch (emailError) {
@@ -1723,36 +1754,72 @@ export function registerRoutes(app: Express): Server {
 
       // Trimitem notificare prin email pentru noul mesaj (doar dacă destinatarul este furnizor de servicii)
       try {
+        console.log(`=== PROCES EMAIL NOTIFICARE MESAJ NOU ===`);
+        
         if (message.receiverRole === "service") {
+          console.log(`Destinatar este furnizor de servicii (ID: ${message.receiverId})`);
+          
           // Obținem datele furnizorului de servicii
           const serviceProvider = await storage.getServiceProvider(message.receiverId);
           
           if (serviceProvider) {
+            console.log(`Service Provider găsit: ${serviceProvider.companyName} (${serviceProvider.email})`);
+            
             // Verificăm preferințele pentru notificări
+            console.log(`Verificăm preferințele pentru notificări email...`);
             const preferences = await storage.getNotificationPreferences(serviceProvider.id);
             
-            // Dacă preferințele permit trimiterea de email-uri pentru mesaje noi
-            if (!preferences || 
-                (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled)) {
+            console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+            if (preferences) {
+              console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
+              console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+              console.log(`- Notificări email pentru mesaje noi: ${preferences.newMessageEmailEnabled ? 'DA' : 'NU'}`);
+            } else {
+              console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+            }
+            
+            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+            const shouldSendEmail = !preferences || 
+                (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
+                
+            console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+            
+            if (shouldSendEmail) {
+              console.log(`Pregătim trimiterea email-ului de notificare...`);
               
               // Obținem detaliile cererii pentru a include în email
               const request = await storage.getRequest(requestId);
               const senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
               const requestTitle = request ? request.title : "Cerere service auto";
               
-              // Trimitem email de notificare
-              EmailService.sendNewMessageNotification(
-                serviceProvider,
-                message.content,
-                senderName,
-                requestTitle
-              ).catch(err => {
-                console.error("Eroare la trimiterea email-ului de notificare pentru mesaj nou:", err);
-              });
+              console.log(`Informații pentru email:`);
+              console.log(`- Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+              console.log(`- Expeditor: ${senderName}`);
+              console.log(`- Titlu cerere: "${requestTitle}"`);
+              console.log(`- Conținut mesaj: "${message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content}"`);
               
-              console.log(`Email de notificare pentru mesaj nou trimis către ${serviceProvider.companyName}`);
+              // Trimitem email de notificare
+              try {
+                console.log(`Se trimite email-ul...`);
+                await EmailService.sendNewMessageNotification(
+                  serviceProvider,
+                  message.content,
+                  senderName,
+                  requestTitle,
+                  `message_${message.id}_${Date.now()}`
+                );
+                console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+              } catch (err) {
+                console.error(`✗ EROARE la trimiterea email-ului:`, err);
+              }
+            } else {
+              console.log(`Nu se trimite email de notificare pentru mesaj nou către ${serviceProvider.companyName} conform preferințelor`);
             }
+          } else {
+            console.log(`Furnizorul de servicii cu ID ${message.receiverId} nu a fost găsit pentru trimiterea email-ului`);
           }
+        } else {
+          console.log(`Destinatarul are rolul ${message.receiverRole}, nu se trimite email (se trimit doar către furnizori de servicii)`);
         }
       } catch (emailError) {
         console.error("Eroare la trimiterea email-ului de notificare pentru mesaj nou:", emailError);
@@ -2128,6 +2195,31 @@ export function registerRoutes(app: Express): Server {
       } catch (fcmError) {
         console.error('Error sending FCM notification:', fcmError);
         // Don't fail the entire request if FCM notification fails
+      }
+      
+      // Send email notification to client
+      try {
+        // We're sending from a service provider to a client, so the client receives the notification
+        const EmailService = require('./services/emailService').EmailService;
+        
+        // Generate a unique ID for this notification to prevent duplication
+        const uniqueMessageId = `message_${message.id}_${Date.now()}`;
+        
+        console.log(`Trimitere notificare email pentru mesaj nou către client ${receiver.name} (${receiver.email})`);
+        
+        // Send the email notification
+        await EmailService.sendNewMessageNotification(
+          receiver, // receiver information (client)
+          content, // message content
+          sender.companyName, // sender name
+          request.title, // request or offer title
+          uniqueMessageId // unique message ID
+        );
+        
+        console.log(`Notificare email pentru mesaj nou trimisă cu succes către ${receiver.email}`);
+      } catch (emailError) {
+        console.error('Eroare la trimiterea notificării prin email:', emailError);
+        // Don't fail the entire request if email notification fails
       }
 
       res.json(enrichedMessage);
@@ -2598,6 +2690,55 @@ export function registerRoutes(app: Express): Server {
         const receiver = await storage.getServiceProvider(receiverId);
         
         if (receiver && receiver.firebaseUid) {
+          // Verificăm preferințele de notificare pentru email
+          console.log(`Verificăm preferințele pentru notificări email pentru service provider ${receiverId}...`);
+          
+          try {
+            const preferences = await storage.getNotificationPreferences(receiverId);
+            
+            console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+            if (preferences) {
+              console.log(`Preferințe specifice pentru service provider ID ${receiverId}:`);
+              console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+              console.log(`- Notificări email pentru mesaje noi: ${preferences.newMessageEmailEnabled ? 'DA' : 'NU'}`);
+            } else {
+              console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+            }
+            
+            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+            const shouldSendEmail = !preferences || 
+                (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
+                
+            console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+            
+            // Utilizăm ID-ul mesajului pentru a asigura că fiecare mesaj primește un email separat
+            // Adăugăm și timestamp-ul pentru a face identificatorul și mai unic
+            const emailIdentifier = `message_${message.id}_${Date.now()}`;
+            console.log(`Identificator unic email: ${emailIdentifier}`);
+            
+            if (shouldSendEmail) {
+              console.log(`Pregătim trimiterea email-ului de notificare...`);
+              
+              try {
+                console.log(`Se trimite email-ul pentru mesajul #${message.id}...`);
+                await EmailService.sendNewMessageNotification(
+                  receiver,
+                  content,
+                  client.name,
+                  request.title || "Cerere service auto",
+                  `message_${message.id}_${Date.now()}`
+                );
+                console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email}) pentru mesajul #${message.id}`);
+              } catch (emailErr) {
+                console.error(`✗ EROARE la trimiterea email-ului pentru mesajul #${message.id}:`, emailErr);
+              }
+            } else {
+              console.log(`Nu se trimite email de notificare către ${receiver.companyName} conform preferințelor`);
+            }
+          } catch (prefError) {
+            console.error(`Eroare la obținerea preferințelor de notificare:`, prefError);
+          }
+          
           // Obținem token-urile FCM asociate cu service provider-ul
           const db = admin.firestore();
           const userCollection = 'service_providers';
@@ -2815,24 +2956,40 @@ export function registerRoutes(app: Express): Server {
 
       // Trimitem notificare prin email pentru noua recenzie
       try {
+        console.log(`Pregătire pentru trimiterea email-ului de notificare pentru recenzie nouă către furnizorul de servicii cu ID: ${serviceProviderId}`);
+        
         // Verificăm preferințele pentru notificări
         const preferences = await storage.getNotificationPreferences(serviceProviderId);
+        
+        console.log(`Verificăm preferințe de notificare pentru email-uri pentru furnizorul ${serviceProvider.companyName} (ID: ${serviceProviderId})`);
+        console.log('Preferințe găsite:', !!preferences);
+        if (preferences) {
+          console.log('Email notificări activate global:', preferences.emailNotificationsEnabled);
+          console.log('Email notificări recenzii noi:', preferences.newReviewEmailEnabled);
+        }
         
         // Dacă preferințele permit trimiterea de email-uri pentru recenzii noi
         if (!preferences || 
             (preferences.emailNotificationsEnabled && preferences.newReviewEmailEnabled)) {
           
-          // Trimitem email de notificare
-          EmailService.sendNewReviewNotification(
-            serviceProvider,
-            client.name,
-            rating,
-            comment
-          ).catch(err => {
-            console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", err);
-          });
+          console.log(`Preferințele permit trimiterea email-ului de notificare pentru recenzie nouă către ${serviceProvider.companyName}`);
+          console.log(`Trimitem email de notificare pentru recenzie nouă (${rating} stele) de la "${client.name}" către ${serviceProvider.email}`);
           
-          console.log(`Email de notificare pentru recenzie nouă trimis către ${serviceProvider.companyName}`);
+          // Trimitem email de notificare
+          try {
+            await EmailService.sendNewReviewNotification(
+              serviceProvider,
+              client.name,
+              rating,
+              comment,
+              `review_${createdReview.id}_${Date.now()}`
+            );
+            console.log(`Email de notificare pentru recenzie nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+          } catch (err) {
+            console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", err);
+          }
+        } else {
+          console.log(`Nu se trimite email de notificare pentru recenzie nouă către ${serviceProvider.companyName} conform preferințelor`);
         }
       } catch (emailError) {
         console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", emailError);
@@ -3383,18 +3540,113 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/test-email", async (req, res) => {
     try {
       console.log("Testăm trimiterea email-ului...");
-      const result = await EmailService.sendEmail(
-        "test@example.com", // Înlocuiește cu email-ul tău pentru testare
-        "Test Email de la Auto Service App",
-        "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
-        "Acesta este un email de test. Sistemul de email funcționează corect!"
-      );
+      console.log("API Key present:", !!process.env.ELASTIC_EMAIL_API_KEY);
+      console.log("Using email:", "test@example.com");
       
-      console.log("Rezultat trimitere test email:", result);
-      res.json({ success: result, message: result ? "Email trimis cu succes" : "Eroare la trimiterea email-ului" });
+      try {
+        const result = await EmailService.sendEmail(
+          "test@example.com", // Înlocuiește cu email-ul tău pentru testare
+          "Test Email de la Auto Service App",
+          "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
+          "Acesta este un email de test. Sistemul de email funcționează corect!"
+        );
+        
+        console.log("Rezultat trimitere test email:", result);
+        res.json({ success: result, message: result ? "Email trimis cu succes" : "Eroare la trimiterea email-ului" });
+      } catch (emailError) {
+        console.error("Excepție în timpul trimiterii email-ului:", emailError);
+        res.status(500).json({ 
+          success: false, 
+          error: String(emailError),
+          apiKeyPresent: !!process.env.ELASTIC_EMAIL_API_KEY,
+          details: emailError.message || "No detailed error message available"
+        });
+      }
     } catch (error) {
       console.error("Eroare la testarea serviciului de email:", error);
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ 
+        success: false, 
+        error: String(error),
+        apiKeyPresent: !!process.env.ELASTIC_EMAIL_API_KEY 
+      });
+    }
+  });
+  
+  // Adăugăm o nouă rută pentru diagnosticare email
+  app.get("/api/email-diagnostics", (req, res) => {
+    // Verificăm prezența cheii API
+    const apiKeyPresent = !!process.env.ELASTIC_EMAIL_API_KEY;
+    const apiKeyLength = process.env.ELASTIC_EMAIL_API_KEY ? process.env.ELASTIC_EMAIL_API_KEY.length : 0;
+    
+    // Extragem prima și ultima parte a cheii pentru verificare (nu expunem cheia completă)
+    let apiKeyHint = 'not set';
+    if (process.env.ELASTIC_EMAIL_API_KEY && apiKeyLength > 8) {
+      apiKeyHint = `${process.env.ELASTIC_EMAIL_API_KEY.substring(0, 4)}...${process.env.ELASTIC_EMAIL_API_KEY.substring(apiKeyLength - 4)}`;
+    }
+    
+    // Verificăm setările EmailService
+    const fromEmail = EmailService.getFromEmail();
+    const baseUrl = EmailService.getBaseUrl();
+    
+    // Obținem diagnosticul direct din serviciul de email
+    const emailServiceDiagnostics = EmailService.getConfigDiagnostics ? 
+      EmailService.getConfigDiagnostics() : 
+      { hasApiKey: apiKeyPresent, apiKeyLength, fromEmail, baseUrl };
+    
+    res.json({
+      emailConfigStatus: {
+        apiKeyPresent,
+        apiKeyLength,
+        apiKeyHint,
+        fromEmail,
+        baseUrl,
+        elasticEmailEnvVar: process.env.ELASTIC_EMAIL_API_KEY ? 'set' : 'not set',
+        serviceConfig: emailServiceDiagnostics
+      },
+      environmentVariables: {
+        nodeEnv: process.env.NODE_ENV,
+        apiKeyEnvVar: 'ELASTIC_EMAIL_API_KEY'
+      }
+    });
+  });
+  
+  // Adăugăm o rută pentru trimiterea unui email de test
+  app.post("/api/send-test-email", validateFirebaseToken, async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ success: false, error: "Adresa de email este obligatorie" });
+      }
+      
+      console.log(`Se trimite email de test către: ${email}`);
+      
+      const result = await EmailService.sendEmail(
+        email,
+        "Test notificare - Auto Service App",
+        `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4a5568;">Email de test</h2>
+          <p>Bună ziua,</p>
+          <p>Acesta este un email de test pentru a verifica funcționalitatea sistemului de notificări.</p>
+          <p>Dacă primiți acest email, înseamnă că sistemul de notificări prin email funcționează corect.</p>
+          <hr>
+          <p style="color: #718096; font-size: 0.9em;">Acest email a fost trimis automat de aplicația Auto Service.</p>
+        </div>
+        `,
+        "Acesta este un email de test pentru a verifica funcționalitatea sistemului de notificări.",
+        "Email de test direct din aplicație"
+      );
+      
+      res.json({ 
+        success: result, 
+        message: result ? "Email de test trimis cu succes" : "Eroare la trimiterea email-ului" 
+      });
+    } catch (error) {
+      console.error("Eroare la trimiterea email-ului de test:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: String(error)
+      });
     }
   });
 
