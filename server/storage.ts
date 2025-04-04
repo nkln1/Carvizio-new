@@ -991,23 +991,22 @@ export class DatabaseStorage implements IStorage {
 
   async markConversationAsRead(requestId: number, userId: number): Promise<void> {
     try {
-      // Doar marcăm mesajele ca fiind citite (isRead = true), dar păstrăm starea isNew 
-      // pentru a permite etichetele "nou" să rămână vizibile în interfață
       await db
         .update(messagesTable)
         .set({
           isRead: true,
-          // Nu mai modificăm isNew aici: isNew: false 
+          isNew: false
         })
         .where(
           and(
             eq(messagesTable.requestId, requestId),
             eq(messagesTable.receiverId, userId),
-            eq(messagesTable.isRead, false)
+            or(
+              eq(messagesTable.isRead, false),
+              eq(messagesTable.isNew, true)
+            )
           )
         );
-      
-      console.log(`Mesajele din conversația pentru request ${requestId} au fost marcate ca citite pentru utilizatorul ${userId}`);
     } catch (error) {
       console.error('Error marking conversation as read:', error);
       throw error;
