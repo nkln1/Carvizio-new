@@ -145,6 +145,16 @@ class WebSocketService {
                 detail: data 
               });
               window.dispatchEvent(newMessageEvent);
+              
+              // Încercăm să afișăm notificarea direct dacă avem NotificationHelper
+              try {
+                if (window.NotificationHelper && typeof window.NotificationHelper.forceMessageNotification === 'function') {
+                  console.log('Trying to show notification directly via NotificationHelper');
+                  window.NotificationHelper.forceMessageNotification(data.payload?.content || 'Mesaj nou');
+                }
+              } catch (notifErr) {
+                console.error('Error showing direct notification:', notifErr);
+              }
             }
 
             // Notificăm toți handlerii înregistrați
@@ -287,6 +297,20 @@ class WebSocketService {
 
         // Process messages as if they came from WebSocket
         messages.forEach(message => {
+          // Verificăm dacă este un mesaj nou și încercăm să afișăm notificarea direct
+          if (message && message.type === 'NEW_MESSAGE') {
+            console.log('Received NEW_MESSAGE from polling:', message);
+            try {
+              if (window.NotificationHelper && typeof window.NotificationHelper.forceMessageNotification === 'function') {
+                console.log('Trying to show notification directly from polling via NotificationHelper');
+                window.NotificationHelper.forceMessageNotification(message.payload?.content || 'Mesaj nou');
+              }
+            } catch (notifErr) {
+              console.error('Error showing direct notification from polling:', notifErr);
+            }
+          }
+          
+          // Transmitem mesajul la toți handlerii înregistrați
           this.messageHandlers.forEach(handler => {
             try {
               handler(message);

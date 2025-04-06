@@ -18,6 +18,7 @@ declare global {
     stopBackgroundMessageCheck?: () => Promise<any>;
     swRegistration?: ServiceWorkerRegistration;
     getAuthToken?: () => Promise<string | null>;
+    NotificationHelper?: any; // Adăugăm NotificationHelper ca proprietate globală
   }
 }
 
@@ -907,4 +908,9 @@ if (typeof window !== 'undefined') {
 }
 
 // Exportăm clasa pentru a putea fi folosită în alte componente
+// Expunem NotificationHelper la nivel global pentru a putea fi utilizat din WebSocket
+if (typeof window !== 'undefined') {
+  window.NotificationHelper = NotificationHelper;
+}
+
 export default NotificationHelper;
