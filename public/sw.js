@@ -63,9 +63,6 @@ self.addEventListener('message', (event) => {
     console.log('[Service Worker] Primire comandă SKIP_WAITING, activare imediată');
     self.skipWaiting();
   }
-  
-  // Adăugăm debuging pentru a vedea toate tipurile de mesaje primite
-  console.log('[Service Worker] Mesaj primit:', event.data ? event.data.type : 'fără tip', event.data);
 });
 
 // Configurare pentru verificarea mesajelor în fundal
@@ -120,7 +117,6 @@ function handleShowNotification(event) {
   const title = payload.title || 'Notificare';
   const options = payload.options || {};
 
-  console.log('[Service Worker] Afișez notificare cu titlul:', title);
   console.log('[Service Worker] Afișez notificare cu opțiunile:', JSON.stringify(options));
 
   // Verificăm dacă trebuie să redăm un sunet
@@ -141,18 +137,15 @@ function handleShowNotification(event) {
   })
   .then(() => {
     // Notificarea a fost afișată cu succes
-    console.log('[Service Worker] Notificarea a fost afișată cu succes');
     if (event.ports && event.ports[0]) {
       event.ports[0].postMessage({ success: true });
     }
-    return true;
   })
   .catch((error) => {
     console.error('[Service Worker] Eroare la afișarea notificării:', error);
     if (event.ports && event.ports[0]) {
       event.ports[0].postMessage({ error: error.message });
     }
-    return Promise.reject(error);
   });
 }
 
@@ -868,7 +861,7 @@ self.addEventListener('message', (event) => {
   console.log('[Service Worker] Mesaj primit:', event.data);
 
   // Răspundem imediat pentru a preveni timeout-urile
-  if (event.data && event.data.id) {
+  if (event.data.id) {
     // Trimitem un răspuns inițial înainte de procesare
     self.clients.matchAll().then(clients => {
       clients.forEach(client => {
@@ -883,18 +876,56 @@ self.addEventListener('message', (event) => {
     });
   }
 
-  // Verificăm dacă există date în eveniment
-  if (!event.data) {
-    console.error('[Service Worker] Eveniment fără date primit');
-    return;
-  }
-
   // Tratăm diferitele tipuri de mesaje
   switch (event.data.type) {
     case 'SHOW_NOTIFICATION':
-      // Folosim handleShowNotification pentru a gestiona afișarea notificărilor
+      // Folosim try-catch pentru a preveni terminarea Service Worker-ului
       try {
-        handleShowNotification(event);
+        // Extragem datele
+        const title = event.data.payload?.title || 'Notificare nouă';
+        const options = event.data.payload?.options || {};
+
+        // Afișăm notificarea
+        self.registration.showNotification(title, {
+          badge: '/favicon.ico',
+          icon: '/favicon.ico',
+          requireInteraction: true,
+          ...options,
+          data: {
+            ...(options.data || {}),
+            timestamp: new Date().getTime()
+          }
+        })
+        .then(() => {
+          console.log('[Service Worker] Notificare afișată cu succes');
+          // Trimitem confirmarea de succes
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id,
+                  status: 'completed',
+                  success: true
+                });
+              });
+            });
+          }
+        })
+        .catch(error => {
+          console.error('[Service Worker] Eroare la afișarea notificării:', error);
+          // Trimitem eroarea înapoi
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id,
+                  status: 'error',
+                  error: error.message
+                });
+              });
+            });
+          }
+        });
       } catch (error) {
         console.error('[Service Worker] Excepție la procesarea notificării:', error);
       }
@@ -903,8 +934,6 @@ self.addEventListener('message', (event) => {
     case 'START_BACKGROUND_MESSAGE_CHECK':
       try {
         const result = startPeriodicMessageCheck(event.data.payload);
-        console.log('[Service Worker] Verificare de fundal pornită cu succes:', result);
-        
         // Trimitem rezultatul înapoi
         if (event.data.id) {
           self.clients.matchAll().then(clients => {
@@ -920,90 +949,6 @@ self.addEventListener('message', (event) => {
         }
       } catch (error) {
         console.error('[Service Worker] Eroare la pornirea verificării de fundal:', error);
-        
-        // Notificăm despre eroare
-        if (event.data.id) {
-          self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
-              client.postMessage({
-                id: event.data.id,
-                status: 'error',
-                success: false,
-                error: error.message || 'Eroare necunoscută'
-              });
-            });
-          });
-        }
-      }
-      break;
-
-    case 'TEST_NOTIFICATION':
-      try {
-        console.log('[Service Worker] Testare notificare cu payload:', event.data.payload);
-        
-        const title = event.data.payload?.title || 'Test Service Worker';
-        const body = event.data.payload?.body || 'Aceasta este o notificare de test.';
-        
-        self.registration.showNotification(title, {
-          body: body,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: event.data.payload?.tag || 'test-notification',
-          requireInteraction: true,
-          data: {
-            url: event.data.payload?.url || '/',
-            timestamp: new Date().getTime(),
-            test: true
-          }
-        })
-        .then(() => {
-          console.log('[Service Worker] Test notificare reușit');
-          if (event.data.id) {
-            self.clients.matchAll().then(clients => {
-              clients.forEach(client => {
-                client.postMessage({
-                  id: event.data.id, 
-                  type: 'TEST_NOTIFICATION_RESULT', 
-                  status: 'completed',
-                  success: true 
-                });
-              });
-            });
-          }
-        })
-        .catch(error => {
-          console.error('[Service Worker] Eroare la testarea notificării:', error);
-          if (event.data.id) {
-            self.clients.matchAll().then(clients => {
-              clients.forEach(client => {
-                client.postMessage({
-                  id: event.data.id,
-                  type: 'TEST_NOTIFICATION_RESULT', 
-                  status: 'error',
-                  success: false, 
-                  error: error.message 
-                });
-              });
-            });
-          }
-        });
-      } catch (error) {
-        console.error('[Service Worker] Excepție la testarea notificării:', error);
-        
-        // Notificăm despre eroare
-        if (event.data && event.data.id) {
-          self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
-              client.postMessage({
-                id: event.data.id,
-                type: 'TEST_NOTIFICATION_RESULT', 
-                status: 'error',
-                success: false, 
-                error: error.message || 'Eroare necunoscută la testare'
-              });
-            });
-          });
-        }
       }
       break;
 
@@ -1202,6 +1147,54 @@ self.addEventListener('message', (event) => {
             error: error.message || 'Eroare necunoscută la oprirea verificării'
           });
         }
+      }
+      break;
+
+    case 'TEST_NOTIFICATION':
+      try {
+        self.registration.showNotification(
+          event.data.payload?.title || 'Test Service Worker', 
+          {
+            body: event.data.payload?.body || 'Aceasta este o notificare de test.',
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: event.data.payload?.tag || 'test-notification',
+            requireInteraction: true
+          }
+        )
+        .then(() => {
+          console.log('[Service Worker] Test notificare reușit');
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id, 
+                  type: 'TEST_NOTIFICATION_RESULT', 
+                  status: 'completed',
+                  success: true 
+                });
+              });
+            });
+          }
+        })
+        .catch(error => {
+          console.error('[Service Worker] Eroare la testarea notificării:', error);
+          if (event.data.id) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  id: event.data.id,
+                  type: 'TEST_NOTIFICATION_RESULT', 
+                  status: 'error',
+                  success: false, 
+                  error: error.message 
+                });
+              });
+            });
+          }
+        });
+      } catch (error) {
+        console.error('[Service Worker] Excepție la testarea notificării:', error);
       }
       break;
 

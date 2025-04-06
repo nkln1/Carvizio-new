@@ -70,81 +70,43 @@ export default function ServiceDashboard() {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (!firebaseUser) {
         setLocation("/");
-        return;
-      }
-      
-      // Verificăm dacă utilizatorul este autentificat și avem ID-ul
-      if (!user || !user.id) {
-        console.log("Utilizator autentificat dar datele lipsesc, așteptăm...");
-        return;
-      }
-      
-      try {
-        // Obținem token-ul Firebase
-        const token = await firebaseUser.getIdToken(true); // forțăm reîmprospătarea
-        
-        // Verificăm suportul pentru notificări și permisiunile
-        if (NotificationHelper.isSupported()) {
-          const permission = NotificationHelper.checkPermission();
-          
-          if (permission === 'granted') {
-            console.log("Permisiuni acordate pentru notificări, inițiem verificarea mesajelor");
-            
+      } else if (user && !window.startBackgroundMessageCheck) {
+        console.error("Service Worker nu este disponibil pentru verificarea mesajelor în fundal");
+      } else if (user && user.id && window.startBackgroundMessageCheck) {
+        // Inițiem verificarea periodică a mesajelor în fundal pentru a primi notificări
+        // chiar și când tab-ul browser-ului este inactiv
+        firebaseUser.getIdToken().then(token => {
+          if (NotificationHelper.isSupported() && NotificationHelper.checkPermission() === 'granted') {
             try {
-              // Pornim verificarea pe fundal folosind Service Worker
-              const result = await NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
+              console.log("Inițierea verificării mesajelor în fundal pentru utilizatorul", user.id);
               
-              console.log("Rezultat inițiere verificare mesaje:", result);
+              // Pornim verificarea pe fundal folosind Service Worker
+              NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
+              
+              // Doar logăm în consolă că notificările sunt active, fără toast
               console.log("Notificări active - vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.");
             } catch (error) {
               console.error("Eroare la inițierea verificării mesajelor în fundal:", error);
-              
-              // Afișăm un toast de eroare doar în modul de dezvoltare
-              if (import.meta.env.DEV) {
-                toast({
-                  title: "Eroare la activarea notificărilor",
-                  description: "A apărut o problemă la configurarea notificărilor în fundal.",
-                  variant: "destructive",
-                });
-              }
             }
-          } else if (permission === 'denied') {
-            console.log("Permisiunile pentru notificări au fost refuzate");
-            
+          } else if (NotificationHelper.checkPermission() !== 'granted') {
+            console.log("Permisiunile pentru notificări nu sunt acordate");
+            // Afișăm un toast care informează utilizatorul
             toast({
               title: "Notificări dezactivate",
-              description: "Permite notificările în setările browserului pentru a primi alerte.",
+              description: "Permite notificările pentru a primi alerte de mesaje noi.",
               variant: "default",
             });
-          } else {
-            console.log("Permisiunile pentru notificări nu au fost solicitate încă");
-            
-            // Solicităm permisiunea
-            const newPermission = await Notification.requestPermission();
-            
-            if (newPermission === 'granted') {
-              // Reîncercăm după ce am primit permisiunea
-              const result = await NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
-              console.log("Notificări activate după solicitarea permisiunii:", result);
-            }
           }
-        } else {
-          console.log("Notificările nu sunt suportate în acest browser");
-        }
-      } catch (error) {
-        console.error("Eroare la configurarea notificărilor:", error);
+        });
       }
     });
 
     // Curățăm verificarea în fundal când componenta este demontată
     return () => {
-      console.log("Se demontează componenta ServiceDashboard, se opresc notificările");
       unsubscribe();
-      
-      try {
+      // Verificăm dacă metoda există înainte de a o apela
+      if (typeof NotificationHelper.stopBackgroundMessageCheck === 'function') {
         NotificationHelper.stopBackgroundMessageCheck();
-      } catch (error) {
-        console.error("Eroare la oprirea verificării în fundal:", error);
       }
     };
   }, [setLocation, user, toast]);

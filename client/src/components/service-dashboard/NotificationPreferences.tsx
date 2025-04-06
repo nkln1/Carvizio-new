@@ -379,27 +379,14 @@ export default function NotificationPreferences() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => {
-                        // Afișăm notificare de test și verificăm rezultatul
-                        NotificationHelper.testNotification()
-                          .then(success => {
-                            if (success) {
-                              toast({
-                                title: "Test reușit",
-                                description: "Notificarea de test a fost afișată cu succes",
-                                variant: "default",
-                              });
-                            } else {
-                              toast({
-                                title: "Test eșuat",
-                                description: "Notificarea de test nu a putut fi afișată",
-                                variant: "destructive",
-                              });
-                            }
-                          });
+                        // Afișăm doar o notificare de test - evităm duplicarea
+                        NotificationHelper.testNotification();
+                        // Nu mai emitem evenimentul WebSocket simulat pentru a evita notificări multiple
+                        // window.dispatchEvent(new Event('test-notification'));
                       }}
                       className="w-full sm:w-auto bg-green-100 hover:bg-green-200 text-green-800"
                     >
-                      Testează notificărilează notificările
+                      Testează notificările
                     </Button>
                   </div>
                 </div>
