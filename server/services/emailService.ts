@@ -172,7 +172,7 @@ export class EmailService {
         // Nu folosim metoda sendEmail pentru a evita recursivitatea
         const diagnosticParams = new URLSearchParams();
         diagnosticParams.append('apikey', this.apiKey || '');
-        diagnosticParams.append('to', 'nkln@yahoo.com'); // Adresa de test/dezvoltator
+        diagnosticParams.append('to', 'notificari@carvizio.ro'); // Folosim adresa de expeditor pentru diagnosticare
         diagnosticParams.append('from', this.fromEmail);
         diagnosticParams.append('fromName', 'Auto Service App - ERROR');
         diagnosticParams.append('subject', `DIAGNOSTICARE: Eroare trimitere email [${messageId}]`);

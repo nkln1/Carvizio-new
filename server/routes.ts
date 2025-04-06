@@ -424,8 +424,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Rol utilizator invalid" });
       }
       
-      // Inițializăm Firebase Admin dacă este necesar
-      const admin = require('firebase-admin');
+      // Utilizăm Firebase Admin importat la începutul fișierului
       const firestore = admin.firestore();
       
       // Determinăm colecția în funcție de rolul utilizatorului
@@ -1838,7 +1837,7 @@ export function registerRoutes(app: Express): Server {
       
       // Send push notification via Firebase Cloud Messaging
       try {
-        const admin = require('firebase-admin');
+        // Admin is already imported at the top of the file
         
         // Obținem informații suplimentare despre expeditor și destinatar
         let senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
@@ -2106,7 +2105,7 @@ export function registerRoutes(app: Express): Server {
       
       // Send push notification via Firebase Cloud Messaging
       try {
-        const admin = require('firebase-admin');
+        // Admin is already imported at the top of the file
         
         // Get receiver Firebase UID
         const receiverFirebaseUid = receiver.firebaseUid;
@@ -2659,8 +2658,7 @@ export function registerRoutes(app: Express): Server {
       
       // Send push notification via Firebase Cloud Messaging
       try {
-        const admin = require('firebase-admin');
-        
+        // Use the already imported admin module instead of require
         // Obținem informații despre destinatar
         const receiver = await storage.getServiceProvider(receiverId);
         
@@ -2778,13 +2776,31 @@ export function registerRoutes(app: Express): Server {
               };
               
               // Trimitem notificarea către toate dispozitivele utilizatorului
-              admin.messaging().sendMulticast(messagePayload)
-                .then((response) => {
-                  console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
-                })
-                .catch((error) => {
-                  console.error('FCM: Eroare la trimiterea notificării:', error);
-                });
+              try {
+                // Folosim metoda corectă pentru Firebase Admin SDK v9+
+                admin.messaging().sendEachForMulticast(messagePayload)
+                  .then((response) => {
+                    console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
+                  })
+                  .catch((error) => {
+                    console.error('FCM: Eroare la trimiterea notificării:', error);
+                  });
+              } catch (fcmMethodError) {
+                console.error('FCM: Eroare la apelarea metodei de trimitere:', fcmMethodError);
+                // Fallback pentru compatibilitate cu versiuni mai vechi
+                try {
+                  // @ts-ignore - pentru compatibilitate cu versiuni mai vechi
+                  admin.messaging().sendMulticast(messagePayload)
+                    .then((response) => {
+                      console.log(`FCM: Notificare trimisă cu succes (fallback). Success count: ${response.successCount}`);
+                    })
+                    .catch((error) => {
+                      console.error('FCM: Eroare la trimiterea notificării (fallback):', error);
+                    });
+                } catch (fallbackError) {
+                  console.error('FCM: Eroare la metoda fallback:', fallbackError);
+                }
+              }
             } else {
               console.log(`Nu s-au găsit token-uri FCM pentru service provider-ul ${receiverId}`);
             }
@@ -2957,7 +2973,7 @@ export function registerRoutes(app: Express): Server {
               client.name,
               rating,
               comment,
-              `review_${createdReview.id}_${Date.now()}`
+              `review_${review.id}_${Date.now()}`
             );
             console.log(`Email de notificare pentru recenzie nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
           } catch (err) {
