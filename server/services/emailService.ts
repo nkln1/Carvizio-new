@@ -30,18 +30,6 @@ export class EmailService {
   public static getBaseUrl(): string {
     return this.baseUrl;
   }
-  
-  /**
-   * Diagnosticare internă - utilă pentru verificări
-   */
-  public static getConfigDiagnostics(): { hasApiKey: boolean, apiKeyLength: number, fromEmail: string, baseUrl: string } {
-    return {
-      hasApiKey: !!this.apiKey,
-      apiKeyLength: this.apiKey?.length || 0,
-      fromEmail: this.fromEmail,
-      baseUrl: this.baseUrl
-    };
-  }
 
   /**
    * Trimite un email folosind Elastic Email API
