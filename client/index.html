@@ -27,22 +27,22 @@
     <script>
       // Versiune inline a sw-registration.js 
       // Acest cod înglobează funcționalitatea oferită anterior de fișierul extern
-      
+
       // Funcție pentru înregistrarea Service Worker-ului
       function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
           // Configurăm ascultătorul pentru token înainte de înregistrarea Service Worker
           setupAuthTokenListener();
-          
+
           window.addEventListener('load', () => {
             // Adăugăm un timestamp pentru a preveni cache-ul și pentru a forța reîncărcarea
             const timestamp = new Date().getTime();
-            
+
             // Definim opțiuni explicite pentru înregistrarea Service Worker-ului
             const options = {
               scope: '/'
             };
-            
+
             // Încercăm să înregistrăm Service Worker-ul cu versiune actualizată
             navigator.serviceWorker.register(`/sw.js?t=${timestamp}&v=1.0.8`, options)
               .then(registration => {
@@ -57,7 +57,7 @@
               .catch(error => {
                 console.error('Eroare la înregistrarea Service Worker:', error);
                 console.log('Încercăm cale alternativă...');
-                
+
                 // Dacă prima încercare eșuează, încercăm cu o altă cale
                 return fetch('/sw.js')
                   .then(response => {
@@ -100,18 +100,18 @@
       // Funcție pentru a răspunde la mesajele Service Worker pentru token
       function setupAuthTokenListener() {
         if (!('serviceWorker' in navigator)) return;
-        
+
         // Adăugăm un eveniment pentru gestionarea mesajelor de la Service Worker
         navigator.serviceWorker.addEventListener('message', function(event) {
           if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
             console.log('Am primit cerere pentru token de autentificare de la Service Worker');
-            
+
             // Obținem tokenul din localStorage
             const token = localStorage.getItem('firebase_auth_token');
             const expiresAt = localStorage.getItem('firebase_auth_token_expires');
-            
+
             console.log('Token disponibil:', !!token);
-            
+
             // Verificăm validitatea tokenului
             let isValid = false;
             if (token && expiresAt) {
@@ -119,7 +119,7 @@
               isValid = now < parseInt(expiresAt, 10);
               console.log('Tokenul este valid:', isValid);
             }
-            
+
             // Răspundem la cerere
             if (event.ports && event.ports[0]) {
               event.ports[0].postMessage({
@@ -129,17 +129,17 @@
             }
           }
         });
-        
+
         console.log('Ascultător pentru cereri de token configurat');
       }
-      
+
       // Funcție pentru a trimite mesaje către Service Worker
       function sendMessageToSW(message) {
         return new Promise((resolve, reject) => {
           if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
             // Returnăm o eroare mai prietenoasă, folosind fallback acolo unde este posibil
             console.warn('Service Worker nu este disponibil sau activat');
-            
+
             // Pentru notificări, folosim fallback-ul nativ
             if (message.type === 'SHOW_NOTIFICATION' && Notification.permission === 'granted') {
               try {
@@ -154,7 +154,7 @@
               }
               return;
             }
-            
+
             reject(new Error('Service Worker nu este disponibil'));
             return;
           }
@@ -179,7 +179,7 @@
               } else {
                 console.warn('Toate încercările au eșuat. Încercăm un fallback dacă este disponibil.');
                 navigator.serviceWorker.removeEventListener('message', messageListener);
-                
+
                 // Pentru notificări, folosim fallback-ul nativ
                 if (message.type === 'SHOW_NOTIFICATION' && Notification.permission === 'granted') {
                   try {
@@ -259,15 +259,15 @@
       // Funcție pentru a porni verificarea periodică a mesajelor în Service Worker
       function startBackgroundMessageCheck(options = {}) {
         console.log('[startBackgroundMessageCheck] Pornire verificare mesaje în fundal', options);
-        
+
         if (!('serviceWorker' in navigator)) {
           console.warn('Service Worker API nu este suportat în acest browser');
           return Promise.reject(new Error('Service Worker API nu este suportat'));
         }
-        
+
         if (!navigator.serviceWorker.controller) {
           console.warn('Service Worker nu este încă activ, încercăm să forțăm activarea');
-          
+
           // Încercăm să verificăm înregistrarea existentă
           return navigator.serviceWorker.getRegistration('/')
             .then(registration => {
@@ -275,16 +275,16 @@
                 console.error('Nu există nicio înregistrare de Service Worker');
                 return Promise.reject(new Error('Service Worker nu este înregistrat'));
               }
-              
+
               console.log('Am găsit o înregistrare de Service Worker:', registration.scope);
               console.log('Stare Service Worker:', registration.active ? 'Activ' : 'Inactiv');
-              
+
               // Incearcă să activeze service worker-ul dacă există dar nu e activ
               if (registration.waiting) {
                 console.log('Service Worker în așteptare, îl activăm forțat');
                 registration.waiting.postMessage({type: 'SKIP_WAITING'});
               }
-              
+
               // Așteptăm puțin și reîncercăm să trimitem mesajul
               return new Promise((resolve) => {
                 setTimeout(() => {
@@ -306,7 +306,7 @@
               return Promise.reject(error);
             });
         }
-        
+
         console.log('Service Worker este activ, trimitem comanda direct');
         return sendMessageToSW({
           type: 'START_BACKGROUND_MESSAGE_CHECK',
@@ -317,12 +317,12 @@
       // Funcție pentru a opri verificarea periodică a mesajelor
       function stopBackgroundMessageCheck() {
         console.log('[stopBackgroundMessageCheck] Oprire verificare mesaje în fundal');
-        
+
         if (!('serviceWorker' in navigator)) {
           console.warn('Service Worker API nu este suportat în acest browser');
           return Promise.resolve();
         }
-        
+
         if (!navigator.serviceWorker.controller) {
           console.warn('Service Worker nu este activ, nu este nevoie să oprim verificarea');
           return Promise.resolve();
@@ -352,7 +352,7 @@
           });
         });
       }
-      
+
       // Forțăm reîncărcarea și reînregistrarea service worker-ului prin unregister înainte
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -360,7 +360,7 @@
             console.log('Unregister service worker:', registration.scope);
             registration.unregister();
           }
-          
+
           setTimeout(() => {
             // După ce am curățat, înregistrăm Service Worker-ul din nou
             registerServiceWorker();
