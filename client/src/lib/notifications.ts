@@ -292,26 +292,50 @@ class NotificationHelper {
     const timestamp = new Date().getTime();
     const tag = `message-${timestamp}`;
 
-    // Folosim Service Worker dacă este disponibil
-    if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-      console.log('Folosim Service Worker pentru notificarea de mesaj');
-      window.showNotificationViaSW('Mesaj nou', {
-        body: safeContent,
-        icon: '/favicon.ico',
-        tag: tag,
-        requireInteraction: true,
-        data: {
-          url: '/service-dashboard?tab=messages'
-        }
-      });
-    } else {
-      // Folosim metoda obișnuită dacă Service Worker nu e disponibil
-      this.showNotification('Mesaj nou', {
+    try {
+      // Încercăm direct metoda Notification API pentru a ne asigura că funcționează
+      console.log('Folosim metoda directă pentru notificare mesaj nou');
+      const notification = new Notification('Mesaj nou', {
         body: safeContent,
         icon: '/favicon.ico',
         tag: tag,
         requireInteraction: true
       });
+      
+      // Adăugăm event handlers
+      notification.onclick = () => {
+        window.focus();
+        // Navigare către tab-ul de mesaje
+        window.location.href = '/service-dashboard?tab=messages';
+        notification.close();
+      };
+      
+      console.log('Notificare mesaj nou afișată cu succes direct');
+      return;
+    } catch (directError) {
+      console.error('Eroare la afișarea notificării directe:', directError);
+      
+      // Încercăm metoda cu Service Worker ca fallback
+      if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+        console.log('Folosim Service Worker pentru notificarea de mesaj (fallback)');
+        window.showNotificationViaSW('Mesaj nou', {
+          body: safeContent,
+          icon: '/favicon.ico',
+          tag: tag,
+          requireInteraction: true,
+          data: {
+            url: '/service-dashboard?tab=messages'
+          }
+        });
+      } else {
+        // Folosim metoda obișnuită dacă Service Worker nu e disponibil
+        this.showNotification('Mesaj nou', {
+          body: safeContent,
+          icon: '/favicon.ico',
+          tag: tag,
+          requireInteraction: true
+        });
+      }
     }
 
     // Emitem și un eveniment pentru debugging sau pentru alte componente care ar putea asculta
