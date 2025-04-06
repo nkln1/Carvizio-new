@@ -16,11 +16,25 @@ interface EmailPayload {
 }
 
 export class EmailService {
+  // Definim proprietățile statice înainte de block-ul static pentru a evita accesul înainte de inițializare
   private static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
-  // Folosim adresa de email verificată în contul Elastic Email
   private static fromEmail = 'notificari@carvizio.ro'; // Adresa verificată pentru domeniul carvizio.ro
   private static fromName = 'Auto Service App';
   private static baseUrl = 'https://api.elasticemail.com/v2';
+  
+  static {
+    console.log('EmailService initialization:');
+    console.log('- API Key configured:', this.apiKey ? 'YES' : 'NO');
+    console.log('- From Email:', this.fromEmail);
+    console.log('- From Name:', this.fromName);
+    console.log('- API Base URL:', this.baseUrl);
+    if (this.apiKey) {
+      console.log(`- API Key (masked): ${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}`);
+    } else {
+      console.log('- ELASTIC_EMAIL_API_KEY environment variable not found');
+      console.log('- Available environment variables:', Object.keys(process.env).join(', '));
+    }
+  }
   
   // Getteri pentru diagnosticare (nu expunem API Key)
   public static getFromEmail(): string {

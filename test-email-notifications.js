@@ -4,8 +4,8 @@
  * Verifică toate tipurile de notificări: cereri noi, oferte acceptate, mesaje noi, recenzii noi
  */
 
-// Import direct pentru fișierul TypeScript
-import { EmailService } from './server/services/emailService.ts';
+// Import de la versiunea JavaScript a EmailService
+import { EmailService } from './emailService.js';
 import pg from 'pg';
 const { Pool } = pg;
 

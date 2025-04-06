@@ -8,11 +8,25 @@
  * 4. Trimiterea directă a unui email de test pentru fiecare tip de notificare
  */
 
-// Folosim require pentru toate modulele (CommonJS)
-const { EmailService } = require('./server/services/emailService');
-const { Pool } = require('pg');
-const { drizzle } = require('drizzle-orm/node-postgres');
-const schema = require('./shared/schema');
+// Folosim import pentru ES modules
+import { EmailService } from './emailService.js';
+import pg from 'pg';
+const { Pool } = pg;
+import { drizzle } from 'drizzle-orm/node-postgres';
+// Importăm schema direct cu require deoarece TypeScript nu este compatibil
+const schema = await import('./shared/schema.js').catch(() => {
+  // Fallback dacă nu putem importa direct schema.js - folosim schema.ts
+  const fs = await import('fs');
+  const schemaContent = fs.readFileSync('./shared/schema.ts', 'utf-8');
+  console.log('Schema.js nu a putut fi importată. Folosim date din baza de date fără schema.');
+  return { 
+    serviceProvidersTable: { id: 'id' },
+    notificationPreferencesTable: { serviceProviderId: 'service_provider_id' }
+  };
+});
+
+// Adăugăm importul necesar pentru eq
+import { eq } from 'drizzle-orm';
 
 // Conexiune la baza de date folosind aceleași setări ca în aplicație
 const pool = new Pool({
@@ -116,8 +130,5 @@ async function main() {
     console.log('\n=== SFÂRȘIT TESTARE ===');
   }
 }
-
-// Adăugăm importul necesar pentru eq
-const { eq } = require('drizzle-orm');
 
 main().catch(console.error);

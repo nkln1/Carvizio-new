@@ -13,310 +13,339 @@
  * 4. Compatibilitatea cu baza de date
  */
 
-import { EmailService } from './server/services/emailService.ts';
+import fetch from 'node-fetch';
 import pg from 'pg';
 const { Pool } = pg;
 
-async function main() {
-  console.log('====================================================');
-  console.log('=== TEST SISTEM NOTIFICĂRI PENTRU SERVICE PROVIDERS ===');
-  console.log('====================================================\n');
-  
+// Configurare conexiune la baza de date
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+// Configurare API Elastic Email
+const ELASTIC_EMAIL_API_KEY = process.env.ELASTIC_EMAIL_API_KEY;
+const FROM_EMAIL = 'notificari@carvizio.ro';
+const FROM_NAME = 'Auto Service App';
+const API_BASE_URL = 'https://api.elasticemail.com/v2';
+
+// Funcție generică pentru trimiterea email-urilor
+async function sendEmail(to, subject, htmlContent, textContent, messageId = `test_${Date.now()}`) {
   try {
-    // Verificare API key Elastic Email
-    console.log('🔑 Verificare configurare Elastic Email:');
-    const apiKey = process.env.ELASTIC_EMAIL_API_KEY;
-    const fromEmail = EmailService.getFromEmail();
-    const baseUrl = EmailService.getBaseUrl();
-    
-    console.log(`- API URL: ${baseUrl}`);
-    console.log(`- Email expeditor: ${fromEmail}`);
-    console.log('- API Key configurată:', !!apiKey);
-    if (apiKey) {
-      console.log(`- API Key (primele/ultimele caractere): ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
-    } else {
-      console.error('❌ API KEY LIPSĂ - Serviciul de notificări email nu va funcționa!');
-      process.exit(1);
+    console.log(`\n[${messageId}] 📧 ===== ELASTIC EMAIL - TRIMITERE EMAIL =====`);
+    console.log(`[${messageId}] 📋 Detalii email:`);
+    console.log(`[${messageId}]   • Destinatar:`, to);
+    console.log(`[${messageId}]   • Subiect:`, subject);
+    console.log(`[${messageId}]   • Conținut HTML:`, htmlContent ? htmlContent.substring(0, 50) + '...' : 'Nu există');
+
+    // Construim parametrii pentru request
+    const params = new URLSearchParams();
+    params.append('apikey', ELASTIC_EMAIL_API_KEY);
+    params.append('to', to);
+    params.append('from', FROM_EMAIL);
+    params.append('fromName', FROM_NAME);
+    params.append('subject', subject);
+    params.append('bodyHtml', htmlContent);
+    if (textContent) {
+      params.append('bodyText', textContent);
     }
+
+    console.log(`[${messageId}] 🔄 Trimitere cerere către API...`);
     
-    // Conectare la baza de date
-    console.log('\n🔌 Conectare la baza de date...');
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+    const startTime = Date.now();
+    const response = await fetch(`${API_BASE_URL}/email/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-ElasticEmail-ApiKey': ELASTIC_EMAIL_API_KEY
+      },
+      body: params
     });
+    const endTime = Date.now();
     
-    // Obține toți service providers din baza de date
-    console.log('\n👨‍🔧 Obținere lista service providers...');
-    const spResult = await pool.query('SELECT * FROM service_providers');
+    console.log(`[${messageId}] ⏱️ Durata cerere API: ${endTime - startTime}ms`);
+    console.log(`[${messageId}] 📊 Răspuns primit: [${response.status}] ${response.statusText}`);
     
-    if (spResult.rows.length === 0) {
-      console.error('❌ Nu există service providers în baza de date!');
-      process.exit(1);
+    if (!response.ok) {
+      let errorText = await response.text();
+      console.error(`[${messageId}] ❌ Eroare la trimiterea email-ului. Status:`, response.status, errorText);
+      return false;
     }
-    
-    console.log(`✅ Am găsit ${spResult.rows.length} service providers.`);
-    
-    // Testare notificări pentru primul service provider
-    const serviceProvider = spResult.rows[0];
-    console.log(`\n🔍 Test notificări pentru service provider: ${serviceProvider.company_name} (${serviceProvider.email})`);
-    
-    // Adaptăm obiectul pentru a corespunde așteptărilor EmailService
-    const adaptedServiceProvider = {
-      id: serviceProvider.id,
-      companyName: serviceProvider.company_name,
-      email: serviceProvider.email,
-      phone: serviceProvider.phone
-    };
-    
-    // Obține un client din baza de date pentru teste
-    console.log('\n👤 Obținere client pentru testare...');
-    const clientResult = await pool.query('SELECT * FROM clients LIMIT 1');
-    
-    if (clientResult.rows.length === 0) {
-      console.error('❌ Nu există clienți în baza de date!');
-      process.exit(1);
-    }
-    
-    const client = clientResult.rows[0];
-    console.log(`✅ Client pentru teste: ${client.name} (${client.email})`);
-    
-    // Obține preferințele de notificare
-    console.log('\n⚙️ Verificare preferințe notificări...');
-    const prefsResult = await pool.query(
-      'SELECT * FROM notification_preferences WHERE service_provider_id = $1',
-      [serviceProvider.id]
-    );
-    
-    let hasPreferences = prefsResult.rows.length > 0;
-    let prefs = {
-      email_notifications_enabled: true,
-      new_request_email_enabled: true,
-      accepted_offer_email_enabled: true,
-      new_message_email_enabled: true,
-      new_review_email_enabled: true
-    };
-    
-    if (hasPreferences) {
-      prefs = prefsResult.rows[0];
-      console.log('Preferințe notificări găsite:');
-      console.log(`- Email notificări activate: ${prefs.email_notifications_enabled ? '✅ DA' : '❌ NU'}`);
-      console.log(`- Cereri noi: ${prefs.new_request_email_enabled ? '✅ DA' : '❌ NU'}`);
-      console.log(`- Oferte acceptate: ${prefs.accepted_offer_email_enabled ? '✅ DA' : '❌ NU'}`);
-      console.log(`- Mesaje noi: ${prefs.new_message_email_enabled ? '✅ DA' : '❌ NU'}`);
-      console.log(`- Recenzii noi: ${prefs.new_review_email_enabled ? '✅ DA' : '❌ NU'}`);
-    } else {
-      console.log('ℹ️ Nu există preferințe setate. Se vor folosi valorile implicite (toate notificările activate).');
-    }
-    
-    // Obținem sau creăm date necesare pentru teste (cerere și ofertă)
-    console.log('\n📋 Pregătire date pentru teste...');
-    
-    // 1. Obține/creează o cerere
-    console.log('Căutare cereri existente...');
-    const requestResult = await pool.query(
-      'SELECT * FROM requests WHERE client_id = $1 LIMIT 1',
-      [client.id]
-    );
-    
-    let requestId;
-    let requestTitle;
-    
-    if (requestResult.rows.length > 0) {
-      const request = requestResult.rows[0];
-      requestId = request.id;
-      requestTitle = request.title;
-      console.log(`✅ Cerere existentă găsită: "${requestTitle}" (ID: ${requestId})`);
-    } else {
-      console.log('Creare cerere de test...');
-      const newRequestResult = await pool.query(
-        'INSERT INTO requests (client_id, title, description, car_id, status, county, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, title',
-        [client.id, 'Cerere test pentru notificări', 'Aceasta este o cerere creată automat pentru testarea notificărilor', null, 'Activă', 'București', new Date()]
-      );
-      requestId = newRequestResult.rows[0].id;
-      requestTitle = newRequestResult.rows[0].title;
-      console.log(`✅ Cerere nouă creată: "${requestTitle}" (ID: ${requestId})`);
-    }
-    
-    // 2. Obține/creează o ofertă
-    console.log('Căutare oferte existente...');
-    const offerResult = await pool.query(
-      'SELECT * FROM sent_offers WHERE service_provider_id = $1 AND request_id = $2 LIMIT 1',
-      [serviceProvider.id, requestId]
-    );
-    
-    let offerId;
-    let offerTitle = "Ofertă test pentru notificări";
-    
-    if (offerResult.rows.length > 0) {
-      const offer = offerResult.rows[0];
-      offerId = offer.id;
-      console.log(`✅ Ofertă existentă găsită (ID: ${offerId})`);
-    } else {
-      console.log('Creare ofertă de test...');
-      try {
-        // Obținem informații suplimentare despre cerere și client
-        const requestDetails = await pool.query(
-          'SELECT r.*, c.name as client_name FROM requests r JOIN clients c ON r.client_id = c.id WHERE r.id = $1',
-          [requestId]
-        );
-        
-        const request = requestDetails.rows[0];
-        
-        const newOfferResult = await pool.query(
-          `INSERT INTO sent_offers (
-            service_provider_id, request_id, price, details, status, created_at,
-            title, request_user_id, request_user_name, available_dates
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-          [
-            serviceProvider.id,
-            requestId,
-            500,
-            'Ofertă de test pentru notificări',
-            'Trimisă',
-            new Date(),
-            offerTitle,
-            request.client_id,
-            request.client_name,
-            '{2025-05-01}' // Array cu o dată disponibilă
-          ]
-        );
-        
-        offerId = newOfferResult.rows[0].id;
-        console.log(`✅ Ofertă nouă creată (ID: ${offerId})`);
-      } catch (offerError) {
-        console.error('❌ Eroare la crearea ofertei:', offerError.message);
-        console.log('Continuăm testele fără ofertă...');
-      }
-    }
-    
-    // Test pentru toate tipurile de notificări
-    const results = {
-      newRequest: false,
-      acceptedOffer: false,
-      newMessage: false,
-      newReview: false
-    };
-    
-    // 1. Test notificare cerere nouă
-    console.log('\n📬 TEST 1: NOTIFICARE CERERE NOUĂ');
-    if (prefs.email_notifications_enabled && prefs.new_request_email_enabled) {
-      const requestResult = await EmailService.sendNewRequestNotification(
-        adaptedServiceProvider,
-        'Reparație sistem frânare',
-        client.name,
-        `test_request_${Date.now()}`
-      );
-      results.newRequest = requestResult;
-      console.log(`Rezultat test cerere nouă: ${requestResult ? '✅ SUCCES' : '❌ EȘEC'}`);
-    } else {
-      console.log('ℹ️ Test omis: notificările pentru cereri noi sunt dezactivate în preferințele utilizatorului.');
-    }
-    
-    // 2. Test notificare ofertă acceptată
-    console.log('\n📬 TEST 2: NOTIFICARE OFERTĂ ACCEPTATĂ');
-    if (prefs.email_notifications_enabled && prefs.accepted_offer_email_enabled) {
-      const offerResult = await EmailService.sendOfferAcceptedNotification(
-        adaptedServiceProvider,
-        offerTitle,
-        client.name,
-        `test_offer_${Date.now()}`
-      );
-      results.acceptedOffer = offerResult;
-      console.log(`Rezultat test ofertă acceptată: ${offerResult ? '✅ SUCCES' : '❌ EȘEC'}`);
-    } else {
-      console.log('ℹ️ Test omis: notificările pentru oferte acceptate sunt dezactivate în preferințele utilizatorului.');
-    }
-    
-    // 3. Test notificare mesaj nou
-    console.log('\n📬 TEST 3: NOTIFICARE MESAJ NOU');
-    if (prefs.email_notifications_enabled && prefs.new_message_email_enabled) {
-      // Creare mesaj în baza de date
-      const messageContent = "Acesta este un mesaj de test pentru verificarea notificărilor prin email.";
-      
-      try {
-        const messageResult = await pool.query(
-          'INSERT INTO messages (request_id, sender_id, sender_role, receiver_id, receiver_role, content, is_read, is_new, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
-          [requestId, client.id, 'client', serviceProvider.id, 'service', messageContent, false, true, new Date()]
-        );
-        
-        const messageId = messageResult.rows[0].id;
-        console.log(`✅ Mesaj creat cu succes în baza de date (ID: ${messageId})`);
-        
-        // Trimite notificare
-        const emailResult = await EmailService.sendNewMessageNotification(
-          adaptedServiceProvider,
-          messageContent,
-          client.name,
-          requestTitle,
-          `test_message_${messageId}_${Date.now()}`
-        );
-        
-        results.newMessage = emailResult;
-        console.log(`Rezultat test mesaj nou: ${emailResult ? '✅ SUCCES' : '❌ EȘEC'}`);
-      } catch (messageError) {
-        console.error('❌ Eroare la crearea mesajului:', messageError.message);
-        console.log('Continuăm testele fără mesaj...');
-      }
-    } else {
-      console.log('ℹ️ Test omis: notificările pentru mesaje noi sunt dezactivate în preferințele utilizatorului.');
-    }
-    
-    // 4. Test notificare recenzie nouă
-    console.log('\n📬 TEST 4: NOTIFICARE RECENZIE NOUĂ');
-    if (prefs.email_notifications_enabled && prefs.new_review_email_enabled) {
-      const reviewText = "Servicii excelente, promptitudine și profesionalism. Recomand cu încredere!";
-      const reviewRating = 5;
-      
-      // Creare recenzie în baza de date (opțional, dacă avem tabel pentru recenzii)
-      try {
-        // Nu facem INSERT în baza de date pentru recenzie, doar simulăm notificarea
-        const reviewResult = await EmailService.sendNewReviewNotification(
-          adaptedServiceProvider,
-          client.name,
-          reviewRating,
-          reviewText,
-          `test_review_${Date.now()}`
-        );
-        
-        results.newReview = reviewResult;
-        console.log(`Rezultat test recenzie nouă: ${reviewResult ? '✅ SUCCES' : '❌ EȘEC'}`);
-      } catch (reviewError) {
-        console.error('❌ Eroare la notificarea recenziei:', reviewError.message);
-      }
-    } else {
-      console.log('ℹ️ Test omis: notificările pentru recenzii noi sunt dezactivate în preferințele utilizatorului.');
-    }
-    
-    // Rezultate finale
-    console.log('\n📊 REZULTATE FINALE');
-    console.log('====================================================');
-    console.log(`Cerere nouă: ${results.newRequest ? '✅ SUCCES' : prefs.new_request_email_enabled ? '❌ EȘEC' : '⏩ OMIS'}`);
-    console.log(`Ofertă acceptată: ${results.acceptedOffer ? '✅ SUCCES' : prefs.accepted_offer_email_enabled ? '❌ EȘEC' : '⏩ OMIS'}`);
-    console.log(`Mesaj nou: ${results.newMessage ? '✅ SUCCES' : prefs.new_message_email_enabled ? '❌ EȘEC' : '⏩ OMIS'}`);
-    console.log(`Recenzie nouă: ${results.newReview ? '✅ SUCCES' : prefs.new_review_email_enabled ? '❌ EȘEC' : '⏩ OMIS'}`);
-    console.log('====================================================');
-    
-    const allSuccess = 
-      (results.newRequest || !prefs.new_request_email_enabled) && 
-      (results.acceptedOffer || !prefs.accepted_offer_email_enabled) && 
-      (results.newMessage || !prefs.new_message_email_enabled) && 
-      (results.newReview || !prefs.new_review_email_enabled);
-    
-    if (allSuccess) {
-      console.log('✅ TOATE TESTELE AU FOST TRECUTE CU SUCCES!');
-      console.log('Sistemul de notificări prin email funcționează corect.');
-    } else {
-      console.log('❌ UNELE TESTE AU EȘUAT!');
-      console.log('Verificați erorile de mai sus și corectați problemele.');
-    }
-    
-    // Închide conexiunea la baza de date
-    await pool.end();
-    
+
+    const data = await response.json();
+    console.log(`[${messageId}] ✅ Email trimis cu succes!`, data);
+    console.log(`[${messageId}] 📧 ===== SFÂRȘIT TRIMITERE EMAIL =====\n`);
+    return true;
   } catch (error) {
-    console.error('❌ EROARE GENERALĂ:', error);
-    process.exit(1);
+    console.error(`Eroare la trimiterea email-ului:`, error);
+    return false;
   }
 }
 
-main().catch(console.error);
+// Funcții pentru tipuri specifice de notificări
+async function sendNewRequestNotification(email, companyName, requestTitle, clientName, messageId = `request_${Date.now()}`) {
+  const subject = `Cerere nouă: ${requestTitle} [${messageId}]`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #4a5568;">Cerere nouă de service</h2>
+      <p>Bună ziua, ${companyName},</p>
+      <p>Ați primit o cerere nouă de service de la <strong>${clientName}</strong>:</p>
+      <div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">${requestTitle}</h3>
+      </div>
+      <p>Puteți vizualiza detaliile și răspunde acestei cereri din contul dvs.</p>
+      <p>
+        <a href="https://auto-service-app.replit.app/service-dashboard?tab=cereri" 
+           style="background-color: #4299e1; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Vezi cererea
+        </a>
+      </p>
+      <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
+        Acest email a fost trimis automat de aplicația Auto Service.
+        <br>
+        Puteți dezactiva notificările prin email din setările contului dvs.
+      </p>
+      <!-- ID Cerere: ${messageId} - Folosit pentru prevenirea duplicării -->
+    </div>
+  `;
+  const text = `Cerere nouă de service: ${requestTitle}\n\nBună ziua, ${companyName},\n\nAți primit o cerere nouă de service de la ${clientName}.\n\nPuteți vizualiza detaliile și răspunde acestei cereri din contul dvs.\n\nAcest email a fost trimis automat de aplicația Auto Service. Puteți dezactiva notificările prin email din setările contului dvs.`;
+  return await sendEmail(email, subject, html, text, messageId);
+}
+
+async function sendOfferAcceptedNotification(email, companyName, offerTitle, clientName, messageId = `offer_${Date.now()}`) {
+  const subject = `Ofertă acceptată: ${offerTitle} [${messageId}]`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #4a5568;">Ofertă acceptată</h2>
+      <p>Bună ziua, ${companyName},</p>
+      <p><strong>${clientName}</strong> a acceptat oferta dvs. pentru:</p>
+      <div style="background-color: #f7fafc; border-left: 4px solid #68d391; padding: 15px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">${offerTitle}</h3>
+      </div>
+      <p>Puteți vizualiza detaliile și contacta clientul din contul dvs.</p>
+      <p>
+        <a href="https://auto-service-app.replit.app/service-dashboard?tab=oferte-acceptate" 
+           style="background-color: #68d391; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Vezi oferta acceptată
+        </a>
+      </p>
+      <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
+        Acest email a fost trimis automat de aplicația Auto Service.
+        <br>
+        Puteți dezactiva notificările prin email din setările contului dvs.
+      </p>
+      <!-- ID Ofertă: ${messageId} - Folosit pentru prevenirea duplicării -->
+    </div>
+  `;
+  const text = `Ofertă acceptată: ${offerTitle}\n\nBună ziua, ${companyName},\n\n${clientName} a acceptat oferta dvs.\n\nPuteți vizualiza detaliile și contacta clientul din contul dvs.\n\nAcest email a fost trimis automat de aplicația Auto Service. Puteți dezactiva notificările prin email din setările contului dvs.`;
+  return await sendEmail(email, subject, html, text, messageId);
+}
+
+async function sendNewMessageNotification(email, companyName, messageContent, senderName, requestOrOfferTitle, messageId = `message_${Date.now()}`) {
+  const subject = `Mesaj nou: ${senderName} [${messageId}]`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #4a5568;">Mesaj nou</h2>
+      <p>Bună ziua, ${companyName},</p>
+      <p>Ați primit un mesaj nou de la <strong>${senderName}</strong> pentru <strong>${requestOrOfferTitle}</strong>:</p>
+      <div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0;">
+        <p style="margin-top: 0;">${messageContent}</p>
+      </div>
+      <p>Puteți răspunde acestui mesaj din contul dvs.</p>
+      <p>
+        <a href="https://auto-service-app.replit.app/service-dashboard?tab=mesaje" 
+           style="background-color: #4299e1; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Vezi mesajul
+        </a>
+      </p>
+      <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
+        Acest email a fost trimis automat de aplicația Auto Service.
+        <br>
+        Puteți dezactiva notificările prin email din setările contului dvs.
+      </p>
+      <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+    </div>
+  `;
+  const text = `Mesaj nou: ${senderName}\n\nBună ziua, ${companyName},\n\nAți primit un mesaj nou de la ${senderName} pentru ${requestOrOfferTitle}:\n\n${messageContent}\n\nPuteți răspunde acestui mesaj din contul dvs.\n\nAcest email a fost trimis automat de aplicația Auto Service. Puteți dezactiva notificările prin email din setările contului dvs.`;
+  return await sendEmail(email, subject, html, text, messageId);
+}
+
+async function sendNewReviewNotification(email, companyName, clientName, rating, reviewContent, messageId = `review_${Date.now()}`) {
+  const subject = `Recenzie nouă: ${clientName} a acordat ${rating} stele [${messageId}]`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #4a5568;">Recenzie nouă</h2>
+      <p>Bună ziua, ${companyName},</p>
+      <p><strong>${clientName}</strong> v-a lăsat o recenzie nouă:</p>
+      <div style="background-color: #f7fafc; border-left: 4px solid ${rating >= 4 ? '#68d391' : rating >= 3 ? '#ecc94b' : '#f56565'}; padding: 15px; margin: 20px 0;">
+        <p style="margin-top: 0; font-size: 1.2em;">Evaluare: ${Array(rating).fill('★').join('')}${Array(5-rating).fill('☆').join('')} (${rating}/5)</p>
+        <p>${reviewContent}</p>
+      </div>
+      <p>Puteți vizualiza toate recenziile din contul dvs.</p>
+      <p>
+        <a href="https://auto-service-app.replit.app/service-dashboard?tab=recenzii" 
+           style="background-color: #4299e1; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Vezi recenziile
+        </a>
+      </p>
+      <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
+        Acest email a fost trimis automat de aplicația Auto Service.
+        <br>
+        Puteți dezactiva notificările prin email din setările contului dvs.
+      </p>
+      <!-- ID Recenzie: ${messageId} - Folosit pentru prevenirea duplicării -->
+    </div>
+  `;
+  const text = `Recenzie nouă: ${clientName} a acordat ${rating} stele\n\nBună ziua, ${companyName},\n\n${clientName} v-a lăsat o recenzie nouă:\n\nEvaluare: ${rating}/5\n\n${reviewContent}\n\nPuteți vizualiza toate recenziile din contul dvs.\n\nAcest email a fost trimis automat de aplicația Auto Service. Puteți dezactiva notificările prin email din setările contului dvs.`;
+  return await sendEmail(email, subject, html, text, messageId);
+}
+
+// Funcție pentru verificarea preferințelor de notificare ale unui furnizor de servicii
+async function getServiceProviderWithPreferences(serviceProviderId) {
+  try {
+    const providerResult = await pool.query(
+      'SELECT * FROM service_providers WHERE id = $1', 
+      [serviceProviderId]
+    );
+    
+    if (providerResult.rows.length === 0) {
+      console.error(`Nu s-a găsit furnizorul de servicii cu ID ${serviceProviderId}`);
+      return null;
+    }
+    
+    const provider = providerResult.rows[0];
+    
+    // Verifică existența preferințelor de notificare
+    const preferencesResult = await pool.query(
+      'SELECT * FROM notification_preferences WHERE service_provider_id = $1',
+      [serviceProviderId]
+    );
+    
+    const preferences = preferencesResult.rows.length > 0 ? 
+      preferencesResult.rows[0] : 
+      {
+        email_notifications_enabled: true,
+        new_request_email_enabled: true,
+        accepted_offer_email_enabled: true,
+        new_message_email_enabled: true,
+        new_review_email_enabled: true
+      };
+    
+    // Remap from snake_case keys to camelCase for consistent access throughout the test
+    return {
+      id: provider.id,
+      email: provider.email,
+      company_name: provider.company_name, // Keep snake_case for direct DB values
+      companyName: provider.company_name, // Also provide camelCase for TypeScript use
+      notificationPreferences: preferences
+    };
+  } catch (error) {
+    console.error("Eroare la obținerea furnizorului de servicii și a preferințelor:", error);
+    return null;
+  }
+}
+
+// Funcție principală
+async function main() {
+  try {
+    console.log("=== Test Sistem Notificări Email ===");
+    console.log("Mediu:", process.env.NODE_ENV);
+    console.log("API Key Configurată:", !!ELASTIC_EMAIL_API_KEY);
+    
+    if (!ELASTIC_EMAIL_API_KEY) {
+      console.error("API Key pentru Elastic Email nu este configurată!");
+      // In ES modules we use a different approach than process.exit
+      throw new Error("API Key missing");
+    }
+    
+    // Testăm conexiunea la baza de date
+    const dbTest = await pool.query('SELECT NOW()');
+    console.log("Conexiune reușită la baza de date:", dbTest.rows[0].now);
+    
+    // Obținem service provider-ul cu ID-ul 1 (NKLN Service) pentru teste
+    const serviceProvider = await getServiceProviderWithPreferences(1);
+    
+    if (!serviceProvider) {
+      console.error("Nu s-a putut obține service provider-ul pentru teste");
+      throw new Error("Service provider not found");
+    }
+    
+    console.log(`\nService Provider pentru teste:`);
+    console.log(`- ID: ${serviceProvider.id}`);
+    console.log(`- Nume: ${serviceProvider.company_name}`);
+    console.log(`- Email: ${serviceProvider.email}`);
+    console.log(`- Preferințe notificări email:`);
+    console.log(`  * Activat general: ${serviceProvider.notificationPreferences.email_notifications_enabled}`);
+    console.log(`  * Cereri noi: ${serviceProvider.notificationPreferences.new_request_email_enabled}`);
+    console.log(`  * Oferte acceptate: ${serviceProvider.notificationPreferences.accepted_offer_email_enabled}`);
+    console.log(`  * Mesaje noi: ${serviceProvider.notificationPreferences.new_message_email_enabled}`);
+    console.log(`  * Recenzii noi: ${serviceProvider.notificationPreferences.new_review_email_enabled}`);
+    
+    // Test pentru toate tipurile de notificări
+    console.log("\n=== Începere teste pentru toate tipurile de notificări ===");
+    
+    // 1. Notificare pentru cerere nouă
+    console.log("\n1. Test notificare cerere nouă:");
+    const requestResult = await sendNewRequestNotification(
+      serviceProvider.email,
+      serviceProvider.company_name,
+      "Reparație cutie de viteze",
+      "Ion Popescu",
+      `request_test_${Date.now()}`
+    );
+    console.log(`Rezultat notificare cerere nouă: ${requestResult ? "Succes" : "Eșec"}`);
+    
+    // 2. Notificare pentru ofertă acceptată
+    console.log("\n2. Test notificare ofertă acceptată:");
+    const offerResult = await sendOfferAcceptedNotification(
+      serviceProvider.email,
+      serviceProvider.company_name,
+      "Ofertă reparație suspensie",
+      "Maria Ionescu",
+      `offer_test_${Date.now()}`
+    );
+    console.log(`Rezultat notificare ofertă acceptată: ${offerResult ? "Succes" : "Eșec"}`);
+    
+    // 3. Notificare pentru mesaj nou
+    console.log("\n3. Test notificare mesaj nou:");
+    const messageResult = await sendNewMessageNotification(
+      serviceProvider.email,
+      serviceProvider.company_name,
+      "Bună ziua, aș dori să știu când va fi gata mașina?",
+      "Gheorghe Popescu",
+      "Reparație frâne",
+      `message_test_${Date.now()}`
+    );
+    console.log(`Rezultat notificare mesaj nou: ${messageResult ? "Succes" : "Eșec"}`);
+    
+    // 4. Notificare pentru recenzie nouă
+    console.log("\n4. Test notificare recenzie nouă:");
+    const reviewResult = await sendNewReviewNotification(
+      serviceProvider.email,
+      serviceProvider.company_name,
+      "Ana Dumitrescu",
+      5, // rating
+      "Servicii excelente, mașina funcționează perfect după reparație. Recomand cu încredere!",
+      `review_test_${Date.now()}`
+    );
+    console.log(`Rezultat notificare recenzie nouă: ${reviewResult ? "Succes" : "Eșec"}`);
+    
+    console.log("\n=== Sumar teste notificări email ===");
+    console.log(`- Cerere nouă: ${requestResult ? "✅ Succes" : "❌ Eșec"}`);
+    console.log(`- Ofertă acceptată: ${offerResult ? "✅ Succes" : "❌ Eșec"}`);
+    console.log(`- Mesaj nou: ${messageResult ? "✅ Succes" : "❌ Eșec"}`);
+    console.log(`- Recenzie nouă: ${reviewResult ? "✅ Succes" : "❌ Eșec"}`);
+    
+    console.log("\n=== Testare completă ===");
+    
+  } catch (error) {
+    console.error("Eroare în timpul testării:", error);
+  } finally {
+    // Închidem pool-ul de conexiuni la baza de date
+    await pool.end();
+  }
+}
+
+// Rulăm funcția principală
+main().catch(err => {
+  console.error("Eroare neașteptată:", err);
+});

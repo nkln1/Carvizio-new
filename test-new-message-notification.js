@@ -3,7 +3,7 @@
  * Acest test simulează crearea unui mesaj nou și verifică trimiterea email-ului de notificare
  */
 
-import { EmailService } from './server/services/emailService.ts';
+import { EmailService } from './emailService.js';
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import fetch from 'node-fetch';

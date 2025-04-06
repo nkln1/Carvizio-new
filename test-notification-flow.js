@@ -3,144 +3,152 @@
  * Simulează crearea unui mesaj nou și urmărește fluxul de trimitere email
  */
 
+import { EmailService } from './emailService.js';
 import pg from 'pg';
-import fetch from 'node-fetch';
-import { EmailService } from './server/services/emailService.js';
-
 const { Pool } = pg;
 
-// Conexiune la baza de date
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
 async function main() {
+  console.log('=== TEST FLUX COMPLET NOTIFICĂRI EMAIL ===');
+  console.log('Acest test simulează fluxul complet de trimitere a notificărilor prin email\n');
+
   try {
-    console.log('=== TEST FLUX NOTIFICĂRI EMAIL ===\n');
+    // Conectare la baza de date
+    console.log('Conectare la baza de date...');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
     
-    // 1. Preluăm un service provider din baza de date pentru test
-    console.log('1. Obținem detalii service provider pentru test...');
-    const serviceProviderResult = await pool.query(
-      'SELECT * FROM "service_providers" WHERE id = 1'
-    );
+    // Obținem un service provider activ
+    console.log('\nCăutare service provider pentru test...');
+    const result = await pool.query(`
+      SELECT sp.*, np.* 
+      FROM service_providers sp
+      LEFT JOIN notification_preferences np ON sp.id = np.service_provider_id
+      WHERE sp.id = 1
+    `);
     
-    if (serviceProviderResult.rows.length === 0) {
-      console.error('Nu a fost găsit niciun service provider cu ID 1');
+    if (result.rows.length === 0) {
+      console.error('❌ Nu s-a găsit service provider-ul cu ID 1 în baza de date');
       return;
     }
     
-    const serviceProvider = serviceProviderResult.rows[0];
-    console.log(`Service provider găsit: ${serviceProvider.company_name} (${serviceProvider.email})`);
+    const spData = result.rows[0];
     
-    // 2. Preluăm un client pentru test
-    console.log('\n2. Obținem detalii client pentru test...');
-    const clientResult = await pool.query(
-      'SELECT * FROM "clients" WHERE id = 1'
-    );
-    
-    if (clientResult.rows.length === 0) {
-      console.error('Nu a fost găsit niciun client cu ID 1');
-      return;
-    }
-    
-    const client = clientResult.rows[0];
-    console.log(`Client găsit: ${client.name} (${client.email})`);
-    
-    // 3. Preluăm o cerere pentru test
-    console.log('\n3. Obținem detalii cerere pentru test...');
-    const requestResult = await pool.query(
-      'SELECT * FROM "requests" LIMIT 1'
-    );
-    
-    if (requestResult.rows.length === 0) {
-      console.error('Nu a fost găsită nicio cerere în baza de date');
-      return;
-    }
-    
-    const request = requestResult.rows[0];
-    console.log(`Cerere găsită: ${request.title} (ID: ${request.id})`);
-    
-    // 4. Verificăm preferințele de notificare ale service provider-ului
-    console.log('\n4. Verificăm preferințele de notificare...');
-    const preferencesResult = await pool.query(
-      'SELECT * FROM "notification_preferences" WHERE user_id = $1 AND user_type = $2',
-      [serviceProvider.id, 'service']
-    );
-    
-    let preferences = null;
-    if (preferencesResult.rows.length > 0) {
-      preferences = preferencesResult.rows[0];
-      console.log('Preferințe găsite:');
-      console.log(`- Notificări email activate: ${preferences.email_notifications_enabled ? 'DA' : 'NU'}`);
-      console.log(`- Notificări mesaje noi: ${preferences.new_message_email_enabled ? 'DA' : 'NU'}`);
-    } else {
-      console.log('Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)');
-    }
-    
-    // 5. Simulăm trimiterea unui mesaj nou
-    console.log('\n5. Simulăm trimiterea unui mesaj nou...');
-    
-    // Adaptează obiectul serviceProvider pentru a se potrivi cu ce așteaptă EmailService
-    const adaptedServiceProvider = {
-      id: serviceProvider.id,
-      companyName: serviceProvider.company_name,
-      email: serviceProvider.email,
-      phone: serviceProvider.phone
+    // Construim obiectul service provider pentru EmailService
+    const serviceProvider = {
+      id: spData.id,
+      email: spData.email,
+      companyName: spData.company_name,
+      phone: spData.phone
     };
     
-    const messageContent = "Acesta este un mesaj de test pentru verificarea notificărilor prin email.";
-    const clientName = client.name;
-    const requestTitle = request.title || "Cerere service auto";
-    const messageId = `test_message_${Date.now()}`;
+    console.log(`✅ Găsit service provider: ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
+    console.log(`📧 Email: ${serviceProvider.email}`);
     
-    console.log('Detalii mesaj:');
-    console.log(`- Expeditor: ${clientName}`);
-    console.log(`- Destinatar: ${adaptedServiceProvider.companyName} (${adaptedServiceProvider.email})`);
-    console.log(`- Referitor la: ${requestTitle}`);
-    console.log(`- Conținut: ${messageContent}`);
-    console.log(`- ID Mesaj: ${messageId}`);
+    // Verificăm preferințele de notificare pentru mesaje
+    const emailNotificationsEnabled = spData.email_notifications_enabled !== false; // default true
+    const newMessageEmailEnabled = spData.new_message_email_enabled !== false; // default true
     
-    // 6. Trimitem notificarea prin email
-    console.log('\n6. Trimitem notificarea prin email...');
+    console.log('\nVerificare preferințe notificare:');
+    console.log(`- Notificări email activate: ${emailNotificationsEnabled ? 'DA' : 'NU'}`);
+    console.log(`- Notificări pentru mesaje noi: ${newMessageEmailEnabled ? 'DA' : 'NU'}`);
     
-    // Verificăm dacă trebuie să trimitem emailul conform preferințelor
-    const shouldSendEmail = !preferences || 
-      (preferences.email_notifications_enabled && preferences.new_message_email_enabled);
-      
-    console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-    
-    if (shouldSendEmail) {
-      try {
-        console.log('Se trimite notificarea prin email...');
-        const result = await EmailService.sendNewMessageNotification(
-          adaptedServiceProvider,
-          messageContent,
-          clientName,
-          requestTitle,
-          messageId
-        );
-        
-        if (result) {
-          console.log('✅ Email de notificare trimis cu succes!');
-        } else {
-          console.error('❌ Trimiterea email-ului a eșuat.');
-        }
-      } catch (error) {
-        console.error('❌ Eroare la trimiterea email-ului:', error);
-      }
-    } else {
-      console.log('Trimiterea email-ului a fost omisă conform preferințelor utilizatorului.');
+    if (!emailNotificationsEnabled || !newMessageEmailEnabled) {
+      console.log('⚠️ Notificările pentru mesaje noi sunt dezactivate în preferințe!');
+      console.log('Continuăm totuși testul pentru a verifica funcționalitatea...');
     }
     
-    console.log('\n=== TEST FINALIZAT ===');
-    console.log('Verificați adresa de email a service provider-ului pentru a confirma primirea notificării.');
+    // Simulăm trimiterea unui mesaj nou
+    console.log('\n1️⃣ Simulare MESAJ NOU...');
+    
+    // Pregătim datele pentru mesaj
+    const messageId = `test_message_${Date.now()}`;
+    const messageContent = 'Acesta este un mesaj de test pentru verificarea fluxului de notificări.';
+    const senderName = 'Client Test Automat';
+    const requestTitle = 'Cerere Test Notificări';
+    
+    console.log(`- ID Mesaj: ${messageId}`);
+    console.log(`- Conținut: ${messageContent}`);
+    console.log(`- Expeditor: ${senderName}`);
+    console.log(`- Cerere asociată: ${requestTitle}`);
+    
+    // 2. Trimitem notificare prin email
+    console.log('\n2️⃣ Trimitere NOTIFICARE EMAIL...');
+    
+    // Verificăm existența API key-ului ElasticEmail
+    const apiKey = process.env.ELASTIC_EMAIL_API_KEY;
+    if (!apiKey) {
+      console.error('❌ API KEY Elastic Email lipsește! Notificările nu vor fi trimise.');
+      process.exit(1);
+    }
+    
+    console.log(`- API Key Elastic Email: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+    console.log(`- Expeditor: ${EmailService.getFromEmail()} (${EmailService.getFromName()})`);
+    
+    // Trimitem notificarea de mesaj nou
+    const emailResult = await EmailService.sendNewMessageNotification(
+      serviceProvider,
+      messageContent,
+      senderName,
+      requestTitle,
+      messageId,
+      'Test direct din script test-notification-flow.js'
+    );
+    
+    if (emailResult) {
+      console.log('✅ Notificare email trimisă cu SUCCES!');
+      console.log(`📧 Verificați adresa ${serviceProvider.email} pentru a confirma primirea email-ului.`);
+    } else {
+      console.error('❌ Eroare la trimiterea notificării prin email!');
+    }
+    
+    // 3. Verificăm dacă a fost trimis email-ul verificând tabelul trimise_emails
+    console.log('\n3️⃣ Verificare înregistrare email în baza de date...');
+    try {
+      const emailCheckResult = await pool.query(`
+        SELECT * FROM sent_emails 
+        WHERE recipient = $1 AND message_id = $2
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [serviceProvider.email, messageId]);
+      
+      if (emailCheckResult.rows.length > 0) {
+        const emailRecord = emailCheckResult.rows[0];
+        console.log(`✅ Email găsit în baza de date:`);
+        console.log(`- ID: ${emailRecord.id}`);
+        console.log(`- Destinatar: ${emailRecord.recipient}`);
+        console.log(`- Subiect: ${emailRecord.subject}`);
+        console.log(`- Trimis la: ${emailRecord.created_at}`);
+        console.log(`- Status API: ${emailRecord.api_response}`);
+      } else {
+        console.log('⚠️ Nu s-a găsit înregistrarea email-ului în baza de date.');
+        console.log('Posibile cauze:');
+        console.log('- Email-ul a fost trimis, dar nu a fost înregistrat în baza de date');
+        console.log('- Tabelul sent_emails nu există în baza de date');
+        console.log('- O eroare a împiedicat trimiterea email-ului');
+      }
+    } catch (error) {
+      console.log(`⚠️ Nu s-a putut verifica tabelul sent_emails: ${error.message}`);
+      console.log('Cel mai probabil tabelul nu există în baza de date.');
+    }
+    
+    // Sumar final
+    console.log('\n=== SUMAR FINAL ===');
+    console.log(`Service Provider: ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
+    console.log(`Email: ${serviceProvider.email}`);
+    console.log(`Notificări email activate: ${emailNotificationsEnabled ? 'DA' : 'NU'}`);
+    console.log(`Notificări pentru mesaje noi: ${newMessageEmailEnabled ? 'DA' : 'NU'}`);
+    console.log(`Rezultat trimitere email: ${emailResult ? 'SUCCES' : 'EȘEC'}`);
+    
+    // Închide conexiunea la baza de date
+    await pool.end();
     
   } catch (error) {
-    console.error('Eroare în timpul testului:', error);
-  } finally {
-    // Închidem conexiunea la baza de date
-    await pool.end();
+    console.error('❌ EROARE ÎN TIMPUL TESTULUI:', error);
+    process.exit(1);
   }
+  
+  console.log('\n=== TEST COMPLET ===');
 }
 
-main();
+main().catch(console.error);

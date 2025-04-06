@@ -17,6 +17,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
 import { EmailService } from './services/emailService';
+console.log('EmailService imported successfully:', EmailService ? 'Defined' : 'Undefined');
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -3532,14 +3533,15 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Testăm trimiterea email-ului...");
       console.log("API Key present:", !!process.env.ELASTIC_EMAIL_API_KEY);
-      console.log("Using email:", "test@example.com");
+      console.log("Using email:", "nkln@yahoo.com"); // Known working email recipient
       
       try {
         const result = await EmailService.sendEmail(
-          "test@example.com", // Înlocuiește cu email-ul tău pentru testare
+          "nkln@yahoo.com", // Using known working email from test scripts
           "Test Email de la Auto Service App",
-          "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
-          "Acesta este un email de test. Sistemul de email funcționează corect!"
+          "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p><p>Trimis la: " + new Date().toLocaleString() + "</p>",
+          "Acesta este un email de test. Sistemul de email funcționează corect! Trimis la: " + new Date().toLocaleString(),
+          "API Test Route"
         );
         
         console.log("Rezultat trimitere test email:", result);
