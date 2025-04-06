@@ -2,11 +2,11 @@
 /**
  * Service Worker principal pentru aplicație
  * Acest fișier se ocupă de verificarea mesajelor în fundal și afișarea notificărilor
- * @version 1.0.8
+ * @version 1.0.9
  */
 
 // Versiunea Service Worker-ului (se modifică pentru a forța actualizarea)
-const VERSION = 'v1.0.8'; // Actualizat la 29 martie 2025
+const VERSION = 'v1.0.9'; // Actualizat la 6 aprilie 2025
 
 // Resurse pentru caching
 const CACHE_NAME = 'service-dashboard-cache-' + VERSION;

@@ -31,6 +31,9 @@
       // Funcție pentru înregistrarea Service Worker-ului
       function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
+          // Configurăm ascultătorul pentru token înainte de înregistrarea Service Worker
+          setupAuthTokenListener();
+          
           window.addEventListener('load', () => {
             // Adăugăm un timestamp pentru a preveni cache-ul și pentru a forța reîncărcarea
             const timestamp = new Date().getTime();
@@ -40,8 +43,8 @@
               scope: '/'
             };
             
-            // Încercăm să înregistrăm Service Worker-ul cu type: 'module' pentru a forța MIME corect
-            navigator.serviceWorker.register(`/sw.js?t=${timestamp}&v=1.0.6`, options)
+            // Încercăm să înregistrăm Service Worker-ul cu versiune actualizată
+            navigator.serviceWorker.register(`/sw.js?t=${timestamp}&v=1.0.8`, options)
               .then(registration => {
                 console.log('Service Worker înregistrat cu succes:', registration.scope);
 
@@ -94,6 +97,42 @@
         });
       }
 
+      // Funcție pentru a răspunde la mesajele Service Worker pentru token
+      function setupAuthTokenListener() {
+        if (!('serviceWorker' in navigator)) return;
+        
+        // Adăugăm un eveniment pentru gestionarea mesajelor de la Service Worker
+        navigator.serviceWorker.addEventListener('message', function(event) {
+          if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
+            console.log('Am primit cerere pentru token de autentificare de la Service Worker');
+            
+            // Obținem tokenul din localStorage
+            const token = localStorage.getItem('firebase_auth_token');
+            const expiresAt = localStorage.getItem('firebase_auth_token_expires');
+            
+            console.log('Token disponibil:', !!token);
+            
+            // Verificăm validitatea tokenului
+            let isValid = false;
+            if (token && expiresAt) {
+              const now = Date.now();
+              isValid = now < parseInt(expiresAt, 10);
+              console.log('Tokenul este valid:', isValid);
+            }
+            
+            // Răspundem la cerere
+            if (event.ports && event.ports[0]) {
+              event.ports[0].postMessage({
+                token: isValid ? token : null
+              });
+              console.log('Răspuns trimis către Service Worker cu token valid:', isValid);
+            }
+          }
+        });
+        
+        console.log('Ascultător pentru cereri de token configurat');
+      }
+      
       // Funcție pentru a trimite mesaje către Service Worker
       function sendMessageToSW(message) {
         return new Promise((resolve, reject) => {
