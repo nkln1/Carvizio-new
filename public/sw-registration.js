@@ -9,12 +9,36 @@
  */
 /**
  * Configurează ascultătorul pentru mesajele primite de la Service Worker
- * ATENȚIE: Funcția principală este acum implementată în index.html (setupAuthTokenListener)
- * pentru a evita duplicarea codului
+ * Tratează în special solicitările de token de autentificare
  */
 function setupServiceWorkerMessageListener() {
-  console.log('[SW-Registration] Listener-ul pentru mesaje este gestionat acum de index.html');
-  // Funcția goală rămâne pentru compatibilitate, implementarea reală este în index.html
+  // Configurăm ascultătorul pentru mesajele din Service Worker
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    console.log('Mesaj primit de la Service Worker:', event.data);
+    
+    // Verificăm tipul mesajului
+    if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
+      // Service Worker-ul cere token-ul de autentificare
+      const token = localStorage.getItem('firebase_auth_token');
+      const expiresAt = localStorage.getItem('firebase_auth_token_expires');
+      
+      console.log('Service Worker solicită token-ul de autentificare, disponibil:', !!token);
+      
+      // Verificăm validitatea tokenului
+      let isValid = false;
+      if (token && expiresAt) {
+        const now = Date.now();
+        isValid = now < parseInt(expiresAt, 10);
+      }
+      
+      // Răspundem la solicitare
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({
+          token: isValid ? token : null
+        });
+      }
+    }
+  });
 }
 
 function registerServiceWorker() {
@@ -22,7 +46,7 @@ function registerServiceWorker() {
     console.log('[SW-Registration] Începere înregistrare Service Worker...');
     
     // Adăugăm un parametru de timestamp pentru a evita cache-ul la încărcarea Service Worker-ului
-    const swUrl = `/sw.js?t=${Date.now()}&v=1.0.9`;
+    const swUrl = `/sw.js?t=${Date.now()}&v=1.0.8`;
     
     navigator.serviceWorker.register(swUrl, { scope: '/' })
       .then(function(registration) {
