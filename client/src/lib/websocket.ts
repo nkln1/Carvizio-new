@@ -65,19 +65,17 @@ class WebSocketService {
                   window.location.hostname === '127.0.0.1' ||
                   window.location.hostname.includes('replit.dev');
 
-    // In dev environment, use relative URL to avoid CORS issues
+    // Updated path to match server configuration
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/socket`;  // Must match the path in server's WebSocketServer config
+    
     if (isDev) {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/ws`;
       console.log('WebSocket URL (dev environment):', wsUrl);
-      return wsUrl;
     } else {
-      // In production, use same origin
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/ws`;
       console.log('WebSocket URL (production):', wsUrl);
-      return wsUrl;
     }
+    
+    return wsUrl;
   }
 
   private connect() {

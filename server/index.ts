@@ -8,10 +8,14 @@ import { setCustomMimeTypes } from "./mimeTypes";
 const app = express();
 const server = http.createServer(app);
 
+// Export server for use in routes.ts
+export { server };
+
 // Initialize WebSocket server with proper configuration
+// Use a different path that won't conflict with Vite in development
 const wss = new WebSocketServer({ 
   server,
-  path: '/ws',
+  path: '/socket',  // Use a different path to avoid conflicts with Vite
   clientTracking: true
 });
 
@@ -99,6 +103,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   // Aplicăm configurarea MIME types ÎNAINTE de a înregistra rutele
   setCustomMimeTypes(app); // Add MIME type configuration
   
+  // registerRoutes no longer returns a server instance
   registerRoutes(app);
 
   if (app.get("env") === "development") {

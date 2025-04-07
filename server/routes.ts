@@ -13,6 +13,7 @@ import { sql } from 'drizzle-orm';
 import { serviceProviders, workingHours } from '@shared/schema';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
+import { server } from './index';
 import * as fs from 'fs';
 import * as path from 'path';
 import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
@@ -115,7 +116,7 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 
 
 
-export function registerRoutes(app: Express): Server {
+export function registerRoutes(app: Express): void {
   
   // Firebase Auth Middleware cu gestionare îmbunătățită a erorilor
   const validateFirebaseToken = async (req: Request, res: any, next: any) => {
@@ -3236,22 +3237,17 @@ export function registerRoutes(app: Express): Server {
   });
 
 
-  const httpServer = createServer(app);
-
-  // Initialize WebSocket server with the correct path to match client
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path: '/api/ws'  // Match the client's WebSocket path
-  });
-
-  // WebSocket connection handler with improved error handling
+  // We no longer create a new WebSocket server here because we're using the one imported from index.ts
+  // This code was causing port conflict by creating two WebSocket servers
+  
+  // Register a new message handler for specific WebSocket events
   wss.on('connection', (ws) => {
-    console.log('New WebSocket connection established');
-
+    // We'll keep this event handler to handle specific application-related WebSocket events
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
-        console.log('Received message:', data);
+        console.log('Received message in routes.ts handler:', data);
+        
         // Handle different message types
         switch (data.type) {
           case 'OFFER_SENT':
@@ -3267,19 +3263,11 @@ export function registerRoutes(app: Express): Server {
             });
             break;
           default:
-            console.log('Unknown message type:', data.type);
+            console.log('Unknown message type in routes.ts handler:', data.type);
         }
       } catch (error) {
-        console.error('Error processing WebSocket message:', error);
+        console.error('Error processing WebSocket message in routes.ts handler:', error);
       }
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
-
-    ws.on('close', () => {
-      console.log('Client disconnected');
     });
   });
 
@@ -3595,7 +3583,111 @@ export function registerRoutes(app: Express): Server {
       }
     });
   });
+  
+  // System notifications endpoint - broadcasts a system notification to all connected clients
+  app.post('/api/notifications/broadcast', validateFirebaseToken, (req, res) => {
+    try {
+      const { type, title, content, targetUserId } = req.body;
+      
+      if (!type || !title || !content) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Missing required fields (type, title, content)'
+        });
+      }
+      
+      // Import WebSocket Server from index.ts
+      import('./index.js').then(({ wss }) => {
+        import('ws').then(({ WebSocket }) => {
+          // Broadcast to all connected clients or filter by target user
+          let clientCount = 0;
+          const notificationPayload = {
+            type: type,
+            timestamp: new Date().toISOString(),
+            payload: {
+              title: title,
+              content: content,
+              id: Date.now().toString(),
+              // Include any additional metadata
+              metadata: req.body.metadata || {}
+            }
+          };
+          
+          wss.clients.forEach((client: any) => {
+            // If targetUserId is specified, only send to that user
+            // This would require storing user IDs with WebSocket connections
+            // For now, we broadcast to all clients
+            if (client.readyState === WebSocket.OPEN) {
+              clientCount++;
+              client.send(JSON.stringify(notificationPayload));
+            }
+          });
+          
+          res.status(200).json({ 
+            success: true, 
+            message: 'Notification broadcast to clients',
+            notificationType: type,
+            clientCount: clientCount
+          });
+        }).catch(err => {
+          console.error('Error importing WebSocket:', err);
+          res.status(500).json({ error: 'Failed to import WebSocket module' });
+        });
+      }).catch(err => {
+        console.error('Error importing wss:', err);
+        res.status(500).json({ error: 'Failed to import WebSocket server' });
+      });
+    } catch (error) {
+      console.error('Error broadcasting notification:', error);
+      res.status(500).json({ error: 'Failed to broadcast notification' });
+    }
+  });
+  
+  // Test endpoint for WebSocket broadcast
+  app.post('/api/test/broadcast', (req, res) => {
+    try {
+      const message = req.body;
+      console.log('Broadcasting test message to all WebSocket clients:', message);
+      
+      // Import WebSocket Server from index.ts
+      import('./index.js').then(({ wss }) => {
+        import('ws').then(({ WebSocket }) => {
+          // Broadcast to all connected clients
+          let clientCount = 0;
+          wss.clients.forEach((client: any) => {
+            if (client.readyState === WebSocket.OPEN) {
+              clientCount++;
+              client.send(JSON.stringify({
+                type: 'TEST_NOTIFICATION',
+                timestamp: new Date().toISOString(),
+                payload: {
+                  title: 'Test Notification',
+                  content: message.message || 'This is a test notification',
+                  id: Date.now().toString()
+                }
+              }));
+            }
+          });
+          
+          res.status(200).json({ 
+            success: true, 
+            message: 'Test notification broadcast to all connected clients',
+            clientCount: clientCount
+          });
+        }).catch(err => {
+          console.error('Error importing WebSocket:', err);
+          res.status(500).json({ error: 'Failed to import WebSocket module' });
+        });
+      }).catch(err => {
+        console.error('Error importing wss:', err);
+        res.status(500).json({ error: 'Failed to import WebSocket server' });
+      });
+    } catch (error) {
+      console.error('Error broadcasting test message:', error);
+      res.status(500).json({ error: 'Failed to broadcast test message' });
+    }
+  });
 
-  // Return the server at the end
-  return httpServer;
+  // No need to return anything as we're now using void as the return type
+  return;
 }
