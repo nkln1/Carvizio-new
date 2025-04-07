@@ -142,9 +142,6 @@ class WebSocketService {
               if (!data.notificationId) {
                 data.notificationId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
               }
-              
-              // Marcăm mesajul ca fiind în timp real (prin WebSocket)
-              data.source = 'websocket';
 
               // Emitem un eveniment DOM pentru a facilita depanarea
               const newMessageEvent = new CustomEvent('new-message-received', { 
@@ -304,9 +301,6 @@ class WebSocketService {
             if (!message.notificationId) {
               message.notificationId = `poll-msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
             }
-            
-            // Marcăm mesajul ca fiind în timp real (prin polling), pentru a permite afișarea notificărilor
-            message.source = 'realtime';
             
             // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
             // pentru a evita duplicarea notificărilor

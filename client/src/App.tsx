@@ -104,54 +104,51 @@ const AppNotificationInitializer: React.FC = () => {
                 return;
               }
 
-              // Verificăm dacă este mesaj în timp real prin WebSocket
-              // Acest lucru previne notificările la încărcarea inițială sau la refresh-ul paginii
-              if (data.source === 'websocket' || data.source === 'realtime') {
-                // Verificăm preferințele de notificări pentru mesaje
-                if (data.type === 'NEW_MESSAGE') {
-                  try {
-                    // Obținem preferințele de notificări
-                    const response = await fetch('/api/service/notification-preferences');
+              // Verificăm preferințele de notificări doar pentru mesaje de tip NEW_MESSAGE
+              if (data.type === 'NEW_MESSAGE') {
+                try {
+                  // Obținem preferințele de notificări
+                  const response = await fetch('/api/service/notification-preferences');
 
-                    if (!response.ok) {
-                      console.error("Nu am putut obține preferințele de notificări");
-                      return;
+                  if (!response.ok) {
+                    console.error("Nu am putut obține preferințele de notificări");
+                    // Forțăm afișarea notificării direct ca fallback
+                    if (data.payload && data.payload.content) {
+                      NotificationHelper.forceMessageNotification(data.payload.content);
                     }
-
-                    const preferences = await response.json();
-                    console.log("Preferințe notificări obținute:", preferences);
-
-                    if (preferences && 
-                        preferences.browserNotificationsEnabled && 
-                        preferences.newMessageBrowserEnabled) {
-                      console.log("Afișăm notificare pentru mesaj nou în timp real:", data.payload);
-
-                      let messageBody = 'Ați primit un mesaj nou';
-                      if (data.payload && data.payload.content) {
-                        messageBody = data.payload.content;
-                      }
-
-                      // Generăm un ID unic pentru această notificare
-                      const notificationId = data.notificationId || 
-                        `realtime-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-                      
-                      // Actualizăm data cu ID-ul
-                      data.notificationId = notificationId;
-                      
-                      // Delegăm către NotificationHelper pentru gestionarea uniformă
-                      NotificationHelper.handleNotificationEvent(data);
-                    } else {
-                      console.log("Notificările pentru mesaje noi sunt dezactivate în preferințe");
-                    }
-                  } catch (error) {
-                    console.error("Eroare la procesarea notificării:", error);
+                    return;
                   }
-                } else {
-                  // Pentru alte tipuri de evenimente în timp real, delegăm către NotificationHelper
-                  NotificationHelper.handleNotificationEvent(data);
+
+                  const preferences = await response.json();
+
+                  console.log("Preferințe notificări obținute:", preferences);
+
+                  if (preferences && 
+                      preferences.browserNotificationsEnabled && 
+                      preferences.newMessageBrowserEnabled) {
+                    console.log("Afișăm notificare pentru mesaj nou:", data.payload);
+
+                    let messageBody = 'Ați primit un mesaj nou';
+                    if (data.payload && data.payload.content) {
+                      messageBody = data.payload.content;
+                    }
+
+                    // Forțăm afișarea notificării direct
+                    NotificationHelper.forceMessageNotification(messageBody);
+                  } else {
+                    console.log("Notificările pentru mesaje noi sunt dezactivate în preferințe");
+                  }
+                } catch (error) {
+                  console.error("Eroare la procesarea notificării:", error);
+
+                  // În caz de eroare, încercăm totuși să afișăm notificarea
+                  if (data.payload && data.payload.content) {
+                    NotificationHelper.forceMessageNotification(data.payload.content);
+                  }
                 }
               } else {
-                console.log("Ignorăm notificarea, nu este în timp real:", data);
+                // Pentru alte tipuri de evenimente, delegăm către NotificationHelper
+                NotificationHelper.handleNotificationEvent(data);
               }
             });
 
