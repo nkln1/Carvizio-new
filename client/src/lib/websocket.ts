@@ -138,21 +138,19 @@ class WebSocketService {
               console.log('Received NEW_MESSAGE event:', data);
               console.log('NEW_MESSAGE content:', data.payload?.content);
 
+              // Generăm un ID unic pentru acest mesaj pentru a evita duplicarea
+              if (!data.notificationId) {
+                data.notificationId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+              }
+
               // Emitem un eveniment DOM pentru a facilita depanarea
               const newMessageEvent = new CustomEvent('new-message-received', { 
                 detail: data 
               });
               window.dispatchEvent(newMessageEvent);
               
-              // Încercăm să afișăm notificarea direct dacă avem NotificationHelper
-              try {
-                if (window.NotificationHelper && typeof window.NotificationHelper.forceMessageNotification === 'function') {
-                  console.log('Trying to show notification directly via NotificationHelper');
-                  window.NotificationHelper.forceMessageNotification(data.payload?.content || 'Mesaj nou');
-                }
-              } catch (notifErr) {
-                console.error('Error showing direct notification:', notifErr);
-              }
+              // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
+              // Acest lucru previne afișarea de notificări duplicate
             }
 
             // Notificăm toți handlerii înregistrați
@@ -295,17 +293,17 @@ class WebSocketService {
 
         // Process messages as if they came from WebSocket
         messages.forEach(message => {
-          // Verificăm dacă este un mesaj nou și încercăm să afișăm notificarea direct
+          // Verificăm dacă este un mesaj nou
           if (message && message.type === 'NEW_MESSAGE') {
             console.log('Received NEW_MESSAGE from polling:', message);
-            try {
-              if (window.NotificationHelper && typeof window.NotificationHelper.forceMessageNotification === 'function') {
-                console.log('Trying to show notification directly from polling via NotificationHelper');
-                window.NotificationHelper.forceMessageNotification(message.payload?.content || 'Mesaj nou');
-              }
-            } catch (notifErr) {
-              console.error('Error showing direct notification from polling:', notifErr);
+            
+            // Adăugăm ID unic pentru evitarea duplicatelor
+            if (!message.notificationId) {
+              message.notificationId = `poll-msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
             }
+            
+            // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
+            // pentru a evita duplicarea notificărilor
           }
           
           // Transmitem mesajul la toți handlerii înregistrați

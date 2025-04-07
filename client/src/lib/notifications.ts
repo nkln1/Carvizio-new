@@ -143,6 +143,14 @@ class NotificationHelper {
         requireInteraction: true,  // Notificarea rămâne vizibilă până când utilizatorul interacționează cu ea
         ...options
       };
+      
+      // Folosim tag-ul pentru a preveni notificările duplicate
+      // Dacă nu există deja un tag, generăm un ID unic
+      if (!defaultOptions.tag) {
+        defaultOptions.tag = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+      }
+      
+      console.log('Tag notificare:', defaultOptions.tag);
 
       // Încercăm mai întâi să folosim Service Worker dacă este disponibil
       if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
@@ -415,6 +423,10 @@ class NotificationHelper {
           notificationUrl = '/service-dashboard?tab=offers';
         }
 
+        // Generăm un ID de notificare unic dacă nu există deja
+        // Acest ID va fi folosit ca tag pentru a evita notificările duplicate
+        const notificationId = data.notificationId || `notif-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        
         // Verificăm tipul de eveniment și afișăm notificarea corespunzătoare
         switch (data.type) {
           case 'NEW_MESSAGE':
@@ -423,7 +435,7 @@ class NotificationHelper {
               window.showNotificationViaSW('Mesaj nou', {
                 body: data.payload?.content || 'Ați primit un mesaj nou',
                 icon: '/favicon.ico',
-                tag: `message-${Date.now()}`,
+                tag: notificationId, // Folosim ID-ul unic ca tag
                 requireInteraction: true,
                 data: { url: notificationUrl }
               });
@@ -431,7 +443,7 @@ class NotificationHelper {
               this.showNotification('Mesaj nou', {
                 body: data.payload?.content || 'Ați primit un mesaj nou',
                 icon: '/favicon.ico',
-                tag: `message-${Date.now()}`,
+                tag: notificationId, // Folosim ID-ul unic ca tag
                 requireInteraction: true
               });
             }
