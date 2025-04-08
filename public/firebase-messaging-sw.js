@@ -1,8 +1,8 @@
 // Firebase Messaging Service Worker
-// Versiunea: 1.0.2
+// Versiunea: 1.0.1
 
 // Versiunea service worker-ului - modificați-o la fiecare actualizare importantă
-const VERSION = '1.0.2';
+const VERSION = '1.0.1';
 console.log('[Firebase Messaging SW] Script încărcat, versiunea:', VERSION);
 
 // Evităm erorile cu try-catch

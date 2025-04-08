@@ -539,36 +539,8 @@ async function checkForNewRequests(userId, userRole, token) {
     // Actualizăm contorul de cereri noi
     backgroundCheckConfig.lastNewRequestsCount = newRequestsCount;
 
-    // Generăm un ID unic pentru acest eveniment de notificare pentru a preveni duplicarea
-    const eventIdentifier = `new-requests-${currentTimestamp}`;
-    
-    // Verificăm dacă am afișat deja o notificare pentru cereri noi recent
-    // Folosim algoritmul de prevenire a duplicării similar cu cel pentru mesaje
-    const recentNotificationKey = 'recent-request-notification';
-    const recentNotifications = await self.registration.index.getAll(recentNotificationKey) || [];
-    
-    const hasRecentNotification = recentNotifications.some(notif => {
-      // Verificăm dacă a fost afișată o notificare în ultimele 10 secunde
-      return (currentTimestamp - notif.timestamp) < 10000;
-    });
-    
-    if (hasRecentNotification) {
-      console.log('[Service Worker] Notificare pentru cereri noi ignorată - deja afișată recent');
-      return Promise.resolve();
-    }
-    
     // Afișăm notificări doar dacă există cereri noi și condițiile sunt îndeplinite
     if (newRequestsCount > 0 && (isCountIncreased || hasTimeElapsed)) {
-      // Salvăm timestamp-ul acestei notificări pentru a preveni duplicarea
-      try {
-        await self.registration.index.add(recentNotificationKey, {
-          timestamp: currentTimestamp,
-          count: newRequestsCount
-        });
-      } catch (error) {
-        console.warn('[Service Worker] Eroare la salvarea notificării recente:', error);
-      }
-      
       // Actualizăm timestamp-ul ultimei notificări
       backgroundCheckConfig.lastNewRequestNotificationTime = currentTimestamp;
 

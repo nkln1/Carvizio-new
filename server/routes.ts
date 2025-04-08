@@ -13,12 +13,10 @@ import { sql } from 'drizzle-orm';
 import { serviceProviders, workingHours } from '@shared/schema';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
 import { wss } from './index';
-import { server } from './index';
 import * as fs from 'fs';
 import * as path from 'path';
 import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
 import { EmailService } from './services/emailService';
-console.log('EmailService imported successfully:', EmailService ? 'Defined' : 'Undefined');
 
 // Extend the Express Request type to include firebaseUser
 declare global {
@@ -116,7 +114,7 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 
 
 
-export function registerRoutes(app: Express): void {
+export function registerRoutes(app: Express): Server {
   
   // Firebase Auth Middleware cu gestionare îmbunătățită a erorilor
   const validateFirebaseToken = async (req: Request, res: any, next: any) => {
@@ -426,7 +424,8 @@ export function registerRoutes(app: Express): void {
         return res.status(400).json({ error: "Rol utilizator invalid" });
       }
       
-      // Utilizăm Firebase Admin importat la începutul fișierului
+      // Inițializăm Firebase Admin dacă este necesar
+      const admin = require('firebase-admin');
       const firestore = admin.firestore();
       
       // Determinăm colecția în funcție de rolul utilizatorului
@@ -1839,7 +1838,7 @@ export function registerRoutes(app: Express): void {
       
       // Send push notification via Firebase Cloud Messaging
       try {
-        // Admin is already imported at the top of the file
+        const admin = require('firebase-admin');
         
         // Obținem informații suplimentare despre expeditor și destinatar
         let senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
@@ -2107,7 +2106,7 @@ export function registerRoutes(app: Express): void {
       
       // Send push notification via Firebase Cloud Messaging
       try {
-        // Admin is already imported at the top of the file
+        const admin = require('firebase-admin');
         
         // Get receiver Firebase UID
         const receiverFirebaseUid = receiver.firebaseUid;
@@ -2660,7 +2659,8 @@ export function registerRoutes(app: Express): void {
       
       // Send push notification via Firebase Cloud Messaging
       try {
-        // Use the already imported admin module instead of require
+        const admin = require('firebase-admin');
+        
         // Obținem informații despre destinatar
         const receiver = await storage.getServiceProvider(receiverId);
         
@@ -2778,31 +2778,13 @@ export function registerRoutes(app: Express): void {
               };
               
               // Trimitem notificarea către toate dispozitivele utilizatorului
-              try {
-                // Folosim metoda corectă pentru Firebase Admin SDK v9+
-                admin.messaging().sendEachForMulticast(messagePayload)
-                  .then((response) => {
-                    console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
-                  })
-                  .catch((error) => {
-                    console.error('FCM: Eroare la trimiterea notificării:', error);
-                  });
-              } catch (fcmMethodError) {
-                console.error('FCM: Eroare la apelarea metodei de trimitere:', fcmMethodError);
-                // Fallback pentru compatibilitate cu versiuni mai vechi
-                try {
-                  // @ts-ignore - pentru compatibilitate cu versiuni mai vechi
-                  admin.messaging().sendMulticast(messagePayload)
-                    .then((response) => {
-                      console.log(`FCM: Notificare trimisă cu succes (fallback). Success count: ${response.successCount}`);
-                    })
-                    .catch((error) => {
-                      console.error('FCM: Eroare la trimiterea notificării (fallback):', error);
-                    });
-                } catch (fallbackError) {
-                  console.error('FCM: Eroare la metoda fallback:', fallbackError);
-                }
-              }
+              admin.messaging().sendMulticast(messagePayload)
+                .then((response) => {
+                  console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
+                })
+                .catch((error) => {
+                  console.error('FCM: Eroare la trimiterea notificării:', error);
+                });
             } else {
               console.log(`Nu s-au găsit token-uri FCM pentru service provider-ul ${receiverId}`);
             }
@@ -2975,7 +2957,7 @@ export function registerRoutes(app: Express): void {
               client.name,
               rating,
               comment,
-              `review_${review.id}_${Date.now()}`
+              `review_${createdReview.id}_${Date.now()}`
             );
             console.log(`Email de notificare pentru recenzie nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
           } catch (err) {
@@ -3237,17 +3219,22 @@ export function registerRoutes(app: Express): void {
   });
 
 
-  // We no longer create a new WebSocket server here because we're using the one imported from index.ts
-  // This code was causing port conflict by creating two WebSocket servers
-  
-  // Register a new message handler for specific WebSocket events
+  const httpServer = createServer(app);
+
+  // Initialize WebSocket server with the correct path to match client
+  const wss = new WebSocketServer({
+    server: httpServer,
+    path: '/api/ws'  // Match the client's WebSocket path
+  });
+
+  // WebSocket connection handler with improved error handling
   wss.on('connection', (ws) => {
-    // We'll keep this event handler to handle specific application-related WebSocket events
+    console.log('New WebSocket connection established');
+
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
-        console.log('Received message in routes.ts handler:', data);
-        
+        console.log('Received message:', data);
         // Handle different message types
         switch (data.type) {
           case 'OFFER_SENT':
@@ -3263,11 +3250,19 @@ export function registerRoutes(app: Express): void {
             });
             break;
           default:
-            console.log('Unknown message type in routes.ts handler:', data.type);
+            console.log('Unknown message type:', data.type);
         }
       } catch (error) {
-        console.error('Error processing WebSocket message in routes.ts handler:', error);
+        console.error('Error processing WebSocket message:', error);
       }
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    ws.on('close', () => {
+      console.log('Client disconnected');
     });
   });
 
@@ -3521,15 +3516,14 @@ export function registerRoutes(app: Express): void {
     try {
       console.log("Testăm trimiterea email-ului...");
       console.log("API Key present:", !!process.env.ELASTIC_EMAIL_API_KEY);
-      console.log("Using email:", "nkln@yahoo.com"); // Known working email recipient
+      console.log("Using email:", "test@example.com");
       
       try {
         const result = await EmailService.sendEmail(
-          "nkln@yahoo.com", // Using known working email from test scripts
+          "test@example.com", // Înlocuiește cu email-ul tău pentru testare
           "Test Email de la Auto Service App",
-          "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p><p>Trimis la: " + new Date().toLocaleString() + "</p>",
-          "Acesta este un email de test. Sistemul de email funcționează corect! Trimis la: " + new Date().toLocaleString(),
-          "API Test Route"
+          "<h1>Acesta este un email de test</h1><p>Sistemul de email funcționează corect!</p>",
+          "Acesta este un email de test. Sistemul de email funcționează corect!"
         );
         
         console.log("Rezultat trimitere test email:", result);
@@ -3583,111 +3577,7 @@ export function registerRoutes(app: Express): void {
       }
     });
   });
-  
-  // System notifications endpoint - broadcasts a system notification to all connected clients
-  app.post('/api/notifications/broadcast', validateFirebaseToken, (req, res) => {
-    try {
-      const { type, title, content, targetUserId } = req.body;
-      
-      if (!type || !title || !content) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Missing required fields (type, title, content)'
-        });
-      }
-      
-      // Import WebSocket Server from index.ts
-      import('./index.js').then(({ wss }) => {
-        import('ws').then(({ WebSocket }) => {
-          // Broadcast to all connected clients or filter by target user
-          let clientCount = 0;
-          const notificationPayload = {
-            type: type,
-            timestamp: new Date().toISOString(),
-            payload: {
-              title: title,
-              content: content,
-              id: Date.now().toString(),
-              // Include any additional metadata
-              metadata: req.body.metadata || {}
-            }
-          };
-          
-          wss.clients.forEach((client: any) => {
-            // If targetUserId is specified, only send to that user
-            // This would require storing user IDs with WebSocket connections
-            // For now, we broadcast to all clients
-            if (client.readyState === WebSocket.OPEN) {
-              clientCount++;
-              client.send(JSON.stringify(notificationPayload));
-            }
-          });
-          
-          res.status(200).json({ 
-            success: true, 
-            message: 'Notification broadcast to clients',
-            notificationType: type,
-            clientCount: clientCount
-          });
-        }).catch(err => {
-          console.error('Error importing WebSocket:', err);
-          res.status(500).json({ error: 'Failed to import WebSocket module' });
-        });
-      }).catch(err => {
-        console.error('Error importing wss:', err);
-        res.status(500).json({ error: 'Failed to import WebSocket server' });
-      });
-    } catch (error) {
-      console.error('Error broadcasting notification:', error);
-      res.status(500).json({ error: 'Failed to broadcast notification' });
-    }
-  });
-  
-  // Test endpoint for WebSocket broadcast
-  app.post('/api/test/broadcast', (req, res) => {
-    try {
-      const message = req.body;
-      console.log('Broadcasting test message to all WebSocket clients:', message);
-      
-      // Import WebSocket Server from index.ts
-      import('./index.js').then(({ wss }) => {
-        import('ws').then(({ WebSocket }) => {
-          // Broadcast to all connected clients
-          let clientCount = 0;
-          wss.clients.forEach((client: any) => {
-            if (client.readyState === WebSocket.OPEN) {
-              clientCount++;
-              client.send(JSON.stringify({
-                type: 'TEST_NOTIFICATION',
-                timestamp: new Date().toISOString(),
-                payload: {
-                  title: 'Test Notification',
-                  content: message.message || 'This is a test notification',
-                  id: Date.now().toString()
-                }
-              }));
-            }
-          });
-          
-          res.status(200).json({ 
-            success: true, 
-            message: 'Test notification broadcast to all connected clients',
-            clientCount: clientCount
-          });
-        }).catch(err => {
-          console.error('Error importing WebSocket:', err);
-          res.status(500).json({ error: 'Failed to import WebSocket module' });
-        });
-      }).catch(err => {
-        console.error('Error importing wss:', err);
-        res.status(500).json({ error: 'Failed to import WebSocket server' });
-      });
-    } catch (error) {
-      console.error('Error broadcasting test message:', error);
-      res.status(500).json({ error: 'Failed to broadcast test message' });
-    }
-  });
 
-  // No need to return anything as we're now using void as the return type
-  return;
+  // Return the server at the end
+  return httpServer;
 }

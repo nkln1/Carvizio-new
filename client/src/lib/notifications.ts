@@ -18,7 +18,6 @@ declare global {
     stopBackgroundMessageCheck?: () => Promise<any>;
     swRegistration?: ServiceWorkerRegistration;
     getAuthToken?: () => Promise<string | null>;
-    NotificationHelper?: any; // Adăugăm NotificationHelper ca proprietate globală
   }
 }
 
@@ -28,16 +27,12 @@ class NotificationHelper {
   private static isProcessingQueue = false;
   // Modificăm de la private la public pentru a permite accesul din alte părți ale codului
   public static backgroundCheckActive = false;
-  // Adăugăm un cache pentru ID-urile mesajelor afișate recent pentru a preveni duplicarea
-  private static recentlyShownMessages = new Set<string>();
   private static notificationSettings = {
     enabled: true,
     silentMode: false,
     lastNotificationTime: 0,
     minTimeBetweenNotifications: 1000, // 1 second between notifications
-    backgroundCheckInterval: 30000, // 30 seconds between background checks
-    // Timpul de "cooldown" înainte ca un mesaj să poată fi afișat din nou (10 secunde)
-    messageDuplicationPreventionTime: 10000
+    backgroundCheckInterval: 30000 // 30 seconds between background checks
   };
 
   /**
@@ -147,14 +142,6 @@ class NotificationHelper {
         requireInteraction: true,  // Notificarea rămâne vizibilă până când utilizatorul interacționează cu ea
         ...options
       };
-      
-      // Folosim tag-ul pentru a preveni notificările duplicate
-      // Dacă nu există deja un tag, generăm un ID unic
-      if (!defaultOptions.tag) {
-        defaultOptions.tag = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-      }
-      
-      console.log('Tag notificare:', defaultOptions.tag);
 
       // Încercăm mai întâi să folosim Service Worker dacă este disponibil
       if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
@@ -284,84 +271,52 @@ class NotificationHelper {
   /**
    * Forțează afișarea unei notificări pentru mesaj nou - utilizat în debugging
    */
-  static forceMessageNotification(content: string, messageId?: number | string): void {
+  static forceMessageNotification(content: string): void {
     if (this.checkPermission() !== 'granted') {
       console.warn('Nu se poate forța notificarea - permisiunea nu este acordată');
       this.requestPermission().then(granted => {
         if (granted) {
-          this.forceMessageNotification(content, messageId);
+          this.forceMessageNotification(content);
         }
       });
       return;
     }
 
+    console.log('Forțăm afișarea notificării pentru mesaj nou:', content);
+
     // Asigurăm-ne că conținutul este într-adevăr un string
     const safeContent = content || 'Ați primit un mesaj nou';
-    
-    // Generăm un ID unic pentru mesaj dacă nu există
-    const messageIdentifier = messageId ? `msg-${messageId}` : `msg-content-${safeContent.substring(0, 20)}`;
-    
-    // Verificăm dacă acest mesaj a fost deja afișat recent
-    if (this.recentlyShownMessages.has(messageIdentifier)) {
-      console.log(`Notificare ignorată pentru mesajul "${safeContent.substring(0, 20)}..." - deja afișată recent`);
-      return;
-    }
-    
-    console.log('Afișăm notificare pentru mesaj nou:', safeContent);
 
-    // Adăugăm mesajul în lista mesajelor afișate recent
-    this.recentlyShownMessages.add(messageIdentifier);
-    
-    // Setăm un timer pentru a șterge ID-ul din Set după un interval
-    setTimeout(() => {
-      this.recentlyShownMessages.delete(messageIdentifier);
-    }, this.notificationSettings.messageDuplicationPreventionTime);
-
-    // Adăugăm timestamp în tag pentru a evita ignorarea notificărilor duplicate de către browser
+    // Adăugăm timestamp în tag pentru a evita ignorarea notificărilor duplicate
     const timestamp = new Date().getTime();
     const tag = `message-${timestamp}`;
 
-    // Folosim o singură metodă pentru afișarea notificării
-    // Prioritizăm Service Worker dacă este disponibil
+    // Folosim Service Worker dacă este disponibil
     if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-      console.log('Folosim Service Worker pentru notificare mesaj nou');
+      console.log('Folosim Service Worker pentru notificarea de mesaj');
       window.showNotificationViaSW('Mesaj nou', {
         body: safeContent,
         icon: '/favicon.ico',
         tag: tag,
         requireInteraction: true,
         data: {
-          url: '/service-dashboard?tab=messages',
-          messageId: messageIdentifier
+          url: '/service-dashboard?tab=messages'
         }
       });
     } else {
-      // Fallback la API-ul standard Notification dacă Service Worker nu e disponibil
-      try {
-        console.log('Folosim API-ul Notification pentru notificare mesaj nou');
-        const notification = new Notification('Mesaj nou', {
-          body: safeContent,
-          icon: '/favicon.ico',
-          tag: tag,
-          requireInteraction: true
-        });
-        
-        // Adăugăm event handlers
-        notification.onclick = () => {
-          window.focus();
-          // Navigare către tab-ul de mesaje
-          window.location.href = '/service-dashboard?tab=messages';
-          notification.close();
-        };
-      } catch (error) {
-        console.error('Eroare la afișarea notificării:', error);
-      }
+      // Folosim metoda obișnuită dacă Service Worker nu e disponibil
+      this.showNotification('Mesaj nou', {
+        body: safeContent,
+        icon: '/favicon.ico',
+        tag: tag,
+        requireInteraction: true
+      });
     }
 
     // Emitem și un eveniment pentru debugging sau pentru alte componente care ar putea asculta
     try {
       const notificationEvent = new CustomEvent('message-notification', {
-        detail: { content: safeContent, timestamp, messageId: messageIdentifier }
+        detail: { content: safeContent, timestamp }
       });
       window.dispatchEvent(notificationEvent);
     } catch (error) {
@@ -419,26 +374,6 @@ class NotificationHelper {
       return;
     }
 
-    // Generăm un ID unic pentru acest eveniment de notificare
-    const eventIdentifier = data.notificationId || 
-                         (data.type === 'NEW_MESSAGE' && data.payload?.id 
-                           ? `msg-${data.payload.id}` 
-                           : `${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`);
-
-    // Verificăm dacă acest eveniment a fost deja procesat recent
-    if (this.recentlyShownMessages.has(eventIdentifier)) {
-      console.log(`Eveniment de notificare ignorat - deja procesat recent: ${eventIdentifier}`);
-      return;
-    }
-
-    // Adăugăm ID-ul evenimentului în Set-ul de evenimente recente
-    this.recentlyShownMessages.add(eventIdentifier);
-    
-    // Setăm un timer pentru a șterge ID-ul din Set după un interval
-    setTimeout(() => {
-      this.recentlyShownMessages.delete(eventIdentifier);
-    }, this.notificationSettings.messageDuplicationPreventionTime);
-
     // Verificăm configurările de notificări
     this.getNotificationPreferences().then(preferences => {
       const shouldShowNotification = this.shouldShowNotification(data, preferences);
@@ -453,109 +388,81 @@ class NotificationHelper {
           notificationUrl = '/service-dashboard?tab=requests';
         } else if (data.type === 'OFFER_STATUS_CHANGED' && data.payload?.status === 'Accepted') {
           notificationUrl = '/service-dashboard?tab=offers';
-        } else if (data.type === 'NEW_REVIEW') {
-          notificationUrl = '/service-dashboard?tab=account';
         }
 
-        // Generăm un ID de notificare unic pentru a asigura că browserul nu ignoră notificarea
-        const notificationId = `${eventIdentifier}-${Date.now()}`;
-        
-        let title = '';
-        let body = '';
-        
-        // Pregătim datele pentru notificare bazate pe tipul de eveniment
+        // Verificăm tipul de eveniment și afișăm notificarea corespunzătoare
         switch (data.type) {
           case 'NEW_MESSAGE':
-            title = 'Mesaj nou';
-            body = data.payload?.content || 'Ați primit un mesaj nou';
-            
-            // Pentru mesaje, folosim forceMessageNotification care are logica de deduplicare
-            if (data.payload?.id) {
-              this.forceMessageNotification(body, data.payload.id);
-              // Întoarcem funcția, forceMessageNotification se va ocupa de afișarea notificării
-              return;
+            console.log('Afișăm notificare pentru mesaj nou:', data.payload);
+            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+              window.showNotificationViaSW('Mesaj nou', {
+                body: data.payload?.content || 'Ați primit un mesaj nou',
+                icon: '/favicon.ico',
+                tag: `message-${Date.now()}`,
+                requireInteraction: true,
+                data: { url: notificationUrl }
+              });
+            } else {
+              this.showNotification('Mesaj nou', {
+                body: data.payload?.content || 'Ați primit un mesaj nou',
+                icon: '/favicon.ico',
+                tag: `message-${Date.now()}`,
+                requireInteraction: true
+              });
             }
             break;
-            
           case 'NEW_OFFER':
-            title = 'Ofertă nouă';
-            body = data.payload?.title || 'Ați primit o ofertă nouă';
-            break;
-            
-          case 'NEW_REQUEST':
-            title = 'Cerere nouă';
-            body = data.payload?.title || 'Ați primit o cerere nouă';
-            
-            // Pentru cereri noi, adăugăm un identificator unic pentru a preveni duplicarea
-            const requestIdentifier = `request-${Date.now()}`;
-            if (this.recentlyShownMessages.has('recent-request-notification')) {
-              console.log(`Notificare ignorată pentru cerere nouă - deja afișată recent`);
-              return;
+            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+              window.showNotificationViaSW('Ofertă nouă', {
+                body: data.payload?.title || 'Ați primit o ofertă nouă',
+                icon: '/favicon.ico',
+                requireInteraction: true,
+                data: { url: notificationUrl }
+              });
+            } else {
+              this.showNotification('Ofertă nouă', {
+                body: data.payload?.title || 'Ați primit o ofertă nouă',
+                icon: '/favicon.ico',
+                requireInteraction: true
+              });
             }
-            
-            // Adăugăm în lista de notificări recente
-            this.recentlyShownMessages.add('recent-request-notification');
-            
-            // Setăm un timer pentru a șterge ID-ul din Set după un interval
-            setTimeout(() => {
-              this.recentlyShownMessages.delete('recent-request-notification');
-            }, this.notificationSettings.messageDuplicationPreventionTime);
             break;
-            
+          case 'NEW_REQUEST':
+            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+              window.showNotificationViaSW('Cerere nouă', {
+                body: data.payload?.title || 'Ați primit o cerere nouă',
+                icon: '/favicon.ico',
+                requireInteraction: true,
+                data: { url: notificationUrl }
+              });
+            } else {
+              this.showNotification('Cerere nouă', {
+                body: data.payload?.title || 'Ați primit o cerere nouă',
+                icon: '/favicon.ico',
+                requireInteraction: true
+              });
+            }
+            break;
           case 'OFFER_STATUS_CHANGED':
             if (data.payload?.status === 'Accepted') {
-              title = 'Ofertă acceptată';
-              body = 'O ofertă trimisă de dvs. a fost acceptată';
-              
-              // Pentru oferte acceptate, adăugăm un identificator unic pentru a preveni duplicarea
-              const offerIdentifier = `offer-accepted-${data.payload?.id || Date.now()}`;
-              if (this.recentlyShownMessages.has('recent-offer-notification')) {
-                console.log(`Notificare ignorată pentru ofertă acceptată - deja afișată recent`);
-                return;
+              if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+                window.showNotificationViaSW('Ofertă acceptată', {
+                  body: 'O ofertă trimisă de dvs. a fost acceptată',
+                  icon: '/favicon.ico',
+                  requireInteraction: true,
+                  data: { url: notificationUrl }
+                });
+              } else {
+                this.showNotification('Ofertă acceptată', {
+                  body: 'O ofertă trimisă de dvs. a fost acceptată',
+                  icon: '/favicon.ico',
+                  requireInteraction: true
+                });
               }
-              
-              // Adăugăm în lista de notificări recente
-              this.recentlyShownMessages.add('recent-offer-notification');
-              
-              // Setăm un timer pentru a șterge ID-ul din Set după un interval
-              setTimeout(() => {
-                this.recentlyShownMessages.delete('recent-offer-notification');
-              }, this.notificationSettings.messageDuplicationPreventionTime);
-            } else {
-              // Nu afișăm notificare pentru alte schimbări de status
-              return;
             }
             break;
-            
-          case 'NEW_REVIEW':
-            title = 'Recenzie nouă';
-            body = `Ați primit o recenzie ${data.payload?.rating ? `de ${data.payload.rating} stele` : 'nouă'}`;
-            break;
-            
           default:
             console.log('Tip de eveniment necunoscut pentru notificare:', data.type);
-            return;
-        }
-        
-        // Folosim o singură metodă pentru afișarea notificării
-        if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-          console.log(`Afișăm notificare "${title}" folosind Service Worker`);
-          window.showNotificationViaSW(title, {
-            body: body,
-            icon: '/favicon.ico',
-            tag: notificationId,
-            requireInteraction: true,
-            data: { url: notificationUrl, eventId: eventIdentifier }
-          });
-        } else {
-          console.log(`Afișăm notificare "${title}" folosind API Notification standard`);
-          this.showNotification(title, {
-            body: body,
-            icon: '/favicon.ico',
-            tag: notificationId,
-            requireInteraction: true,
-            data: { eventId: eventIdentifier }
-          });
         }
       } else {
         console.log(`Notificare pentru ${data.type} suprimată conform preferințelor utilizatorului`);
@@ -854,6 +761,9 @@ class NotificationHelper {
           return;
         }
         
+        // Adăugăm informații de debugging pentru a urmări tokenul
+        console.log('[NotificationHelper] Verificare mesaje cu token valid (lungime:', token.length, ')');
+        
         // Facem cererea API pentru verificarea mesajelor noi
         const response = await fetch(`/api/messages?userId=${options.userId}&userRole=${options.userRole}&token=${token}`);
         
@@ -881,56 +791,13 @@ class NotificationHelper {
         console.log('[NotificationHelper] Mesaje primite prin polling:', newMessages ? newMessages.length : 0);
         
         if (newMessages && newMessages.length > 0) {
-          // Filtrăm mesajele pentru care nu am afișat deja o notificare recent
-          const unnotifiedMessages = newMessages.filter((msg: any) => {
-            // Verificăm dacă mesajul are ID și dacă nu este deja în lista de mesaje afișate recent
-            return msg && msg.id && !this.recentlyShownMessages.has(`msg-${msg.id}`);
-          });
-          
-          if (unnotifiedMessages.length > 0) {
-            // Marcăm toate mesajele ca fiind notificate adăugându-le în Set-ul de mesaje recente
-            unnotifiedMessages.forEach((msg: any) => {
-              if (msg && msg.id) {
-                const messageId = `msg-${msg.id}`;
-                this.recentlyShownMessages.add(messageId);
-                
-                // Setăm un timer pentru a șterge ID-ul din Set după un interval
-                setTimeout(() => {
-                  this.recentlyShownMessages.delete(messageId);
-                }, this.notificationSettings.messageDuplicationPreventionTime);
-              }
-            });
-            
-            // Dacă avem mai multe mesaje, creăm un mesaj centralizat
-            if (unnotifiedMessages.length > 1) {
-              const multiMessageId = `multi-message-${Date.now()}`;
-              console.log(`[NotificationHelper] Afișare notificare pentru ${unnotifiedMessages.length} mesaje noi`);
-              
-              // Adăugăm și acest identificator în lista de mesaje afișate recent
-              this.recentlyShownMessages.add(multiMessageId);
-              setTimeout(() => {
-                this.recentlyShownMessages.delete(multiMessageId);
-              }, this.notificationSettings.messageDuplicationPreventionTime);
-              
-              this.showNotification(`${unnotifiedMessages.length} mesaje noi`, {
-                body: 'Ai primit mai multe mesaje noi',
-                icon: '/favicon.ico',
-                tag: multiMessageId,
-                requireInteraction: true,
-                data: {
-                  url: `/${options.userRole}-dashboard?tab=messages`
-                }
-              });
-            } else {
-              // Pentru un singur mesaj, afișăm conținutul folosind forceMessageNotification
-              // care are deja logica de deduplicare
-              const message = unnotifiedMessages[0];
-              if (message && message.content) {
-                console.log('[NotificationHelper] Afișare notificare pentru mesaj nou prin polling');
-                this.forceMessageNotification(message.content, message.id);
-              }
+          // Afișăm notificare pentru fiecare mesaj nou
+          newMessages.forEach((msg: any) => {
+            if (msg && msg.content) {
+              console.log('[NotificationHelper] Afișare notificare pentru mesaj nou');
+              NotificationHelper.forceMessageNotification(msg.content);
             }
-          }
+          });
         }
       } catch (error) {
         console.error('[NotificationHelper] Eroare la verificarea mesajelor prin polling:', error);
@@ -1040,9 +907,4 @@ if (typeof window !== 'undefined') {
 }
 
 // Exportăm clasa pentru a putea fi folosită în alte componente
-// Expunem NotificationHelper la nivel global pentru a putea fi utilizat din WebSocket
-if (typeof window !== 'undefined') {
-  window.NotificationHelper = NotificationHelper;
-}
-
 export default NotificationHelper;
