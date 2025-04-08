@@ -975,7 +975,12 @@ export function registerRoutes(app: Express): void {
           
           // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
           const shouldSendEmail = !preferences || 
-             (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
+             (preferences.emailNotificationsEnabled === true && preferences.newRequestEmailEnabled === true);
+          
+          console.log(`Verificare preferințe notificare pentru ${serviceProvider.companyName}:
+            - emailNotificationsEnabled: ${preferences?.emailNotificationsEnabled}
+            - newRequestEmailEnabled: ${preferences?.newRequestEmailEnabled}
+            - Rezultat verificare: ${shouldSendEmail ? 'SE TRIMITE EMAIL' : 'NU SE TRIMITE EMAIL'}`);
           
           if (shouldSendEmail) {
             console.log(`✓ Se va trimite email de notificare către ${serviceProvider.companyName} (${serviceProvider.email})`);
@@ -1004,15 +1009,21 @@ export function registerRoutes(app: Express): void {
               
               emailPromises.push(emailPromise);
               
-              // Adăugăm log pentru debugging
+              // Adăugăm log îmbunătățit pentru debugging
               emailPromise.then(success => {
                 if (success) {
                   console.log(`✅ Email de notificare pentru cerere nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                  // Notificăm în consolă ID-ul cererii și preferințele utilizate pentru a ajuta la debugging
+                  console.log(`   - ID Cerere: ${request.id}, ID Unic: ${uniqueRequestId}`);
+                  console.log(`   - Preferințe utilizate: emailEnabled=${preferences?.emailNotificationsEnabled}, requestEnabled=${preferences?.newRequestEmailEnabled}`);
                 } else {
                   console.error(`❌ Eroare la trimiterea email-ului de notificare pentru cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                  console.error(`   - ID Cerere: ${request.id}, ID Unic: ${uniqueRequestId}`);
+                  console.error(`   - Preferințe utilizate: emailEnabled=${preferences?.emailNotificationsEnabled}, requestEnabled=${preferences?.newRequestEmailEnabled}`);
                 }
               }).catch(err => {
                 console.error(`❌ Promisiune respinsă la trimiterea email-ului pentru ${serviceProvider.companyName}:`, err);
+                console.error(`   - ID Cerere: ${request.id}, ID Unic: ${uniqueRequestId}`);
               });
             } catch (err) {
               console.error(`❌ Excepție la trimiterea email-ului pentru cerere nouă către ${serviceProvider.companyName}:`, err);
