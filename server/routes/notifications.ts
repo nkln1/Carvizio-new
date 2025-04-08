@@ -120,64 +120,6 @@ export async function sendNotification(req: Request, res: Response) {
       });
     }
 
-    // Verificare dacă notificarea este pentru o cerere nouă și trimitere email
-    if (data?.type === 'NEW_REQUEST' && userRole === 'service' && userIds?.length > 0) {
-      const db = admin.firestore();
-      
-      // Pentru fiecare service provider, trimitem email
-      for (const userId of userIds) {
-        try {
-          // Obținem datele service provider-ului
-          const serviceProviderDoc = await db.collection('service_providers').doc(userId.toString()).get();
-          
-          if (serviceProviderDoc.exists) {
-            const spData = serviceProviderDoc.data();
-            
-            // Verificăm preferințele de notificare
-            const prefDoc = await db.collection('notification_preferences').doc(userId.toString()).get();
-            const prefs = prefDoc.exists ? prefDoc.data() : { 
-              email_notifications_enabled: true, 
-              new_request_email_enabled: true 
-            };
-            
-            // Trimitem email dacă notificările email sunt activate pentru cereri noi
-            if (spData && prefs.email_notifications_enabled && prefs.new_request_email_enabled) {
-              const { EmailService } = await import('../services/emailService');
-              
-              // Adaptăm datele pentru EmailService
-              const serviceProvider = {
-                id: Number(userId),
-                companyName: spData.company_name || spData.companyName,
-                email: spData.email,
-                phone: spData.phone
-              };
-              
-              // Extragem informații din payload
-              const requestTitle = data.payload?.title || title;
-              const clientName = data.payload?.clientName || body;
-              const requestId = data.payload?.id || `request_${Date.now()}`;
-              
-              // Trimitem email
-              await EmailService.sendNewRequestNotification(
-                serviceProvider,
-                requestTitle,
-                clientName,
-                requestId,
-                `Notificare API pentru cerere nouă: ${requestId}`
-              );
-              
-              console.log(`Email de notificare pentru cerere nouă trimis către ${serviceProvider.email} (${userId})`);
-            } else {
-              console.log(`Email pentru cerere nouă omis pentru ${spData.email} (${userId}) - notificări dezactivate în preferințe`);
-            }
-          }
-        } catch (emailError) {
-          console.error(`Eroare la trimiterea emailului pentru cerere nouă către service provider ${userId}:`, emailError);
-          // Continuăm cu alți service providers chiar dacă unul eșuează
-        }
-      }
-    }
-
     // Preparăm mesajul pentru notificare
     const messagePayload = {
       notification: {
