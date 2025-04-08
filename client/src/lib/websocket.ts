@@ -65,19 +65,17 @@ class WebSocketService {
                   window.location.hostname === '127.0.0.1' ||
                   window.location.hostname.includes('replit.dev');
 
-    // In dev environment, use relative URL to avoid CORS issues
+    // Updated path to match server configuration
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/socket`;  // Must match the path in server's WebSocketServer config
+    
     if (isDev) {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/ws`;
       console.log('WebSocket URL (dev environment):', wsUrl);
-      return wsUrl;
     } else {
-      // In production, use same origin
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/ws`;
       console.log('WebSocket URL (production):', wsUrl);
-      return wsUrl;
     }
+    
+    return wsUrl;
   }
 
   private connect() {
@@ -140,11 +138,19 @@ class WebSocketService {
               console.log('Received NEW_MESSAGE event:', data);
               console.log('NEW_MESSAGE content:', data.payload?.content);
 
+              // Generăm un ID unic pentru acest mesaj pentru a evita duplicarea
+              if (!data.notificationId) {
+                data.notificationId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+              }
+
               // Emitem un eveniment DOM pentru a facilita depanarea
               const newMessageEvent = new CustomEvent('new-message-received', { 
                 detail: data 
               });
               window.dispatchEvent(newMessageEvent);
+              
+              // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
+              // Acest lucru previne afișarea de notificări duplicate
             }
 
             // Notificăm toți handlerii înregistrați
@@ -287,6 +293,20 @@ class WebSocketService {
 
         // Process messages as if they came from WebSocket
         messages.forEach(message => {
+          // Verificăm dacă este un mesaj nou
+          if (message && message.type === 'NEW_MESSAGE') {
+            console.log('Received NEW_MESSAGE from polling:', message);
+            
+            // Adăugăm ID unic pentru evitarea duplicatelor
+            if (!message.notificationId) {
+              message.notificationId = `poll-msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+            }
+            
+            // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
+            // pentru a evita duplicarea notificărilor
+          }
+          
+          // Transmitem mesajul la toți handlerii înregistrați
           this.messageHandlers.forEach(handler => {
             try {
               handler(message);
