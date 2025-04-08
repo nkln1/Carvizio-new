@@ -75,7 +75,6 @@ export function MessagesTab({
   // Effect for handling initialConversation updates
   useEffect(() => {
     if (initialConversation?.userId && initialConversation?.requestId) {
-      console.log("MessagesTab: Setting active conversation from initialConversation", initialConversation);
       setActiveConversation({
         userId: initialConversation.userId,
         userName: initialConversation.userName,
@@ -87,7 +86,7 @@ export function MessagesTab({
       // Mark conversation as read when opened directly
       markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
-  }, [initialConversation, markConversationAsRead]);
+  }, [initialConversation?.userId, initialConversation?.requestId, initialConversation?.offerId, markConversationAsRead, initialConversation?.serviceProviderUsername]);
 
   // WebSocket initialization
   useEffect(() => {

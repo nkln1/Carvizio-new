@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
-import NotificationHelper from '@/lib/notifications';
+import NotificationHelper from '@/lib/notifications'; // Added import for NotificationHelper
 
 const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
 const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
@@ -24,7 +24,7 @@ export function useMessagesManagement(
 ) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(initialConversation);
+  const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -38,11 +38,10 @@ export function useMessagesManagement(
   // Mark conversation as read
   const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
     try {
-      console.log("Marking conversation as read:", { requestId, userId });
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`${baseEndpoint}/conversations/${requestId}/mark-read`, {
+      await fetch(`${baseEndpoint}/conversations/${requestId}/mark-read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -50,17 +49,6 @@ export function useMessagesManagement(
         },
         body: JSON.stringify({ userId })
       });
-
-      if (!response.ok) {
-        console.error("Error marking conversation as read:", {
-          status: response.status,
-          statusText: response.statusText
-        });
-        const errorText = await response.text();
-        console.error("Error details:", errorText);
-      } else {
-        console.log("Successfully marked conversation as read:", { requestId, userId });
-      }
 
       // Invalidate queries to update UI
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
@@ -79,7 +67,6 @@ export function useMessagesManagement(
   // Set initial conversation and mark as read if needed
   useEffect(() => {
     if (initialConversation && initialConversation.userId && initialConversation.requestId) {
-      console.log("Setting active conversation from initial:", initialConversation);
       setActiveConversation({
         userId: initialConversation.userId,
         userName: initialConversation.userName || 'Unknown User',
@@ -94,22 +81,10 @@ export function useMessagesManagement(
   }, [initialConversation, markConversationAsRead]);
 
   // Messages query
-  const { 
-    data: messages = [], 
-    isLoading: isLoadingMessages,
-    refetch: refetchMessages
-  } = useQuery({
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     queryFn: async () => {
-      if (!activeConversation?.requestId) {
-        console.log("No active conversation, returning empty messages array");
-        return [];
-      }
-
-      console.log("Fetching messages for conversation:", {
-        requestId: activeConversation.requestId,
-        userId: activeConversation.userId
-      });
+      if (!activeConversation?.requestId) return [];
 
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
@@ -122,41 +97,20 @@ export function useMessagesManagement(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error fetching messages:", {
-          status: response.status,
-          errorText
-        });
-        throw new Error(`Failed to fetch messages: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to fetch messages: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log(`Fetched ${data.length} messages for conversation`, {
-        requestId: activeConversation.requestId
-      });
-      return data;
+      return response.json();
     },
     enabled: !!activeConversation?.requestId,
     staleTime: MESSAGES_STALE_TIME,
     refetchInterval: MESSAGES_STALE_TIME
   });
 
-  // Force refetch messages when active conversation changes
-  useEffect(() => {
-    if (activeConversation?.requestId) {
-      refetchMessages();
-    }
-  }, [activeConversation?.requestId, refetchMessages]);
-
   // Conversations query
-  const { 
-    data: allConversations = [], 
-    isLoading: isLoadingConversations,
-    refetch: refetchConversations 
-  } = useQuery({
+  const { data: allConversations = [], isLoading: isLoadingConversations } = useQuery({
     queryKey: [`${baseEndpoint}/conversations`],
     queryFn: async () => {
-      console.log("Fetching conversations");
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -168,17 +122,10 @@ export function useMessagesManagement(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error fetching conversations:", {
-          status: response.status,
-          errorText
-        });
-        throw new Error(`Failed to fetch conversations: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to fetch conversations: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log(`Fetched ${data.length} conversations`);
-      return data;
+      return response.json();
     },
     staleTime: CONVERSATIONS_STALE_TIME,
     refetchInterval: CONVERSATIONS_STALE_TIME
@@ -186,10 +133,6 @@ export function useMessagesManagement(
 
   // Get paginated conversations for filtered results
   const getPaginatedConversations = (conversations: any[]) => {
-    if (!Array.isArray(conversations)) {
-      console.error("conversations is not an array:", conversations);
-      return [];
-    }
     return conversations.slice(startIndex, startIndex + itemsPerPage);
   };
 
@@ -204,12 +147,6 @@ export function useMessagesManagement(
     }
 
     try {
-      console.log("Sending message:", {
-        content,
-        receiverId: activeConversation.userId,
-        requestId: activeConversation.requestId
-      });
-      
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
@@ -241,7 +178,6 @@ export function useMessagesManagement(
       }
 
       const newMessage = await response.json();
-      console.log("Message sent successfully:", newMessage);
 
       // Update messages cache with proper ordering
       queryClient.setQueryData(
@@ -258,9 +194,6 @@ export function useMessagesManagement(
         queryKey: [`${baseEndpoint}/conversations`]
       });
 
-      // Manually trigger a refetch of messages
-      refetchMessages();
-
       return newMessage;
     } catch (error) {
       console.error('Error in sendMessage:', error);
@@ -271,7 +204,7 @@ export function useMessagesManagement(
       });
       throw error;
     }
-  }, [activeConversation, baseEndpoint, queryClient, isClient, toast, refetchMessages]);
+  }, [activeConversation, baseEndpoint, queryClient, isClient, toast]);
 
   return {
     activeConversation,
@@ -282,8 +215,6 @@ export function useMessagesManagement(
     isLoadingConversations,
     sendMessage,
     markConversationAsRead,
-    refetchMessages,
-    refetchConversations,
     currentPage,
     setCurrentPage,
     itemsPerPage,
