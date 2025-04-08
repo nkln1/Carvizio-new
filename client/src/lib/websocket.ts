@@ -146,23 +146,26 @@ class WebSocketService {
           if (data && data.type) {
             // Generăm un ID unic pentru mesaj dacă nu există deja
             if (!data.notificationId) {
-              data.notificationId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+              data.notificationId = `websocket-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
             }
             
+            // Folosim același mecanism de prevenire a duplicatelor ca în NotificationHelper
+            const sharedProcessedIds = this.processedMessageIds;
+            
             // Verificăm dacă acest mesaj a fost deja procesat pentru a evita duplicatele
-            if (this.processedMessageIds.has(data.notificationId)) {
-              console.log(`Mesaj ignorat (duplicat) cu ID: ${data.notificationId}`);
+            if (sharedProcessedIds.has(data.notificationId)) {
+              console.log(`WebSocket: Mesaj ignorat (duplicat) cu ID: ${data.notificationId}`);
               return;
             }
             
             // Marcăm mesajul ca procesat
-            this.processedMessageIds.add(data.notificationId);
+            sharedProcessedIds.add(data.notificationId);
             
             // Limităm mărimea setului pentru a evita consumul excesiv de memorie
-            if (this.processedMessageIds.size > 100) {
+            if (sharedProcessedIds.size > 100) {
               // Eliminăm primele 50 de elemente când depășim 100
-              const idsToRemove = Array.from(this.processedMessageIds).slice(0, 50);
-              idsToRemove.forEach(id => this.processedMessageIds.delete(id));
+              const idsToRemove = Array.from(sharedProcessedIds).slice(0, 50);
+              idsToRemove.forEach(id => sharedProcessedIds.delete(id));
             }
             
             // Adăugăm debug suplimentar pentru mesajele de tip NEW_MESSAGE
@@ -278,8 +281,29 @@ class WebSocketService {
     console.log('Stopped polling fallback as WebSocket is now connected');
   }
 
-  // Set pentru a ține evidența ID-urilor mesajelor procesate (partajat între WebSocket și polling)
-  private processedMessageIds = new Set<string>();
+  // Set pentru a ține evidența ID-urilor mesajelor procesate (partajat cu NotificationHelper)
+  private get processedMessageIds(): Set<string> {
+    return this.getNotificationHelper().processedNotificationIds;
+  }
+  
+  // Metodă pentru a obține instanța NotificationHelper
+  private getNotificationHelper() {
+    // Se asigură că modulul este disponibil și inițializat
+    if (!window.NotificationHelper) {
+      // Încarcă lazy modulul dacă nu există
+      import('./notifications').then(module => {
+        window.NotificationHelper = module.default;
+      }).catch(err => {
+        console.error('Eroare la încărcarea NotificationHelper:', err);
+      });
+      
+      // Returnează un set gol temporar dacă NotificationHelper nu este disponibil
+      // (va fi sincronizat la următoarea apelare)
+      return { processedNotificationIds: new Set<string>() };
+    }
+    
+    return window.NotificationHelper;
+  }
   
   private async pollingFallback() {
     try {
@@ -324,23 +348,26 @@ class WebSocketService {
           if (message && message.type) {
             // Adăugăm ID unic pentru evitarea duplicatelor dacă nu există deja
             if (!message.notificationId) {
-              message.notificationId = `poll-msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+              message.notificationId = `polling-${message.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
             }
             
-            // Verificăm dacă acest mesaj a fost deja procesat
-            if (this.processedMessageIds.has(message.notificationId)) {
-              console.log(`Mesaj de polling ignorat (duplicat) cu ID: ${message.notificationId}`);
+            // Folosim același mecanism de prevenire a duplicatelor ca în NotificationHelper
+            const sharedProcessedIds = this.processedMessageIds;
+            
+            // Verificăm dacă acest mesaj a fost deja procesat pentru a evita duplicatele
+            if (sharedProcessedIds.has(message.notificationId)) {
+              console.log(`Polling: Mesaj ignorat (duplicat) cu ID: ${message.notificationId}`);
               return;
             }
             
             // Marcăm mesajul ca procesat
-            this.processedMessageIds.add(message.notificationId);
+            sharedProcessedIds.add(message.notificationId);
             
             // Limităm mărimea setului pentru a evita consumul excesiv de memorie
-            if (this.processedMessageIds.size > 100) {
+            if (sharedProcessedIds.size > 100) {
               // Eliminăm primele 50 de elemente când depășim 100
-              const idsToRemove = Array.from(this.processedMessageIds).slice(0, 50);
-              idsToRemove.forEach(id => this.processedMessageIds.delete(id));
+              const idsToRemove = Array.from(sharedProcessedIds).slice(0, 50);
+              idsToRemove.forEach(id => sharedProcessedIds.delete(id));
             }
             
             if (message.type === 'NEW_MESSAGE') {

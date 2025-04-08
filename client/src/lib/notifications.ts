@@ -28,6 +28,9 @@ class NotificationHelper {
   private static isProcessingQueue = false;
   // Modificăm de la private la public pentru a permite accesul din alte părți ale codului
   public static backgroundCheckActive = false;
+  // Set pentru a ține evidența ID-urilor notificărilor procesate pentru a preveni duplicate
+  // Folosim public în loc de private pentru a permite accesul din App.tsx
+  public static processedNotificationIds = new Set<string>();
   private static notificationSettings = {
     enabled: true,
     silentMode: false,
@@ -391,6 +394,27 @@ class NotificationHelper {
       console.warn('Date de notificare invalide:', data);
       return;
     }
+    
+    // Generăm un ID unic pentru notificare dacă nu există deja
+    if (!data.notificationId) {
+      data.notificationId = `notif-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    }
+    
+    // Verificăm dacă această notificare a fost deja procesată pentru a evita duplicatele
+    if (this.processedNotificationIds.has(data.notificationId)) {
+      console.log(`Notificare ignorată (duplicat) cu ID: ${data.notificationId}`);
+      return;
+    }
+    
+    // Marcăm notificarea ca fiind procesată
+    this.processedNotificationIds.add(data.notificationId);
+    
+    // Limităm mărimea setului pentru a evita consumul excesiv de memorie
+    if (this.processedNotificationIds.size > 100) {
+      // Eliminăm primele 50 de elemente când depășim 100
+      const idsToRemove = Array.from(this.processedNotificationIds).slice(0, 50);
+      idsToRemove.forEach(id => this.processedNotificationIds.delete(id));
+    }
 
     // Verificăm permisiunea înainte de toate
     if (this.checkPermission() !== 'granted') {
@@ -400,7 +424,9 @@ class NotificationHelper {
         this.requestPermission().then(granted => {
           if (granted) {
             console.log('Permisiune acordată, reîncercăm afișarea notificării');
-            this.handleNotificationEvent(data);
+            // NU retransmitem notificarea deoarece ar ignora mecanismul de prevenire a duplicărilor
+            // Doar forțăm un refresh în acest caz
+            window.location.reload();
           }
         });
       }
@@ -423,9 +449,9 @@ class NotificationHelper {
           notificationUrl = '/service-dashboard?tab=offers';
         }
 
-        // Generăm un ID de notificare unic dacă nu există deja
-        // Acest ID va fi folosit ca tag pentru a evita notificările duplicate
-        const notificationId = data.notificationId || `notif-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        // ID-ul unic a fost deja generat la începutul metodei și stocat în data.notificationId
+        // Folosim acest ID și pentru tag-ul notificării
+        const notificationId = data.notificationId;
         
         // Verificăm tipul de eveniment și afișăm notificarea corespunzătoare
         switch (data.type) {

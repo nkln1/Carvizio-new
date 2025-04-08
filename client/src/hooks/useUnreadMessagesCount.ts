@@ -2,6 +2,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 
+// Set pentru a evita duplicatele la afișarea notificărilor pentru mesaje necitite
+const processedCountValues = new Set<number>();
+let lastCountNotified = 0;
+
 export function useUnreadMessagesCount() {
   return useQuery({
     queryKey: ["unreadConversationsCount"],
@@ -25,8 +29,24 @@ export function useUnreadMessagesCount() {
         }
 
         const data = await response.json();
-        console.log("Unread conversations count data:", data);
-        return data.conversationsCount || 0;
+        const count = data.conversationsCount || 0;
+        
+        // Prevenim notificările duplicate pentru același număr de mesaje necitite
+        if (count > 0 && count !== lastCountNotified && !processedCountValues.has(count)) {
+          console.log(`Actualizare număr conversații necitite: ${count}`);
+          
+          // Memorăm acest număr pentru a evita notificările duplicate
+          processedCountValues.add(count);
+          lastCountNotified = count;
+          
+          // Limităm mărimea setului pentru a evita memory leaks
+          if (processedCountValues.size > 100) {
+            const idsToRemove = Array.from(processedCountValues).slice(0, 50);
+            idsToRemove.forEach(id => processedCountValues.delete(id));
+          }
+        }
+        
+        return count;
       } catch (error) {
         console.error("Error fetching unread conversations:", error);
         return 0;

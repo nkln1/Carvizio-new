@@ -22,6 +22,10 @@ import React from "react";
 import TestEmailButton from "@/components/TestEmailButton";
 import TestEmail from "@/pages/TestEmail";
 
+// Nu mai avem nevoie de extensia proprietăților globale window
+// deoarece folosim direct NotificationHelper.handleNotificationEvent()
+// care are propria gestiune a ID-urilor de notificări procesate
+
 function Router() {
   return (
     <Switch>
@@ -161,12 +165,29 @@ const AppNotificationInitializer: React.FC = () => {
                 if (response.ok) {
                   const data = await response.json();
                   if (data.newMessages && data.newMessages.length > 0) {
-                    // Procesăm mesajele noi
-                    data.newMessages.forEach((message: {content?: string}) => {
-                      NotificationHelper.forceMessageNotification(
-                        message.content || 'Ați primit un mesaj nou'
-                      );
-                    });
+                    // Procesăm mesajele noi, dar doar unul pentru a evita spam-ul cu notificări
+                    // Acest mecanism este doar un fallback când WebSocket nu funcționează
+                    console.log(`Fallback mechanism: ${data.newMessages.length} new messages found`);
+                    
+                    // Folosim întotdeauna doar primul mesaj pentru notificare pentru a reduce zgomotul
+                    const firstMessage = data.newMessages[0];
+                    
+                    // Generăm un ID unic pentru notificare
+                    const notificationId = `fallback-msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+                    
+                    // Creăm un eveniment de notificare și delegăm gestiunea către NotificationHelper
+                    // pentru a beneficia de mecanismul existent de prevenire a duplicatelor
+                    const notificationEvent = {
+                      type: 'NEW_MESSAGE',
+                      notificationId: notificationId,
+                      payload: {
+                        content: `Aveți ${data.newMessages.length} mesaje necitite`
+                      }
+                    };
+                    
+                    // Folosim handleNotificationEvent pentru a beneficia de logica de deduplicare
+                    console.log(`Afișăm notificare fallback pentru ${data.newMessages.length} mesaje necitite`);
+                    NotificationHelper.handleNotificationEvent(notificationEvent);
                   }
                 }
               } catch (error) {
