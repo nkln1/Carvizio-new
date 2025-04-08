@@ -506,6 +506,21 @@ class NotificationHelper {
             if (data.payload?.status === 'Accepted') {
               title = 'Ofertă acceptată';
               body = 'O ofertă trimisă de dvs. a fost acceptată';
+              
+              // Pentru oferte acceptate, adăugăm un identificator unic pentru a preveni duplicarea
+              const offerIdentifier = `offer-accepted-${data.payload?.id || Date.now()}`;
+              if (this.recentlyShownMessages.has('recent-offer-notification')) {
+                console.log(`Notificare ignorată pentru ofertă acceptată - deja afișată recent`);
+                return;
+              }
+              
+              // Adăugăm în lista de notificări recente
+              this.recentlyShownMessages.add('recent-offer-notification');
+              
+              // Setăm un timer pentru a șterge ID-ul din Set după un interval
+              setTimeout(() => {
+                this.recentlyShownMessages.delete('recent-offer-notification');
+              }, this.notificationSettings.messageDuplicationPreventionTime);
             } else {
               // Nu afișăm notificare pentru alte schimbări de status
               return;
