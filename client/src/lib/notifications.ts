@@ -300,49 +300,39 @@ class NotificationHelper {
     const timestamp = new Date().getTime();
     const tag = `message-${timestamp}`;
 
-    try {
-      // Încercăm direct metoda Notification API pentru a ne asigura că funcționează
-      console.log('Folosim metoda directă pentru notificare mesaj nou');
-      const notification = new Notification('Mesaj nou', {
+    // Folosim o singură metodă pentru afișarea notificării
+    // Prioritizăm Service Worker dacă este disponibil
+    if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+      console.log('Folosim Service Worker pentru notificare mesaj nou');
+      window.showNotificationViaSW('Mesaj nou', {
         body: safeContent,
         icon: '/favicon.ico',
         tag: tag,
-        requireInteraction: true
+        requireInteraction: true,
+        data: {
+          url: '/service-dashboard?tab=messages'
+        }
       });
-      
-      // Adăugăm event handlers
-      notification.onclick = () => {
-        window.focus();
-        // Navigare către tab-ul de mesaje
-        window.location.href = '/service-dashboard?tab=messages';
-        notification.close();
-      };
-      
-      console.log('Notificare mesaj nou afișată cu succes direct');
-      return;
-    } catch (directError) {
-      console.error('Eroare la afișarea notificării directe:', directError);
-      
-      // Încercăm metoda cu Service Worker ca fallback
-      if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-        console.log('Folosim Service Worker pentru notificarea de mesaj (fallback)');
-        window.showNotificationViaSW('Mesaj nou', {
-          body: safeContent,
-          icon: '/favicon.ico',
-          tag: tag,
-          requireInteraction: true,
-          data: {
-            url: '/service-dashboard?tab=messages'
-          }
-        });
-      } else {
-        // Folosim metoda obișnuită dacă Service Worker nu e disponibil
-        this.showNotification('Mesaj nou', {
+    } else {
+      // Fallback la API-ul standard Notification dacă Service Worker nu e disponibil
+      try {
+        console.log('Folosim API-ul Notification pentru notificare mesaj nou');
+        const notification = new Notification('Mesaj nou', {
           body: safeContent,
           icon: '/favicon.ico',
           tag: tag,
           requireInteraction: true
         });
+        
+        // Adăugăm event handlers
+        notification.onclick = () => {
+          window.focus();
+          // Navigare către tab-ul de mesaje
+          window.location.href = '/service-dashboard?tab=messages';
+          notification.close();
+        };
+      } catch (error) {
+        console.error('Eroare la afișarea notificării:', error);
       }
     }
 
@@ -427,79 +417,55 @@ class NotificationHelper {
         // Acest ID va fi folosit ca tag pentru a evita notificările duplicate
         const notificationId = data.notificationId || `notif-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         
-        // Verificăm tipul de eveniment și afișăm notificarea corespunzătoare
+        let title = '';
+        let body = '';
+        
+        // Pregătim datele pentru notificare bazate pe tipul de eveniment
         switch (data.type) {
           case 'NEW_MESSAGE':
-            console.log('Afișăm notificare pentru mesaj nou:', data.payload);
-            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-              window.showNotificationViaSW('Mesaj nou', {
-                body: data.payload?.content || 'Ați primit un mesaj nou',
-                icon: '/favicon.ico',
-                tag: notificationId, // Folosim ID-ul unic ca tag
-                requireInteraction: true,
-                data: { url: notificationUrl }
-              });
-            } else {
-              this.showNotification('Mesaj nou', {
-                body: data.payload?.content || 'Ați primit un mesaj nou',
-                icon: '/favicon.ico',
-                tag: notificationId, // Folosim ID-ul unic ca tag
-                requireInteraction: true
-              });
-            }
+            title = 'Mesaj nou';
+            body = data.payload?.content || 'Ați primit un mesaj nou';
             break;
           case 'NEW_OFFER':
-            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-              window.showNotificationViaSW('Ofertă nouă', {
-                body: data.payload?.title || 'Ați primit o ofertă nouă',
-                icon: '/favicon.ico',
-                requireInteraction: true,
-                data: { url: notificationUrl }
-              });
-            } else {
-              this.showNotification('Ofertă nouă', {
-                body: data.payload?.title || 'Ați primit o ofertă nouă',
-                icon: '/favicon.ico',
-                requireInteraction: true
-              });
-            }
+            title = 'Ofertă nouă';
+            body = data.payload?.title || 'Ați primit o ofertă nouă';
             break;
           case 'NEW_REQUEST':
-            if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-              window.showNotificationViaSW('Cerere nouă', {
-                body: data.payload?.title || 'Ați primit o cerere nouă',
-                icon: '/favicon.ico',
-                requireInteraction: true,
-                data: { url: notificationUrl }
-              });
-            } else {
-              this.showNotification('Cerere nouă', {
-                body: data.payload?.title || 'Ați primit o cerere nouă',
-                icon: '/favicon.ico',
-                requireInteraction: true
-              });
-            }
+            title = 'Cerere nouă';
+            body = data.payload?.title || 'Ați primit o cerere nouă';
             break;
           case 'OFFER_STATUS_CHANGED':
             if (data.payload?.status === 'Accepted') {
-              if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-                window.showNotificationViaSW('Ofertă acceptată', {
-                  body: 'O ofertă trimisă de dvs. a fost acceptată',
-                  icon: '/favicon.ico',
-                  requireInteraction: true,
-                  data: { url: notificationUrl }
-                });
-              } else {
-                this.showNotification('Ofertă acceptată', {
-                  body: 'O ofertă trimisă de dvs. a fost acceptată',
-                  icon: '/favicon.ico',
-                  requireInteraction: true
-                });
-              }
+              title = 'Ofertă acceptată';
+              body = 'O ofertă trimisă de dvs. a fost acceptată';
+            } else {
+              // Nu afișăm notificare pentru alte schimbări de status
+              return;
             }
             break;
           default:
             console.log('Tip de eveniment necunoscut pentru notificare:', data.type);
+            return;
+        }
+        
+        // Folosim o singură metodă pentru afișarea notificării
+        if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
+          console.log(`Afișăm notificare "${title}" folosind Service Worker`);
+          window.showNotificationViaSW(title, {
+            body: body,
+            icon: '/favicon.ico',
+            tag: notificationId,
+            requireInteraction: true,
+            data: { url: notificationUrl }
+          });
+        } else {
+          console.log(`Afișăm notificare "${title}" folosind API Notification standard`);
+          this.showNotification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            tag: notificationId,
+            requireInteraction: true
+          });
         }
       } else {
         console.log(`Notificare pentru ${data.type} suprimată conform preferințelor utilizatorului`);
@@ -754,6 +720,10 @@ class NotificationHelper {
     // Log pentru debugging
     console.log('[NotificationHelper] Polling configurat pentru utilizator:', options.userId, 'rol:', options.userRole);
     
+    // Folosim un Set pentru a ține evidența mesajelor pentru care am afișat deja notificări
+    // Astfel evităm afișarea de notificări duplicate pentru același mesaj
+    const notifiedMessageIds = new Set<number>();
+    
     this.clientSidePollingInterval = setInterval(async () => {
       try {
         console.log('[NotificationHelper] Polling pentru mesaje noi...');
@@ -798,9 +768,6 @@ class NotificationHelper {
           return;
         }
         
-        // Adăugăm informații de debugging pentru a urmări tokenul
-        console.log('[NotificationHelper] Verificare mesaje cu token valid (lungime:', token.length, ')');
-        
         // Facem cererea API pentru verificarea mesajelor noi
         const response = await fetch(`/api/messages?userId=${options.userId}&userRole=${options.userRole}&token=${token}`);
         
@@ -828,13 +795,49 @@ class NotificationHelper {
         console.log('[NotificationHelper] Mesaje primite prin polling:', newMessages ? newMessages.length : 0);
         
         if (newMessages && newMessages.length > 0) {
-          // Afișăm notificare pentru fiecare mesaj nou
-          newMessages.forEach((msg: any) => {
-            if (msg && msg.content) {
-              console.log('[NotificationHelper] Afișare notificare pentru mesaj nou');
-              NotificationHelper.forceMessageNotification(msg.content);
-            }
+          // Grupăm toate mesajele noi pentru a afișa o singură notificare
+          const unnotifiedMessages = newMessages.filter((msg: any) => {
+            // Verificăm dacă mesajul are ID și dacă nu am afișat deja o notificare pentru el
+            return msg && msg.id && !notifiedMessageIds.has(msg.id);
           });
+          
+          if (unnotifiedMessages.length > 0) {
+            // Marcăm toate mesajele ca fiind notificate
+            unnotifiedMessages.forEach((msg: any) => {
+              if (msg && msg.id) {
+                notifiedMessageIds.add(msg.id);
+              }
+            });
+            
+            // Dacă avem mai multe mesaje, creăm un mesaj centralizat
+            if (unnotifiedMessages.length > 1) {
+              console.log(`[NotificationHelper] Afișare notificare pentru ${unnotifiedMessages.length} mesaje noi`);
+              this.showNotification(`${unnotifiedMessages.length} mesaje noi`, {
+                body: 'Ai primit mai multe mesaje noi',
+                icon: '/favicon.ico',
+                tag: `multi-message-${Date.now()}`,
+                requireInteraction: true,
+                data: {
+                  url: `/${options.userRole}-dashboard?tab=messages`
+                }
+              });
+            } else {
+              // Pentru un singur mesaj, afișăm conținutul
+              const message = unnotifiedMessages[0];
+              if (message && message.content) {
+                console.log('[NotificationHelper] Afișare notificare pentru mesaj nou');
+                this.showNotification('Mesaj nou', {
+                  body: message.content,
+                  icon: '/favicon.ico',
+                  tag: `message-${message.id}-${Date.now()}`,
+                  requireInteraction: true,
+                  data: {
+                    url: `/${options.userRole}-dashboard?tab=messages`
+                  }
+                });
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('[NotificationHelper] Eroare la verificarea mesajelor prin polling:', error);
