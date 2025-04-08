@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Send, InfoIcon } from "lucide-react";
 import { format } from "date-fns";
+import cn from 'classnames';
 import type { Message } from "@shared/schema";
 
 interface MessagesViewProps {
@@ -22,6 +23,7 @@ interface MessagesViewProps {
   serviceProviderUsername?: string;
   onViewDetails?: () => void;
   showDetailsButton?: boolean;
+  formatMessageDate: (date: string | Date) => string; // Added function type
 }
 
 export default function MessagesView({
@@ -33,7 +35,8 @@ export default function MessagesView({
   handleSendMessage,
   serviceProviderUsername,
   onViewDetails,
-  showDetailsButton = false
+  showDetailsButton = false,
+  formatMessageDate // Added parameter
 }: MessagesViewProps) {
   const [isSending, setIsSending] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -55,12 +58,12 @@ export default function MessagesView({
     setIsSending(true);
     try {
       await handleSendMessage();
-      
+
       // Focus pe textarea și scroll doar în containerul de mesaje
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
-      
+
       // Scroll manual în containerul de mesaje, fără a afecta pagina
       if (messagesContainerRef.current) {
         const container = messagesContainerRef.current;
@@ -82,85 +85,67 @@ export default function MessagesView({
     }
   };
 
-  const renderMessageTime = (createdAt: Date | string) => {
-    return format(new Date(createdAt), 'dd.MM.yyyy HH:mm');
-  };
+  // Log messages for debugging
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      console.log("MessagesView: Rendering messages:", messages.length);
+    } else {
+      console.log("MessagesView: No messages to render or messages is empty", messages);
+    }
+  }, [messages]);
 
   return (
-    <div className="flex flex-col h-[70vh]">
-      <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-white z-10">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <span>
-              {typeof activeConversation.userName === 'string'
-                ? activeConversation.userName.substring(0, 2).toUpperCase()
-                : 'US'}
-            </span>
-          </Avatar>
-          <div className="font-medium">
-            {serviceProviderUsername ? (
-              <a
-                href={`/service/${serviceProviderUsername}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {activeConversation.userName}
-              </a>
-            ) : (
-              activeConversation.userName
-            )}
-          </div>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center p-4 border-b">
+        <div className="flex-1">
+          <h3 className="text-lg font-medium">{activeConversation?.userName || 'Conversație'}</h3>
+          {serviceProviderUsername && (
+            <p className="text-sm text-gray-500">Service: {serviceProviderUsername}</p>
+          )}
+          <p className="text-xs text-gray-400">
+            Conversație ID: {activeConversation?.requestId} | User ID: {activeConversation?.userId}
+          </p>
         </div>
-        {showDetailsButton && onViewDetails && (
-          <Button variant="ghost" size="sm" onClick={onViewDetails}>
-            <InfoIcon className="h-4 w-4 mr-1" />
-            {activeConversation.offerId ? "Vezi detalii cerere și ofertă" : "Vezi detalii cerere"}
-          </Button>
-        )}
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto bg-gray-50" ref={messagesContainerRef} style={{ minHeight: "200px" }}>
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px]" 
+        ref={messagesContainerRef}
+      >
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
           </div>
-        ) : messages.length === 0 ? (
+        ) : !messages || messages.length === 0 ? (
           <div className="flex justify-center items-center h-full text-gray-500">
-            Trimite primul mesaj pentru a începe conversația
+            Nu există mesaje în această conversație. Trimiteți un mesaj pentru a începe.
           </div>
         ) : (
-          <div className="space-y-4">
-            {[...messages].sort((a, b) => 
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            ).map((message) => (
+          Array.isArray(messages) && messages.map((message) => (
+            <div 
+              key={message.id} 
+              className={`flex ${message.isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+            >
               <div
-                key={message.id}
-                className={`flex ${
-                  message.senderId === Number(activeConversation.userId) ? 'justify-start' : 'justify-end'
-                }`}
+                className={cn(
+                  "max-w-[80%] p-3 rounded-md",
+                  message.isFromCurrentUser 
+                    ? "bg-[#00aff5] text-white" 
+                    : "bg-gray-100 text-gray-900"
+                )}
               >
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.senderId === Number(activeConversation.userId)
-                      ? 'bg-white border border-gray-200'
-                      : 'bg-[#00aff5] text-white'
-                  }`}
+                <div className="break-words">{message.content}</div>
+                <div 
+                  className={cn(
+                    "text-xs mt-1",
+                    message.isFromCurrentUser ? "text-white/80" : "text-gray-500"
+                  )}
                 >
-                  <div className="whitespace-pre-wrap break-words">{message.content}</div>
-                  <div
-                    className={`text-xs mt-1 ${
-                      message.senderId === Number(activeConversation.userId) ? 'text-gray-500' : 'text-blue-100'
-                    }`}
-                  >
-                    {renderMessageTime(message.createdAt)}
-                  </div>
+                  {formatMessageDate(message.createdAt)}
                 </div>
               </div>
-            ))}
-            <div ref={endOfMessagesRef} />
-          </div>
+            </div>
+          ))
         )}
       </div>
 
