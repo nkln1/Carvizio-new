@@ -485,6 +485,21 @@ class NotificationHelper {
           case 'NEW_REQUEST':
             title = 'Cerere nouă';
             body = data.payload?.title || 'Ați primit o cerere nouă';
+            
+            // Pentru cereri noi, adăugăm un identificator unic pentru a preveni duplicarea
+            const requestIdentifier = `request-${Date.now()}`;
+            if (this.recentlyShownMessages.has('recent-request-notification')) {
+              console.log(`Notificare ignorată pentru cerere nouă - deja afișată recent`);
+              return;
+            }
+            
+            // Adăugăm în lista de notificări recente
+            this.recentlyShownMessages.add('recent-request-notification');
+            
+            // Setăm un timer pentru a șterge ID-ul din Set după un interval
+            setTimeout(() => {
+              this.recentlyShownMessages.delete('recent-request-notification');
+            }, this.notificationSettings.messageDuplicationPreventionTime);
             break;
             
           case 'OFFER_STATUS_CHANGED':
