@@ -947,63 +947,54 @@ export function registerRoutes(app: Express): void {
         
         if (serviceProviderIds.size === 0) {
           console.log(`⚠️ Nu s-au găsit furnizori de servicii în ${request.county} pentru notificarea cererii noi ${request.id}`);
-          
-          // Folosim service provider cu id=1 pentru test (precum în notificările pentru mesaje)
-          console.log(`🧪 ADĂUGĂM FURNIZORUL DE TEST CU ID 1 PENTRU DEBUGGING`);
-          serviceProviderIds.add(1);
         }
           
         // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
         const emailPromises = [];
         
-        // Convertim Set-ul în Array pentru a putea itera prin el
-        const serviceProviderIdsArray = Array.from(serviceProviderIds);
-        console.log(`Service provider IDs pentru notificări:`, serviceProviderIdsArray);
-        
         // Iterăm prin toate ID-urile de service providers unice
-        for (const serviceProviderId of serviceProviderIdsArray) {
-          console.log(`\n=== Procesare notificare pentru service provider ID: ${serviceProviderId} ===`);
+        for (const serviceProviderId of serviceProviderIds) {
+          console.log(`Procesare notificare pentru service provider ID: ${serviceProviderId}`);
           
           // Obținem datele furnizorului din baza de date
-          console.log(`Obținere date pentru service provider ID: ${serviceProviderId}`);
           const serviceProvider = await storage.getServiceProvider(serviceProviderId);
-          
           if (!serviceProvider) {
             console.error(`⚠️ Nu s-a găsit service provider-ul cu ID ${serviceProviderId} în baza de date`);
             continue;
           }
           
-          console.log(`Date service provider: ID=${serviceProvider.id}, Nume="${serviceProvider.companyName}", Email="${serviceProvider.email}"`);
-          
           // Verificăm preferințele de notificări
           const preferences = await storage.getNotificationPreferences(serviceProviderId);
           
           // Afișăm preferințele de notificare pentru debug
-          if (preferences) {
-            console.log(`Preferințe notificare găsite pentru ${serviceProvider.companyName}:`, {
+          console.log(`Preferințe notificare pentru ${serviceProvider.companyName} (ID: ${serviceProviderId}):`, 
+            preferences ? JSON.stringify({
               emailNotificationsEnabled: preferences.emailNotificationsEnabled,
               newRequestEmailEnabled: preferences.newRequestEmailEnabled
-            });
-          } else {
-            console.log(`Nu s-au găsit preferințe pentru ${serviceProvider.companyName}, se vor folosi valorile implicite (toate activate)`);
-          }
+            }) : 'Preferințe implicite (toate activate)');
           
           // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
           const shouldSendEmail = !preferences || 
              (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
           
-          console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-          
           if (shouldSendEmail) {
             console.log(`✓ Se va trimite email de notificare către ${serviceProvider.companyName} (${serviceProvider.email})`);
+            
+            // Adăugăm mai multe informații de debugging
+            console.log(`Pregătire email cerere nouă pentru service provider ${serviceProviderId}:
+              - Provider: ${serviceProvider.companyName} (${serviceProvider.email})
+              - Titlu cerere: ${request.title}
+              - Client: ${client.name}
+              - ID Cerere: ${request.id}
+              - Preferințe: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled || 'default true'}, 
+                          newRequestEmailEnabled=${preferences?.newRequestEmailEnabled || 'default true'}
+            `);
             
             // Generăm un ID unic pentru a evita duplicatele și a putea urmări mai bine
             const uniqueRequestId = `request_${request.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
             
             // Trimitem email de notificare
             try {
-              console.log(`Trimitere email de notificare pentru cerere nouă către ${serviceProvider.email}...`);
-              
               const emailPromise = EmailService.sendNewRequestNotification(
                 serviceProvider,
                 request.title,
