@@ -28,12 +28,16 @@ class NotificationHelper {
   private static isProcessingQueue = false;
   // Modificăm de la private la public pentru a permite accesul din alte părți ale codului
   public static backgroundCheckActive = false;
+  // Adăugăm un cache pentru ID-urile mesajelor afișate recent pentru a preveni duplicarea
+  private static recentlyShownMessages = new Set<string>();
   private static notificationSettings = {
     enabled: true,
     silentMode: false,
     lastNotificationTime: 0,
     minTimeBetweenNotifications: 1000, // 1 second between notifications
-    backgroundCheckInterval: 30000 // 30 seconds between background checks
+    backgroundCheckInterval: 30000, // 30 seconds between background checks
+    // Timpul de "cooldown" înainte ca un mesaj să poată fi afișat din nou (10 secunde)
+    messageDuplicationPreventionTime: 10000
   };
 
   /**
@@ -280,23 +284,40 @@ class NotificationHelper {
   /**
    * Forțează afișarea unei notificări pentru mesaj nou - utilizat în debugging
    */
-  static forceMessageNotification(content: string): void {
+  static forceMessageNotification(content: string, messageId?: number | string): void {
     if (this.checkPermission() !== 'granted') {
       console.warn('Nu se poate forța notificarea - permisiunea nu este acordată');
       this.requestPermission().then(granted => {
         if (granted) {
-          this.forceMessageNotification(content);
+          this.forceMessageNotification(content, messageId);
         }
       });
       return;
     }
 
-    console.log('Forțăm afișarea notificării pentru mesaj nou:', content);
-
     // Asigurăm-ne că conținutul este într-adevăr un string
     const safeContent = content || 'Ați primit un mesaj nou';
+    
+    // Generăm un ID unic pentru mesaj dacă nu există
+    const messageIdentifier = messageId ? `msg-${messageId}` : `msg-content-${safeContent.substring(0, 20)}`;
+    
+    // Verificăm dacă acest mesaj a fost deja afișat recent
+    if (this.recentlyShownMessages.has(messageIdentifier)) {
+      console.log(`Notificare ignorată pentru mesajul "${safeContent.substring(0, 20)}..." - deja afișată recent`);
+      return;
+    }
+    
+    console.log('Afișăm notificare pentru mesaj nou:', safeContent);
 
-    // Adăugăm timestamp în tag pentru a evita ignorarea notificărilor duplicate
+    // Adăugăm mesajul în lista mesajelor afișate recent
+    this.recentlyShownMessages.add(messageIdentifier);
+    
+    // Setăm un timer pentru a șterge ID-ul din Set după un interval
+    setTimeout(() => {
+      this.recentlyShownMessages.delete(messageIdentifier);
+    }, this.notificationSettings.messageDuplicationPreventionTime);
+
+    // Adăugăm timestamp în tag pentru a evita ignorarea notificărilor duplicate de către browser
     const timestamp = new Date().getTime();
     const tag = `message-${timestamp}`;
 
@@ -310,7 +331,8 @@ class NotificationHelper {
         tag: tag,
         requireInteraction: true,
         data: {
-          url: '/service-dashboard?tab=messages'
+          url: '/service-dashboard?tab=messages',
+          messageId: messageIdentifier
         }
       });
     } else {
@@ -339,7 +361,7 @@ class NotificationHelper {
     // Emitem și un eveniment pentru debugging sau pentru alte componente care ar putea asculta
     try {
       const notificationEvent = new CustomEvent('message-notification', {
-        detail: { content: safeContent, timestamp }
+        detail: { content: safeContent, timestamp, messageId: messageIdentifier }
       });
       window.dispatchEvent(notificationEvent);
     } catch (error) {
@@ -397,6 +419,26 @@ class NotificationHelper {
       return;
     }
 
+    // Generăm un ID unic pentru acest eveniment de notificare
+    const eventIdentifier = data.notificationId || 
+                         (data.type === 'NEW_MESSAGE' && data.payload?.id 
+                           ? `msg-${data.payload.id}` 
+                           : `${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`);
+
+    // Verificăm dacă acest eveniment a fost deja procesat recent
+    if (this.recentlyShownMessages.has(eventIdentifier)) {
+      console.log(`Eveniment de notificare ignorat - deja procesat recent: ${eventIdentifier}`);
+      return;
+    }
+
+    // Adăugăm ID-ul evenimentului în Set-ul de evenimente recente
+    this.recentlyShownMessages.add(eventIdentifier);
+    
+    // Setăm un timer pentru a șterge ID-ul din Set după un interval
+    setTimeout(() => {
+      this.recentlyShownMessages.delete(eventIdentifier);
+    }, this.notificationSettings.messageDuplicationPreventionTime);
+
     // Verificăm configurările de notificări
     this.getNotificationPreferences().then(preferences => {
       const shouldShowNotification = this.shouldShowNotification(data, preferences);
@@ -413,9 +455,8 @@ class NotificationHelper {
           notificationUrl = '/service-dashboard?tab=offers';
         }
 
-        // Generăm un ID de notificare unic dacă nu există deja
-        // Acest ID va fi folosit ca tag pentru a evita notificările duplicate
-        const notificationId = data.notificationId || `notif-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        // Generăm un ID de notificare unic pentru a asigura că browserul nu ignoră notificarea
+        const notificationId = `${eventIdentifier}-${Date.now()}`;
         
         let title = '';
         let body = '';
@@ -425,6 +466,14 @@ class NotificationHelper {
           case 'NEW_MESSAGE':
             title = 'Mesaj nou';
             body = data.payload?.content || 'Ați primit un mesaj nou';
+            
+            // Pentru mesaje, verificăm dacă există ID și conținut ca să putem preveni duplicarea
+            if (data.payload?.id) {
+              // Folosim forceMessageNotification care are logica de deduplicare
+              this.forceMessageNotification(body, data.payload.id);
+              // Întoarcem funcția, forceMessageNotification se va ocupa de afișarea notificării
+              return;
+            }
             break;
           case 'NEW_OFFER':
             title = 'Ofertă nouă';
@@ -456,7 +505,7 @@ class NotificationHelper {
             icon: '/favicon.ico',
             tag: notificationId,
             requireInteraction: true,
-            data: { url: notificationUrl }
+            data: { url: notificationUrl, eventId: eventIdentifier }
           });
         } else {
           console.log(`Afișăm notificare "${title}" folosind API Notification standard`);
@@ -464,7 +513,8 @@ class NotificationHelper {
             body: body,
             icon: '/favicon.ico',
             tag: notificationId,
-            requireInteraction: true
+            requireInteraction: true,
+            data: { eventId: eventIdentifier }
           });
         }
       } else {
@@ -720,10 +770,6 @@ class NotificationHelper {
     // Log pentru debugging
     console.log('[NotificationHelper] Polling configurat pentru utilizator:', options.userId, 'rol:', options.userRole);
     
-    // Folosim un Set pentru a ține evidența mesajelor pentru care am afișat deja notificări
-    // Astfel evităm afișarea de notificări duplicate pentru același mesaj
-    const notifiedMessageIds = new Set<number>();
-    
     this.clientSidePollingInterval = setInterval(async () => {
       try {
         console.log('[NotificationHelper] Polling pentru mesaje noi...');
@@ -795,46 +841,53 @@ class NotificationHelper {
         console.log('[NotificationHelper] Mesaje primite prin polling:', newMessages ? newMessages.length : 0);
         
         if (newMessages && newMessages.length > 0) {
-          // Grupăm toate mesajele noi pentru a afișa o singură notificare
+          // Filtrăm mesajele pentru care nu am afișat deja o notificare recent
           const unnotifiedMessages = newMessages.filter((msg: any) => {
-            // Verificăm dacă mesajul are ID și dacă nu am afișat deja o notificare pentru el
-            return msg && msg.id && !notifiedMessageIds.has(msg.id);
+            // Verificăm dacă mesajul are ID și dacă nu este deja în lista de mesaje afișate recent
+            return msg && msg.id && !this.recentlyShownMessages.has(`msg-${msg.id}`);
           });
           
           if (unnotifiedMessages.length > 0) {
-            // Marcăm toate mesajele ca fiind notificate
+            // Marcăm toate mesajele ca fiind notificate adăugându-le în Set-ul de mesaje recente
             unnotifiedMessages.forEach((msg: any) => {
               if (msg && msg.id) {
-                notifiedMessageIds.add(msg.id);
+                const messageId = `msg-${msg.id}`;
+                this.recentlyShownMessages.add(messageId);
+                
+                // Setăm un timer pentru a șterge ID-ul din Set după un interval
+                setTimeout(() => {
+                  this.recentlyShownMessages.delete(messageId);
+                }, this.notificationSettings.messageDuplicationPreventionTime);
               }
             });
             
             // Dacă avem mai multe mesaje, creăm un mesaj centralizat
             if (unnotifiedMessages.length > 1) {
+              const multiMessageId = `multi-message-${Date.now()}`;
               console.log(`[NotificationHelper] Afișare notificare pentru ${unnotifiedMessages.length} mesaje noi`);
+              
+              // Adăugăm și acest identificator în lista de mesaje afișate recent
+              this.recentlyShownMessages.add(multiMessageId);
+              setTimeout(() => {
+                this.recentlyShownMessages.delete(multiMessageId);
+              }, this.notificationSettings.messageDuplicationPreventionTime);
+              
               this.showNotification(`${unnotifiedMessages.length} mesaje noi`, {
                 body: 'Ai primit mai multe mesaje noi',
                 icon: '/favicon.ico',
-                tag: `multi-message-${Date.now()}`,
+                tag: multiMessageId,
                 requireInteraction: true,
                 data: {
                   url: `/${options.userRole}-dashboard?tab=messages`
                 }
               });
             } else {
-              // Pentru un singur mesaj, afișăm conținutul
+              // Pentru un singur mesaj, afișăm conținutul folosind forceMessageNotification
+              // care are deja logica de deduplicare
               const message = unnotifiedMessages[0];
               if (message && message.content) {
-                console.log('[NotificationHelper] Afișare notificare pentru mesaj nou');
-                this.showNotification('Mesaj nou', {
-                  body: message.content,
-                  icon: '/favicon.ico',
-                  tag: `message-${message.id}-${Date.now()}`,
-                  requireInteraction: true,
-                  data: {
-                    url: `/${options.userRole}-dashboard?tab=messages`
-                  }
-                });
+                console.log('[NotificationHelper] Afișare notificare pentru mesaj nou prin polling');
+                this.forceMessageNotification(message.content, message.id);
               }
             }
           }
