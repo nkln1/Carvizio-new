@@ -453,6 +453,8 @@ class NotificationHelper {
           notificationUrl = '/service-dashboard?tab=requests';
         } else if (data.type === 'OFFER_STATUS_CHANGED' && data.payload?.status === 'Accepted') {
           notificationUrl = '/service-dashboard?tab=offers';
+        } else if (data.type === 'NEW_REVIEW') {
+          notificationUrl = '/service-dashboard?tab=account';
         }
 
         // Generăm un ID de notificare unic pentru a asigura că browserul nu ignoră notificarea
@@ -467,22 +469,24 @@ class NotificationHelper {
             title = 'Mesaj nou';
             body = data.payload?.content || 'Ați primit un mesaj nou';
             
-            // Pentru mesaje, verificăm dacă există ID și conținut ca să putem preveni duplicarea
+            // Pentru mesaje, folosim forceMessageNotification care are logica de deduplicare
             if (data.payload?.id) {
-              // Folosim forceMessageNotification care are logica de deduplicare
               this.forceMessageNotification(body, data.payload.id);
               // Întoarcem funcția, forceMessageNotification se va ocupa de afișarea notificării
               return;
             }
             break;
+            
           case 'NEW_OFFER':
             title = 'Ofertă nouă';
             body = data.payload?.title || 'Ați primit o ofertă nouă';
             break;
+            
           case 'NEW_REQUEST':
             title = 'Cerere nouă';
             body = data.payload?.title || 'Ați primit o cerere nouă';
             break;
+            
           case 'OFFER_STATUS_CHANGED':
             if (data.payload?.status === 'Accepted') {
               title = 'Ofertă acceptată';
@@ -492,6 +496,12 @@ class NotificationHelper {
               return;
             }
             break;
+            
+          case 'NEW_REVIEW':
+            title = 'Recenzie nouă';
+            body = `Ați primit o recenzie ${data.payload?.rating ? `de ${data.payload.rating} stele` : 'nouă'}`;
+            break;
+            
           default:
             console.log('Tip de eveniment necunoscut pentru notificare:', data.type);
             return;
