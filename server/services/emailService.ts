@@ -234,16 +234,28 @@ export class EmailService {
     clientName: string,
     requestId: string | number = `request_${Date.now()}`
   ): Promise<boolean> {
-    const debugInfo = `[Cerere Nouă] Client: ${clientName}, Titlu: ${requestTitle}, ID: ${requestId}`;
-    console.log(`=== EmailService.sendNewRequestNotification - Trimitere notificare cerere nouă ===`);
+    const messageId = `request_${requestId}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    console.log(`=== EmailService.sendNewRequestNotification [${messageId}] - Trimitere notificare cerere nouă ===`);
     console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
     console.log(`Titlu cerere: ${requestTitle}`);
     console.log(`Client: ${clientName}`);
     console.log(`ID Cerere: ${requestId}`);
     
+    // Verificăm dacă există email pentru service provider
+    if (!serviceProvider.email) {
+      console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Lipsă adresă email pentru service provider ${serviceProvider.id} (${serviceProvider.companyName})`);
+      return false;
+    }
+    
+    // Validăm formatul adresei de email
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(serviceProvider.email)) {
+      console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Format invalid de email pentru service provider ${serviceProvider.id}: ${serviceProvider.email}`);
+      return false;
+    }
+    
     const subject = `Cerere nouă: ${requestTitle}`;
     // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
-    const uniqueSubject = `${subject} [${requestId}]`;
+    const uniqueSubject = `${subject} [${messageId}]`;
     
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -265,23 +277,55 @@ export class EmailService {
           <br>
           Puteți dezactiva notificările prin email din setările contului dvs.
         </p>
-        <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
+        <!-- ID Cerere: ${requestId}, MessageID: ${messageId} - Folosit pentru prevenirea duplicării -->
       </div>
     `;
 
+    // Verificăm dacă API key-ul pentru email există
+    if (!this.apiKey) {
+      console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Lipsă API key pentru email (ELASTIC_EMAIL_API_KEY)`);
+      return false;
+    }
+    
+    const text = `
+Cerere nouă de service - ${requestTitle}
+
+Bună ziua ${serviceProvider.companyName},
+
+Ați primit o cerere nouă de service de la ${clientName}.
+
+Titlu cerere: ${requestTitle}
+
+Puteți vizualiza detaliile și răspunde acestei cereri accesând:
+https://auto-service-app.replit.app/service-dashboard?tab=cereri
+
+Acest email a fost trimis automat de aplicația Auto Service.
+Puteți dezactiva notificările prin email din setările contului dvs.
+
+ID Mesaj: ${messageId}
+    `;
+
     try {
+      console.log(`📧 [${messageId}] Trimitere email de notificare pentru cererea nouă către ${serviceProvider.email}...`);
+      
       // Trimitem email-ul folosind noul parametru de debugging
       const result = await this.sendEmail(
         serviceProvider.email, 
         uniqueSubject, 
         html, 
-        undefined, // text content
-        debugInfo // info debugging
+        text,  // adăugăm și conținut text pentru mai bună compatibilitate
+        messageId // ID unic pentru această notificare
       );
-      console.log(`EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
+      
+      if (result) {
+        console.log(`✅ [${messageId}] EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
+      } else {
+        console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}`);
+      }
+      
       return result;
     } catch (error) {
-      console.error(`EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}:`, error);
+      console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Excepție la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}:`, error);
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
     }

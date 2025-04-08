@@ -927,72 +927,98 @@ export function registerRoutes(app: Express): void {
         console.log(`Furnizori găsiți în Firestore: ${serviceProvidersSnapshot.docs.length}`);
         console.log(`Furnizori găsiți în baza de date PostgreSQL (doar după județ): ${matchingServiceProviders.length}`);
         
-        // Adăugăm și id-urile acestora în set pentru a nu avea duplicări
+        // Construim un set pentru servicii unice (combinând din Firestore și PostgreSQL)
         const serviceProviderIds = new Set();
-          
-        console.log(`Număr furnizori de servicii găsiți în zona cererii: ${serviceProvidersSnapshot.docs.length}`);
         
-        if (serviceProvidersSnapshot.docs.length === 0) {
-          console.log(`⚠️ Nu s-au găsit furnizori de servicii în ${request.county}, ${cityStr} pentru notificarea cererii noi ${request.id}`);
+        // Adăugăm service providers din Firestore
+        for (const doc of serviceProvidersSnapshot.docs) {
+          const id = parseInt(doc.id);
+          if (!isNaN(id)) {
+            serviceProviderIds.add(id);
+          }
+        }
+        
+        // Adăugăm și service providers din baza de date PostgreSQL
+        for (const provider of matchingServiceProviders) {
+          serviceProviderIds.add(provider.id);
+        }
+        
+        console.log(`Total furnizori unici pentru notificare cerere nouă: ${serviceProviderIds.size}`);
+        
+        if (serviceProviderIds.size === 0) {
+          console.log(`⚠️ Nu s-au găsit furnizori de servicii în ${request.county} pentru notificarea cererii noi ${request.id}`);
         }
           
         // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
         const emailPromises = [];
         
-        for (const doc of serviceProvidersSnapshot.docs) {
-          const serviceProviderData = doc.data();
-          const serviceProviderId = parseInt(doc.id);
+        // Iterăm prin toate ID-urile de service providers unice
+        for (const serviceProviderId of serviceProviderIds) {
+          console.log(`Procesare notificare pentru service provider ID: ${serviceProviderId}`);
+          
+          // Obținem datele furnizorului din baza de date
+          const serviceProvider = await storage.getServiceProvider(serviceProviderId);
+          if (!serviceProvider) {
+            console.error(`⚠️ Nu s-a găsit service provider-ul cu ID ${serviceProviderId} în baza de date`);
+            continue;
+          }
           
           // Verificăm preferințele de notificări
           const preferences = await storage.getNotificationPreferences(serviceProviderId);
           
+          // Afișăm preferințele de notificare pentru debug
+          console.log(`Preferințe notificare pentru ${serviceProvider.companyName} (ID: ${serviceProviderId}):`, 
+            preferences ? JSON.stringify({
+              emailNotificationsEnabled: preferences.emailNotificationsEnabled,
+              newRequestEmailEnabled: preferences.newRequestEmailEnabled
+            }) : 'Preferințe implicite (toate activate)');
+          
           // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
-          if (!preferences || 
-              (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled)) {
+          const shouldSendEmail = !preferences || 
+             (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
+          
+          if (shouldSendEmail) {
+            console.log(`✓ Se va trimite email de notificare către ${serviceProvider.companyName} (${serviceProvider.email})`);
             
-            // Obținem datele furnizorului din baza de date
-            const serviceProvider = await storage.getServiceProvider(serviceProviderId);
-            if (serviceProvider) {
-              // Adăugăm mai multe informații de debugging
-              console.log(`Pregătire email cerere nouă pentru service provider ${serviceProviderId}:
-                - Provider: ${serviceProvider.companyName} (${serviceProvider.email})
-                - Titlu cerere: ${request.title}
-                - Client: ${client.name}
-                - ID Cerere: ${request.id}
-                - Preferințe: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled || 'default true'}, 
-                             newRequestEmailEnabled=${preferences?.newRequestEmailEnabled || 'default true'}
-              `);
+            // Adăugăm mai multe informații de debugging
+            console.log(`Pregătire email cerere nouă pentru service provider ${serviceProviderId}:
+              - Provider: ${serviceProvider.companyName} (${serviceProvider.email})
+              - Titlu cerere: ${request.title}
+              - Client: ${client.name}
+              - ID Cerere: ${request.id}
+              - Preferințe: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled || 'default true'}, 
+                          newRequestEmailEnabled=${preferences?.newRequestEmailEnabled || 'default true'}
+            `);
+            
+            // Generăm un ID unic pentru a evita duplicatele și a putea urmări mai bine
+            const uniqueRequestId = `request_${request.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+            
+            // Trimitem email de notificare
+            try {
+              const emailPromise = EmailService.sendNewRequestNotification(
+                serviceProvider,
+                request.title,
+                client.name,
+                uniqueRequestId
+              );
               
-              // Generăm un ID unic pentru a evita duplicatele și a putea urmări mai bine
-              const uniqueRequestId = `request_${request.id}_${Date.now()}`;
+              emailPromises.push(emailPromise);
               
-              // Trimitem email de notificare
-              try {
-                const emailPromise = EmailService.sendNewRequestNotification(
-                  serviceProvider,
-                  request.title,
-                  client.name,
-                  uniqueRequestId
-                );
-                
-                emailPromises.push(emailPromise);
-                
-                // Adăugăm log pentru debugging
-                emailPromise.then(success => {
-                  if (success) {
-                    console.log(`✅ Email de notificare pentru cerere nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
-                  } else {
-                    console.error(`❌ Eroare la trimiterea email-ului de notificare pentru cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
-                  }
-                });
-              } catch (err) {
-                console.error(`❌ Excepție la trimiterea email-ului pentru cerere nouă către ${serviceProvider.companyName}:`, err);
-              }
-            } else {
-              console.error(`⚠️ Nu s-a găsit service provider-ul cu ID ${serviceProviderId} pentru trimiterea notificării de cerere nouă`);
+              // Adăugăm log pentru debugging
+              emailPromise.then(success => {
+                if (success) {
+                  console.log(`✅ Email de notificare pentru cerere nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                } else {
+                  console.error(`❌ Eroare la trimiterea email-ului de notificare pentru cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                }
+              }).catch(err => {
+                console.error(`❌ Promisiune respinsă la trimiterea email-ului pentru ${serviceProvider.companyName}:`, err);
+              });
+            } catch (err) {
+              console.error(`❌ Excepție la trimiterea email-ului pentru cerere nouă către ${serviceProvider.companyName}:`, err);
             }
           } else {
-            console.log(`⚠️ Nu se trimite email de notificare pentru cerere nouă către provider ID ${serviceProviderId} conform preferințelor: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled}, newRequestEmailEnabled=${preferences?.newRequestEmailEnabled}`);
+            console.log(`⚠️ Nu se trimite email de notificare pentru cerere nouă către ${serviceProvider.companyName} (ID: ${serviceProviderId}) conform preferințelor: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled}, newRequestEmailEnabled=${preferences?.newRequestEmailEnabled}`);
           }
         }
         
