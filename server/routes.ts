@@ -974,12 +974,13 @@ export function registerRoutes(app: Express): void {
             }) : 'Preferințe implicite (toate activate)');
           
           // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
+          // Dacă nu există preferințe sau dacă ambele setări sunt true
           const shouldSendEmail = !preferences || 
              (preferences.emailNotificationsEnabled === true && preferences.newRequestEmailEnabled === true);
           
           console.log(`Verificare preferințe notificare pentru ${serviceProvider.companyName}:
-            - emailNotificationsEnabled: ${preferences?.emailNotificationsEnabled}
-            - newRequestEmailEnabled: ${preferences?.newRequestEmailEnabled}
+            - emailNotificationsEnabled: ${preferences?.emailNotificationsEnabled || 'implicit: true'} 
+            - newRequestEmailEnabled: ${preferences?.newRequestEmailEnabled || 'implicit: true'}
             - Rezultat verificare: ${shouldSendEmail ? 'SE TRIMITE EMAIL' : 'NU SE TRIMITE EMAIL'}`);
           
           if (shouldSendEmail) {

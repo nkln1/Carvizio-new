@@ -235,11 +235,14 @@ export class EmailService {
     requestId: string | number = `request_${Date.now()}`
   ): Promise<boolean> {
     const messageId = `request_${requestId}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    console.log(`\n============================================================`);
     console.log(`=== EmailService.sendNewRequestNotification [${messageId}] - Trimitere notificare cerere nouă ===`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
-    console.log(`Titlu cerere: ${requestTitle}`);
+    console.log(`Destinatar: ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
+    console.log(`Email destinatar: ${serviceProvider.email}`);
+    console.log(`Titlu cerere: "${requestTitle}"`);
     console.log(`Client: ${clientName}`);
     console.log(`ID Cerere: ${requestId}`);
+    console.log(`Timestamp: ${new Date().toISOString()}`);
     
     // Verificăm dacă există email pentru service provider
     if (!serviceProvider.email) {
