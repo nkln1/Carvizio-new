@@ -894,10 +894,18 @@ export function registerRoutes(app: Express): void {
 
       // După crearea cererii, găsim furnizorii de servicii din zona specificată pentru a trimite notificări prin email
       try {
+        // Adăugăm logs pentru debugging
+        console.log(`\n==== Trimitere notificări email pentru cererea nouă ${request.id} ====`);
+        console.log(`Cerere creată de clientul: ${client.name} (ID: ${client.id})`);
+        console.log(`Titlu cerere: ${request.title}`);
+        console.log(`Locație: ${request.county}, ${Array.isArray(request.cities) ? request.cities.join(', ') : request.cities}`);
+        
         // Găsim toate serviciile din această zonă
         const firestore = admin.firestore();
         // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
         const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
+        
+        console.log(`Căutare furnizori de servicii în zona: ${request.county}, ${cityStr}`);
         
         // Căutăm toți furnizorii de servicii în aceeași zonă
         const serviceProvidersSnapshot = await firestore
@@ -905,6 +913,12 @@ export function registerRoutes(app: Express): void {
           .where('county', '==', request.county)
           .where('city', '==', cityStr) // Verificăm orașul exact
           .get();
+          
+        console.log(`Număr furnizori de servicii găsiți în zona cererii: ${serviceProvidersSnapshot.docs.length}`);
+        
+        if (serviceProvidersSnapshot.docs.length === 0) {
+          console.log(`⚠️ Nu s-au găsit furnizori de servicii în ${request.county}, ${cityStr} pentru notificarea cererii noi ${request.id}`);
+        }
           
         // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
         const emailPromises = [];
@@ -923,24 +937,57 @@ export function registerRoutes(app: Express): void {
             // Obținem datele furnizorului din baza de date
             const serviceProvider = await storage.getServiceProvider(serviceProviderId);
             if (serviceProvider) {
+              // Adăugăm mai multe informații de debugging
+              console.log(`Pregătire email cerere nouă pentru service provider ${serviceProviderId}:
+                - Provider: ${serviceProvider.companyName} (${serviceProvider.email})
+                - Titlu cerere: ${request.title}
+                - Client: ${client.name}
+                - ID Cerere: ${request.id}
+                - Preferințe: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled || 'default true'}, 
+                             newRequestEmailEnabled=${preferences?.newRequestEmailEnabled || 'default true'}
+              `);
+              
+              // Generăm un ID unic pentru a evita duplicatele și a putea urmări mai bine
+              const uniqueRequestId = `request_${request.id}_${Date.now()}`;
+              
               // Trimitem email de notificare
-              emailPromises.push(
-                EmailService.sendNewRequestNotification(
+              try {
+                const emailPromise = EmailService.sendNewRequestNotification(
                   serviceProvider,
                   request.title,
                   client.name,
-                  `request_${request.id}_${Date.now()}`
-                )
-              );
-              console.log(`Email de notificare pentru cerere nouă trimis către ${serviceProvider.companyName}`);
+                  uniqueRequestId
+                );
+                
+                emailPromises.push(emailPromise);
+                
+                // Adăugăm log pentru debugging
+                emailPromise.then(success => {
+                  if (success) {
+                    console.log(`✅ Email de notificare pentru cerere nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                  } else {
+                    console.error(`❌ Eroare la trimiterea email-ului de notificare pentru cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                  }
+                });
+              } catch (err) {
+                console.error(`❌ Excepție la trimiterea email-ului pentru cerere nouă către ${serviceProvider.companyName}:`, err);
+              }
+            } else {
+              console.error(`⚠️ Nu s-a găsit service provider-ul cu ID ${serviceProviderId} pentru trimiterea notificării de cerere nouă`);
             }
+          } else {
+            console.log(`⚠️ Nu se trimite email de notificare pentru cerere nouă către provider ID ${serviceProviderId} conform preferințelor: emailNotificationsEnabled=${preferences?.emailNotificationsEnabled}, newRequestEmailEnabled=${preferences?.newRequestEmailEnabled}`);
           }
         }
         
         // Așteptăm trimiterea tuturor email-urilor (fără a bloca răspunsul)
-        Promise.all(emailPromises).catch(err => {
-          console.error("Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", err);
-        });
+        Promise.all(emailPromises)
+          .then(results => {
+            console.log(`✅ Rezultate trimitere notificări email: ${results.filter(Boolean).length} din ${results.length} email-uri trimise cu succes`);
+          })
+          .catch(err => {
+            console.error("❌ Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", err);
+          });
       } catch (emailError) {
         // Doar înregistrăm eroarea, nu împiedicăm crearea cererii
         console.error("Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", emailError);
