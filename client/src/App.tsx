@@ -104,52 +104,9 @@ const AppNotificationInitializer: React.FC = () => {
                 return;
               }
 
-              // Verificăm preferințele de notificări doar pentru mesaje de tip NEW_MESSAGE
-              if (data.type === 'NEW_MESSAGE') {
-                try {
-                  // Obținem preferințele de notificări
-                  const response = await fetch('/api/service/notification-preferences');
-
-                  if (!response.ok) {
-                    console.error("Nu am putut obține preferințele de notificări");
-                    // Forțăm afișarea notificării direct ca fallback
-                    if (data.payload && data.payload.content) {
-                      NotificationHelper.forceMessageNotification(data.payload.content);
-                    }
-                    return;
-                  }
-
-                  const preferences = await response.json();
-
-                  console.log("Preferințe notificări obținute:", preferences);
-
-                  if (preferences && 
-                      preferences.browserNotificationsEnabled && 
-                      preferences.newMessageBrowserEnabled) {
-                    console.log("Afișăm notificare pentru mesaj nou:", data.payload);
-
-                    let messageBody = 'Ați primit un mesaj nou';
-                    if (data.payload && data.payload.content) {
-                      messageBody = data.payload.content;
-                    }
-
-                    // Forțăm afișarea notificării direct
-                    NotificationHelper.forceMessageNotification(messageBody);
-                  } else {
-                    console.log("Notificările pentru mesaje noi sunt dezactivate în preferințe");
-                  }
-                } catch (error) {
-                  console.error("Eroare la procesarea notificării:", error);
-
-                  // În caz de eroare, încercăm totuși să afișăm notificarea
-                  if (data.payload && data.payload.content) {
-                    NotificationHelper.forceMessageNotification(data.payload.content);
-                  }
-                }
-              } else {
-                // Pentru alte tipuri de evenimente, delegăm către NotificationHelper
-                NotificationHelper.handleNotificationEvent(data);
-              }
+              // Pentru toate tipurile de evenimente, delegăm către NotificationHelper
+              // Acest lucru centralizează gestionarea notificărilor și previne duplicarea lor
+              NotificationHelper.handleNotificationEvent(data);
             });
 
             // Setăm variabila de stare pentru a indica inițializarea WebSocket

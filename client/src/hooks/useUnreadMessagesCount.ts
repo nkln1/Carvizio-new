@@ -32,9 +32,9 @@ export function useUnreadMessagesCount() {
         return 0;
       }
     },
-    refetchInterval: 8000, // Refetch mai frecvent (8 secunde)
-    staleTime: 3000, // Consider data stale mai repede (3 secunde)
-    retry: 3, // Retry 3 times if the query fails
+    refetchInterval: 30000, // Refetch la 30 secunde (redus din 8 secunde)
+    staleTime: 15000, // Consideră data stale după 15 secunde (crescut din 3 secunde)
+    retry: 2, // Retry 2 times if the query fails
     refetchOnWindowFocus: true, // Reîncarcă când fereastra primește focus
     refetchOnMount: true, // Reîncarcă când componenta este montată
   });

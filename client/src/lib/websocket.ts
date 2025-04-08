@@ -1,3 +1,14 @@
+// Declare Firebase type
+declare global {
+  interface Window {
+    firebase?: {
+      auth: () => {
+        currentUser: any;
+      };
+    };
+  }
+}
+
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempt = 0;
@@ -133,24 +144,37 @@ class WebSocketService {
 
           // Verificăm dacă mesajul are un tip valid
           if (data && data.type) {
+            // Generăm un ID unic pentru mesaj dacă nu există deja
+            if (!data.notificationId) {
+              data.notificationId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+            }
+            
+            // Verificăm dacă acest mesaj a fost deja procesat pentru a evita duplicatele
+            if (this.processedMessageIds.has(data.notificationId)) {
+              console.log(`Mesaj ignorat (duplicat) cu ID: ${data.notificationId}`);
+              return;
+            }
+            
+            // Marcăm mesajul ca procesat
+            this.processedMessageIds.add(data.notificationId);
+            
+            // Limităm mărimea setului pentru a evita consumul excesiv de memorie
+            if (this.processedMessageIds.size > 100) {
+              // Eliminăm primele 50 de elemente când depășim 100
+              const idsToRemove = Array.from(this.processedMessageIds).slice(0, 50);
+              idsToRemove.forEach(id => this.processedMessageIds.delete(id));
+            }
+            
             // Adăugăm debug suplimentar pentru mesajele de tip NEW_MESSAGE
             if (data.type === 'NEW_MESSAGE') {
               console.log('Received NEW_MESSAGE event:', data);
               console.log('NEW_MESSAGE content:', data.payload?.content);
-
-              // Generăm un ID unic pentru acest mesaj pentru a evita duplicarea
-              if (!data.notificationId) {
-                data.notificationId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-              }
 
               // Emitem un eveniment DOM pentru a facilita depanarea
               const newMessageEvent = new CustomEvent('new-message-received', { 
                 detail: data 
               });
               window.dispatchEvent(newMessageEvent);
-              
-              // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
-              // Acest lucru previne afișarea de notificări duplicate
             }
 
             // Notificăm toți handlerii înregistrați
@@ -240,9 +264,9 @@ class WebSocketService {
     console.log('Starting polling fallback for message updates');
     this.isPollingFallback = true;
 
-    // Poll every 10 seconds for new messages
+    // Poll every 30 seconds for new messages (increaseăm intervalul din 10 la 30 secunde)
     this.pollingFallback();
-    this.pollingInterval = setInterval(() => this.pollingFallback(), 10000);
+    this.pollingInterval = setInterval(() => this.pollingFallback(), 30000);
   }
 
   private stopPollingFallback() {
@@ -254,6 +278,9 @@ class WebSocketService {
     console.log('Stopped polling fallback as WebSocket is now connected');
   }
 
+  // Set pentru a ține evidența ID-urilor mesajelor procesate (partajat între WebSocket și polling)
+  private processedMessageIds = new Set<string>();
+  
   private async pollingFallback() {
     try {
       console.log('Polling for new messages...');
@@ -292,28 +319,43 @@ class WebSocketService {
         }
 
         // Process messages as if they came from WebSocket
-        messages.forEach(message => {
+        messages.forEach((message: any) => {
           // Verificăm dacă este un mesaj nou
-          if (message && message.type === 'NEW_MESSAGE') {
-            console.log('Received NEW_MESSAGE from polling:', message);
-            
-            // Adăugăm ID unic pentru evitarea duplicatelor
+          if (message && message.type) {
+            // Adăugăm ID unic pentru evitarea duplicatelor dacă nu există deja
             if (!message.notificationId) {
               message.notificationId = `poll-msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
             }
             
-            // NU mai afișăm notificarea direct aici - lăsăm asta pentru handlerii înregistrați
-            // pentru a evita duplicarea notificărilor
-          }
-          
-          // Transmitem mesajul la toți handlerii înregistrați
-          this.messageHandlers.forEach(handler => {
-            try {
-              handler(message);
-            } catch (handlerError) {
-              console.error('Error in message handler during polling:', handlerError);
+            // Verificăm dacă acest mesaj a fost deja procesat
+            if (this.processedMessageIds.has(message.notificationId)) {
+              console.log(`Mesaj de polling ignorat (duplicat) cu ID: ${message.notificationId}`);
+              return;
             }
-          });
+            
+            // Marcăm mesajul ca procesat
+            this.processedMessageIds.add(message.notificationId);
+            
+            // Limităm mărimea setului pentru a evita consumul excesiv de memorie
+            if (this.processedMessageIds.size > 100) {
+              // Eliminăm primele 50 de elemente când depășim 100
+              const idsToRemove = Array.from(this.processedMessageIds).slice(0, 50);
+              idsToRemove.forEach(id => this.processedMessageIds.delete(id));
+            }
+            
+            if (message.type === 'NEW_MESSAGE') {
+              console.log('Received NEW_MESSAGE from polling:', message);
+            }
+            
+            // Transmitem mesajul la toți handlerii înregistrați
+            this.messageHandlers.forEach(handler => {
+              try {
+                handler(message);
+              } catch (handlerError) {
+                console.error('Error in message handler during polling:', handlerError);
+              }
+            });
+          }
         });
       }
     } catch (error) {
