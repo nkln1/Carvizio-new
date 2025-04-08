@@ -908,11 +908,27 @@ export function registerRoutes(app: Express): void {
         console.log(`Căutare furnizori de servicii în zona: ${request.county}, ${cityStr}`);
         
         // Căutăm toți furnizorii de servicii în aceeași zonă
+        // Căutare în Firestore
         const serviceProvidersSnapshot = await firestore
           .collection('service_providers_data') // Colecția cu date despre furnizori
           .where('county', '==', request.county)
           .where('city', '==', cityStr) // Verificăm orașul exact
           .get();
+        
+        // Pentru debugging/testare, vom obține și toți furnizorii din baza de date PostgreSQL pentru a compara
+        // Această parte este necesară pentru că datele din Firestore ar putea să nu fie sincronizate corect
+        const allServiceProviders = await storage.getAllServiceProviders();
+        
+        // Filtrăm service providers doar după județ (mai flexibil decât Firestore)
+        const matchingServiceProviders = allServiceProviders.filter(sp => 
+          sp.county.toLowerCase() === request.county.toLowerCase());
+          
+        // Afișăm informații de debugging
+        console.log(`Furnizori găsiți în Firestore: ${serviceProvidersSnapshot.docs.length}`);
+        console.log(`Furnizori găsiți în baza de date PostgreSQL (doar după județ): ${matchingServiceProviders.length}`);
+        
+        // Adăugăm și id-urile acestora în set pentru a nu avea duplicări
+        const serviceProviderIds = new Set();
           
         console.log(`Număr furnizori de servicii găsiți în zona cererii: ${serviceProvidersSnapshot.docs.length}`);
         

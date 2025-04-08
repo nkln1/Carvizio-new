@@ -65,6 +65,7 @@ export interface IStorage {
   createServiceProvider(provider: InsertServiceProvider & { firebaseUid: string }): Promise<ServiceProvider>;
   updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
   getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined>;
+  getAllServiceProviders(): Promise<ServiceProvider[]>;
 
   // Car management
   getClientCars(clientId: number): Promise<Car[]>;
@@ -343,8 +344,21 @@ export class DatabaseStorage implements IStorage {
       return provider;
     } catch (error) {
       console.error('Error getting service provider by username:', error);
-      console.error('Error getting service provider by username:', error);
       return undefined;
+    }
+  }
+  
+  async getAllServiceProviders(): Promise<ServiceProvider[]> {
+    try {
+      console.log('[Storage] Obținere toate service providers din baza de date');
+      const providers = await db
+        .select()
+        .from(serviceProviders);
+      console.log(`[Storage] Găsite ${providers.length} service providers în baza de date`);
+      return providers;
+    } catch (error) {
+      console.error('[Storage] Eroare la obținerea tuturor service providers:', error);
+      return [];
     }
   }
 
@@ -1160,13 +1174,31 @@ export class DatabaseStorage implements IStorage {
   // Notification Preferences methods
   async getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined> {
     try {
-      const [preferences] = await db
+      console.log(`[Storage] Obținere preferințe de notificare pentru serviceProviderId: ${serviceProviderId}`);
+      const results = await db
         .select()
         .from(notificationPreferences)
         .where(eq(notificationPreferences.serviceProviderId, serviceProviderId));
+      
+      if (results.length === 0) {
+        console.log(`[Storage] Nu s-au găsit preferințe pentru serviceProviderId: ${serviceProviderId}, se vor folosi valorile implicite`);
+        return undefined;
+      }
+      
+      const preferences = results[0];
+      console.log(`[Storage] Preferințe găsite pentru serviceProviderId ${serviceProviderId}:`, 
+        JSON.stringify({
+          emailNotificationsEnabled: preferences.emailNotificationsEnabled,
+          browserNotificationsEnabled: preferences.browserNotificationsEnabled,
+          newRequestEmailEnabled: preferences.newRequestEmailEnabled,
+          newOfferEmailEnabled: preferences.newOfferEmailEnabled,
+          offerAcceptedEmailEnabled: preferences.offerAcceptedEmailEnabled,
+          newMessageEmailEnabled: preferences.newMessageEmailEnabled,
+          newReviewEmailEnabled: preferences.newReviewEmailEnabled
+        }));
       return preferences;
     } catch (error) {
-      console.error('Error getting notification preferences:', error);
+      console.error('[Storage] Eroare la obținerea preferințelor de notificare:', error);
       return undefined;
     }
   }
@@ -1229,6 +1261,38 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting client reviews:', error);
       return [];
+    }
+  }
+  
+  async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
+    try {
+      console.log(`[Storage] Calculare rating mediu pentru service provider ID: ${serviceProviderId}`);
+      const reviews = await this.getServiceProviderReviews(serviceProviderId);
+      
+      if (reviews.length === 0) {
+        console.log(`[Storage] Nu există recenzii pentru serviceProviderId ${serviceProviderId}`);
+        return 0;
+      }
+      
+      const sum = reviews.reduce((total, review) => total + review.rating, 0);
+      const average = sum / reviews.length;
+      
+      console.log(`[Storage] Rating mediu pentru serviceProviderId ${serviceProviderId}: ${average.toFixed(1)} (${reviews.length} recenzii)`);
+      return parseFloat(average.toFixed(1));
+    } catch (error) {
+      console.error('[Storage] Eroare la calcularea rating-ului mediu:', error);
+      return 0;
+    }
+  }
+  
+  async deleteReview(id: number): Promise<void> {
+    try {
+      console.log(`[Storage] Ștergere recenzie cu ID: ${id}`);
+      await db.delete(reviews).where(eq(reviews.id, id));
+      console.log(`[Storage] Recenzie ștearsă cu succes: ${id}`);
+    } catch (error) {
+      console.error('[Storage] Eroare la ștergerea recenziei:', error);
+      throw error;
     }
   }
 
