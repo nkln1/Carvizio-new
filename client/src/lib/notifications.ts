@@ -834,7 +834,7 @@ class NotificationHelper {
             }
           });
         }
-      }} catch (error) {
+      } catch (error) {
         console.error('[NotificationHelper] Eroare la verificarea mesajelor prin polling:', error);
       }
     }, options.interval || this.notificationSettings.backgroundCheckInterval);

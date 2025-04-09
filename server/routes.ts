@@ -97,6 +97,12 @@ interface IStorage {
     getWorkingHours: any;
     getServiceProviderByUsername: any;
     createReview: any;
+    getNotificationPreferences: any;
+    createNotificationPreferences: any;
+    updateNotificationPreferences: any;
+    getServiceProviderById: any;
+    getClientById: any;
+    updateReview: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {
@@ -117,7 +123,7 @@ const getUserDisplayName = async (userId: number, userRole: "client" | "service"
 
 
 export function registerRoutes(app: Express): void {
-  
+
   // Firebase Auth Middleware cu gestionare îmbunătățită a erorilor
   const validateFirebaseToken = async (req: Request, res: any, next: any) => {
     const authHeader = req.headers.authorization;
@@ -145,7 +151,7 @@ export function registerRoutes(app: Express): void {
       const rootDir = process.cwd();
       const swPath = path.join(rootDir, 'public', 'sw.js');
       console.log('Calea către Service Worker:', swPath);
-      
+
       if (fs.existsSync(swPath)) {
         console.log('Fișierul sw.js există, îl servim cu tipul application/javascript');
         // Setăm explicit tipul MIME și alte headere importante pentru Service Worker
@@ -155,7 +161,7 @@ export function registerRoutes(app: Express): void {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        
+
         // Citim fișierul și îl trimitem ca răspuns direct în loc de sendFile
         const swContent = fs.readFileSync(swPath, 'utf8');
         res.status(200).send(swContent);
@@ -177,7 +183,7 @@ export function registerRoutes(app: Express): void {
       const rootDir = process.cwd();
       const swPath = path.join(rootDir, 'public', 'firebase-messaging-sw.js');
       console.log('Calea către Firebase Messaging Service Worker:', swPath);
-      
+
       if (fs.existsSync(swPath)) {
         console.log('Fișierul firebase-messaging-sw.js există, îl servim cu tipul application/javascript');
         // Setăm explicit tipul MIME și alte headere importante pentru Service Worker
@@ -187,7 +193,7 @@ export function registerRoutes(app: Express): void {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        
+
         // Citim fișierul și îl trimitem ca răspuns direct în loc de sendFile
         const swContent = fs.readFileSync(swPath, 'utf8');
         res.status(200).send(swContent);
@@ -201,14 +207,14 @@ export function registerRoutes(app: Express): void {
       res.status(500).send('Eroare internă la încărcarea Firebase Messaging Service Worker');
     }
   });
-  
+
   app.get('/sw-registration.js', (req, res) => {
     console.log('!!!! RUTA SW-REGISTRATION.JS ACCESATĂ !!!!');
     try {
       const rootDir = process.cwd();
       const regPath = path.join(rootDir, 'public', 'sw-registration.js');
       console.log('Calea către Service Worker Registration:', regPath);
-      
+
       if (fs.existsSync(regPath)) {
         console.log('Fișierul sw-registration.js există, îl servim cu tipul application/javascript');
         res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
@@ -216,7 +222,7 @@ export function registerRoutes(app: Express): void {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        
+
         // Citim fișierul și îl trimitem ca răspuns direct în loc de sendFile
         const swContent = fs.readFileSync(regPath, 'utf8');
         res.status(200).send(swContent);
@@ -230,7 +236,7 @@ export function registerRoutes(app: Express): void {
       res.status(500).send('Internal server error serving Service Worker Registration');
     }
   });
-  
+
   // Adăugăm o rută pentru pagina de test a Service Worker-ului
   app.get('/sw-test', (req, res) => {
     console.log('!!!! RUTA SW-TEST ACCESATĂ !!!!');
@@ -238,7 +244,7 @@ export function registerRoutes(app: Express): void {
       const rootDir = process.cwd();
       const testPagePath = path.join(rootDir, 'public', 'sw-test.html');
       console.log('Calea către pagina de test SW:', testPagePath);
-      
+
       if (fs.existsSync(testPagePath)) {
         console.log('Fișierul sw-test.html există, îl servim');
         res.setHeader('Content-Type', 'text/html');
@@ -256,7 +262,7 @@ export function registerRoutes(app: Express): void {
       res.status(500).send('Internal server error serving Service Worker test page');
     }
   });
-  
+
   // API pentru verificarea mesajelor necitite - folosit de Service Worker
   app.get('/api/service/unread-messages-count', validateFirebaseToken, async (req, res) => {
     try {
@@ -264,11 +270,11 @@ export function registerRoutes(app: Express): void {
       if (!serviceProvider) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Obține numărul de mesaje necitite
       const unreadCount = await storage.getUnreadMessagesCount(serviceProvider.id, "service");
       console.log(`Număr mesaje necitite pentru service provider ${serviceProvider.id}: ${unreadCount}`);
-      
+
       // Răspunde cu numărul de mesaje necitite
       res.json({ count: unreadCount });
     } catch (error) {
@@ -276,18 +282,18 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to get unread messages count" });
     }
   });
-  
+
   app.get('/api/client/unread-messages-count', validateFirebaseToken, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Obține numărul de mesaje necitite
       const unreadCount = await storage.getUnreadMessagesCount(client.id, "client");
       console.log(`Număr mesaje necitite pentru client ${client.id}: ${unreadCount}`);
-      
+
       // Răspunde cu numărul de mesaje necitite
       res.json({ count: unreadCount });
     } catch (error) {
@@ -295,7 +301,7 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to get unread messages count" });
     }
   });
-  
+
   // API pentru obținerea preferințelor de notificări
   app.get('/api/service/notification-preferences', validateFirebaseToken, async (req, res) => {
     try {
@@ -303,10 +309,10 @@ export function registerRoutes(app: Express): void {
       if (!serviceProvider) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Obține preferințele de notificări ale furnizorului de servicii
       const preferences = await storage.getNotificationPreferences(serviceProvider.id);
-      
+
       if (!preferences) {
         // Dacă nu există preferințe, returnează valori implicite
         return res.json({
@@ -327,14 +333,14 @@ export function registerRoutes(app: Express): void {
           updatedAt: new Date()
         });
       }
-      
+
       res.json(preferences);
     } catch (error) {
       console.error("Error getting notification preferences:", error);
       res.status(500).json({ error: "Failed to get notification preferences" });
     }
   });
-  
+
   // API pentru actualizarea preferințelor de notificări
   app.post('/api/service/notification-preferences', validateFirebaseToken, async (req, res) => {
     try {
@@ -342,10 +348,10 @@ export function registerRoutes(app: Express): void {
       if (!serviceProvider) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Verifică dacă există deja preferințe
       let preferences = await storage.getNotificationPreferences(serviceProvider.id);
-      
+
       // Extragem doar câmpurile necesare și eliminăm timestamp-urile care pot cauza probleme
       const { 
         emailNotificationsEnabled, 
@@ -360,7 +366,7 @@ export function registerRoutes(app: Express): void {
         newReviewBrowserEnabled,
         browserPermission
       } = req.body;
-      
+
       // Construim obiectul de preferințe fără createdAt/updatedAt
       const cleanPreferences = {
         emailNotificationsEnabled, 
@@ -375,14 +381,14 @@ export function registerRoutes(app: Express): void {
         newReviewBrowserEnabled,
         browserPermission
       };
-      
+
       if (!preferences) {
         // Dacă nu există, crează preferințe noi
         const newPreferences = {
           serviceProviderId: serviceProvider.id,
           ...cleanPreferences
         };
-        
+
         preferences = await storage.createNotificationPreferences(newPreferences);
         console.log(`Created notification preferences for service provider ${serviceProvider.id}`);
       } else {
@@ -390,26 +396,26 @@ export function registerRoutes(app: Express): void {
         preferences = await storage.updateNotificationPreferences(preferences.id, cleanPreferences);
         console.log(`Updated notification preferences for service provider ${serviceProvider.id}`);
       }
-      
+
       res.json(preferences);
     } catch (error) {
       console.error("Error updating notification preferences:", error);
       res.status(500).json({ error: "Failed to update notification preferences" });
     }
   });
-  
+
   // Endpoint pentru înregistrarea token-ului FCM
   app.post('/api/notifications/register-token', validateFirebaseToken, async (req, res) => {
     try {
       const { token, userId, userRole } = req.body;
-      
+
       if (!token || !userId || !userRole) {
         return res.status(400).json({ 
           error: "Date incomplete", 
           message: "Token FCM, ID utilizator și rol sunt obligatorii" 
         });
       }
-      
+
       // Verificăm tipul de utilizator și preluăm documentul corespunzător
       let user;
       if (userRole === 'client') {
@@ -425,19 +431,19 @@ export function registerRoutes(app: Express): void {
       } else {
         return res.status(400).json({ error: "Rol utilizator invalid" });
       }
-      
+
       // Utilizăm Firebase Admin importat la începutul fișierului
       const firestore = admin.firestore();
-      
+
       // Determinăm colecția în funcție de rolul utilizatorului
       const collectionName = userRole === 'client' ? 'clients' : 'service_providers';
-      
+
       // Referință la documentul Firestore pentru acest utilizator
       const userDocRef = firestore.collection(collectionName).doc(userId.toString());
-      
+
       // Obținem documentul pentru a vedea dacă există deja
       const doc = await userDocRef.get();
-      
+
       if (!doc.exists) {
         // Dacă documentul nu există, îl creăm cu token-ul curent
         await userDocRef.set({
@@ -449,11 +455,11 @@ export function registerRoutes(app: Express): void {
         // Verificăm mai întâi dacă token-ul există deja
         const userData = doc.data();
         const tokens = userData.fcmTokens || [];
-        
+
         if (!tokens.includes(token)) {
           // Adăugăm token-ul doar dacă nu există deja
           tokens.push(token);
-          
+
           // Actualizăm documentul
           await userDocRef.update({
             fcmTokens: tokens,
@@ -461,7 +467,7 @@ export function registerRoutes(app: Express): void {
           });
         }
       }
-      
+
       console.log(`Token FCM înregistrat cu succes pentru ${userRole} ID ${userId}`);
       res.status(200).json({ 
         success: true,
@@ -897,74 +903,74 @@ export function registerRoutes(app: Express): void {
         console.log(`\n===== ÎNCEPERE PROCESARE NOTIFICĂRI EMAIL PENTRU CERERE NOUĂ =====`);
         console.log(`Cerere nouă creată: ID ${request.id}, Titlu: "${request.title}", Client: ${client.name}`);
         console.log(`Locație: ${request.county}, Orașe: ${Array.isArray(request.cities) ? request.cities.join(', ') : request.cities}`);
-        
+
         // Transformăm orașele în array pentru procesare
         const cityList = Array.isArray(request.cities) ? request.cities : [request.cities];
-        
+
         console.log(`Căutare furnizori de servicii în locația: ${request.county}, ${cityList.join(', ')}`);
-        
+
         // Obținem toți furnizorii de servicii din același județ - FĂRĂ filtru pentru oraș, vom verifica manual
         const serviceProvidersList = await db.query.serviceProviders.findMany({
           where: eq(serviceProviders.county, request.county)
         });
-        
+
         console.log(`Găsiți ${serviceProvidersList.length} furnizori de servicii în județ`);
-        
+
         let emailCount = 0;
         let successCount = 0;
-        
+
         // Pentru fiecare furnizor, trimitem notificări
         for (const serviceProvider of serviceProvidersList) {
           // Verificăm dacă furnizorul este în orașele cererii - verificare mai permisivă
           const serviceProviderCity = serviceProvider.city.toLowerCase().trim();
-          
+
           // Folosim o verificare mai permisivă pentru a include servicii în zonă
           const isInRequestCity = cityList.some(city => {
             const lowerCity = city.toLowerCase().trim();
             return serviceProviderCity.includes(lowerCity) || lowerCity.includes(serviceProviderCity);
           });
-          
+
           // Verificăm și dacă orașul din cerere e 'Toate' sau dacă județul e același
           const isAllCities = cityList.some(city => city.toLowerCase().includes('toate'));
-          
+
           // Dacă furnizorul nu este în orașe și nu este selectat 'Toate', îl ignorăm
           if (!isInRequestCity && !isAllCities) {
             console.log(`Furnizorul ${serviceProvider.companyName} (oraș: ${serviceProvider.city}) nu este în orașele cererii ${cityList.join(', ')}, ignoră`);
             continue;
           }
-          
+
           console.log(`\n>> Procesare furnizor de servicii: ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
           console.log(`   Oraș furnizor: ${serviceProvider.city}`);
           console.log(`   Email furnizor: ${serviceProvider.email}`);
-          
+
           try {
             // Verificăm preferințele de notificare
             const preferences = await storage.getNotificationPreferences(serviceProvider.id);
             console.log(`   Preferințe găsite în baza de date: ${!!preferences}`);
-            
+
             if (preferences) {
               console.log(`   - Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
               console.log(`   - Notificări email pentru cereri noi: ${preferences.newRequestEmailEnabled ? 'DA' : 'NU'}`);
             } else {
               console.log(`   Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
             }
-            
+
             // Determinăm dacă trebuie să trimitem email-ul
             const shouldSendEmail = !preferences || 
                 (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
-                
+
             console.log(`   Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-            
+
             if (shouldSendEmail) {
               // Verificăm dacă adresa de email este validă
               if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
                 console.log(`   ⚠️ Adresă de email invalidă pentru service provider ${serviceProvider.id}: ${serviceProvider.email}`);
                 continue;
               }
-              
+
               emailCount++;
               console.log(`   🚀 Trimitere email #${emailCount} către: ${serviceProvider.email}`);
-              
+
               // Asigurăm-ne că toate proprietățile necesare sunt prezente
               const serviceProviderForEmail = {
                 id: serviceProvider.id,
@@ -972,7 +978,7 @@ export function registerRoutes(app: Express): void {
                 companyName: serviceProvider.companyName,
                 phone: serviceProvider.phone || ''
               };
-              
+
               // Folosim direct EmailService.sendNewRequestNotification așa cum este folosit pentru mesaje
               try {
                 const result = await EmailService.sendNewRequestNotification(
@@ -981,7 +987,7 @@ export function registerRoutes(app: Express): void {
                   client.name,
                   `request_${request.id}_${Date.now()}`
                 );
-                
+
                 if (result) {
                   successCount++;
                   console.log(`   ✅ Email trimis cu succes către ${serviceProvider.email}`);
@@ -996,11 +1002,11 @@ export function registerRoutes(app: Express): void {
             console.error(`   ❌ Eroare la verificarea preferințelor pentru ${serviceProvider.companyName}:`, prefError);
           }
         }
-        
+
         // Verificăm situația - dacă nu s-a trimis niciun email, facem un test direct
         if (emailCount === 0) {
           console.log(`\n⚠️ Nu s-a trimis niciun email! Verificăm funcționalitatea cu un test direct...`);
-          
+
           try {
             // Facem un test direct cu EmailService
             const testResult = await EmailService.sendEmail(
@@ -1010,18 +1016,18 @@ export function registerRoutes(app: Express): void {
               `Test diagnostic - Cerere nouă\n\nAcest email este un test diagnostic pentru a verifica funcționalitatea de trimitere email-uri.\n\nCerere nouă creată: "${request.title}" de către ${client.name}`,
               'TEST_DIAGNOSTIC'
             );
-            
+
             console.log(`Test diagnostic direct result: ${testResult ? 'SUCCESS' : 'FAILURE'}`);
           } catch (testError) {
             console.error(`   ❌ Eroare la testul de diagnostic email:`, testError);
           }
         }
-        
+
         console.log(`\n===== FINALIZARE PROCESARE NOTIFICĂRI EMAIL =====`);
         console.log(`Email-uri procesate: ${emailCount}`);
         console.log(`Email-uri trimise cu succes: ${successCount}`);
         console.log(`Email-uri eșuate: ${emailCount - successCount}`);
-        
+
       } catch (emailError) {
         // Doar înregistrăm eroarea, nu împiedicăm crearea cererii
         console.error("\n❌ EROARE GENERALĂ la procesarea email-urilor pentru cerere nouă:", emailError);
@@ -1582,17 +1588,17 @@ export function registerRoutes(app: Express): void {
       try {
         console.log(`=== PROCES EMAIL NOTIFICARE OFERTĂ ACCEPTATĂ ===`);
         console.log(`Service Provider ID: ${offer.serviceProviderId}`);
-        
+
         // Obținem datele furnizorului de servicii
         const serviceProvider = await storage.getServiceProvider(offer.serviceProviderId);
-        
+
         if (serviceProvider) {
           console.log(`Service Provider găsit: ${serviceProvider.companyName} (${serviceProvider.email})`);
-          
+
           // Verificăm preferințele pentru notificări
           console.log(`Verificăm preferințele pentru notificări email...`);
           const preferences = await storage.getNotificationPreferences(serviceProvider.id);
-          
+
           console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
           if (preferences) {
             console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
@@ -1601,25 +1607,25 @@ export function registerRoutes(app: Express): void {
           } else {
             console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
           }
-          
+
           // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
           const shouldSendEmail = !preferences || 
               (preferences.emailNotificationsEnabled && preferences.acceptedOfferEmailEnabled);
-              
+
           console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-          
+
           if (shouldSendEmail) {
             console.log(`Pregătim trimiterea email-ului de notificare...`);
-            
+
             // Obținem detaliile cererii pentru a include în email
             const request = await storage.getRequest(offer.requestId);
             const offerTitle = offer.title || (request ? request.title : "Ofertă service auto");
-            
+
             console.log(`Informații pentru email:`);
             console.log(`- Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
             console.log(`- Titlu ofertă: "${offerTitle}"`);
             console.log(`- Client: ${client.name}`);
-            
+
             // Trimitem email de notificare
             try {
               console.log(`Se trimite email-ul...`);
@@ -1841,20 +1847,20 @@ export function registerRoutes(app: Express): void {
       // Trimitem notificare prin email pentru noul mesaj (doar dacă destinatarul este furnizor de servicii)
       try {
         console.log(`=== PROCES EMAIL NOTIFICARE MESAJ NOU ===`);
-        
+
         if (message.receiverRole === "service") {
           console.log(`Destinatar este furnizor de servicii (ID: ${message.receiverId})`);
-          
+
           // Obținem datele furnizorului de servicii
           const serviceProvider = await storage.getServiceProvider(message.receiverId);
-          
+
           if (serviceProvider) {
             console.log(`Service Provider găsit: ${serviceProvider.companyName} (${serviceProvider.email})`);
-            
+
             // Verificăm preferințele pentru notificări
             console.log(`Verificăm preferințele pentru notificări email...`);
             const preferences = await storage.getNotificationPreferences(serviceProvider.id);
-            
+
             console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
             if (preferences) {
               console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
@@ -1863,27 +1869,27 @@ export function registerRoutes(app: Express): void {
             } else {
               console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
             }
-            
+
             // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
             const shouldSendEmail = !preferences || 
                 (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
-                
+
             console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-            
+
             if (shouldSendEmail) {
               console.log(`Pregătim trimiterea email-ului de notificare...`);
-              
+
               // Obținem detaliile cererii pentru a include în email
               const request = await storage.getRequest(requestId);
               const senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
               const requestTitle = request ? request.title : "Cerere service auto";
-              
+
               console.log(`Informații pentru email:`);
               console.log(`- Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
               console.log(`- Expeditor: ${senderName}`);
               console.log(`- Titlu cerere: "${requestTitle}"`);
               console.log(`- Conținut mesaj: "${message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content}"`);
-              
+
               // Trimitem email de notificare
               try {
                 console.log(`Se trimite email-ul...`);
@@ -1921,20 +1927,20 @@ export function registerRoutes(app: Express): void {
           }));
         }
       });
-      
+
       // Send push notification via Firebase Cloud Messaging
       try {
         // Admin is already imported at the top of the file
-        
+
         // Obținem informații suplimentare despre expeditor și destinatar
         let senderName = await getUserDisplayName(message.senderId, message.senderRole, storage);
-        
+
         // Obținem informații despre solicitare
         const request = await storage.getRequest(requestId);
-        
+
         // Obținem Firebase UID al destinatarului pentru a trimite notificarea
         let receiverFirebaseUid = null;
-        
+
         if (message.receiverRole === 'client') {
           // Destinatarul este client, obținem Firebase UID
           const receiver = await storage.getClient(message.receiverId);
@@ -1944,25 +1950,25 @@ export function registerRoutes(app: Express): void {
           const receiver = await storage.getServiceProvider(message.receiverId);
           receiverFirebaseUid = receiver?.firebaseUid;
         }
-        
+
         // Dacă am găsit UID-ul Firebase al destinatarului, trimitem notificarea
         if (receiverFirebaseUid) {
           // Obținem token-urile FCM asociate cu acest utilizator din Firestore
           const db = admin.firestore();
           const userCollection = message.receiverRole === 'client' ? 'clients' : 'service_providers';
           const userDoc = await db.collection(userCollection).doc(message.receiverId.toString()).get();
-          
+
           if (userDoc.exists) {
             const userData = userDoc.data();
-            
+
             if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
               // Pregătim datele notificării
               const notificationTitle = `${senderName} v-a trimis un mesaj`;
               const notificationBody = content.length > 100 ? content.substring(0, 97) + '...' : content;
-              
+
               // URL-ul pentru redirecționare la click
               const deepLink = `/dashboard/${message.receiverRole}/messages/${requestId}`;
-              
+
               // Trimitem notificarea către toate token-urile utilizatorului
               const messagePayload = {
                 notification: {
@@ -2009,7 +2015,7 @@ export function registerRoutes(app: Express): void {
                   }
                 }
               };
-              
+
               // Trimitem notificarea către toate dispozitivele utilizatorului
               admin.messaging().sendMulticast(messagePayload)
                 .then((response) => {
@@ -2189,31 +2195,31 @@ export function registerRoutes(app: Express): void {
           console.error('Error sending WebSocket message:', error);
         }
       });
-      
+
       // Send push notification via Firebase Cloud Messaging
       try {
         // Admin is already imported at the top of the file
-        
+
         // Get receiver Firebase UID
         const receiverFirebaseUid = receiver.firebaseUid;
-        
+
         if (receiverFirebaseUid) {
           // Obținem token-urile FCM asociate cu acest utilizator din Firestore
           const db = admin.firestore();
           const userCollection = 'clients'; // Receiving role is client
           const userDoc = await db.collection(userCollection).doc(receiver.id.toString()).get();
-          
+
           if (userDoc.exists) {
             const userData = userDoc.data();
-            
+
             if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
               // Prepare notification data
               const notificationTitle = `${sender.companyName} v-a trimis un mesaj`;
               const notificationBody = content.length > 100 ? content.substring(0, 97) + '...' : content;
-              
+
               // Deep link URL
               const deepLink = `/dashboard/client/messages/${requestId}`;
-              
+
               // Send notification to all user devices
               const messagePayload = {
                 notification: {
@@ -2260,7 +2266,7 @@ export function registerRoutes(app: Express): void {
                   }
                 }
               };
-              
+
               // Send notification to all user devices
               admin.messaging().sendMulticast(messagePayload)
                 .then((response) => {
@@ -2494,871 +2500,10 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Test endpoint for new request notification
-  app.post("/api/test/new-request-notification", async (req, res) => {
-    try {
-      const { serviceProviderId } = req.body;
-      
-      if (!serviceProviderId) {
-        return res.status(400).json({ error: "Service provider ID is required" });
-      }
-      
-      const serviceProvider = await storage.getServiceProvider(serviceProviderId);
-      if (!serviceProvider) {
-        return res.status(404).json({ error: "Service provider not found" });
-      }
-      
-      console.log(`\n=== TESTING NEW REQUEST NOTIFICATION EMAIL ===`);
-      console.log(`Target: ${serviceProvider.companyName} (${serviceProvider.email})`);
-      
-      // Direct test of the email notification
-      const result = await EmailService.sendNewRequestNotification(
-        serviceProvider,
-        "Test Request Notification",
-        "Test Client",
-        `test_request_${Date.now()}`
-      );
-      
-      console.log(`Email send result: ${result ? 'SUCCESS' : 'FAILURE'}`);
-      res.json({ success: result, serviceProvider: serviceProvider.email });
-      
-    } catch (error) {
-      console.error("Error testing new request notification:", error);
-      res.status(500).json({ error: "Failed to test new request notification" });
-    }
-  });
-
-
-  // Working Hours endpoints
-  app.get("/api/service/:serviceId/working-hours", async (req, res) => {
-    try {
-      const serviceId = parseInt(req.params.serviceId);
-      if (isNaN(serviceId)) {
-        return res.status(400).json({ error: "Invalid service ID" });
-      }
-
-      // Get custom hours if they exist
-      const workingHours = await storage.getWorkingHours(serviceId);
-      res.json(workingHours);
-    } catch (error) {
-      console.error("Error getting working hours:", error);
-      res.status(500).json({ error: "Failed to get working hours" });
-    }
-  });
-
-  app.put("/api/service/working-hours/:dayOfWeek", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
-      const { openTime, closeTime, isClosed } = req.body;
-      const dayOfWeek = parseInt(req.params.dayOfWeek);
-
-      // Save working hours
-      const updatedHours = await storage.updateWorkingHours(provider.id, {
-        dayOfWeek,
-        openTime,
-        closeTime,
-        isClosed
-      });
-
-      res.json(updatedHours);
-    } catch (error) {
-      console.error("Error updating working hours:", error);
-      res.status(500).json({ error: "Failed to update working hours" });
-    }
-  });
-
-  app.delete("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
-      }
-
-      const hourId = parseInt(req.params.id);
-      if (isNaN(hourId)) {
-        return res.status(400).json({ error: "Invalid working hour ID" });
-      }
-
-      // Get current working hour to verify ownership
-      const workingHours = await storage.getServiceProviderWorkingHours(provider.id);
-      const hourExists = workingHours.some(h => h.id === hourId);
-
-      if (!hourExists) {
-        return res.status(404).json({ error: "Working hour not found or not owned by this service provider" });
-      }
-
-      await storage.deleteWorkingHour(hourId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting working hour:", error);
-      res.status(500).json({ error: "Failed to delete working hour" });
-    }
-  });
-
-  // Add endpoint to get client conversations
-  app.get("/api/client/conversations", validateFirebaseToken, async(req, res) => {    try {
-      const client =await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if(!client) {
-        return res.status(401).json({ error: "Client not found" });
-      }
-
-      //      // Getall messagesfor this client
-      const messages = await storage.getUserMessages(client.id, "client", null);
-
-      // Group messages by requestId
-      const conversationsByRequest = messages.reduce((acc, message) => {        if (!acc[message.requestId]) {
-          acc[message.requestId] = message;
-        } else if (new Date(message.createdAt) > new Date(acc[message.requestId].createdAt)) {
-          // Keep the most recent message for this request
-          acc[message.requestId] = message;
-        }
-        return acc;
-      }, {});
-
-      // Get service provider information and request details for each conversation
-      const conversations = await Promise.all(
-        Object.values(conversationsByRequest).map(async (message) => {
-          const request = await storage.getRequest(message.requestId);
-          if (!request) return null;
-
-          // Find the service provider who sent or received messages
-          const serviceProviderId = message.senderRole === "service" ? message.senderId : message.receiverId;
-          const serviceProvider = await storage.getServiceProvider(serviceProviderId);
-          if (!serviceProvider) return null;
-
-          // Get unread count
-          const unreadMessages = messages.filter(m =>
-            m.requestId === message.requestId &&
-            m.receiverId === client.id &&
-            m.receiverRole === "client" &&
-            !m.isRead
-          );
-
-          return {
-            userId: serviceProvider.id,
-            userName: serviceProvider.companyName,
-            serviceProviderUsername: serviceProvider.username,
-            requestId: message.requestId,
-            requestTitle: request.title,
-            lastMessage: message.content,
-            lastMessageDate: message.createdAt,
-            unreadCount: unreadMessages.length,
-            offerId: message.offerId
-          };
-        })
-      );
-
-      // Filter out null values and sort by date (most recent first)
-      const validConversations = conversations
-        .filter(conv => conv !== null)
-        .sort((a, b) =>
-          new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
-        );
-
-      res.json(validConversations);
-    } catch (error) {
-      console.error("Error fetching client conversations:", error);
-      res.status(500).json({ error: "Failed to fetch conversations" });
-    }
-  });
-
-  // Client message endpoints
-  app.get("/api/client/messages/:requestId", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log('GET /api/client/messages/:requestId - Start', {
-        firebaseUid: req.firebaseUser!.uid,
-        requestId: req.params.requestId
-      });
-
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        console.log('Client not found for Firebase UID:', req.firebaseUser!.uid);
-        return res.status(403).json({ error: "Access denied. Only clients can view messages." });
-      }
-
-      const requestId = parseInt(req.params.requestId);
-      if (isNaN(requestId)) {
-        console.log('Invalid request ID:', req.params.requestId);
-        return res.status(400).json({ error: "Invalid request ID" });
-      }
-
-      // Verify the client owns this request
-      const request = await storage.getRequest(requestId);
-      console.log('Found request:', request);
-
-      if (!request || request.clientId !== client.id) {
-        console.log('Request not found or unauthorized:', { requestId, clientId: client.id });
-        return res.status(403).json({ error: "Not authorized to view these messages" });
-      }
-
-      // Get messages with enriched sender information
-      const messages = await storage.getMessagesByRequest(requestId);
-      console.log('Retrieved messages count:', messages.length);
-
-      // Set proper content type and send response
-      res.setHeader('Content-Type', 'application/json');
-      return res.json(messages);
-    } catch (error) {
-      console.error('Error in GET /api/client/messages/:requestId:', error);
-      return res.status(500).json({
-        error: "Failed to fetch messages",
-        message: error instanceof Error ? error.message : "Unknown error occurred"
-      });
-    }
-  });
-
-  app.post("/api/client/messages/send", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log('POST /api/client/messages/send - Start', req.body);
-
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        console.log('Client not found for Firebase UID:', req.firebaseUser!.uid);
-        return res.status(403).json({ error: "Access denied. Only clients can send messages." });
-      }
-
-      const { content, receiverId, receiverRole, requestId, offerId } = req.body;
-
-      // Validate required fields
-      if (!content || !receiverId || !requestId) {
-        console.log('Missing required fields:', { content, receiverId, requestId });
-        return res.status(400).json({
-          error: "Invalid request data",
-          message: "Content, receiverId and requestId are required"
-        });
-      }
-
-      // Verify the client owns this request
-      const request = await storage.getRequest(requestId);
-      console.log('Found request:', request);
-
-      if (!request || request.clientId !== client.id) {
-        console.log('Request not found or unauthorized:', { requestId, clientId: client.id });
-        return res.status(403).json({ error: "Not authorized to send messages for this request" });
-      }
-
-      // Create message
-      const message = await storage.createMessage({
-        senderId: client.id,
-        senderRole: 'client',
-        receiverId,
-        receiverRole: receiverRole || 'service',
-        content,
-        requestId,
-        offerId: offerId || null
-      });
-
-      // Enrich message with sender name for response
-      const enrichedMessage = {
-        ...message,
-        senderName: client.name
-      };
-
-      // Send real-time notification through WebSocket
-      const messageNotification = {
-        type: 'NEW_MESSAGE',
-        payload: enrichedMessage,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Broadcasting message notification:', messageNotification);
-
-      wss.clients.forEach((wsClient) => {
-        if (wsClient.readyState === WebSocket.OPEN) {
-          try {
-            wsClient.send(JSON.stringify(messageNotification));
-          } catch (err) {
-            console.error('WebSocket send error:', err);
-          }
-        }
-      });
-      
-      // Send push notification via Firebase Cloud Messaging
-      try {
-        // Use the already imported admin module instead of require
-        // Obținem informații despre destinatar
-        const receiver = await storage.getServiceProvider(receiverId);
-        
-        if (receiver && receiver.firebaseUid) {
-          // Verificăm preferințele de notificare pentru email
-          console.log(`Verificăm preferințele pentru notificări email pentru service provider ${receiverId}...`);
-          
-          try {
-            const preferences = await storage.getNotificationPreferences(receiverId);
-            
-            console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
-            if (preferences) {
-              console.log(`Preferințe specifice pentru service provider ID ${receiverId}:`);
-              console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
-              console.log(`- Notificări email pentru mesaje noi: ${preferences.newMessageEmailEnabled ? 'DA' : 'NU'}`);
-            } else {
-              console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
-            }
-            
-            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
-            const shouldSendEmail = !preferences || 
-                (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
-                
-            console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-            
-            // Utilizăm ID-ul mesajului pentru a asigura că fiecare mesaj primește un email separat
-            // Adăugăm și timestamp-ul pentru a face identificatorul și mai unic
-            const emailIdentifier = `message_${message.id}_${Date.now()}`;
-            console.log(`Identificator unic email: ${emailIdentifier}`);
-            
-            if (shouldSendEmail) {
-              console.log(`Pregătim trimiterea email-ului de notificare...`);
-              
-              try {
-                console.log(`Se trimite email-ul pentru mesajul #${message.id}...`);
-                await EmailService.sendNewMessageNotification(
-                  receiver,
-                  content,
-                  client.name,
-                  request.title || "Cerere service auto",
-                  `message_${message.id}_${Date.now()}`
-                );
-                console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email}) pentru mesajul #${message.id}`);
-              } catch (emailErr) {
-                console.error(`✗ EROARE la trimiterea email-ului pentru mesajul #${message.id}:`, emailErr);
-              }
-            } else {
-              console.log(`Nu se trimite email de notificare către ${receiver.companyName} conform preferințelor`);
-            }
-          } catch (prefError) {
-            console.error(`Eroare la obținerea preferințelor de notificare:`, prefError);
-          }
-          
-          // Obținem token-urile FCM asociate cu service provider-ul
-          const db = admin.firestore();
-          const userCollection = 'service_providers';
-          const userDoc = await db.collection(userCollection).doc(receiverId.toString()).get();
-          
-          if (userDoc.exists) {
-            const userData = userDoc.data();
-            
-            if (userData && userData.fcmTokens && userData.fcmTokens.length > 0) {
-              // Pregătim datele notificării
-              const notificationTitle = `${client.name} v-a trimis un mesaj`;
-              const notificationBody = content.length > 100 ? content.substring(0, 97) + '...' : content;
-              
-              // URL-ul pentru redirecționare la click
-              const deepLink = `/dashboard/service/messages/${requestId}`;
-              
-              // Pregătim payload-ul notificării
-              const messagePayload = {
-                notification: {
-                  title: notificationTitle,
-                  body: notificationBody,
-                },
-                data: {
-                  requestId: requestId.toString(),
-                  messageId: message.id.toString(),
-                  senderId: client.id.toString(),
-                  senderRole: 'client',
-                  type: 'new_message',
-                  url: deepLink,
-                  timestamp: new Date().getTime().toString(),
-                  requestTitle: request.title || 'Cerere service'
-                },
-                tokens: userData.fcmTokens,
-                // Configurare pentru Android
-                android: {
-                  notification: {
-                    sound: 'default',
-                    clickAction: 'FLUTTER_NOTIFICATION_CLICK',
-                  }
-                },
-                // Configurare pentru iOS
-                apns: {
-                  payload: {
-                    aps: {
-                      sound: 'default',
-                    }
-                  }
-                },
-                // Configurare pentru web
-                webpush: {
-                  notification: {
-                    icon: '/favicon.ico',
-                    badge: '/favicon.ico',
-                  },
-                  fcmOptions: {
-                    link: deepLink,
-                  },
-                  headers: {
-                    TTL: '86400' // 24 de ore în secunde
-                  }
-                }
-              };
-              
-              // Trimitem notificarea către toate dispozitivele utilizatorului
-              try {
-                // Folosim metoda corectă pentru Firebase Admin SDK v9+
-                admin.messaging().sendEachForMulticast(messagePayload)
-                  .then((response) => {
-                    console.log(`FCM: Notificare trimisă cu succes. Success count: ${response.successCount}`);
-                  })
-                  .catch((error) => {
-                    console.error('FCM: Eroare la trimiterea notificării:', error);
-                  });
-              } catch (fcmMethodError) {
-                console.error('FCM: Eroare la apelarea metodei de trimitere:', fcmMethodError);
-                // Fallback pentru compatibilitate cu versiuni mai vechi
-                try {
-                  // @ts-ignore - pentru compatibilitate cu versiuni mai vechi
-                  admin.messaging().sendMulticast(messagePayload)
-                    .then((response) => {
-                      console.log(`FCM: Notificare trimisă cu succes (fallback). Success count: ${response.successCount}`);
-                    })
-                    .catch((error) => {
-                      console.error('FCM: Eroare la trimiterea notificării (fallback):', error);
-                    });
-                } catch (fallbackError) {
-                  console.error('FCM: Eroare la metoda fallback:', fallbackError);
-                }
-              }
-            } else {
-              console.log(`Nu s-au găsit token-uri FCM pentru service provider-ul ${receiverId}`);
-            }
-          } else {
-            console.log(`Nu s-a găsit documentul Firestore pentru service provider-ul ${receiverId}`);
-          }
-        } else {
-          console.log(`Nu s-a găsit Firebase UID pentru service provider-ul ${receiverId}`);
-        }
-      } catch (fcmError) {
-        console.error('Eroare la trimiterea notificării FCM:', fcmError);
-        // Nu eșuăm întregul request dacă notificarea FCM eșuează
-      }
-
-      // Set proper content type and send response
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(201).json(enrichedMessage);
-    } catch (error) {
-      console.error('Error in POST /api/client/messages/send:', error);
-      return res.status(500).json({
-        error: "Failed to send message",
-        message: error instanceof Error ? error.message : "Unknown error occurred"
-      });
-    }
-  });
-
-  // Add this endpoint after the other message-related endpoints
-  app.post("/api/service/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can mark conversations as read." });
-      }
-
-      const requestId = parseInt(req.params.requestId);
-      const { userId } = req.body;
-
-      if (!requestId || !userId) {
-        return res.status(400).json({ error: "Missing required parameters" });
-      }
-
-      await storage.markConversationAsRead(requestId, provider.id);
-
-      res.status(200).json({ message: "Conversation marked as read successfully" });
-    } catch (error) {
-      console.error("Error marking conversation as read:", error);
-      res.status(500).json({ error: "Failed to mark conversation as read" });
-    }
-  });
-
-  // Add similar endpoint for client
-  app.post("/api/client/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
-    try {
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(403).json({ error: "Access denied. Only clients can mark conversations as read." });
-      }
-
-      const requestId = parseInt(req.params.requestId);
-      const { userId } = req.body;
-
-      if (!requestId || !userId) {
-        return res.status(400).json({ error: "Missing required parameters" });
-      }
-
-      await storage.markConversationAsRead(requestId, client.id);
-
-      res.status(200).json({ message: "Conversation marked as read successfully" });
-    } catch (error) {
-      console.error("Error marking conversation as read:", error);
-      res.status(500).json({ error: "Failed to mark conversation as read" });
-    }
-  });
-
-  // Update the review endpoint to handle direct service reviews
-  app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log("Attempting to create review with data:", req.body);
-
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(403).json({ error: "Access denied. Only clients can submit reviews." });
-      }
-
-      const { rating, comment, serviceProviderId, offerId, requestId } = req.body;
-
-      // Verify serviceProvider exists
-      const serviceProvider = await storage.getServiceProvider(serviceProviderId);
-      if (!serviceProvider) {
-        return res.status(400).json({ error: "Service provider not found" });
-      }
-
-      // Verificăm dacă clientul a interacționat cu acest service provider
-      // prin verificarea existenței unei oferte acceptate
-      let acceptedOffer = null;
-      const offers = await storage.getOffersForClient(client.id);
-
-      if (offerId) {
-        acceptedOffer = offers.find(offer => 
-          offer.id === offerId && 
-          offer.serviceProviderId === serviceProviderId && 
-          offer.status === "Accepted"
-        );
-
-        if (!acceptedOffer) {
-          return res.status(403).json({ 
-            error: "Cannot create review", 
-            message: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie." 
-          });
-        }
-      } else {
-        // Dacă nu este specificat un offerId, căutăm prima ofertă acceptată
-        acceptedOffer = offers.find(offer => 
-          offer.serviceProviderId === serviceProviderId && 
-          offer.status === "Accepted"
-        );
-
-        if (!acceptedOffer) {
-          return res.status(403).json({ 
-            error: "Cannot create review", 
-            message: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie." 
-          });
-        }
-      }
-
-      console.log("Creating review for service provider:", serviceProviderId, "by client:", client.id);
-
-      // Determinăm data finalizării ofertei (completedAt sau data curentă)
-      const offerCompletedAt = acceptedOffer.completedAt || new Date();
-
-      // Validate review data
-      const reviewData = insertReviewSchema.parse({
-        serviceProviderId,
-        clientId: client.id,
-        rating,
-        comment,
-        requestId: requestId || acceptedOffer.requestId || null,
-        offerId: offerId || acceptedOffer.id || null,
-        offerCompletedAt // Adăugăm data finalizării
-      });
-
-      // Create the review
-      const review = await storage.createReview(reviewData);
-
-      // Trimitem notificare prin email pentru noua recenzie
-      try {
-        console.log(`Pregătire pentru trimiterea email-ului de notificare pentru recenzie nouă către furnizorul de servicii cu ID: ${serviceProviderId}`);
-        
-        // Verificăm preferințele pentru notificări
-        const preferences = await storage.getNotificationPreferences(serviceProviderId);
-        
-        console.log(`Verificăm preferințe de notificare pentru email-uri pentru furnizorul ${serviceProvider.companyName} (ID: ${serviceProviderId})`);
-        console.log('Preferințe găsite:', !!preferences);
-        if (preferences) {
-          console.log('Email notificări activate global:', preferences.emailNotificationsEnabled);
-          console.log('Email notificări recenzii noi:', preferences.newReviewEmailEnabled);
-        }
-        
-        // Dacă preferințele permit trimiterea de email-uri pentru recenzii noi
-        if (!preferences || 
-            (preferences.emailNotificationsEnabled && preferences.newReviewEmailEnabled)) {
-          
-          console.log(`Preferințele permit trimiterea email-ului de notificare pentru recenzie nouă către ${serviceProvider.companyName}`);
-          console.log(`Trimitem email de notificare pentru recenzie nouă (${rating} stele) de la "${client.name}" către ${serviceProvider.email}`);
-          
-          // Trimitem email de notificare
-          try {
-            await EmailService.sendNewReviewNotification(
-              serviceProvider,
-              client.name,
-              rating,
-              comment,
-              `review_${review.id}_${Date.now()}`
-            );
-            console.log(`Email de notificare pentru recenzie nouă trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
-          } catch (err) {
-            console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", err);
-          }
-        } else {
-          console.log(`Nu se trimite email de notificare pentru recenzie nouă către ${serviceProvider.companyName} conform preferințelor`);
-        }
-      } catch (emailError) {
-        console.error("Eroare la trimiterea email-ului de notificare pentru recenzie nouă:", emailError);
-      }
-
-      console.log("Review created successfully:", review);
-      res.status(201).json(review);
-    } catch (error) {
-      console.error("Error creating review:", error);
-      if (error instanceof Error) {
-        res.status(500).json({ 
-          error: "Failed to create review",
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
-      } else {
-        res.status(500).json({ error: "Failed to create review" });
-      }
-    }
-  });
-
-  // Endpoint pentru actualizarea recenziilor
-  // Endpoint pentru actualizarea recenziilor
-  app.put("/api/reviews/:id", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log("Attempting to update review with data:", req.body);
-
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(403).json({ error: "Access denied. Only clients can update reviews." });
-      }
-
-      const reviewId = parseInt(req.params.id);
-      if (isNaN(reviewId)) {
-        return res.status(400).json({ error: "Invalid review ID" });
-      }
-
-      // Verifică dacă recenzia există 
-      const existingReview = await db
-        .select()
-        .from(reviews)
-        .where(eq(reviews.id, reviewId))
-        .limit(1);
-
-      if (!existingReview || existingReview.length === 0) {
-        return res.status(404).json({ error: "Review not found" });
-      }
-
-      // Verifică separat dacă clientul este proprietarul
-      if (existingReview[0].clientId !== client.id) {
-        return res.status(403).json({ error: "This review does not belong to you" });
-      }
-
-      const { rating, comment } = req.body;
-
-      // Validează datele recenziei
-      if (!rating || rating < 1 || rating > 5 || !comment || comment.length < 20) {
-        return res.status(400).json({ 
-          error: "Invalid review data", 
-          message: "Rating must be between 1-5 and comment must be at least 20 characters" 
-        });
-      }
-
-      // Actualizează recenzia
-      const updatedReview = await storage.updateReview(reviewId, {
-        rating,
-        comment,
-        lastModified: new Date()
-      });
-
-      console.log("Review updated successfully:", updatedReview);
-      res.status(200).json(updatedReview);
-    } catch (error) {
-      console.error("Error updating review:", error);
-      if (error instanceof Error) {
-        res.status(500).json({ 
-          error: "Failed to update review",
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
-      } else {
-        res.status(500).json({ error: "Failed to update review" });
-      }
-    }
-  });
-
-  app.put("/api/reviews/:id", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log("Attempting to update review with data:", req.body);
-
-      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
-      if (!client) {
-        return res.status(403).json({ error: "Access denied. Only clients can update reviews." });
-      }
-
-      const reviewId = parseInt(req.params.id);
-      if (isNaN(reviewId)) {
-        return res.status(400).json({ error: "Invalid review ID" });
-      }
-
-      // Verifică dacă recenzia există 
-      const existingReview = await db
-        .select()
-        .from(reviews)
-        .where(eq(reviews.id, reviewId))
-        .limit(1);
-
-      if (!existingReview || existingReview.length === 0) {
-        return res.status(404).json({ error: "Review not found" });
-      }
-
-      // Verifică dacă clientul este proprietarul
-      if (existingReview[0].clientId !== client.id) {
-        return res.status(403).json({ error: "This review does not belong to you" });
-      }
-
-      const { rating, comment } = req.body;
-
-      // Validează datele recenziei
-      if (!rating || rating < 1 || rating > 5 || !comment || comment.length < 20) {
-        return res.status(400).json({ 
-          error: "Invalid review data", 
-          message: "Rating must be between 1-5 and comment must be at least 20 characters" 
-        });
-      }
-
-      // Actualizează recenzia
-      const updatedReview = await storage.updateReview(reviewId, {
-        rating,
-        comment,
-        lastModified: new Date()
-      });
-
-      console.log("Review updated successfully:", updatedReview);
-      res.status(200).json(updatedReview);
-    } catch (error) {
-      console.error("Error updating review:", error);
-      if (error instanceof Error) {
-        res.status(500).json({ 
-          error: "Failed to update review",
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
-      } else {
-        res.status(500).json({ error: "Failed to update review" });
-      }
-    }
-  });
-  
-  // Working Hours endpoints
-  app.get("/api/service/:serviceId/working-hours", async (req, res) => {
-    try {
-      const serviceId = parseInt(req.params.serviceId);
-      if (isNaN(serviceId)) {
-        return res.status(400).json({ error: "Invalid service ID" });
-      }
-
-      // Get custom hours if they exist
-      const workingHours = await storage.getWorkingHours(serviceId);
-      res.json(workingHours);
-    } catch (error) {
-      console.error("Error getting working hours:", error);
-      res.status(500).json({ error: "Failed to get working hours" });
-    }
-  });
-
-  app.put("/api/service/working-hours/:dayOfWeek", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
-      const { openTime, closeTime, isClosed } = req.body;
-      const dayOfWeek = parseInt(req.params.dayOfWeek);
-
-      // Save working hours
-      const updatedHours = await storage.updateWorkingHours(provider.id, {
-        dayOfWeek,
-        openTime,
-        closeTime,
-        isClosed
-      });
-
-      res.json(updatedHours);
-    } catch (error) {
-      console.error("Error updating working hours:", error);
-      res.status(500).json({ error: "Failed to update working hours" });
-    }
-  });
-
-  app.delete("/api/service/working-hours/:id", validateFirebaseToken, async (req, res) => {
-    try {
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        return res.status(403).json({ error: "Access denied. Only service providers can manage working hours." });
-      }
-
-      const hourId = parseInt(req.params.id);
-      if (isNaN(hourId)) {
-        return res.status(400).json({ error: "Invalid working hour ID" });
-      }
-
-      // Get current working hour to verify ownership
-      const workingHours = await storage.getServiceProviderWorkingHours(provider.id);
-      const hourExists = workingHours.some(h => h.id === hourId);
-
-      if (!hourExists) {
-        return res.status(404).json({ error: "Working hour not found or not owned by this service provider" });
-      }
-
-      await storage.deleteWorkingHour(hourId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting working hour:", error);
-      res.status(500).json({ error: "Failed to delete working hour" });
-    }
-  });
-
-  // Add endpoint to mark accepted offer as viewed
-  app.post("/api/service/mark-accepted-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
-    try {
-      console.log('Marking accepted offer as viewed - Request params:', req.params);
-
-      const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
-      if (!provider) {
-        console.log('Service provider not found for Firebase UID:', req.firebaseUser!.uid);
-        return res.status(403).json({ error: "Access denied. Only service providers can mark offers as viewed." });
-      }
-      console.log('Service provider found:', { id: provider.id, email: provider.email });
-
-      const offerId = parseInt(req.params.offerId);
-      console.log('Attempting to mark accepted offer as viewed:', { providerId: provider.id, offerId });
-
-      // Verify the offer exists and belongs to this provider
-      const offers = await storage.getSentOffersByServiceProvider(provider.id);
-      const offerExists = offers.some(offer => offer.id === offerId && offer.status === "Accepted");
-
-      if (!offerExists) {
-        console.log('Accepted offer not found or not accessible to provider:', offerId);
-        return res.status(404).json({ error: "Accepted offer not found or not accessible" });
-      }
-
-      const viewedOffer = await storage.markAcceptedOfferAsViewed(provider.id, offerId);
-      console.log('Successfully marked accepted offer as viewed:', viewedOffer);
-
-      res.json(viewedOffer);
-    } catch (error) {
-      console.error("Error marking accepted offer as viewed:", error);
-      res.status(500).json({ error: "Failed to mark accepted offer as viewed" });
-    }
-  });
-
 
   // We no longer create a new WebSocket server here because we're using the one imported from index.ts
   // This code was causing port conflict by creating two WebSocket servers
-  
+
   // Register a new message handler for specific WebSocket events
   wss.on('connection', (ws) => {
     // We'll keep this event handler to handle specific application-related WebSocket events
@@ -3366,7 +2511,7 @@ export function registerRoutes(app: Express): void {
       try {
         const data = JSON.parse(message.toString());
         console.log('Received message in routes.ts handler:', data);
-        
+
         // Handle different message types
         switch (data.type) {
           case 'OFFER_SENT':
@@ -3397,16 +2542,16 @@ export function registerRoutes(app: Express): void {
   app.put("/api/service/notification-preferences", validateFirebaseToken, async (req, res) => {
     try {
       const { userType } = req.session;
-      
+
       if (!userType || userType !== "service") {
         return res.status(403).json({ error: "Unauthorized. Only service providers can update notification preferences." });
       }
-      
+
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
       if (!provider) {
         return res.status(404).json({ error: "Service provider not found" });
       }
-      
+
       // Check if preferences exist
       const existingPreferences = await storage.getNotificationPreferences(provider.id);
       if (!existingPreferences) {
@@ -3415,13 +2560,13 @@ export function registerRoutes(app: Express): void {
           serviceProviderId: provider.id,
           ...req.body
         });
-        
+
         return res.status(201).json(newPreferences);
       }
-      
+
       // Update existing preferences
       const updatedPreferences = await storage.updateNotificationPreferences(existingPreferences.id, req.body);
-      
+
       return res.status(200).json(updatedPreferences);
     } catch (error) {
       console.error("Error updating notification preferences:", error);
@@ -3544,18 +2689,18 @@ export function registerRoutes(app: Express): void {
       if (!serviceProvider) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Obține cererile din zona furnizorului de servicii
       const requestsInArea = await storage.getRequestsByLocation(serviceProvider.county, serviceProvider.city);
-      
+
       // Obține cererile deja vizualizate de furnizorul de servicii
       const viewedRequests = await storage.getViewedRequestsByServiceProvider(serviceProvider.id);
-      
+
       // Filtrăm doar cererile nevizualizate
       const newRequests = requestsInArea.filter(request => {
         return !viewedRequests.some(viewed => viewed.requestId === request.id);
       });
-      
+
       res.json({ 
         count: newRequests.length,
         newRequests
@@ -3573,21 +2718,21 @@ export function registerRoutes(app: Express): void {
       if (!serviceProvider) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Obține ofertele trimise de furnizorul de servicii
       const sentOffers = await storage.getSentOffersByServiceProvider(serviceProvider.id);
-      
+
       // Filtrăm ofertele acceptate
       const acceptedOffers = sentOffers.filter(offer => offer.status === 'Accepted');
-      
+
       // Obținem ofertele acceptate care au fost deja vizualizate
       const viewedAcceptedOffers = await storage.getViewedAcceptedOffersByServiceProvider(serviceProvider.id);
-      
+
       // Filtrăm ofertele acceptate nevizualizate
       const newAcceptedOffers = acceptedOffers.filter(offer => {
         return !viewedAcceptedOffers.some(viewed => viewed.offerId === offer.id);
       });
-      
+
       res.json({ 
         count: newAcceptedOffers.length,
         newAcceptedOffers
@@ -3605,10 +2750,10 @@ export function registerRoutes(app: Express): void {
       if (!serviceProvider) {
         return res.status(401).json({ error: "Not authorized" });
       }
-      
+
       // Verificăm recenziile noi - implementăm doar răspunsul de bază
       // În viitor, aici se va adăuga logica pentru a verifica recenziile necitite
-      
+
       res.json({ 
         count: 0,
         newReviews: []
@@ -3634,14 +2779,14 @@ export function registerRoutes(app: Express): void {
     // Delegăm cererea către handlerul din routes/notifications.ts
     await unregisterToken(req, res);
   });
-  
+
   // Rută de test pentru trimiterea de email (pentru debugging)
   app.get("/api/test-email", async (req, res) => {
     try {
       console.log("Testăm trimiterea email-ului...");
       console.log("API Key present:", !!process.env.ELASTIC_EMAIL_API_KEY);
       console.log("Using email:", "nkln@yahoo.com"); // Known working email recipient
-      
+
       try {
         const result = await EmailService.sendEmail(
           "nkln@yahoo.com", // Using known working email from test scripts
@@ -3650,7 +2795,7 @@ export function registerRoutes(app: Express): void {
           "Acesta este un email de test. Sistemul de email funcționează corect! Trimis la: " + new Date().toLocaleString(),
           "API Test Route"
         );
-        
+
         console.log("Rezultat trimitere test email:", result);
         res.json({ success: result, message: result ? "Email trimis cu succes" : "Eroare la trimiterea email-ului" });
       } catch (emailError) {
@@ -3671,23 +2816,23 @@ export function registerRoutes(app: Express): void {
       });
     }
   });
-  
+
   // Adăugăm o nouă rută pentru diagnosticare email
   app.get("/api/email-diagnostics", (req, res) => {
     // Verificăm prezența cheii API
     const apiKeyPresent = !!process.env.ELASTIC_EMAIL_API_KEY;
     const apiKeyLength = process.env.ELASTIC_EMAIL_API_KEY ? process.env.ELASTIC_EMAIL_API_KEY.length : 0;
-    
+
     // Extragem prima și ultima parte a cheii pentru verificare (nu expunem cheia completă)
     let apiKeyHint = 'not set';
     if (process.env.ELASTIC_EMAIL_API_KEY && apiKeyLength > 8) {
       apiKeyHint = `${process.env.ELASTIC_EMAIL_API_KEY.substring(0, 4)}...${process.env.ELASTIC_EMAIL_API_KEY.substring(apiKeyLength - 4)}`;
     }
-    
+
     // Verificăm setările EmailService
     const fromEmail = EmailService.getFromEmail();
     const baseUrl = EmailService.getBaseUrl();
-    
+
     res.json({
       emailConfigStatus: {
         apiKeyPresent,
@@ -3702,19 +2847,19 @@ export function registerRoutes(app: Express): void {
       }
     });
   });
-  
+
   // System notifications endpoint - broadcasts a system notification to all connected clients
   app.post('/api/notifications/broadcast', validateFirebaseToken, (req, res) => {
     try {
       const { type, title, content, targetUserId } = req.body;
-      
+
       if (!type || !title || !content) {
         return res.status(400).json({ 
           success: false, 
           error: 'Missing required fields (type, title, content)'
         });
       }
-      
+
       // Import WebSocket Server from index.ts
       import('./index.js').then(({ wss }) => {
         import('ws').then(({ WebSocket }) => {
@@ -3731,7 +2876,7 @@ export function registerRoutes(app: Express): void {
               metadata: req.body.metadata || {}
             }
           };
-          
+
           wss.clients.forEach((client: any) => {
             // If targetUserId is specified, only send to that user
             // This would require storing user IDs with WebSocket connections
@@ -3741,7 +2886,7 @@ export function registerRoutes(app: Express): void {
               client.send(JSON.stringify(notificationPayload));
             }
           });
-          
+
           res.status(200).json({ 
             success: true, 
             message: 'Notification broadcast to clients',
@@ -3761,13 +2906,13 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: 'Failed to broadcast notification' });
     }
   });
-  
+
   // Test endpoint for WebSocket broadcast
   app.post('/api/test/broadcast', (req, res) => {
     try {
       const message = req.body;
       console.log('Broadcasting test message to all WebSocket clients:', message);
-      
+
       // Import WebSocket Server from index.ts
       import('./index.js').then(({ wss }) => {
         import('ws').then(({ WebSocket }) => {
@@ -3787,7 +2932,7 @@ export function registerRoutes(app: Express): void {
               }));
             }
           });
-          
+
           res.status(200).json({ 
             success: true, 
             message: 'Test notification broadcast to all connected clients',
@@ -3811,90 +2956,20 @@ export function registerRoutes(app: Express): void {
   return;
 }
 
-// După crearea cererii, găsim furnizorii de servicii din zona specificată pentru a trimite notificări prin email
-try {
-  // Găsim toate serviciile din această zonă
-  const firestore = admin.firestore();
-  // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
-  const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
-  
-  console.log(`Căutare furnizori de servicii pentru notificări email în zona: ${request.county}, ${cityStr}`);
-  
-  // Căutăm toți furnizorii de servicii în aceeași zonă
-  const serviceProvidersSnapshot = await firestore
-    .collection('service_providers_data') // Colecția cu date despre furnizori
-    .where('county', '==', request.county)
-    .where('city', '==', cityStr) // Verificăm orașul exact
-    .get();
-    
-  console.log(`Găsiți ${serviceProvidersSnapshot.size} furnizori de servicii în zonă pentru notificări`);
-  
-  // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
-  const emailPromises = [];
-  
-  for (const doc of serviceProvidersSnapshot.docs) {
-    const serviceProviderData = doc.data();
-    const serviceProviderId = parseInt(doc.id);
-    
-    console.log(`Verificare preferințe pentru furnizorul ${serviceProviderData.company_name} (ID: ${serviceProviderId})`);
-    
-    // Verificăm preferințele de notificări
-    const preferences = await storage.getNotificationPreferences(serviceProviderId);
-    
-    // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
-    const shouldSendEmail = !preferences || 
-      (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
-    
-    console.log(`Preferințe pentru notificări email: ${JSON.stringify(preferences || 'folosim valori implicite')}`);
-    console.log(`Trimitere email pentru cerere nouă: ${shouldSendEmail ? 'DA' : 'NU'}`);
-    
-    if (shouldSendEmail) {
-      // Obținem datele furnizorului de servicii
-      const serviceProvider = await storage.getServiceProviderById(serviceProviderId);
-      
-      if (serviceProvider) {
-        // Adaptăm formatul pentru EmailService
-        const serviceProviderForEmail = {
-          id: serviceProvider.id,
-          companyName: serviceProviderData.company_name || serviceProvider.username,
-          email: serviceProviderData.email || serviceProvider.email,
-          phone: serviceProviderData.phone || ''
-        };
-        
-        console.log(`Trimitere email pentru cerere nouă către: ${serviceProviderForEmail.companyName} (${serviceProviderForEmail.email})`);
-        
-        // Obținem numele clientului care a creat cererea
-        const client = await storage.getClientById(request.clientId);
-        const clientName = client ? client.username : 'Un client';
-        
-        // Trimitem notificarea prin email
-        emailPromises.push(
-          EmailService.sendNewRequestNotification(
-            serviceProviderForEmail,
-            request.title,
-            clientName,
-            request.id
-          ).then(success => {
-            console.log(`Email pentru cerere nouă către ${serviceProviderForEmail.email}: ${success ? 'SUCCES' : 'EȘEC'}`);
-            return success;
-          }).catch(error => {
-            console.error(`Eroare la trimiterea email-ului pentru cerere nouă către ${serviceProviderForEmail.email}:`, error);
-            return false;
-          })
-        );
+// Servire fișiere statice cu opțiuni personalizate
+  app.use(express.static('public', { 
+    maxAge: '1h',
+    setHeaders: function (res, path) {
+      if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+      if (path.endsWith('.ts') || path.endsWith('.tsx')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+      // Cache control pentru Service Worker
+      if (path.endsWith('sw.js')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Service-Worker-Allowed', '/');
       }
     }
-  }
-  
-  // Așteptăm ca toate email-urile să fie trimise
-  if (emailPromises.length > 0) {
-    console.log(`Așteptăm trimiterea a ${emailPromises.length} email-uri pentru cererea nouă...`);
-    await Promise.allSettled(emailPromises);
-    console.log('Toate email-urile pentru cererea nouă au fost procesate');
-  } else {
-    console.log('Nu sunt email-uri de trimis pentru cererea nouă');
-  }
-} catch (emailError) {
-  console.error('Eroare la trimiterea notificărilor email pentru cererea nouă:', emailError);
-  // Nu afectăm fluxul principal - continuăm fără a arunca eroarea mai departe
-}
+  }));
