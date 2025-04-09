@@ -11,6 +11,7 @@ import {
   workingHours,
   reviews,
   notificationPreferences,
+  clientNotificationPreferences,
   type Message,
   type Client,
   type InsertClient,
@@ -31,7 +32,9 @@ import {
   type Review,
   type InsertReview,
   type NotificationPreference,
-  type InsertNotificationPreference
+  type InsertNotificationPreference,
+  type ClientNotificationPreference,
+  type InsertClientNotificationPreference
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and, inArray, sql } from "drizzle-orm";
@@ -133,6 +136,11 @@ export interface IStorage {
   getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
   updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference>;
+  
+  // Client Notification Preferences management
+  getClientNotificationPreferences(clientId: number): Promise<ClientNotificationPreference | undefined>;
+  createClientNotificationPreferences(preferences: InsertClientNotificationPreference): Promise<ClientNotificationPreference>;
+  updateClientNotificationPreferences(id: number, preferencesData: Partial<ClientNotificationPreference>): Promise<ClientNotificationPreference>;
 
 
   // Reviews management
@@ -1205,6 +1213,54 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  // Client Notification Preferences methods
+  async getClientNotificationPreferences(clientId: number): Promise<ClientNotificationPreference | undefined> {
+    try {
+      const [preferences] = await db
+        .select()
+        .from(clientNotificationPreferences)
+        .where(eq(clientNotificationPreferences.clientId, clientId));
+      return preferences;
+    } catch (error) {
+      console.error('Error getting client notification preferences:', error);
+      return undefined;
+    }
+  }
+
+  async createClientNotificationPreferences(preferences: InsertClientNotificationPreference): Promise<ClientNotificationPreference> {
+    try {
+      const [newPreferences] = await db
+        .insert(clientNotificationPreferences)
+        .values({
+          ...preferences,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      return newPreferences;
+    } catch (error) {
+      console.error('Error creating client notification preferences:', error);
+      throw error;
+    }
+  }
+
+  async updateClientNotificationPreferences(id: number, preferencesData: Partial<ClientNotificationPreference>): Promise<ClientNotificationPreference> {
+    try {
+      const [updatedPreferences] = await db
+        .update(clientNotificationPreferences)
+        .set({
+          ...preferencesData,
+          updatedAt: new Date()
+        })
+        .where(eq(clientNotificationPreferences.id, id))
+        .returning();
+      return updatedPreferences;
+    } catch (error) {
+      console.error('Error updating client notification preferences:', error);
+      throw error;
+    }
+  }
 
   // Reviews methods
   async getServiceProviderReviews(serviceProviderId: number): Promise<Review[]> {
@@ -1309,6 +1365,29 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  async deleteReview(id: number): Promise<void> {
+    try {
+      await db.delete(reviews).where(eq(reviews.id, id));
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      throw error;
+    }
+  }
+  
+  async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
+    try {
+      const result = await db
+        .select({ avgRating: sql<number>`AVG(${reviews.rating})` })
+        .from(reviews)
+        .where(eq(reviews.serviceProviderId, serviceProviderId));
+      
+      return result[0]?.avgRating || 0;
+    } catch (error) {
+      console.error('Error getting service provider average rating:', error);
+      return 0;
+    }
+  }
 
   // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
   async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
@@ -1359,30 +1438,17 @@ export class DatabaseStorage implements IStorage {
       // Verificăm dacă județul este valid sau dacă este "Toate județele"
       const isAllCounties = county === "Toate județele";
 
-      let query = `
-        SELECT * FROM service_providers 
-        WHERE ${isAllCounties ? 'TRUE' : 'county = $1'}
-      `;
-
-      const params = isAllCounties ? [] : [county];
-      const result = await this.db.query(query, params);
-
-      const serviceProviders = result.rows.map(row => ({
-        id: row.id,
-        companyName: row.company_name,
-        email: row.email,
-        phone: row.phone,
-        county: row.county,
-        address: row.address,
-        description: row.description,
-        logoUrl: row.logo_url
-      }));
-
-      console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județul ${county}`);
-      return serviceProviders;
+      if (isAllCounties) {
+        return await db.select().from(serviceProviders);
+      } else {
+        return await db
+          .select()
+          .from(serviceProviders)
+          .where(eq(serviceProviders.county, county));
+      }
     } catch (error) {
       console.error('Eroare la obținerea furnizorilor de servicii din județ:', error);
-      throw error;
+      return [];
     }
   }
 }

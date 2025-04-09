@@ -5,6 +5,7 @@ import { EditProfile } from "@/components/auth/EditProfile";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import type { User as UserType } from "@shared/schema";
 import { useState } from "react";
+import NotificationPreferences from "@/components/client-dashboard/NotificationPreferences";
 
 interface ProfileTabProps {
   userProfile: UserType;
@@ -79,6 +80,11 @@ export function ProfileTab({ userProfile }: ProfileTabProps) {
                 >
                   Schimbă Parola
                 </Button>
+              </div>
+              
+              {/* Secțiunea de preferințe notificări */}
+              <div className="mt-8">
+                <NotificationPreferences />
               </div>
             </>
           )}

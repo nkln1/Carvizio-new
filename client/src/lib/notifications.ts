@@ -536,41 +536,62 @@ class NotificationHelper {
   /**
    * Obține preferințele de notificări din API sau folosește valorile implicite
    */
-  static async getNotificationPreferences(): Promise<any> {
+  static async getNotificationPreferences(userRole: string = 'service'): Promise<any> {
     try {
-      // Încercăm să obținem preferințele de la API
-      const response = await fetch('/api/service/notification-preferences');
+      // Încercăm să obținem preferințele de la API - diferențiată în funcție de rolul utilizatorului
+      const url = userRole === 'client' 
+        ? '/api/client/notification-preferences'
+        : '/api/service/notification-preferences';
+        
+      console.log(`Obținem preferințele de notificări pentru ${userRole} de la ${url}`);
+      const response = await fetch(url);
 
       if (!response.ok) {
-        console.warn('Nu am putut obține preferințele de notificări de la API, folosim valori implicite');
-        return this.getDefaultNotificationPreferences();
+        console.warn(`Nu am putut obține preferințele de notificări pentru ${userRole} de la API, folosim valori implicite`);
+        return this.getDefaultNotificationPreferences(userRole);
       }
 
       const preferences = await response.json();
+      console.log(`Preferințe de notificări obținute pentru ${userRole}:`, preferences);
       return preferences;
     } catch (error) {
-      console.error('Eroare la obținerea preferințelor de notificări:', error);
-      return this.getDefaultNotificationPreferences();
+      console.error(`Eroare la obținerea preferințelor de notificări pentru ${userRole}:`, error);
+      return this.getDefaultNotificationPreferences(userRole);
     }
   }
 
   /**
-   * Returnează preferințele implicite pentru notificări
+   * Returnează preferințele implicite pentru notificări în funcție de rolul utilizatorului
    */
-  static getDefaultNotificationPreferences(): any {
-    return {
+  static getDefaultNotificationPreferences(userRole: string = 'service'): any {
+    // Preferințe comune pentru ambele roluri
+    const commonPreferences = {
       emailNotificationsEnabled: true,
-      newRequestEmailEnabled: true,
-      acceptedOfferEmailEnabled: true,
       newMessageEmailEnabled: true,
-      newReviewEmailEnabled: true,
       browserNotificationsEnabled: true,
-      newRequestBrowserEnabled: true,
-      acceptedOfferBrowserEnabled: true,
       newMessageBrowserEnabled: true,
-      newReviewBrowserEnabled: true,
       browserPermission: this.checkPermission() === 'granted'
     };
+    
+    if (userRole === 'client') {
+      // Preferințe specifice pentru client
+      return {
+        ...commonPreferences,
+        newOfferEmailEnabled: true,
+        newOfferBrowserEnabled: true
+      };
+    } else {
+      // Preferințe specifice pentru furnizor de servicii
+      return {
+        ...commonPreferences,
+        newRequestEmailEnabled: true,
+        acceptedOfferEmailEnabled: true,
+        newReviewEmailEnabled: true,
+        newRequestBrowserEnabled: true,
+        acceptedOfferBrowserEnabled: true,
+        newReviewBrowserEnabled: true
+      };
+    }
   }
 
   /**
@@ -590,8 +611,8 @@ class NotificationHelper {
         return preferences.newMessageBrowserEnabled !== false; // Implicit activat dacă nu există
 
       case 'NEW_OFFER':
-        console.log('Verificăm preferința pentru oferte noi');
-        return true; // Nu există o preferință specifică pentru acest tip
+        console.log('Verificăm preferința pentru oferte noi:', preferences.newOfferBrowserEnabled);
+        return preferences.newOfferBrowserEnabled !== false; // Implicit activat dacă nu există
 
       case 'NEW_REQUEST':
         console.log('Verificăm preferința pentru cereri noi:', preferences.newRequestBrowserEnabled);

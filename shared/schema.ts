@@ -63,9 +63,27 @@ export interface BaseUser {
 }
 
 // Client specific interface
+// Client Notification preferences interface
+export interface ClientNotificationPreferences {
+  id: number;
+  clientId: number;
+  emailNotificationsEnabled: boolean;
+  newOfferEmailEnabled: boolean;
+  newMessageEmailEnabled: boolean;
+  
+  browserNotificationsEnabled: boolean;
+  newOfferBrowserEnabled: boolean;
+  newMessageBrowserEnabled: boolean;
+  browserPermission: boolean;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ClientUser extends BaseUser {
   role: "client";
   name: string;
+  notificationPreferences?: ClientNotificationPreferences;
 }
 
 // Service Provider specific interface
@@ -162,12 +180,15 @@ export const clients = pgTable("clients", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-export const clientsRelations = relations(clients, ({ many }) => ({
+// Forward references are defined below
+
+export const clientsRelations = relations(clients, ({ many, one }) => ({
   cars: many(cars),
   requests: many(requests),
   clientSender: many(messages),
   clientReceiver: many(messages),
   viewedOffers: many(viewedOffers)
+  // Client notification preferences relation will be added after the table is defined
 }));
 
 // Service Providers table definition
@@ -383,6 +404,39 @@ export const workingHoursRelations = relations(workingHours, ({ one }) => ({
   })
 }));
 
+// Client notification preferences table definition
+export const clientNotificationPreferences = pgTable("client_notification_preferences", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id).unique(),
+  emailNotificationsEnabled: boolean("email_notifications_enabled").default(true).notNull(),
+  newOfferEmailEnabled: boolean("new_offer_email_enabled").default(true).notNull(),
+  newMessageEmailEnabled: boolean("new_message_email_enabled").default(true).notNull(),
+  
+  browserNotificationsEnabled: boolean("browser_notifications_enabled").default(true).notNull(),
+  newOfferBrowserEnabled: boolean("new_offer_browser_enabled").default(true).notNull(),
+  newMessageBrowserEnabled: boolean("new_message_browser_enabled").default(true).notNull(),
+  browserPermission: boolean("browser_permission").default(false).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Relations for client notification preferences
+export const clientNotificationPreferencesRelations = relations(clientNotificationPreferences, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientNotificationPreferences.clientId],
+    references: [clients.id],
+  })
+}));
+
+// Update clients relations to include notification preferences
+export const clientsNotificationRelations = relations(clients, ({ one }) => ({
+  notificationPreferences: one(clientNotificationPreferences, {
+    fields: [clients.id],
+    references: [clientNotificationPreferences.clientId],
+  })
+}));
+
 // Notification preferences table definition
 export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),
@@ -536,6 +590,16 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
 
 export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferencesSchema>;
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+
+// Add schema for client notification preferences
+export const insertClientNotificationPreferencesSchema = createInsertSchema(clientNotificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertClientNotificationPreference = z.infer<typeof insertClientNotificationPreferencesSchema>;
+export type ClientNotificationPreference = typeof clientNotificationPreferences.$inferSelect;
 
 // Define a type for accepted offer with client details
 export type AcceptedOfferWithClient = SentOffer & {

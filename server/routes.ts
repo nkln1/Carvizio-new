@@ -398,6 +398,98 @@ export function registerRoutes(app: Express): void {
     }
   });
   
+  // API pentru obținerea preferințelor de notificări pentru client
+  app.get('/api/client/notification-preferences', validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Obține preferințele de notificări ale clientului
+      const preferences = await storage.getClientNotificationPreferences(client.id);
+      
+      if (!preferences) {
+        // Dacă nu există preferințe, returnează valori implicite
+        return res.json({
+          id: 0,
+          clientId: client.id,
+          emailNotificationsEnabled: true,
+          newOfferEmailEnabled: true,
+          newMessageEmailEnabled: true,
+          
+          browserNotificationsEnabled: true,
+          newOfferBrowserEnabled: true,
+          newMessageBrowserEnabled: true,
+          browserPermission: false,
+          
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error getting client notification preferences:", error);
+      res.status(500).json({ error: "Failed to get client notification preferences" });
+    }
+  });
+  
+  // API pentru actualizarea preferințelor de notificări pentru client
+  app.post('/api/client/notification-preferences', validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      // Verifică dacă există deja preferințe
+      let preferences = await storage.getClientNotificationPreferences(client.id);
+      
+      // Extragem doar câmpurile necesare și eliminăm timestamp-urile care pot cauza probleme
+      const { 
+        emailNotificationsEnabled, 
+        newOfferEmailEnabled, 
+        newMessageEmailEnabled, 
+        browserNotificationsEnabled,
+        newOfferBrowserEnabled,
+        newMessageBrowserEnabled,
+        browserPermission
+      } = req.body;
+      
+      // Construim obiectul de preferințe fără createdAt/updatedAt
+      const cleanPreferences = {
+        emailNotificationsEnabled, 
+        newOfferEmailEnabled, 
+        newMessageEmailEnabled, 
+        browserNotificationsEnabled,
+        newOfferBrowserEnabled,
+        newMessageBrowserEnabled,
+        browserPermission
+      };
+      
+      if (!preferences) {
+        // Dacă nu există, crează preferințe noi
+        const newPreferences = {
+          clientId: client.id,
+          ...cleanPreferences
+        };
+        
+        preferences = await storage.createClientNotificationPreferences(newPreferences);
+        console.log(`Created notification preferences for client ${client.id}`);
+      } else {
+        // Dacă există, actualizează preferințele
+        preferences = await storage.updateClientNotificationPreferences(preferences.id, cleanPreferences);
+        console.log(`Updated notification preferences for client ${client.id}`);
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating client notification preferences:", error);
+      res.status(500).json({ error: "Failed to update client notification preferences" });
+    }
+  });
+  
   // Endpoint pentru înregistrarea token-ului FCM
   app.post('/api/notifications/register-token', validateFirebaseToken, async (req, res) => {
     try {
