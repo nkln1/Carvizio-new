@@ -39,65 +39,6 @@ export default function ClientDashboard() {
 
   // Get unread messages count
   const { data: unreadMessagesCount = 0 } = useUnreadMessagesCount();
-  
-  // Effect pentru pornirea verificării notificărilor în fundal
-  useEffect(() => {
-    const startBackgroundCheck = async () => {
-      if (userProfile && window.NotificationHelper) {
-        // Verificăm dacă avem permisiune browser
-        const notificationsSupported = window.NotificationHelper.isSupported();
-        if (notificationsSupported) {
-          const permission = window.NotificationHelper.checkPermission();
-          
-          // Verificăm permisiunea și pornim verificarea în fundal doar dacă avem permisiune
-          if (permission === 'granted') {
-            try {
-              // Obținem token-ul pentru verificarea în fundal
-              const token = await auth.currentUser?.getIdToken();
-              
-              // Pornim verificarea în fundal
-              await window.NotificationHelper.startBackgroundMessageCheck(
-                userProfile.id, 
-                'client',
-                token
-              );
-              console.log('Verificare notificări în fundal pornită pentru client');
-            } catch (error) {
-              console.error('Eroare la pornirea verificării notificărilor în fundal:', error);
-            }
-          } else {
-            console.log('Permisiunea pentru notificări browser nu a fost acordată');
-          }
-        } else {
-          console.log('Notificările browser nu sunt suportate în acest browser');
-        }
-      }
-    };
-    
-    startBackgroundCheck();
-    
-    // Cleanup la dezmontare
-    return () => {
-      if (window.NotificationHelper) {
-        window.NotificationHelper.stopBackgroundMessageCheck();
-      }
-    };
-  }, [userProfile]);
-
-  const {
-    selectedCar,
-    setSelectedCar,
-    handleCarSubmit,
-    handleUpdateCar,
-    handleDeleteCar,
-  } = useCarManagement();
-
-  const {
-    offers,
-    viewedOffers,
-    markOfferAsViewed,
-    newOffersCount
-  } = useOfferManagement();
 
   const { data: userProfile, isLoading } = useQuery<UserType>({
     queryKey: ['/api/auth/me'],
@@ -129,14 +70,14 @@ export default function ClientDashboard() {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'NEW_OFFER') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-        
+
         // Process browser notification for new offer
         const notificationId = `websocket-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         const notificationData = {
           ...data,
           notificationId,
         };
-        
+
         // Procesăm notificarea în browser dacă este disponibil NotificationHelper
         if (window.NotificationHelper) {
           console.log("Processing websocket message for notifications:", notificationData);
@@ -150,14 +91,14 @@ export default function ClientDashboard() {
         queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
         // Also invalidate unread messages count
         queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-        
+
         // Process browser notification for new message
         const notificationId = `websocket-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         const notificationData = {
           ...data,
           notificationId,
         };
-        
+
         // Procesăm notificarea în browser dacă este disponibil NotificationHelper
         if (window.NotificationHelper) {
           console.log("Processing websocket message for notifications:", notificationData);
@@ -257,6 +198,50 @@ export default function ClientDashboard() {
     });
     setActiveTab("messages");
   };
+
+  useEffect(() => {
+    const startBackgroundCheck = async () => {
+      if (userProfile && window.NotificationHelper) {
+        // Verificăm dacă avem permisiune browser
+        const notificationsSupported = window.NotificationHelper.isSupported();
+        if (notificationsSupported) {
+          const permission = window.NotificationHelper.checkPermission();
+
+          // Verificăm permisiunea și pornim verificarea în fundal doar dacă avem permisiune
+          if (permission === 'granted') {
+            try {
+              // Obținem token-ul pentru verificarea în fundal
+              const token = await auth.currentUser?.getIdToken();
+
+              // Pornim verificarea în fundal
+              await window.NotificationHelper.startBackgroundMessageCheck(
+                userProfile.id, 
+                'client',
+                token
+              );
+              console.log('Verificare notificări în fundal pornită pentru client');
+            } catch (error) {
+              console.error('Eroare la pornirea verificării notificărilor în fundal:', error);
+            }
+          } else {
+            console.log('Permisiunea pentru notificări browser nu a fost acordată');
+          }
+        } else {
+          console.log('Notificările browser nu sunt suportate în acest browser');
+        }
+      }
+    };
+
+    startBackgroundCheck();
+
+    // Cleanup la dezmontare
+    return () => {
+      if (window.NotificationHelper) {
+        window.NotificationHelper.stopBackgroundMessageCheck();
+      }
+    };
+  }, [userProfile]);
+
 
   if (!user) {
     return (
