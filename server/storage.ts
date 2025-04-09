@@ -128,7 +128,7 @@ export interface IStorage {
     closeTime: string;
     isClosed: boolean;
   }): Promise<WorkingHour>;
-  
+
   // Notification Preferences management
   getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
@@ -142,6 +142,7 @@ export interface IStorage {
   updateReview(id: number, reviewData: Partial<Review>): Promise<Review>;
   deleteReview(id: number): Promise<void>;
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
+  getServiceProvidersInCounty(county: string): Promise<ServiceProvider[]>; // Added method
 }
 
 async function generateUniqueUsername(companyName: string, db: typeof import('./db').db): Promise<string> {
@@ -1006,7 +1007,7 @@ export class DatabaseStorage implements IStorage {
             eq(messagesTable.isRead, false)
           )
         );
-      
+
       console.log(`Mesajele din conversația pentru request ${requestId} au fost marcate ca citite pentru utilizatorul ${userId}`);
     } catch (error) {
       console.error('Error marking conversation as read:', error);
@@ -1308,7 +1309,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
   async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
     try {
@@ -1344,6 +1345,44 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error checking if client can review service:', error);
       return false;
+    }
+  }
+  /**
+   * Obține toți furnizorii de servicii dintr-un anumit județ
+   * @param county Județul pentru care se caută furnizorii
+   * @returns Array de furnizori de servicii
+   */
+  async getServiceProvidersInCounty(county: string): Promise<ServiceProvider[]> {
+    try {
+      console.log(`Căutare furnizori de servicii în județul: ${county}`);
+
+      // Verificăm dacă județul este valid sau dacă este "Toate județele"
+      const isAllCounties = county === "Toate județele";
+
+      let query = `
+        SELECT * FROM service_providers 
+        WHERE ${isAllCounties ? 'TRUE' : 'county = $1'}
+      `;
+
+      const params = isAllCounties ? [] : [county];
+      const result = await this.db.query(query, params);
+
+      const serviceProviders = result.rows.map(row => ({
+        id: row.id,
+        companyName: row.company_name,
+        email: row.email,
+        phone: row.phone,
+        county: row.county,
+        address: row.address,
+        description: row.description,
+        logoUrl: row.logo_url
+      }));
+
+      console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județul ${county}`);
+      return serviceProviders;
+    } catch (error) {
+      console.error('Eroare la obținerea furnizorilor de servicii din județ:', error);
+      throw error;
     }
   }
 }
