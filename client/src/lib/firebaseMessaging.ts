@@ -1,4 +1,4 @@
-import { messaging, messagingSupported, isFirebaseInitialized } from './firebase';
+import { messaging, messagingSupported, isFirebaseInitialized, auth } from './firebase';
 import Cookie from 'js-cookie';
 
 /**
@@ -213,10 +213,20 @@ class FirebaseMessaging {
     }
 
     try {
+      // Obține token-ul de autentificare Firebase curent
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.error('Utilizatorul nu este autentificat pentru înregistrarea token-ului FCM');
+        return;
+      }
+      
+      const authToken = await currentUser.getIdToken();
+      
       const response = await fetch('/api/notifications/register-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
           token: this.fcmToken,

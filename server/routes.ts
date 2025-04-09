@@ -120,20 +120,23 @@ export function registerRoutes(app: Express): void {
   
   // Firebase Auth Middleware cu gestionare îmbunătățită a erorilor
   const validateFirebaseToken = async (req: Request, res: any, next: any) => {
+    console.log(`[Auth Debug] Request method: ${req.method}, URL: ${req.url}`);
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No token provided in request');
+      console.log(`[Auth Debug] No token provided in request for ${req.url}`);
+      console.log(`[Auth Debug] Headers: ${JSON.stringify(req.headers)}`);
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.split('Bearer ')[1];
+    console.log(`[Auth Debug] Token found for ${req.url}`);
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
       req.firebaseUser = decodedToken;
-      console.log('Firebase token verified successfully for user:', decodedToken.uid);
+      console.log(`[Auth Debug] Firebase token verified successfully for user: ${decodedToken.uid} at ${req.url}`);
       next();
     } catch (error) {
-      console.error('Firebase token verification failed:', error);
+      console.error(`[Auth Debug] Error verifying Firebase token for ${req.url}:`, error);
       return res.status(401).json({ error: 'Invalid token' });
     }
   };
@@ -3915,12 +3918,14 @@ export function registerRoutes(app: Express): void {
   return;
 }
 
+// FRAGMENT DE COD COMENTAT - a fost găsit un cod orfan care cauzează erori
+/*
 // După crearea cererii, găsim furnizorii de servicii din zona specificată pentru a trimite notificări prin email
 try {
   // Găsim toate serviciile din această zonă
   const firestore = admin.firestore();
   // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
-  const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
+  // const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
   
   console.log(`Căutare furnizori de servicii pentru notificări email în zona: ${request.county}, ${cityStr}`);
   
@@ -4002,3 +4007,4 @@ try {
   console.error('Eroare la trimiterea notificărilor email pentru cererea nouă:', emailError);
   // Nu afectăm fluxul principal - continuăm fără a arunca eroarea mai departe
 }
+*/
