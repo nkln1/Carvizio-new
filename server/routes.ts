@@ -3691,3 +3691,91 @@ export function registerRoutes(app: Express): void {
   // No need to return anything as we're now using void as the return type
   return;
 }
+
+// După crearea cererii, găsim furnizorii de servicii din zona specificată pentru a trimite notificări prin email
+try {
+  // Găsim toate serviciile din această zonă
+  const firestore = admin.firestore();
+  // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
+  const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
+  
+  console.log(`Căutare furnizori de servicii pentru notificări email în zona: ${request.county}, ${cityStr}`);
+  
+  // Căutăm toți furnizorii de servicii în aceeași zonă
+  const serviceProvidersSnapshot = await firestore
+    .collection('service_providers_data') // Colecția cu date despre furnizori
+    .where('county', '==', request.county)
+    .where('city', '==', cityStr) // Verificăm orașul exact
+    .get();
+    
+  console.log(`Găsiți ${serviceProvidersSnapshot.size} furnizori de servicii în zonă pentru notificări`);
+  
+  // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
+  const emailPromises = [];
+  
+  for (const doc of serviceProvidersSnapshot.docs) {
+    const serviceProviderData = doc.data();
+    const serviceProviderId = parseInt(doc.id);
+    
+    console.log(`Verificare preferințe pentru furnizorul ${serviceProviderData.company_name} (ID: ${serviceProviderId})`);
+    
+    // Verificăm preferințele de notificări
+    const preferences = await storage.getNotificationPreferences(serviceProviderId);
+    
+    // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
+    const shouldSendEmail = !preferences || 
+      (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
+    
+    console.log(`Preferințe pentru notificări email: ${JSON.stringify(preferences || 'folosim valori implicite')}`);
+    console.log(`Trimitere email pentru cerere nouă: ${shouldSendEmail ? 'DA' : 'NU'}`);
+    
+    if (shouldSendEmail) {
+      // Obținem datele furnizorului de servicii
+      const serviceProvider = await storage.getServiceProviderById(serviceProviderId);
+      
+      if (serviceProvider) {
+        // Adaptăm formatul pentru EmailService
+        const serviceProviderForEmail = {
+          id: serviceProvider.id,
+          companyName: serviceProviderData.company_name || serviceProvider.username,
+          email: serviceProviderData.email || serviceProvider.email,
+          phone: serviceProviderData.phone || ''
+        };
+        
+        console.log(`Trimitere email pentru cerere nouă către: ${serviceProviderForEmail.companyName} (${serviceProviderForEmail.email})`);
+        
+        // Obținem numele clientului care a creat cererea
+        const client = await storage.getClientById(request.clientId);
+        const clientName = client ? client.username : 'Un client';
+        
+        // Trimitem notificarea prin email
+        emailPromises.push(
+          EmailService.sendNewRequestNotification(
+            serviceProviderForEmail,
+            request.title,
+            clientName,
+            request.id
+          ).then(success => {
+            console.log(`Email pentru cerere nouă către ${serviceProviderForEmail.email}: ${success ? 'SUCCES' : 'EȘEC'}`);
+            return success;
+          }).catch(error => {
+            console.error(`Eroare la trimiterea email-ului pentru cerere nouă către ${serviceProviderForEmail.email}:`, error);
+            return false;
+          })
+        );
+      }
+    }
+  }
+  
+  // Așteptăm ca toate email-urile să fie trimise
+  if (emailPromises.length > 0) {
+    console.log(`Așteptăm trimiterea a ${emailPromises.length} email-uri pentru cererea nouă...`);
+    await Promise.allSettled(emailPromises);
+    console.log('Toate email-urile pentru cererea nouă au fost procesate');
+  } else {
+    console.log('Nu sunt email-uri de trimis pentru cererea nouă');
+  }
+} catch (emailError) {
+  console.error('Eroare la trimiterea notificărilor email pentru cererea nouă:', emailError);
+  // Nu afectăm fluxul principal - continuăm fără a arunca eroarea mai departe
+}

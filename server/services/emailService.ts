@@ -235,11 +235,23 @@ export class EmailService {
     requestId: string | number = `request_${Date.now()}`
   ): Promise<boolean> {
     const debugInfo = `[Cerere Nouă] Client: ${clientName}, Titlu: ${requestTitle}, ID: ${requestId}`;
-    console.log(`=== EmailService.sendNewRequestNotification - Trimitere notificare cerere nouă ===`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
-    console.log(`Titlu cerere: ${requestTitle}`);
-    console.log(`Client: ${clientName}`);
-    console.log(`ID Cerere: ${requestId}`);
+    console.log(`\n📨 === EmailService.sendNewRequestNotification - Trimitere notificare cerere nouă ===`);
+    console.log(`📧 Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+    console.log(`📝 Titlu cerere: ${requestTitle}`);
+    console.log(`👤 Client: ${clientName}`);
+    console.log(`🔢 ID Cerere: ${requestId}`);
+    
+    // Validare date de intrare
+    if (!serviceProvider || !serviceProvider.email) {
+      console.error(`❌ Date furnizor de servicii invalide:`, serviceProvider);
+      return false;
+    }
+    
+    // Verificăm dacă email-ul este valid
+    if (!serviceProvider.email.includes('@')) {
+      console.error(`❌ Adresa de email invalidă: ${serviceProvider.email}`);
+      return false;
+    }
     
     const subject = `Cerere nouă: ${requestTitle}`;
     // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
@@ -270,6 +282,8 @@ export class EmailService {
     `;
 
     try {
+      console.log(`🔄 Inițiere trimitere email pentru cerere nouă...`);
+      
       // Trimitem email-ul folosind noul parametru de debugging
       const result = await this.sendEmail(
         serviceProvider.email, 
@@ -278,12 +292,20 @@ export class EmailService {
         undefined, // text content
         debugInfo // info debugging
       );
-      console.log(`EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
+      
+      if (result) {
+        console.log(`✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
+      } else {
+        console.error(`❌ EmailService.sendNewRequestNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}`);
+      }
+      
       return result;
     } catch (error) {
-      console.error(`EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}:`, error);
+      console.error(`❌ EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}:`, error);
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
+    } finally {
+      console.log(`📨 === Sfârșit procesare notificare cerere nouă ===\n`);
     }
   }
 
