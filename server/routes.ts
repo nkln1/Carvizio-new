@@ -2952,11 +2952,7 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // No need to return anything as we're now using void as the return type
-  return;
-}
-
-// Servire fișiere statice cu opțiuni personalizate
+  // Servire fișiere statice cu opțiuni personalizate
   app.use(express.static('public', { 
     maxAge: '1h',
     setHeaders: function (res, path) {
@@ -2973,3 +2969,7 @@ export function registerRoutes(app: Express): void {
       }
     }
   }));
+
+  // No need to return anything as we're now using void as the return type
+  return;
+}
