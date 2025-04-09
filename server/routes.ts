@@ -898,69 +898,70 @@ export function registerRoutes(app: Express): void {
         console.log(`Cerere nouă creată: ID ${request.id}, Titlu: "${request.title}", Client: ${client.name}`);
         console.log(`Locație: ${request.county}, Orașe: ${Array.isArray(request.cities) ? request.cities.join(', ') : request.cities}`);
         
-        // Găsim toate serviciile din această zonă
-        const firestore = admin.firestore();
-        // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
-        const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
+        // Găsim direct toți furnizorii de servicii din baza de date PostgreSQL care sunt în aceeași zonă
+        // În loc să folosim Firestore pentru această căutare, folosim direct query-ul din baza de date PostgreSQL
+        const cityList = Array.isArray(request.cities) ? request.cities : [request.cities];
         
-        console.log(`Căutare furnizori de servicii în locația: ${request.county}, ${cityStr}`);
+        console.log(`Căutare furnizori de servicii în locația: ${request.county}, ${cityList.join(', ')}`);
         
-        // Căutăm toți furnizorii de servicii în aceeași zonă
-        const serviceProvidersSnapshot = await firestore
-          .collection('service_providers_data') // Colecția cu date despre furnizori
-          .where('county', '==', request.county)
-          .get(); // Modificăm pentru a lua toți furnizorii din județ
-          
-        console.log(`Găsiți ${serviceProvidersSnapshot.size} furnizori de servicii în județ`);
+        // Obținem toți furnizorii de servicii din același județ
+        const serviceProviders = await db.query.serviceProviders.findMany({
+          where: eq(serviceProviders.county, request.county)
+        });
+        
+        console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județ`);
         
         // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
         const emailPromises = [];
         
-        for (const doc of serviceProvidersSnapshot.docs) {
-          const serviceProviderData = doc.data();
-          const serviceProviderId = parseInt(doc.id);
-          
-          // Verificam dacă furnizorul este în orașul cererii
-          const serviceProviderCity = serviceProviderData.city || '';
-          const isInRequestCity = Array.isArray(request.cities) 
-            ? request.cities.some(city => serviceProviderCity.includes(city))
-            : serviceProviderCity.includes(request.cities);
+        for (const serviceProvider of serviceProviders) {
+          // Verificăm dacă furnizorul este în orașele cererii
+          const isInRequestCity = cityList.some(city => 
+            serviceProvider.city.toLowerCase().includes(city.toLowerCase()) ||
+            city.toLowerCase().includes(serviceProvider.city.toLowerCase()));
           
           if (!isInRequestCity) {
-            console.log(`Furnizorul ${serviceProviderData.company_name || serviceProviderId} (oraș: ${serviceProviderCity}) nu este în orașele cererii, ignoră`);
+            console.log(`Furnizorul ${serviceProvider.companyName} (oraș: ${serviceProvider.city}) nu este în orașele cererii, ignoră`);
             continue;
           }
           
-          console.log(`Verificare preferințe pentru furnizorul ${serviceProviderData.company_name || serviceProviderId} (ID: ${serviceProviderId})`);
+          console.log(`Verificare furnizor în oraș potrivit: ${serviceProvider.companyName} (ID: ${serviceProvider.id}), Oraș: ${serviceProvider.city}`);
+          console.log(`Orașe cerere: ${cityList.join(', ')}`);
+          console.log(`Verificare preferințe pentru furnizorul ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
           
-          // Verificăm preferințele de notificări
-          const preferences = await storage.getNotificationPreferences(serviceProviderId);
-          
-          console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
-          if (preferences) {
-            console.log(`Preferințe specifice pentru service provider ID ${serviceProviderId}:`);
-            console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
-            console.log(`- Notificări email pentru cereri noi: ${preferences.newRequestEmailEnabled ? 'DA' : 'NU'}`);
-          } else {
-            console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
-          }
-          
-          // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
-          const shouldSendEmail = !preferences || 
-              (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
+          try {
+            // Verificăm preferințele de notificări
+            const preferences = await storage.getNotificationPreferences(serviceProvider.id);
+            
+            console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+            if (preferences) {
+              console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
+              console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+              console.log(`- Notificări email pentru cereri noi: ${preferences.newRequestEmailEnabled ? 'DA' : 'NU'}`);
+            } else {
+              console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+            }
+            
+            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+            const shouldSendEmail = !preferences || 
+                (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
+                
+            console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+            
+            if (shouldSendEmail) {
+              // Verificăm dacă adresa de email este validă
+              if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
+                console.log(`⚠️ Adresă de email invalidă pentru service provider ${serviceProvider.id}: ${serviceProvider.email}`);
+                continue;
+              }
               
-          console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
-          
-          if (shouldSendEmail) {
-            // Obținem datele furnizorului din baza de date pentru a avea toate informațiile necesare
-            const serviceProvider = await storage.getServiceProvider(serviceProviderId);
-            if (serviceProvider) {
-              console.log(`Service Provider găsit în baza de date: ${serviceProvider.companyName} (${serviceProvider.email})`);
+              console.log(`Service Provider eligibil pentru email: ${serviceProvider.companyName} (${serviceProvider.email})`);
               
               // Generăm un ID unic pentru această notificare
-              const notificationId = `request_${request.id}_${Date.now()}_${serviceProviderId}`;
+              const notificationId = `request_${request.id}_${Date.now()}_${serviceProvider.id}`;
               
               // Trimitem email de notificare
+              console.log(`🚀 Trimitere email notificare cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
               emailPromises.push(
                 EmailService.sendNewRequestNotification(
                   serviceProvider,
@@ -970,12 +971,15 @@ export function registerRoutes(app: Express): void {
                 ).then(success => {
                   console.log(`Email pentru cerere nouă către ${serviceProvider.email}: ${success ? '✅ SUCCES' : '❌ EȘEC'}`);
                   return success;
+                }).catch(err => {
+                  console.error(`❌ Eroare la trimiterea email-ului pentru ${serviceProvider.email}:`, err);
+                  return false;
                 })
               );
               console.log(`Notificare programată pentru: ${serviceProvider.companyName} (${serviceProvider.email})`);
-            } else {
-              console.log(`⚠️ Nu s-a găsit service provider cu ID ${serviceProviderId} în baza de date!`);
             }
+          } catch (prefError) {
+            console.error(`❌ Eroare la verificarea preferințelor pentru ${serviceProvider.companyName}:`, prefError);
           }
         }
         
@@ -1001,6 +1005,7 @@ export function registerRoutes(app: Express): void {
       } catch (emailError) {
         // Doar înregistrăm eroarea, nu împiedicăm crearea cererii
         console.error("❌ Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", emailError);
+        console.error("Stack trace:", emailError.stack);
       }
 
       res.status(201).json(request);

@@ -314,7 +314,20 @@ Puteți dezactiva notificările prin email din setările contului dvs.
     try {
       console.log(`🔄 Inițiere trimitere email pentru cerere nouă...`);
       
+      // Verificăm dacă API key-ul este configurat
+      if (!this.apiKey) {
+        console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
+        console.error(`Variabile de mediu disponibile:`, Object.keys(process.env).filter(key => 
+          !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')).join(', '));
+        return false;
+      }
+
       // Trimitem email-ul folosind noul parametru de debugging
+      console.log(`🔄 Trimitere email către: ${serviceProvider.email}`);
+      console.log(`🔄 Subiect: ${uniqueSubject}`);
+      console.log(`🔄 API Key prezent: ${!!this.apiKey}`);
+      console.log(`🔄 API Key trunchiat: ${this.apiKey ? this.apiKey.substring(0, 4) + '...' + this.apiKey.substring(this.apiKey.length - 4) : 'N/A'}`);
+      
       const result = await this.sendEmail(
         serviceProvider.email, 
         uniqueSubject, 
@@ -332,6 +345,11 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       return result;
     } catch (error) {
       console.error(`❌ EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}:`, error);
+      // Logging detailed error information
+      if (error instanceof Error) {
+        console.error(`❌ Error details: ${error.message}`);
+        console.error(`❌ Stack trace: ${error.stack}`);
+      }
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
     } finally {
