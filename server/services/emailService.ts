@@ -229,7 +229,7 @@ export class EmailService {
    * @returns Promise care indică succesul sau eșecul trimiterii
    */
   public static async sendNewRequestNotification(
-    serviceProvider: ServiceProvider,
+    serviceProvider: any, // Modificat pentru a accepta structuri diferite
     requestTitle: string,
     clientName: string,
     requestId: string | number = `request_${Date.now()}`

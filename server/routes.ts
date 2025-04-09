@@ -898,8 +898,7 @@ export function registerRoutes(app: Express): void {
         console.log(`Cerere nouă creată: ID ${request.id}, Titlu: "${request.title}", Client: ${client.name}`);
         console.log(`Locație: ${request.county}, Orașe: ${Array.isArray(request.cities) ? request.cities.join(', ') : request.cities}`);
         
-        // Găsim direct toți furnizorii de servicii din baza de date PostgreSQL care sunt în aceeași zonă
-        // În loc să folosim Firestore pentru această căutare, folosim direct query-ul din baza de date PostgreSQL
+        // Transformăm orașele în array pentru procesare
         const cityList = Array.isArray(request.cities) ? request.cities : [request.cities];
         
         console.log(`Căutare furnizori de servicii în locația: ${request.county}, ${cityList.join(', ')}`);
@@ -915,19 +914,20 @@ export function registerRoutes(app: Express): void {
         const emailPromises = [];
         
         for (const serviceProvider of serviceProviders) {
-          // Verificăm dacă furnizorul este în orașele cererii
-          const isInRequestCity = cityList.some(city => 
-            serviceProvider.city.toLowerCase().includes(city.toLowerCase()) ||
-            city.toLowerCase().includes(serviceProvider.city.toLowerCase()));
+          // Verificăm dacă furnizorul este în orașele cererii - facem verificarea case-insensitive
+          const serviceProviderCity = serviceProvider.city.toLowerCase();
+          const isInRequestCity = cityList.some(city => {
+            const lowerCity = city.toLowerCase();
+            return serviceProviderCity.includes(lowerCity) || lowerCity.includes(serviceProviderCity);
+          });
           
           if (!isInRequestCity) {
             console.log(`Furnizorul ${serviceProvider.companyName} (oraș: ${serviceProvider.city}) nu este în orașele cererii, ignoră`);
             continue;
           }
           
-          console.log(`Verificare furnizor în oraș potrivit: ${serviceProvider.companyName} (ID: ${serviceProvider.id}), Oraș: ${serviceProvider.city}`);
+          console.log(`✓ Furnizor în oraș potrivit: ${serviceProvider.companyName} (ID: ${serviceProvider.id}), Oraș: ${serviceProvider.city}`);
           console.log(`Orașe cerere: ${cityList.join(', ')}`);
-          console.log(`Verificare preferințe pentru furnizorul ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
           
           try {
             // Verificăm preferințele de notificări
@@ -955,50 +955,52 @@ export function registerRoutes(app: Express): void {
                 continue;
               }
               
-              console.log(`Service Provider eligibil pentru email: ${serviceProvider.companyName} (${serviceProvider.email})`);
+              console.log(`🟢 Service Provider eligibil pentru email: ${serviceProvider.companyName} (${serviceProvider.email})`);
               
               // Generăm un ID unic pentru această notificare
               const notificationId = `request_${request.id}_${Date.now()}_${serviceProvider.id}`;
               
-              // Trimitem email de notificare
+              // Creăm obiectul ServiceProvider în formatul așteptat de EmailService
+              const formattedServiceProvider = {
+                id: serviceProvider.id,
+                companyName: serviceProvider.companyName,
+                email: serviceProvider.email,
+                phone: serviceProvider.phone
+              };
+              
+              // Afișăm obiectul pentru debugging
+              console.log(`🔍 Obiect ServiceProvider formatat:`, formattedServiceProvider);
+              
+              // Verificăm dacă cheile API sunt configurate
+              console.log(`🔑 API Key Elastic Email configurată: ${!!process.env.ELASTIC_EMAIL_API_KEY}`);
+              if (!process.env.ELASTIC_EMAIL_API_KEY) {
+                console.error(`❌ EROARE: ELASTIC_EMAIL_API_KEY nu este setat în variabilele de mediu!`);
+              }
+              
+              // Trimitem email de notificare - DIRECT
               console.log(`🚀 Trimitere email notificare cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
-              emailPromises.push(
-                EmailService.sendNewRequestNotification(
-                  serviceProvider,
+              try {
+                const result = await EmailService.sendNewRequestNotification(
+                  formattedServiceProvider,
                   request.title,
                   client.name,
                   notificationId
-                ).then(success => {
-                  console.log(`Email pentru cerere nouă către ${serviceProvider.email}: ${success ? '✅ SUCCES' : '❌ EȘEC'}`);
-                  return success;
-                }).catch(err => {
-                  console.error(`❌ Eroare la trimiterea email-ului pentru ${serviceProvider.email}:`, err);
-                  return false;
-                })
-              );
-              console.log(`Notificare programată pentru: ${serviceProvider.companyName} (${serviceProvider.email})`);
+                );
+                
+                console.log(`📧 Rezultat trimitere email către ${serviceProvider.email}: ${result ? '✅ SUCCES' : '❌ EȘEC'}`);
+                
+                if (result) {
+                  console.log(`✅ Email pentru cerere nouă trimis cu succes către ${serviceProvider.email}`);
+                } else {
+                  console.error(`❌ Eșec la trimiterea email-ului pentru cerere nouă către ${serviceProvider.email}`);
+                }
+              } catch (sendError) {
+                console.error(`❌ Excepție la trimiterea email-ului pentru ${serviceProvider.email}:`, sendError);
+              }
             }
           } catch (prefError) {
             console.error(`❌ Eroare la verificarea preferințelor pentru ${serviceProvider.companyName}:`, prefError);
           }
-        }
-        
-        console.log(`Total ${emailPromises.length} notificări email programate pentru trimitere`);
-        
-        // Așteptăm trimiterea tuturor email-urilor (fără a bloca răspunsul)
-        if (emailPromises.length > 0) {
-          Promise.allSettled(emailPromises).then(results => {
-            const succeeded = results.filter(r => r.status === 'fulfilled' && r.value === true).length;
-            const failed = emailPromises.length - succeeded;
-            console.log(`✅ Email-uri trimise cu succes: ${succeeded}`);
-            if (failed > 0) {
-              console.log(`❌ Email-uri eșuate: ${failed}`);
-            }
-          }).catch(err => {
-            console.error("❌ Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", err);
-          });
-        } else {
-          console.log(`ℹ️ Nu s-au găsit furnizori de servicii eligibili pentru notificări email`);
         }
         
         console.log(`=== SFÂRȘIT PROCES EMAIL NOTIFICARE CERERE NOUĂ ===`);
