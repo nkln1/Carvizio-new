@@ -903,37 +903,60 @@ export function registerRoutes(app: Express): void {
         
         console.log(`Căutare furnizori de servicii în locația: ${request.county}, ${cityList.join(', ')}`);
         
-        // Obținem toți furnizorii de servicii din același județ
+        // Obținem toți furnizorii de servicii din același județ - FĂRĂ filtru pentru oraș, vom verifica manual
         const serviceProviders = await db.query.serviceProviders.findMany({
           where: eq(serviceProviders.county, request.county)
         });
         
         console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județ`);
         
-        // Importăm direct EmailService
-        console.log(`EmailService disponibil: ${!!EmailService}`);
-        console.log(`EmailService.sendNewRequestNotification disponibil: ${!!EmailService.sendNewRequestNotification}`);
+        // Verificăm configuraița EmailService
+        if (!EmailService) {
+          console.error(`❌ EROARE CRITICĂ: EmailService nu este definit sau importat corect!`);
+          console.log(`Încercăm să importăm direct modulul EmailService...`);
+          
+          try {
+            // Încercăm reimportarea
+            const { EmailService: ImportedEmailService } = await import('./services/emailService');
+            console.log(`Reimport EmailService reușit: ${!!ImportedEmailService}`);
+            
+            if (!ImportedEmailService || typeof ImportedEmailService.sendNewRequestNotification !== 'function') {
+              console.error(`❌ Reimportul a eșuat sau funcția sendNewRequestNotification nu există!`);
+            }
+          } catch (importError) {
+            console.error(`❌ Eroare la reimportarea EmailService:`, importError);
+          }
+        }
         
         // Verificăm configurarea API-ului de email
         console.log(`API Key prezent: ${!!process.env.ELASTIC_EMAIL_API_KEY}`);
         if (!process.env.ELASTIC_EMAIL_API_KEY) {
           console.error(`⚠️ AVERTISMENT: ELASTIC_EMAIL_API_KEY nu este configurat! Notificările email nu vor funcționa.`);
+          console.error(`Variabile de mediu disponibile: ${Object.keys(process.env).join(', ')}`);
+        } else {
+          console.log(`API Key mascat: ${process.env.ELASTIC_EMAIL_API_KEY.substring(0, 4)}...${process.env.ELASTIC_EMAIL_API_KEY.substring(process.env.ELASTIC_EMAIL_API_KEY.length - 4)}`);
         }
         
         let emailCount = 0;
         let successCount = 0;
         
-        // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
+        // Pentru fiecare furnizor, trimitem notificări
         for (const serviceProvider of serviceProviders) {
-          // Verificăm dacă furnizorul este în orașele cererii - facem verificarea case-insensitive
-          const serviceProviderCity = serviceProvider.city.toLowerCase();
+          // Verificăm dacă furnizorul este în orașele cererii - verificare mai permisivă
+          const serviceProviderCity = serviceProvider.city.toLowerCase().trim();
+          
+          // Folosim o verificare mai permisivă pentru a include servicii în zonă
           const isInRequestCity = cityList.some(city => {
-            const lowerCity = city.toLowerCase();
+            const lowerCity = city.toLowerCase().trim();
             return serviceProviderCity.includes(lowerCity) || lowerCity.includes(serviceProviderCity);
           });
           
-          if (!isInRequestCity) {
-            console.log(`Furnizorul ${serviceProvider.companyName} (oraș: ${serviceProvider.city}) nu este în orașele cererii, ignoră`);
+          // Verificăm și dacă orașul din cerere e 'Toate' sau dacă județul e același
+          const isAllCities = cityList.some(city => city.toLowerCase().includes('toate'));
+          
+          // Dacă furnizorul nu este în orașe și nu este selectat 'Toate', îl ignorăm
+          if (!isInRequestCity && !isAllCities) {
+            console.log(`Furnizorul ${serviceProvider.companyName} (oraș: ${serviceProvider.city}) nu este în orașele cererii ${cityList.join(', ')}, ignoră`);
             continue;
           }
           
@@ -942,7 +965,7 @@ export function registerRoutes(app: Express): void {
           console.log(`   Email furnizor: ${serviceProvider.email}`);
           
           try {
-            // Verificăm preferințele de notificări
+            // Verificăm preferințele de notificări (cu default pentru trimitere dacă nu există)
             const preferences = await storage.getNotificationPreferences(serviceProvider.id);
             
             console.log(`   Preferințe găsite în baza de date: ${!!preferences}`);
@@ -953,7 +976,7 @@ export function registerRoutes(app: Express): void {
               console.log(`   - Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
             }
             
-            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor (default DA)
             const shouldSendEmail = !preferences || 
                 (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
                 
@@ -975,19 +998,26 @@ export function registerRoutes(app: Express): void {
               // Creăm obiectul ServiceProvider în formatul așteptat de EmailService
               const formattedServiceProvider = {
                 id: serviceProvider.id,
-                companyName: serviceProvider.companyName,
+                companyName: serviceProvider.companyName || "Furnizor servicii",
                 email: serviceProvider.email,
-                phone: serviceProvider.phone
+                phone: serviceProvider.phone || ""
               };
               
               try {
-                // Verificăm dacă metoda este disponibilă
+                // Verificăm direct EmailService și funcția
+                if (!EmailService) {
+                  console.error(`   ❌ EmailService nu este definit!`);
+                  continue;
+                }
+                
                 if (typeof EmailService.sendNewRequestNotification !== 'function') {
                   console.error(`   ❌ EmailService.sendNewRequestNotification nu este o funcție! Type: ${typeof EmailService.sendNewRequestNotification}`);
                   continue;
                 }
                 
-                // Apelăm direct funcția de trimitere email
+                // Apelăm direct funcția de trimitere email cu logging detaliat
+                console.log(`   📧 Trimitere email pentru cerere nouă "${request.title}" către ${formattedServiceProvider.email}...`);
+                
                 const result = await EmailService.sendNewRequestNotification(
                   formattedServiceProvider,
                   request.title,
@@ -1011,6 +1041,25 @@ export function registerRoutes(app: Express): void {
             }
           } catch (prefError) {
             console.error(`   ❌ Eroare la verificarea preferințelor pentru ${serviceProvider.companyName}:`, prefError);
+          }
+        }
+        
+        // Verificăm situația - dacă nu s-a trimis niciun email, facem un test direct
+        if (emailCount === 0) {
+          console.log(`\n⚠️ Nu s-a trimis niciun email! Verificăm funcționalitatea cu un test direct...`);
+          
+          try {
+            const testResult = await EmailService.sendEmail(
+              "notificari@carvizio.ro", // Adresa de test
+              `[TEST DIAGNOSTIC] Cerere nouă: ${request.title}`,
+              `<h1>Test diagnostic - Cerere nouă</h1><p>Acest email este un test diagnostic pentru a verifica funcționalitatea de trimitere email-uri.</p><p>Cerere nouă creată: "${request.title}" de către ${client.name}</p>`,
+              `Test diagnostic - Cerere nouă\n\nAcest email este un test diagnostic pentru a verifica funcționalitatea de trimitere email-uri.\n\nCerere nouă creată: "${request.title}" de către ${client.name}`,
+              "Test diagnostic notificări cereri noi"
+            );
+            
+            console.log(`   Test diagnostic email: ${testResult ? 'SUCCES' : 'EȘEC'}`);
+          } catch (testError) {
+            console.error(`   ❌ Eroare la testul de diagnostic email:`, testError);
           }
         }
         

@@ -314,23 +314,42 @@ Puteți dezactiva notificările prin email din setările contului dvs.
     try {
       console.log(`🔄 Inițiere trimitere email pentru cerere nouă...`);
       
-      // Verificăm dacă API key-ul este configurat
+      // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
         console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
         console.error(`Variabile de mediu disponibile:`, Object.keys(process.env).filter(key => 
           !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')).join(', '));
+        
+        // Încercăm să verificăm direct variabila de mediu pentru debugging
+        console.error(`ELASTIC_EMAIL_API_KEY în process.env: ${!!process.env.ELASTIC_EMAIL_API_KEY}`);
+        if (process.env.ELASTIC_EMAIL_API_KEY) {
+          console.error(`Lungime ELASTIC_EMAIL_API_KEY: ${process.env.ELASTIC_EMAIL_API_KEY.length}`);
+        }
+        
         return false;
       }
 
-      // Trimitem email-ul folosind noul parametru de debugging
+      // Verificăm parametrii email pentru debugging
+      if (!serviceProvider.email || !uniqueSubject || !html) {
+        console.error(`❌ Parametri email invalizi:`, {
+          email: !!serviceProvider.email, 
+          subject: !!uniqueSubject, 
+          html: !!html
+        });
+        return false;
+      }
+
+      // Trimitem email-ul cu logging extins pentru debugging
       console.log(`🔄 Trimitere email către: ${serviceProvider.email}`);
       console.log(`🔄 Subiect: ${uniqueSubject}`);
       console.log(`🔄 API Key prezent: ${!!this.apiKey}`);
-      console.log(`🔄 API Key trunchiat: ${this.apiKey ? this.apiKey.substring(0, 4) + '...' + this.apiKey.substring(this.apiKey.length - 4) : 'N/A'}`);
+      console.log(`🔄 API Key trunchiat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
+      console.log(`🔄 Dimensiune conținut HTML: ${html.length} caractere`);
       
-      // Apel direct la metoda sendEmail fără a aștepta rezultat - mai robust
+      // Apel direct la metoda sendEmail cu try-catch separat pentru robustețe
       let result: boolean;
       try {
+        // Încercăm trimiterea email-ului
         result = await this.sendEmail(
           serviceProvider.email, 
           uniqueSubject, 
@@ -338,8 +357,13 @@ Puteți dezactiva notificările prin email din setările contului dvs.
           text, // Adăugăm și conținut text simplu pentru compatibilitate
           debugInfo // info debugging
         );
+        
+        console.log(`🔄 Rezultat apel sendEmail: ${result ? 'SUCCESS' : 'FAILURE'}`);
       } catch (innerError) {
         console.error(`❌ Excepție internă în timpul trimiterii email-ului: ${innerError instanceof Error ? innerError.message : String(innerError)}`);
+        if (innerError instanceof Error && innerError.stack) {
+          console.error(`❌ Stack trace excepție internă: ${innerError.stack}`);
+        }
         result = false;
       }
       
@@ -347,6 +371,25 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.log(`✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
       } else {
         console.error(`❌ EmailService.sendNewRequestNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}`);
+        
+        // Încercăm un fallback cu adresa de diagnosticare
+        try {
+          console.log(`🔄 Încercare fallback la adresa de diagnosticare...`);
+          const fallbackResult = await this.sendEmail(
+            "notificari@carvizio.ro", // Adresa de diagnosticare
+            `[DIAGNOSTIC] ${uniqueSubject}`,
+            `<h1>Test diagnostic - Eșec trimitere email cerere nouă</h1>
+            <p>Acest email este un test de diagnostic pentru o cerere nouă care nu a putut fi trimisă la adresa destinatarului original.</p>
+            <p><strong>Destinatar original:</strong> ${serviceProvider.email}</p>
+            <p><strong>Cerere:</strong> ${requestTitle}</p>
+            <p><strong>Client:</strong> ${clientName}</p>`,
+            `Test diagnostic - Eșec trimitere email cerere nouă\n\nDestinatarul original: ${serviceProvider.email}\nCerere: ${requestTitle}\nClient: ${clientName}`,
+            `[FALLBACK] ${debugInfo}`
+          );
+          console.log(`🔄 Rezultat fallback diagnostic: ${fallbackResult ? 'SUCCESS' : 'FAILURE'}`);
+        } catch (fallbackError) {
+          console.error(`❌ Și fallback-ul a eșuat:`, fallbackError);
+        }
       }
       
       return result;
