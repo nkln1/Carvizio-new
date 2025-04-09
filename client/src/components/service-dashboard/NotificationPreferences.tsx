@@ -379,21 +379,14 @@ export default function NotificationPreferences() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => {
-                        // Afișăm doar o notificare de test locală în browser - fără a trimite email
-                        NotificationHelper.showNotification('Notificare de test', {
-                          body: 'Aceasta este doar o notificare de test în browser. Nu se trimite email.',
-                          icon: '/favicon.ico',
-                          requireInteraction: false
-                        });
-                        toast({
-                          title: "Notificare de test afișată",
-                          description: "Am afișat o notificare de test doar în browser. Niciun email nu a fost trimis.",
-                          variant: "default",
-                        });
+                        // Afișăm doar o notificare de test - evităm duplicarea
+                        NotificationHelper.testNotification();
+                        // Nu mai emitem evenimentul WebSocket simulat pentru a evita notificări multiple
+                        // window.dispatchEvent(new Event('test-notification'));
                       }}
                       className="w-full sm:w-auto bg-green-100 hover:bg-green-200 text-green-800"
                     >
-                      Testează notificările browser
+                      Testează notificările
                     </Button>
                   </div>
                 </div>
