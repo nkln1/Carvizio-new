@@ -257,28 +257,58 @@ export class EmailService {
     // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
     const uniqueSubject = `${subject} [${requestId}]`;
     
+    // HTML mai atractiv pentru notificarea prin email
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #4a5568;">Cerere nouă de service</h2>
-        <p>Bună ziua, ${serviceProvider.companyName},</p>
-        <p>Ați primit o cerere nouă de service de la <strong>${clientName}</strong>:</p>
-        <div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">${requestTitle}</h3>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #4299e1; padding: 20px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Cerere nouă de service</h2>
         </div>
-        <p>Puteți vizualiza detaliile și răspunde acestei cereri din contul dvs.</p>
-        <p>
-          <a href="https://auto-service-app.replit.app/service-dashboard?tab=cereri" 
-             style="background-color: #4299e1; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
-            Vezi cererea
-          </a>
-        </p>
-        <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
-          Acest email a fost trimis automat de aplicația Auto Service.
-          <br>
-          Puteți dezactiva notificările prin email din setările contului dvs.
-        </p>
-        <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
+        <div style="padding: 20px;">
+          <p style="font-size: 16px;">Bună ziua, <strong>${serviceProvider.companyName}</strong>,</p>
+          <p style="font-size: 16px;">Ați primit o cerere nouă de service de la <strong>${clientName}</strong>:</p>
+          <div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #2d3748;">${requestTitle}</h3>
+          </div>
+          <p style="font-size: 16px;">Puteți vizualiza detaliile complete ale cererii și răspunde direct din contul dvs.</p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="https://auto-service-app.replit.app/service-dashboard?tab=cereri" 
+               style="background-color: #4299e1; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Vezi cererea
+            </a>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
+            <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
+              Acest email a fost trimis automat de aplicația Auto Service.
+            </p>
+            <p style="color: #718096; font-size: 14px; margin-top: 0;">
+              Puteți dezactiva notificările prin email din 
+              <a href="https://auto-service-app.replit.app/service-dashboard?tab=account" style="color: #4299e1; text-decoration: none;">
+                setările contului dvs
+              </a>.
+            </p>
+          </div>
+        </div>
+        <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+          <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
+        </div>
       </div>
+    `;
+
+    // Text simplu pentru clienții de email care nu suportă HTML
+    const text = `
+Cerere nouă de service: ${requestTitle}
+
+Bună ziua, ${serviceProvider.companyName},
+
+Ați primit o cerere nouă de service de la ${clientName}.
+
+Puteți vizualiza detaliile și răspunde acestei cereri accesând: https://auto-service-app.replit.app/service-dashboard?tab=cereri
+
+Acest email a fost trimis automat de aplicația Auto Service.
+Puteți dezactiva notificările prin email din setările contului dvs.
+
+© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.
     `;
 
     try {
@@ -289,7 +319,7 @@ export class EmailService {
         serviceProvider.email, 
         uniqueSubject, 
         html, 
-        undefined, // text content
+        text, // Adăugăm și conținut text simplu pentru compatibilitate
         debugInfo // info debugging
       );
       
