@@ -97,27 +97,6 @@ export class EmailService {
    */
   static async sendNewRequestNotification(serviceProvider, requestTitle, clientName, requestId, debugInfo) {
     const uniqueSubject = `Cerere nouă: ${requestTitle}`;
-    const messageId = `request_${requestId}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-    
-    console.log(`\n=== EmailService.sendNewRequestNotification [${messageId}] - Trimitere notificare cerere nouă ===`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
-    console.log(`Email destinatar: ${serviceProvider.email}`);
-    console.log(`Titlu cerere: "${requestTitle}"`);
-    console.log(`Client: ${clientName}`);
-    console.log(`ID Cerere: ${requestId}`);
-    console.log(`Timestamp: ${new Date().toISOString()}`);
-    
-    // Verificăm dacă există email pentru service provider
-    if (!serviceProvider.email) {
-      console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Lipsă adresă email pentru service provider ${serviceProvider.id} (${serviceProvider.companyName})`);
-      return false;
-    }
-    
-    // Validăm formatul adresei de email
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(serviceProvider.email)) {
-      console.error(`❌ [${messageId}] EmailService.sendNewRequestNotification - Format invalid de email pentru service provider ${serviceProvider.id}: ${serviceProvider.email}`);
-      return false;
-    }
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -137,7 +116,7 @@ export class EmailService {
           <br>
           Puteți dezactiva notificările prin email din setările contului dvs.
         </p>
-        <!-- ID Cerere: ${requestId}, MessageID: ${messageId} - Folosit pentru prevenirea duplicării -->
+        <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
       </div>
     `;
 
