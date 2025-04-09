@@ -1,5 +1,114 @@
 
 /**
+ * Script de test pentru notificări de cerere nouă
+ * Util pentru debugging
+ */
+
+const fetch = require('node-fetch');
+const { EmailService } = require('./server/services/emailService');
+
+// Funcție pentru testarea directă a notificării de cerere nouă
+async function testNewRequestNotification() {
+  console.log('Test direct de notificare pentru cerere nouă');
+
+  // Verifică configurarea EmailService
+  console.log('Configurare EmailService:');
+  console.log('- API key prezent:', !!process.env.ELASTIC_EMAIL_API_KEY);
+  console.log('- From email:', EmailService.getFromEmail());
+  
+  if (!process.env.ELASTIC_EMAIL_API_KEY) {
+    console.error('EROARE: API key lipsește. Verificați variabila de mediu ELASTIC_EMAIL_API_KEY');
+    return false;
+  }
+
+  // Date pentru testare - înlocuiți cu datele reale
+  const testServiceProvider = {
+    id: 1, // service provider ID
+    companyName: 'Service Test',
+    email: 'notificari@carvizio.ro', // adresa de email de test
+    phone: '0722223333'
+  };
+
+  const requestTitle = 'Test Notificare Cerere Nouă';
+  const clientName = 'Client Test';
+  const requestId = `test_request_${Date.now()}`;
+
+  console.log('\nTrimitere notificare cerere nouă:');
+  console.log('- Destinatar:', testServiceProvider.email);
+  console.log('- Titlu cerere:', requestTitle);
+  console.log('- Client:', clientName);
+  console.log('- Request ID:', requestId);
+
+  try {
+    // Testare cu EmailService
+    console.log('\n1. Test utilizând EmailService.sendNewRequestNotification:');
+    const result = await EmailService.sendNewRequestNotification(
+      testServiceProvider,
+      requestTitle,
+      clientName,
+      requestId
+    );
+    
+    console.log('Rezultat test EmailService:', result ? 'SUCCES' : 'EȘEC');
+
+    // Testare directă cu API
+    console.log('\n2. Test utilizând direct API-ul ElasticEmail:');
+    const params = new URLSearchParams();
+    params.append('apikey', process.env.ELASTIC_EMAIL_API_KEY);
+    params.append('to', testServiceProvider.email);
+    params.append('from', 'notificari@carvizio.ro');
+    params.append('fromName', 'Auto Service App');
+    params.append('subject', `Cerere nouă: ${requestTitle} [${requestId}]`);
+    
+    // HTML pentru email
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4a5568;">Cerere nouă de service</h2>
+        <p>Bună ziua, ${testServiceProvider.companyName},</p>
+        <p>Ați primit o cerere nouă de service de la <strong>${clientName}</strong>:</p>
+        <div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">${requestTitle}</h3>
+        </div>
+        <p>Puteți vizualiza detaliile complete ale cererii și răspunde direct din contul dvs.</p>
+        <p>Acesta este un email de test pentru verificarea funcționalității notificărilor.</p>
+        <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
+      </div>
+    `;
+    
+    params.append('bodyHtml', html);
+    
+    const response = await fetch('https://api.elasticemail.com/v2/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params
+    });
+    
+    const responseData = await response.text();
+    console.log('Status API:', response.status, response.statusText);
+    console.log('Răspuns API:', responseData);
+    
+    return result;
+  } catch (error) {
+    console.error('EROARE la testarea notificării:', error);
+    return false;
+  }
+}
+
+// Rulăm testul
+testNewRequestNotification()
+  .then(result => {
+    console.log('\nRezultat final test:', result ? 'SUCCES' : 'EȘEC');
+    process.exit(result ? 0 : 1);
+  })
+  .catch(err => {
+    console.error('Eroare neprevăzută:', err);
+    process.exit(1);
+  });
+
+
+/**
  * Script pentru testarea notificărilor prin email pentru cereri noi
  * Acest script va simula trimiterea unui email de notificare pentru o cerere nouă
  * pentru un furnizor de servicii specific

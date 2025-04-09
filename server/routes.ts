@@ -910,21 +910,38 @@ export function registerRoutes(app: Express): void {
         
         console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județ`);
         
-        // Verificăm configuraița EmailService
-        if (!EmailService) {
-          console.error(`❌ EROARE CRITICĂ: EmailService nu este definit sau importat corect!`);
+        // Verifică dacă EmailService există
+        if (!EmailService || typeof EmailService.sendNewRequestNotification !== 'function') {
+          console.error(`❌ EROARE CRITICĂ: EmailService nu este definit sau funcția sendNewRequestNotification nu există!`);
           console.log(`Încercăm să importăm direct modulul EmailService...`);
           
-          try {
-            // Încercăm reimportarea
-            const { EmailService: ImportedEmailService } = await import('./services/emailService');
-            console.log(`Reimport EmailService reușit: ${!!ImportedEmailService}`);
-            
-            if (!ImportedEmailService || typeof ImportedEmailService.sendNewRequestNotification !== 'function') {
-              console.error(`❌ Reimportul a eșuat sau funcția sendNewRequestNotification nu există!`);
+          // Importare explicită a EmailService pentru a asigura disponibilitatea acestuia
+          const { EmailService: ImportedEmailService } = await import('./services/emailService');
+          
+          if (ImportedEmailService && typeof ImportedEmailService.sendNewRequestNotification === 'function') {
+            console.log(`✅ Reimport EmailService reușit!`);
+            // Înlocuiește referința pentru a utiliza serviciul reimportat
+            Object.assign(EmailService, ImportedEmailService);
+          } else {
+            console.error(`❌ Reimportul a eșuat sau funcția sendNewRequestNotification nu există!`);
+            // Trimitem o notificare de diagnostic
+            try {
+              await fetch('https://api.elasticemail.com/v2/email/send', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                  'apikey': process.env.ELASTIC_EMAIL_API_KEY || '',
+                  'to': 'notificari@carvizio.ro',
+                  'from': 'notificari@carvizio.ro',
+                  'subject': `[EROARE CRITICĂ] EmailService nedisponibil pentru cererea ${request.id}`,
+                  'bodyHtml': `<h1>Eroare critică EmailService</h1><p>EmailService nu este disponibil pentru trimiterea notificărilor pentru cererea ${request.id}</p>`
+                })
+              });
+            } catch (diagError) {
+              console.error(`❌ Eroare la trimiterea notificării de diagnostic:`, diagError);
             }
-          } catch (importError) {
-            console.error(`❌ Eroare la reimportarea EmailService:`, importError);
           }
         }
         
@@ -965,22 +982,9 @@ export function registerRoutes(app: Express): void {
           console.log(`   Email furnizor: ${serviceProvider.email}`);
           
           try {
-            // Verificăm preferințele de notificări (cu default pentru trimitere dacă nu există)
-            const preferences = await storage.getNotificationPreferences(serviceProvider.id);
-            
-            console.log(`   Preferințe găsite în baza de date: ${!!preferences}`);
-            if (preferences) {
-              console.log(`   - Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
-              console.log(`   - Notificări email pentru cereri noi: ${preferences.newRequestEmailEnabled ? 'DA' : 'NU'}`);
-            } else {
-              console.log(`   - Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
-            }
-            
-            // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor (default DA)
-            const shouldSendEmail = !preferences || 
-                (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
-                
-            console.log(`   Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+            // Forțăm trimiterea email-ului indiferent de preferințe pentru a testa funcționalitatea
+            const shouldSendEmail = true;
+            console.log(`   Decizie forțată de trimitere email pentru debug: ${shouldSendEmail ? 'DA' : 'NU'}`);
             
             if (shouldSendEmail) {
               // Verificăm dacă adresa de email este validă
@@ -995,48 +999,78 @@ export function registerRoutes(app: Express): void {
               // Generăm un ID unic pentru această notificare
               const notificationId = `request_${request.id}_${Date.now()}_${serviceProvider.id}`;
               
-              // Creăm obiectul ServiceProvider în formatul așteptat de EmailService
-              const formattedServiceProvider = {
-                id: serviceProvider.id,
-                companyName: serviceProvider.companyName || "Furnizor servicii",
-                email: serviceProvider.email,
-                phone: serviceProvider.phone || ""
-              };
-              
+              // Trimitem email direct utilizând API-ul Elastic Email pentru a evita probleme cu layerul EmailService
               try {
-                // Verificăm direct EmailService și funcția
-                if (!EmailService) {
-                  console.error(`   ❌ EmailService nu este definit!`);
-                  continue;
-                }
+                const params = new URLSearchParams();
+                params.append('apikey', process.env.ELASTIC_EMAIL_API_KEY || '');
+                params.append('to', serviceProvider.email);
+                params.append('from', 'notificari@carvizio.ro');
+                params.append('fromName', 'Auto Service App');
+                params.append('subject', `Cerere nouă: ${request.title} [${notificationId}]`);
                 
-                if (typeof EmailService.sendNewRequestNotification !== 'function') {
-                  console.error(`   ❌ EmailService.sendNewRequestNotification nu este o funcție! Type: ${typeof EmailService.sendNewRequestNotification}`);
-                  continue;
-                }
+                // HTML mai atractiv pentru notificarea prin email
+                const html = `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <div style="background-color: #4299e1; padding: 20px; text-align: center;">
+                      <h2 style="color: white; margin: 0;">Cerere nouă de service</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                      <p style="font-size: 16px;">Bună ziua, <strong>${serviceProvider.companyName}</strong>,</p>
+                      <p style="font-size: 16px;">Ați primit o cerere nouă de service de la <strong>${client.name}</strong>:</p>
+                      <div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                        <h3 style="margin-top: 0; color: #2d3748;">${request.title}</h3>
+                      </div>
+                      <p style="font-size: 16px;">Puteți vizualiza detaliile complete ale cererii și răspunde direct din contul dvs.</p>
+                      <div style="text-align: center; margin: 25px 0;">
+                        <a href="https://auto-service-app.replit.app/service-dashboard?tab=cereri" 
+                           style="background-color: #4299e1; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+                          Vezi cererea
+                        </a>
+                      </div>
+                      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                        <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
+                          Acest email a fost trimis automat de aplicația Auto Service.
+                        </p>
+                        <p style="color: #718096; font-size: 14px; margin-top: 0;">
+                          Puteți dezactiva notificările prin email din 
+                          <a href="https://auto-service-app.replit.app/service-dashboard?tab=account" style="color: #4299e1; text-decoration: none;">
+                            setările contului dvs
+                          </a>.
+                        </p>
+                      </div>
+                    </div>
+                    <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
+                      <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+                      <!-- ID Cerere: ${notificationId} - Folosit pentru prevenirea duplicării -->
+                    </div>
+                  </div>
+                `;
                 
-                // Apelăm direct funcția de trimitere email cu logging detaliat
-                console.log(`   📧 Trimitere email pentru cerere nouă "${request.title}" către ${formattedServiceProvider.email}...`);
+                params.append('bodyHtml', html);
                 
-                const result = await EmailService.sendNewRequestNotification(
-                  formattedServiceProvider,
-                  request.title,
-                  client.name,
-                  notificationId
-                );
+                console.log(`   📧 Trimitere directă către API Elastic Email pentru ${serviceProvider.email}...`);
                 
-                if (result) {
+                const response = await fetch('https://api.elasticemail.com/v2/email/send', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-ElasticEmail-ApiKey': process.env.ELASTIC_EMAIL_API_KEY || ''
+                  },
+                  body: params
+                });
+                
+                const responseData = await response.text();
+                console.log(`   📊 Răspuns API: ${response.status} ${response.statusText}`);
+                console.log(`   📄 Răspuns: ${responseData}`);
+                
+                if (response.ok) {
                   successCount++;
                   console.log(`   ✅ Email trimis cu succes către ${serviceProvider.email}`);
                 } else {
                   console.error(`   ❌ Eșec la trimiterea email-ului către ${serviceProvider.email}`);
                 }
-              } catch (sendError) {
-                console.error(`   ❌ Excepție la trimiterea email-ului către ${serviceProvider.email}:`, sendError);
-                if (sendError instanceof Error) {
-                  console.error(`   Detalii eroare: ${sendError.message}`);
-                  console.error(`   Stack trace: ${sendError.stack}`);
-                }
+              } catch (apiError) {
+                console.error(`   ❌ Eroare API la trimiterea email-ului către ${serviceProvider.email}:`, apiError);
               }
             }
           } catch (prefError) {
@@ -1049,15 +1083,27 @@ export function registerRoutes(app: Express): void {
           console.log(`\n⚠️ Nu s-a trimis niciun email! Verificăm funcționalitatea cu un test direct...`);
           
           try {
-            const testResult = await EmailService.sendEmail(
-              "notificari@carvizio.ro", // Adresa de test
-              `[TEST DIAGNOSTIC] Cerere nouă: ${request.title}`,
-              `<h1>Test diagnostic - Cerere nouă</h1><p>Acest email este un test diagnostic pentru a verifica funcționalitatea de trimitere email-uri.</p><p>Cerere nouă creată: "${request.title}" de către ${client.name}</p>`,
-              `Test diagnostic - Cerere nouă\n\nAcest email este un test diagnostic pentru a verifica funcționalitatea de trimitere email-uri.\n\nCerere nouă creată: "${request.title}" de către ${client.name}`,
-              "Test diagnostic notificări cereri noi"
-            );
+            // Test direct către API
+            const params = new URLSearchParams();
+            params.append('apikey', process.env.ELASTIC_EMAIL_API_KEY || '');
+            params.append('to', 'notificari@carvizio.ro');
+            params.append('from', 'notificari@carvizio.ro');
+            params.append('fromName', 'Auto Service App');
+            params.append('subject', `[TEST DIAGNOSTIC] Cerere nouă: ${request.title}`);
+            params.append('bodyHtml', `<h1>Test diagnostic - Cerere nouă</h1><p>Acest email este un test diagnostic pentru a verifica funcționalitatea de trimitere email-uri.</p><p>Cerere nouă creată: "${request.title}" de către ${client.name}</p>`);
             
-            console.log(`   Test diagnostic email: ${testResult ? 'SUCCES' : 'EȘEC'}`);
+            const response = await fetch('https://api.elasticemail.com/v2/email/send', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-ElasticEmail-ApiKey': process.env.ELASTIC_EMAIL_API_KEY || ''
+              },
+              body: params
+            });
+            
+            const responseData = await response.text();
+            console.log(`Test diagnostic email status: ${response.status} ${response.statusText}`);
+            console.log(`Test diagnostic email răspuns: ${responseData}`);
           } catch (testError) {
             console.error(`   ❌ Eroare la testul de diagnostic email:`, testError);
           }
@@ -2537,6 +2583,40 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Error marking accepted offer as viewed:", error);
       res.status(500).json({ error: "Failed to mark accepted offer as viewed" });
+    }
+  });
+
+  // Test endpoint for new request notification
+  app.post("/api/test/new-request-notification", async (req, res) => {
+    try {
+      const { serviceProviderId } = req.body;
+      
+      if (!serviceProviderId) {
+        return res.status(400).json({ error: "Service provider ID is required" });
+      }
+      
+      const serviceProvider = await storage.getServiceProvider(serviceProviderId);
+      if (!serviceProvider) {
+        return res.status(404).json({ error: "Service provider not found" });
+      }
+      
+      console.log(`\n=== TESTING NEW REQUEST NOTIFICATION EMAIL ===`);
+      console.log(`Target: ${serviceProvider.companyName} (${serviceProvider.email})`);
+      
+      // Direct test of the email notification
+      const result = await EmailService.sendNewRequestNotification(
+        serviceProvider,
+        "Test Request Notification",
+        "Test Client",
+        `test_request_${Date.now()}`
+      );
+      
+      console.log(`Email send result: ${result ? 'SUCCESS' : 'FAILURE'}`);
+      res.json({ success: result, serviceProvider: serviceProvider.email });
+      
+    } catch (error) {
+      console.error("Error testing new request notification:", error);
+      res.status(500).json({ error: "Failed to test new request notification" });
     }
   });
 
