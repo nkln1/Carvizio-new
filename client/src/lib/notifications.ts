@@ -55,14 +55,14 @@ class NotificationHelper {
     const hasServiceWorker = 'serviceWorker' in navigator;
     const hasController = !!navigator.serviceWorker?.controller;
     const hasNotificationFunction = typeof window.showNotificationViaSW === 'function';
-    
+
     console.log('[Diagnostic] Service Worker disponibilitate:', { 
       hasServiceWorker, 
       hasController, 
       hasNotificationFunction,
       serviceWorkerState: navigator.serviceWorker?.controller?.state
     });
-    
+
     return hasServiceWorker && hasController && hasNotificationFunction;
   }
 
@@ -146,13 +146,13 @@ class NotificationHelper {
         requireInteraction: true,  // Notificarea rămâne vizibilă până când utilizatorul interacționează cu ea
         ...options
       };
-      
+
       // Folosim tag-ul pentru a preveni notificările duplicate
       // Dacă nu există deja un tag, generăm un ID unic
       if (!defaultOptions.tag) {
         defaultOptions.tag = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
       }
-      
+
       console.log('Tag notificare:', defaultOptions.tag);
 
       // Încercăm mai întâi să folosim Service Worker dacă este disponibil
@@ -225,58 +225,30 @@ class NotificationHelper {
 
   /**
    * Metodă pentru testarea notificărilor
+   * Aceasta este doar o notificare locală care nu implică serverul sau trimiterea de email-uri
    */
   static testNotification(): void {
-    console.log('Inițiere test notificări browser...');
-    const permission = this.checkPermission();
-    console.log('Test notificări. Permisiune curentă:', permission);
+    try {
+      if (!this.isSupported()) {
+        console.error('Browserul nu suportă notificările');
+        return;
+      }
 
-    if (permission === 'granted') {
-      console.log('Permisiune acordată, afișăm notificarea de test');
-      
-      // Adăugăm un identificator unic la notificare pentru a preveni duplicarea
-      const uniqueId = Date.now();
-      const notificationTag = 'test-notification-' + uniqueId;
-      
-      // Asigurăm-ne că afișăm o singură notificare cu tag unic și nu trei notificări separate
-      if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
-        // Folosim Service Worker pentru notificare pentru a testa funcționalitatea
-        window.showNotificationViaSW('Test notificare', {
-          body: 'Test notificare realizat cu succes',
-          icon: '/favicon.ico',
-          tag: notificationTag, // Folosim același tag pentru toate trei notificările
-          requireInteraction: true,
-          data: {
-            id: uniqueId,
-            test: true
-          }
-        });
-      } else {
-        // Fallback la API-ul standard de notificări dacă Service Worker nu este disponibil
-        this.showNotification('Test notificare', {
-          body: 'Test notificare realizat cu succes',
-          icon: '/favicon.ico',
-          tag: notificationTag,
-          requireInteraction: true,
-          data: {
-            id: uniqueId,
-            test: true
-          }
-        });
-      }
-    } else {
-      console.warn('Nu se poate testa notificarea - permisiunea nu este acordată');
-      // Încercăm să solicităm permisiunea dacă nu este denial
-      if (permission !== 'denied') {
-        this.requestPermission().then(granted => {
-          if (granted) {
-            console.log('Permisiune acordată după solicitare, testăm notificarea');
-            this.testNotification();
-          } else {
-            console.log('Permisiune refuzată de utilizator');
-          }
-        });
-      }
+      console.log('Afișare notificare de test locală (doar browser, fără email)');
+
+      this.showNotification('Notificare de test', {
+        body: 'Aceasta este o notificare de test pentru a verifica funcționalitatea notificărilor în browser. Niciun email nu a fost trimis.',
+        icon: '/favicon.ico',
+        requireInteraction: false, // Nu necesită interacțiune
+        silent: false, // Cu sunet
+        data: {
+          testOnly: true,
+          localOnly: true,
+          noEmail: true
+        }
+      });
+    } catch (error) {
+      console.error('Eroare la afișarea notificării de test:', error);
     }
   }
 
@@ -312,7 +284,7 @@ class NotificationHelper {
         tag: tag,
         requireInteraction: true
       });
-      
+
       // Adăugăm event handlers
       notification.onclick = () => {
         window.focus();
@@ -320,12 +292,12 @@ class NotificationHelper {
         window.location.href = '/service-dashboard?tab=messages';
         notification.close();
       };
-      
+
       console.log('Notificare mesaj nou afișată cu succes direct');
       return;
     } catch (directError) {
       console.error('Eroare la afișarea notificării directe:', directError);
-      
+
       // Încercăm metoda cu Service Worker ca fallback
       if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
         console.log('Folosim Service Worker pentru notificarea de mesaj (fallback)');
@@ -394,21 +366,21 @@ class NotificationHelper {
       console.warn('Date de notificare invalide:', data);
       return;
     }
-    
+
     // Generăm un ID unic pentru notificare dacă nu există deja
     if (!data.notificationId) {
       data.notificationId = `notif-${data.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     }
-    
+
     // Verificăm dacă această notificare a fost deja procesată pentru a evita duplicatele
     if (this.processedNotificationIds.has(data.notificationId)) {
       console.log(`Notificare ignorată (duplicat) cu ID: ${data.notificationId}`);
       return;
     }
-    
+
     // Marcăm notificarea ca fiind procesată
     this.processedNotificationIds.add(data.notificationId);
-    
+
     // Limităm mărimea setului pentru a evita consumul excesiv de memorie
     if (this.processedNotificationIds.size > 100) {
       // Eliminăm primele 50 de elemente când depășim 100
@@ -452,7 +424,7 @@ class NotificationHelper {
         // ID-ul unic a fost deja generat la începutul metodei și stocat în data.notificationId
         // Folosim acest ID și pentru tag-ul notificării
         const notificationId = data.notificationId;
-        
+
         // Verificăm tipul de eveniment și afișăm notificarea corespunzătoare
         switch (data.type) {
           case 'NEW_MESSAGE':
@@ -623,10 +595,10 @@ class NotificationHelper {
    */
   static startBackgroundMessageCheck(userId: number, userRole: string, token?: string): Promise<any> {
     console.log(`[NotificationHelper] Pornire verificare mesaje pentru utilizator ${userId} (${userRole})`);
-    
+
     // Marcăm verificarea ca activă indiferent de Service Worker
     this.backgroundCheckActive = true;
-    
+
     // Verificăm dacă avem datele minime necesare
     if (!userId || !userRole) {
       const errorMsg = 'Date lipsă pentru verificarea mesajelor în fundal: ' + 
@@ -635,11 +607,11 @@ class NotificationHelper {
       console.error('[NotificationHelper]', errorMsg);
       return Promise.reject(new Error(errorMsg));
     }
-    
+
     // Oprim orice verificare existentă înainte de a porni una nouă
     // Acest lucru asigură că nu avem verificări multiple active
     this.stopBackgroundMessageCheck();
-    
+
     // Obținem token-ul din localStorage dacă nu a fost furnizat
     let authToken = token;
     if (!authToken || authToken === 'undefined' || authToken === 'null') {
@@ -648,16 +620,16 @@ class NotificationHelper {
                   localStorage.getItem('authToken') || 
                   sessionStorage.getItem('firebase_auth_token') || 
                   sessionStorage.getItem('authToken') || '';
-      
+
       console.log('[NotificationHelper] Token obținut din storage:', authToken ? 'Da (lungime ' + authToken.length + ')' : 'Nu');
     }
-    
+
     // Verificare suplimentară a validității tokenului - ar trebui să fie un șir non-gol
     if (!authToken || authToken === 'undefined' || authToken === 'null') {
       console.warn('[NotificationHelper] Token invalid sau lipsă pentru verificarea mesajelor');
       // Continuăm oricum, dar semnalăm problema
     }
-    
+
     // Pregătim opțiunile pentru verificare
     const options = {
       userId, 
@@ -665,7 +637,7 @@ class NotificationHelper {
       token: authToken,
       interval: 30000 // 30 secunde între verificări
     };
-    
+
     // Log pentru debugging
     console.log('[NotificationHelper] Opțiuni verificare mesaje:', {
       userId: options.userId,
@@ -691,7 +663,7 @@ class NotificationHelper {
       }
 
       console.log('[NotificationHelper] Trimitere comandă către Service Worker pentru verificarea mesajelor');
-      
+
       try {
         // Setăm un timeout pentru a evita blocarea în cazul în care Service Worker nu răspunde
         const timeoutId = setTimeout(() => {
@@ -699,7 +671,7 @@ class NotificationHelper {
           this.startClientSidePolling(options);
           resolve({ success: true, message: 'Client-side polling started after timeout', fallback: true });
         }, 3000);
-        
+
         // Trimitem comanda către Service Worker
         window.startBackgroundMessageCheck(options)
           .then((result) => {
@@ -710,7 +682,7 @@ class NotificationHelper {
           .catch(error => {
             clearTimeout(timeoutId);
             console.error('[NotificationHelper] Eroare la pornirea verificării mesajelor în fundal:', error);
-            
+
             // În caz de eroare, încercăm fallback-ul cu polling din client
             console.log('[NotificationHelper] Folosim polling din client ca fallback după eroare');
             this.startClientSidePolling(options);
@@ -718,7 +690,7 @@ class NotificationHelper {
           });
       } catch (error) {
         console.error('[NotificationHelper] Excepție la pornirea verificării mesajelor:', error);
-        
+
         // În caz de excepție, folosim polling din client
         this.startClientSidePolling(options);
         resolve({ success: true, message: 'Client-side polling started after exception', error, fallback: true });
@@ -732,14 +704,14 @@ class NotificationHelper {
    */
   static stopBackgroundMessageCheck(): void {
     console.log('Încercare de oprire a verificării mesajelor în fundal. Stare verificare activă:', this.backgroundCheckActive);
-    
+
     // Oprim întotdeauna polling-ul din client, indiferent de starea Service Worker-ului
     if (this.clientSidePollingInterval) {
       console.log('Oprire polling client-side activ');
       clearInterval(this.clientSidePollingInterval);
       this.clientSidePollingInterval = null;
     }
-    
+
     // Verificăm dacă Service Worker-ul este disponibil
     if (!this.isServiceWorkerAvailable() || !window.stopBackgroundMessageCheck) {
       console.warn('Service Worker nu este disponibil pentru oprirea verificării mesajelor în fundal');
@@ -754,13 +726,13 @@ class NotificationHelper {
       .then((result) => {
         this.backgroundCheckActive = false;
         console.log('Verificare mesaje în fundal oprită cu succes:', result);
-        
+
         // Adăugăm un log suplimentar în console pentru a confirma utilizatorului
         console.log('%cNotificările au fost dezactivate cu succes', 'color: green; font-weight: bold;');
       })
       .catch(error => {
         console.error('Eroare la oprirea verificării mesajelor în fundal:', error);
-        
+
         // Încercăm să forțăm oprirea verificării
         this.backgroundCheckActive = false;
       });
@@ -770,23 +742,23 @@ class NotificationHelper {
 
   private static async startClientSidePolling(options: BackgroundCheckOptions) {
     console.log('[NotificationHelper] Pornire polling client-side pentru verificarea mesajelor');
-    
+
     // Oprim orice interval existent înainte de a începe unul nou
     if (this.clientSidePollingInterval) {
       clearInterval(this.clientSidePollingInterval);
       this.clientSidePollingInterval = null;
     }
-    
+
     // Log pentru debugging
     console.log('[NotificationHelper] Polling configurat pentru utilizator:', options.userId, 'rol:', options.userRole);
-    
+
     this.clientSidePollingInterval = setInterval(async () => {
       try {
         console.log('[NotificationHelper] Polling pentru mesaje noi...');
-        
+
         // Obținem tokenul de autentificare din toate sursele posibile
         let token = options.token;
-        
+
         // Dacă tokenul nu există sau este invalid, încercăm să-l obținem din alte surse
         if (!token || token === 'undefined' || token === 'null') {
           // Încercăm metoda globală
@@ -801,58 +773,58 @@ class NotificationHelper {
               console.warn('[NotificationHelper] Eroare la obținerea tokenului prin window.getAuthToken:', error);
             }
           }
-          
+
           // Încercăm localStorage și sessionStorage dacă încă nu avem token
           if (!token || token === 'undefined' || token === 'null') {
             token = localStorage.getItem('firebase_auth_token') || 
                     localStorage.getItem('authToken') || 
                     sessionStorage.getItem('firebase_auth_token') || 
                     sessionStorage.getItem('authToken') || '';
-                    
+
             console.log('[NotificationHelper] Token obținut din storage:', token ? 'disponibil' : 'indisponibil');
-            
+
             // Actualizăm token-ul în opțiuni pentru verificările viitoare
             if (token && token !== 'undefined' && token !== 'null') {
               options.token = token;
             }
           }
         }
-        
+
         // Verificăm dacă avem un token valid
         if (!token || token === 'undefined' || token === 'null') {
           console.log('[NotificationHelper] Token invalid sau lipsă pentru polling');
           return;
         }
-        
+
         // Adăugăm informații de debugging pentru a urmări tokenul
         console.log('[NotificationHelper] Verificare mesaje cu token valid (lungime:', token.length, ')');
-        
+
         // Facem cererea API pentru verificarea mesajelor noi
         const response = await fetch(`/api/messages?userId=${options.userId}&userRole=${options.userRole}&token=${token}`);
-        
+
         if (!response.ok) {
           console.error('[NotificationHelper] Eroare la verificarea mesajelor prin polling:', response.status);
-          
+
           // Verificăm dacă este o eroare de autentificare
           if (response.status === 401 || response.status === 403) {
             console.warn('[NotificationHelper] Eroare de autentificare, ștergem tokenul pentru următoarea verificare');
             options.token = undefined; // Forțăm reîncercarea obținerii unui token nou
           }
-          
+
           return;
         }
-        
+
         // Verificăm content-type pentru a evita erori de parsare JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
           console.warn('[NotificationHelper] Răspunsul nu este JSON valid:', contentType);
           return;
         }
-        
+
         // Procesăm mesajele primite
         const newMessages = await response.json();
         console.log('[NotificationHelper] Mesaje primite prin polling:', newMessages ? newMessages.length : 0);
-        
+
         if (newMessages && newMessages.length > 0) {
           // Afișăm notificare pentru fiecare mesaj nou
           newMessages.forEach((msg: any) => {
@@ -862,7 +834,7 @@ class NotificationHelper {
             }
           });
         }
-      } catch (error) {
+      }} catch (error) {
         console.error('[NotificationHelper] Eroare la verificarea mesajelor prin polling:', error);
       }
     }, options.interval || this.notificationSettings.backgroundCheckInterval);
@@ -910,15 +882,15 @@ if (typeof window !== 'undefined') {
                         localStorage.getItem('authToken') || 
                         sessionStorage.getItem('firebase_auth_token') || 
                         sessionStorage.getItem('authToken');
-                        
+
         console.log('[getAuthToken] Furnizăm token de autentificare către Service Worker', 
                     authToken ? 'Token găsit (lungime ' + authToken.length + ')' : 'Token lipsă');
-        
+
         if (!authToken || authToken === 'undefined' || authToken === 'null') {
           console.warn('[getAuthToken] Nu s-a găsit un token valid în storage');
           return null;
         }
-        
+
         return authToken;
       } catch (error) {
         console.error('[getAuthToken] Eroare la obținerea token-ului de autentificare:', error);
@@ -940,7 +912,7 @@ if (typeof window !== 'undefined') {
                       localStorage.getItem('authToken') || 
                       sessionStorage.getItem('firebase_auth_token') || 
                       sessionStorage.getItem('authToken');
-                      
+
           console.log('[ServiceWorker Message Listener] Cerere token primită, răspundem cu token:', 
                       token ? `disponibil (${token.length} caractere)` : 'indisponibil');
 
@@ -951,7 +923,7 @@ if (typeof window !== 'undefined') {
               token: token, 
               timestamp: new Date().toISOString()
             });
-            
+
             // Confirmăm în console că am trimis răspunsul
             console.log('[ServiceWorker Message Listener] Răspuns token trimis către Service Worker');
           } else {
