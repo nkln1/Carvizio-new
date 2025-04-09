@@ -894,7 +894,7 @@ export function registerRoutes(app: Express): void {
 
       // După crearea cererii, găsim furnizorii de servicii din zona specificată pentru a trimite notificări prin email
       try {
-        console.log(`=== PROCES EMAIL NOTIFICARE CERERE NOUĂ ===`);
+        console.log(`\n===== ÎNCEPERE PROCESARE NOTIFICĂRI EMAIL PENTRU CERERE NOUĂ =====`);
         console.log(`Cerere nouă creată: ID ${request.id}, Titlu: "${request.title}", Client: ${client.name}`);
         console.log(`Locație: ${request.county}, Orașe: ${Array.isArray(request.cities) ? request.cities.join(', ') : request.cities}`);
         
@@ -910,9 +910,20 @@ export function registerRoutes(app: Express): void {
         
         console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județ`);
         
-        // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
-        const emailPromises = [];
+        // Importăm direct EmailService
+        console.log(`EmailService disponibil: ${!!EmailService}`);
+        console.log(`EmailService.sendNewRequestNotification disponibil: ${!!EmailService.sendNewRequestNotification}`);
         
+        // Verificăm configurarea API-ului de email
+        console.log(`API Key prezent: ${!!process.env.ELASTIC_EMAIL_API_KEY}`);
+        if (!process.env.ELASTIC_EMAIL_API_KEY) {
+          console.error(`⚠️ AVERTISMENT: ELASTIC_EMAIL_API_KEY nu este configurat! Notificările email nu vor funcționa.`);
+        }
+        
+        let emailCount = 0;
+        let successCount = 0;
+        
+        // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
         for (const serviceProvider of serviceProviders) {
           // Verificăm dacă furnizorul este în orașele cererii - facem verificarea case-insensitive
           const serviceProviderCity = serviceProvider.city.toLowerCase();
@@ -926,36 +937,37 @@ export function registerRoutes(app: Express): void {
             continue;
           }
           
-          console.log(`✓ Furnizor în oraș potrivit: ${serviceProvider.companyName} (ID: ${serviceProvider.id}), Oraș: ${serviceProvider.city}`);
-          console.log(`Orașe cerere: ${cityList.join(', ')}`);
+          console.log(`\n>> Procesare furnizor de servicii: ${serviceProvider.companyName} (ID: ${serviceProvider.id})`);
+          console.log(`   Oraș furnizor: ${serviceProvider.city}`);
+          console.log(`   Email furnizor: ${serviceProvider.email}`);
           
           try {
             // Verificăm preferințele de notificări
             const preferences = await storage.getNotificationPreferences(serviceProvider.id);
             
-            console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+            console.log(`   Preferințe găsite în baza de date: ${!!preferences}`);
             if (preferences) {
-              console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
-              console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
-              console.log(`- Notificări email pentru cereri noi: ${preferences.newRequestEmailEnabled ? 'DA' : 'NU'}`);
+              console.log(`   - Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+              console.log(`   - Notificări email pentru cereri noi: ${preferences.newRequestEmailEnabled ? 'DA' : 'NU'}`);
             } else {
-              console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+              console.log(`   - Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
             }
             
             // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
             const shouldSendEmail = !preferences || 
                 (preferences.emailNotificationsEnabled && preferences.newRequestEmailEnabled);
                 
-            console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+            console.log(`   Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
             
             if (shouldSendEmail) {
               // Verificăm dacă adresa de email este validă
               if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
-                console.log(`⚠️ Adresă de email invalidă pentru service provider ${serviceProvider.id}: ${serviceProvider.email}`);
+                console.log(`   ⚠️ Adresă de email invalidă pentru service provider ${serviceProvider.id}: ${serviceProvider.email}`);
                 continue;
               }
               
-              console.log(`🟢 Service Provider eligibil pentru email: ${serviceProvider.companyName} (${serviceProvider.email})`);
+              emailCount++;
+              console.log(`   🚀 Trimitere email #${emailCount} către: ${serviceProvider.email}`);
               
               // Generăm un ID unic pentru această notificare
               const notificationId = `request_${request.id}_${Date.now()}_${serviceProvider.id}`;
@@ -968,18 +980,14 @@ export function registerRoutes(app: Express): void {
                 phone: serviceProvider.phone
               };
               
-              // Afișăm obiectul pentru debugging
-              console.log(`🔍 Obiect ServiceProvider formatat:`, formattedServiceProvider);
-              
-              // Verificăm dacă cheile API sunt configurate
-              console.log(`🔑 API Key Elastic Email configurată: ${!!process.env.ELASTIC_EMAIL_API_KEY}`);
-              if (!process.env.ELASTIC_EMAIL_API_KEY) {
-                console.error(`❌ EROARE: ELASTIC_EMAIL_API_KEY nu este setat în variabilele de mediu!`);
-              }
-              
-              // Trimitem email de notificare - DIRECT
-              console.log(`🚀 Trimitere email notificare cerere nouă către ${serviceProvider.companyName} (${serviceProvider.email})`);
               try {
+                // Verificăm dacă metoda este disponibilă
+                if (typeof EmailService.sendNewRequestNotification !== 'function') {
+                  console.error(`   ❌ EmailService.sendNewRequestNotification nu este o funcție! Type: ${typeof EmailService.sendNewRequestNotification}`);
+                  continue;
+                }
+                
+                // Apelăm direct funcția de trimitere email
                 const result = await EmailService.sendNewRequestNotification(
                   formattedServiceProvider,
                   request.title,
@@ -987,27 +995,37 @@ export function registerRoutes(app: Express): void {
                   notificationId
                 );
                 
-                console.log(`📧 Rezultat trimitere email către ${serviceProvider.email}: ${result ? '✅ SUCCES' : '❌ EȘEC'}`);
-                
                 if (result) {
-                  console.log(`✅ Email pentru cerere nouă trimis cu succes către ${serviceProvider.email}`);
+                  successCount++;
+                  console.log(`   ✅ Email trimis cu succes către ${serviceProvider.email}`);
                 } else {
-                  console.error(`❌ Eșec la trimiterea email-ului pentru cerere nouă către ${serviceProvider.email}`);
+                  console.error(`   ❌ Eșec la trimiterea email-ului către ${serviceProvider.email}`);
                 }
               } catch (sendError) {
-                console.error(`❌ Excepție la trimiterea email-ului pentru ${serviceProvider.email}:`, sendError);
+                console.error(`   ❌ Excepție la trimiterea email-ului către ${serviceProvider.email}:`, sendError);
+                if (sendError instanceof Error) {
+                  console.error(`   Detalii eroare: ${sendError.message}`);
+                  console.error(`   Stack trace: ${sendError.stack}`);
+                }
               }
             }
           } catch (prefError) {
-            console.error(`❌ Eroare la verificarea preferințelor pentru ${serviceProvider.companyName}:`, prefError);
+            console.error(`   ❌ Eroare la verificarea preferințelor pentru ${serviceProvider.companyName}:`, prefError);
           }
         }
         
-        console.log(`=== SFÂRȘIT PROCES EMAIL NOTIFICARE CERERE NOUĂ ===`);
+        console.log(`\n===== FINALIZARE PROCESARE NOTIFICĂRI EMAIL =====`);
+        console.log(`Email-uri procesate: ${emailCount}`);
+        console.log(`Email-uri trimise cu succes: ${successCount}`);
+        console.log(`Email-uri eșuate: ${emailCount - successCount}`);
+        
       } catch (emailError) {
         // Doar înregistrăm eroarea, nu împiedicăm crearea cererii
-        console.error("❌ Eroare la trimiterea email-urilor de notificare pentru cerere nouă:", emailError);
-        console.error("Stack trace:", emailError.stack);
+        console.error("\n❌ EROARE GENERALĂ la procesarea email-urilor pentru cerere nouă:", emailError);
+        if (emailError instanceof Error) {
+          console.error("Detalii eroare:", emailError.message);
+          console.error("Stack trace:", emailError.stack);
+        }
       }
 
       res.status(201).json(request);

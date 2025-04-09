@@ -328,13 +328,20 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`🔄 API Key prezent: ${!!this.apiKey}`);
       console.log(`🔄 API Key trunchiat: ${this.apiKey ? this.apiKey.substring(0, 4) + '...' + this.apiKey.substring(this.apiKey.length - 4) : 'N/A'}`);
       
-      const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        text, // Adăugăm și conținut text simplu pentru compatibilitate
-        debugInfo // info debugging
-      );
+      // Apel direct la metoda sendEmail fără a aștepta rezultat - mai robust
+      let result: boolean;
+      try {
+        result = await this.sendEmail(
+          serviceProvider.email, 
+          uniqueSubject, 
+          html, 
+          text, // Adăugăm și conținut text simplu pentru compatibilitate
+          debugInfo // info debugging
+        );
+      } catch (innerError) {
+        console.error(`❌ Excepție internă în timpul trimiterii email-ului: ${innerError instanceof Error ? innerError.message : String(innerError)}`);
+        result = false;
+      }
       
       if (result) {
         console.log(`✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
