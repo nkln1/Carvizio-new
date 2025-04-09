@@ -904,17 +904,17 @@ export function registerRoutes(app: Express): void {
         console.log(`Căutare furnizori de servicii în locația: ${request.county}, ${cityList.join(', ')}`);
         
         // Obținem toți furnizorii de servicii din același județ - FĂRĂ filtru pentru oraș, vom verifica manual
-        const serviceProviders = await db.query.serviceProviders.findMany({
+        const serviceProvidersList = await db.query.serviceProviders.findMany({
           where: eq(serviceProviders.county, request.county)
         });
         
-        console.log(`Găsiți ${serviceProviders.length} furnizori de servicii în județ`);
+        console.log(`Găsiți ${serviceProvidersList.length} furnizori de servicii în județ`);
         
         let emailCount = 0;
         let successCount = 0;
         
         // Pentru fiecare furnizor, trimitem notificări
-        for (const serviceProvider of serviceProviders) {
+        for (const serviceProvider of serviceProvidersList) {
           // Verificăm dacă furnizorul este în orașele cererii - verificare mai permisivă
           const serviceProviderCity = serviceProvider.city.toLowerCase().trim();
           
@@ -965,10 +965,18 @@ export function registerRoutes(app: Express): void {
               emailCount++;
               console.log(`   🚀 Trimitere email #${emailCount} către: ${serviceProvider.email}`);
               
+              // Asigurăm-ne că toate proprietățile necesare sunt prezente
+              const serviceProviderForEmail = {
+                id: serviceProvider.id,
+                email: serviceProvider.email,
+                companyName: serviceProvider.companyName,
+                phone: serviceProvider.phone || ''
+              };
+              
               // Folosim direct EmailService.sendNewRequestNotification așa cum este folosit pentru mesaje
               try {
                 const result = await EmailService.sendNewRequestNotification(
-                  serviceProvider,  // Trimitem obiectul serviceProvider direct
+                  serviceProviderForEmail,  // Trimitem obiectul serviceProvider direct
                   request.title,
                   client.name,
                   `request_${request.id}_${Date.now()}`
