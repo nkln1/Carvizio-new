@@ -401,13 +401,19 @@ export function registerRoutes(app: Express): void {
   // API pentru obținerea preferințelor de notificări pentru client
   app.get('/api/client/notification-preferences', validateFirebaseToken, async (req, res) => {
     try {
+      console.log(`Solicitare preferințe de notificări pentru client cu Firebase UID: ${req.firebaseUser!.uid}`);
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      
       if (!client) {
+        console.log(`Client nu a fost găsit pentru Firebase UID: ${req.firebaseUser!.uid}`);
         return res.status(401).json({ error: "Not authorized" });
       }
       
+      console.log(`Client găsit cu ID: ${client.id}, email: ${client.email}`);
+      
       // Obține preferințele de notificări ale clientului
       const preferences = await storage.getClientNotificationPreferences(client.id);
+      console.log(`Preferințe de notificări pentru client ${client.id}:`, preferences ? 'Găsite' : 'Nu există');
       
       if (!preferences) {
         // Dacă nu există preferințe, returnează valori implicite
@@ -438,13 +444,19 @@ export function registerRoutes(app: Express): void {
   // API pentru actualizarea preferințelor de notificări pentru client
   app.post('/api/client/notification-preferences', validateFirebaseToken, async (req, res) => {
     try {
+      console.log(`POST request to update client notification preferences from Firebase UID: ${req.firebaseUser!.uid}`);
+      
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
+        console.log(`Client nu a fost găsit pentru Firebase UID: ${req.firebaseUser!.uid}`);
         return res.status(401).json({ error: "Not authorized" });
       }
       
+      console.log(`Client găsit cu ID: ${client.id}, email: ${client.email}`);
+      
       // Verifică dacă există deja preferințe
       let preferences = await storage.getClientNotificationPreferences(client.id);
+      console.log(`Preferințe existente:`, preferences ? 'Găsite' : 'Nu există');
       
       // Extragem doar câmpurile necesare și eliminăm timestamp-urile care pot cauza probleme
       const { 

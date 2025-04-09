@@ -1217,11 +1217,20 @@ export class DatabaseStorage implements IStorage {
   // Client Notification Preferences methods
   async getClientNotificationPreferences(clientId: number): Promise<ClientNotificationPreference | undefined> {
     try {
-      const [preferences] = await db
+      console.log(`Obtaining client notification preferences for client ID: ${clientId}`);
+      
+      const preferences = await db
         .select()
         .from(clientNotificationPreferences)
         .where(eq(clientNotificationPreferences.clientId, clientId));
-      return preferences;
+
+      console.log(`Found ${preferences.length} notification preferences records for client ${clientId}`);
+      
+      if (preferences.length === 0) {
+        return undefined;
+      }
+      
+      return preferences[0];
     } catch (error) {
       console.error('Error getting client notification preferences:', error);
       return undefined;
@@ -1230,6 +1239,8 @@ export class DatabaseStorage implements IStorage {
 
   async createClientNotificationPreferences(preferences: InsertClientNotificationPreference): Promise<ClientNotificationPreference> {
     try {
+      console.log(`Creating new client notification preferences for client ID: ${preferences.clientId}`, preferences);
+      
       const [newPreferences] = await db
         .insert(clientNotificationPreferences)
         .values({
@@ -1238,6 +1249,8 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .returning();
+      
+      console.log(`Created client notification preferences:`, newPreferences);
       return newPreferences;
     } catch (error) {
       console.error('Error creating client notification preferences:', error);
