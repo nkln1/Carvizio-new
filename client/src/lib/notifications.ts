@@ -351,10 +351,26 @@ class NotificationHelper {
 
     // Emitem și un eveniment pentru debugging sau pentru alte componente care ar putea asculta
     try {
-      const notificationEvent = new CustomEvent('message-notification', {
+      // Event pentru debugging - message-notification
+      const messageNotificationEvent = new CustomEvent('message-notification', {
         detail: { content: safeContent, timestamp }
       });
-      window.dispatchEvent(notificationEvent);
+      window.dispatchEvent(messageNotificationEvent);
+      
+      // Evenim pentru sistemul de notificări Firebase
+      const appNotificationEvent = new CustomEvent('app-notification', {
+        detail: { 
+          type: 'NEW_MESSAGE',
+          title: 'Mesaj nou',
+          body: safeContent,
+          timestamp,
+          data: {
+            url: '/client-dashboard?tab=messages'
+          }
+        }
+      });
+      window.dispatchEvent(appNotificationEvent);
+      console.log('Eveniment app-notification emis pentru mesaj nou');
     } catch (error) {
       console.error('Eroare la emiterea evenimentului de notificare:', error);
     }
@@ -434,19 +450,32 @@ class NotificationHelper {
     }
 
     // Verificăm configurările de notificări
-    this.getNotificationPreferences().then(preferences => {
+    this.getNotificationPreferences(data.userRole || 'service').then(preferences => {
       const shouldShowNotification = this.shouldShowNotification(data, preferences);
 
       if (shouldShowNotification) {
-        // În funcție de tipul de eveniment, determinăm URL-ul către care să redirecționăm
-        let notificationUrl = '/service-dashboard';
-
+        // În funcție de tipul de eveniment și rolul utilizatorului, determinăm URL-ul corespunzător
+        let notificationUrl;
+        
+        // Determină dashboard-ul corect bazat pe rolul utilizatorului
+        const dashboardBase = data.userRole === 'client' ? '/client-dashboard' : '/service-dashboard';
+        
         if (data.type === 'NEW_MESSAGE') {
-          notificationUrl = '/service-dashboard?tab=messages';
+          notificationUrl = `${dashboardBase}?tab=messages`;
         } else if (data.type === 'NEW_REQUEST') {
-          notificationUrl = '/service-dashboard?tab=requests';
+          notificationUrl = `${dashboardBase}?tab=requests`;
+        } else if (data.type === 'NEW_OFFER') {
+          notificationUrl = `${dashboardBase}?tab=offers`;
         } else if (data.type === 'OFFER_STATUS_CHANGED' && data.payload?.status === 'Accepted') {
-          notificationUrl = '/service-dashboard?tab=offers';
+          notificationUrl = `${dashboardBase}?tab=offers`;
+        } else {
+          // Fallback la dashboard-ul de bază
+          notificationUrl = dashboardBase;
+        }
+        
+        // Folosește URL-ul furnizat direct în date dacă există (prioritate maximă)
+        if (data.data && data.data.url) {
+          notificationUrl = data.data.url;
         }
 
         // ID-ul unic a fost deja generat la începutul metodei și stocat în data.notificationId
@@ -475,10 +504,12 @@ class NotificationHelper {
             }
             break;
           case 'NEW_OFFER':
+            console.log('Afișăm notificare pentru ofertă nouă:', data.payload);
             if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
               window.showNotificationViaSW('Ofertă nouă', {
                 body: data.payload?.title || 'Ați primit o ofertă nouă',
                 icon: '/favicon.ico',
+                tag: notificationId, // Folosim ID-ul unic ca tag
                 requireInteraction: true,
                 data: { url: notificationUrl }
               });
@@ -486,15 +517,18 @@ class NotificationHelper {
               this.showNotification('Ofertă nouă', {
                 body: data.payload?.title || 'Ați primit o ofertă nouă',
                 icon: '/favicon.ico',
+                tag: notificationId, // Folosim ID-ul unic ca tag
                 requireInteraction: true
               });
             }
             break;
           case 'NEW_REQUEST':
+            console.log('Afișăm notificare pentru cerere nouă:', data.payload);
             if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
               window.showNotificationViaSW('Cerere nouă', {
                 body: data.payload?.title || 'Ați primit o cerere nouă',
                 icon: '/favicon.ico',
+                tag: notificationId, // Folosim ID-ul unic ca tag
                 requireInteraction: true,
                 data: { url: notificationUrl }
               });
@@ -502,16 +536,19 @@ class NotificationHelper {
               this.showNotification('Cerere nouă', {
                 body: data.payload?.title || 'Ați primit o cerere nouă',
                 icon: '/favicon.ico',
+                tag: notificationId, // Folosim ID-ul unic ca tag
                 requireInteraction: true
               });
             }
             break;
           case 'OFFER_STATUS_CHANGED':
             if (data.payload?.status === 'Accepted') {
+              console.log('Afișăm notificare pentru ofertă acceptată:', data.payload);
               if (this.isServiceWorkerAvailable() && window.showNotificationViaSW) {
                 window.showNotificationViaSW('Ofertă acceptată', {
                   body: 'O ofertă trimisă de dvs. a fost acceptată',
                   icon: '/favicon.ico',
+                  tag: notificationId, // Folosim ID-ul unic ca tag
                   requireInteraction: true,
                   data: { url: notificationUrl }
                 });
@@ -519,6 +556,7 @@ class NotificationHelper {
                 this.showNotification('Ofertă acceptată', {
                   body: 'O ofertă trimisă de dvs. a fost acceptată',
                   icon: '/favicon.ico',
+                  tag: notificationId, // Folosim ID-ul unic ca tag
                   requireInteraction: true
                 });
               }
