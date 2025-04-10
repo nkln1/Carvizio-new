@@ -3591,7 +3591,152 @@ export function registerRoutes(app: Express): void {
       return res.status(500).json({ error: "Failed to update notification preferences" });
     }
   });
-  // Adaugă acest endpoint în fișierul routes.ts, în funcția registerRoutes
+
+  // Endpoint pentru obținerea preferințelor de notificare ale clienților
+  app.get('/api/client/notification-preferences', validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      console.log(`Obținerea preferințelor de notificare pentru clientul: ${client.id}`);
+      
+      // Obține preferințele de notificări ale clientului
+      const preferences = await storage.getClientNotificationPreferences(client.id);
+      
+      if (!preferences) {
+        console.log(`Nu s-au găsit preferințe pentru clientul ${client.id}, returnăm valori implicite`);
+        // Dacă nu există preferințe, returnează valori implicite
+        return res.json({
+          id: 0,
+          clientId: client.id,
+          emailNotificationsEnabled: true,
+          newOfferEmailEnabled: true,
+          newMessageEmailEnabled: true,
+          browserNotificationsEnabled: true,
+          newOfferBrowserEnabled: true,
+          newMessageBrowserEnabled: true,
+          browserPermission: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+      
+      console.log(`Preferințe găsite pentru clientul ${client.id}:`, preferences);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error getting client notification preferences:", error);
+      res.status(500).json({ error: "Failed to get notification preferences" });
+    }
+  });
+  
+  // Endpoint pentru crearea/actualizarea preferințelor de notificare pentru clienți
+  app.post('/api/client/notification-preferences', validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(401).json({ error: "Not authorized" });
+      }
+      
+      console.log(`Actualizare preferințe de notificare pentru clientul: ${client.id}`, req.body);
+      
+      // Verifică dacă există deja preferințe
+      let preferences = await storage.getClientNotificationPreferences(client.id);
+      
+      // Extragem doar câmpurile necesare
+      const { 
+        emailNotificationsEnabled, 
+        newOfferEmailEnabled, 
+        newMessageEmailEnabled, 
+        browserNotificationsEnabled, 
+        newOfferBrowserEnabled, 
+        newMessageBrowserEnabled, 
+        browserPermission 
+      } = req.body;
+      
+      if (!preferences) {
+        console.log(`Crearea preferințelor pentru clientul ${client.id}`);
+        // Dacă nu există preferințe, le creează
+        preferences = await storage.createClientNotificationPreferences({
+          clientId: client.id,
+          emailNotificationsEnabled,
+          newOfferEmailEnabled,
+          newMessageEmailEnabled,
+          browserNotificationsEnabled,
+          newOfferBrowserEnabled,
+          newMessageBrowserEnabled,
+          browserPermission
+        });
+      } else {
+        console.log(`Actualizarea preferințelor pentru clientul ${client.id} cu ID: ${preferences.id}`);
+        // Dacă există preferințe, le actualizează
+        preferences = await storage.updateClientNotificationPreferences(preferences.id, {
+          emailNotificationsEnabled,
+          newOfferEmailEnabled,
+          newMessageEmailEnabled,
+          browserNotificationsEnabled,
+          newOfferBrowserEnabled,
+          newMessageBrowserEnabled,
+          browserPermission
+        });
+      }
+      
+      console.log(`Preferințe actualizate pentru clientul ${client.id}:`, preferences);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating client notification preferences:", error);
+      res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
+  
+  // Endpoint pentru actualizarea preferințelor de notificare pentru clienți
+  app.put("/api/client/notification-preferences", validateFirebaseToken, async (req, res) => {
+    try {
+      const { userType } = req.session;
+      
+      if (!userType || userType !== "client") {
+        return res.status(403).json({ error: "Unauthorized. Only clients can update notification preferences." });
+      }
+      
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      
+      console.log(`PUT pentru actualizarea preferințelor clientului ${client.id}`, req.body);
+      
+      // Verifică dacă preferințele există
+      const existingPreferences = await storage.getClientNotificationPreferences(client.id);
+      if (!existingPreferences) {
+        // Dacă preferințele nu există, le creează
+        try {
+          console.log(`Crearea preferințelor pentru clientul ${client.id} din ruta PUT`);
+          const newPreferences = await storage.createClientNotificationPreferences({
+            clientId: client.id,
+            ...req.body
+          });
+          return res.json(newPreferences);
+        } catch (error) {
+          console.error("Error creating client notification preferences:", error);
+          return res.status(500).json({ error: "Failed to create notification preferences" });
+        }
+      }
+      
+      console.log(`Actualizarea preferințelor pentru clientul ${client.id} cu ID: ${existingPreferences.id} din ruta PUT`);
+      // Actualizează preferințele existente
+      const updatedPreferences = await storage.updateClientNotificationPreferences(
+        existingPreferences.id,
+        req.body
+      );
+      
+      console.log(`Preferințe actualizate cu succes:`, updatedPreferences);
+      res.json(updatedPreferences);
+    } catch (error) {
+      console.error("Error updating client notification preferences:", error);
+      res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
 
   // Endpoint pentru polling mesaje când WebSocket nu funcționează
   app.get("/api/messages/poll", validateFirebaseToken, async (req, res) => {
