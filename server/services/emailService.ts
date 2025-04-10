@@ -625,4 +625,178 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       return false;
     }
   }
+  
+  /**
+   * Trimite notificare de mesaj nou către client
+   * Această metodă este specializată pentru a notifica clienții (nu service provider-ii)
+   * @param client Clientul care primește notificarea
+   * @param messageContent Conținutul mesajului
+   * @param senderName Numele expeditorului (service provider)
+   * @param requestOrOfferTitle Titlul cererii sau ofertei asociate
+   * @param messageId ID unic pentru mesaj (pentru prevenirea duplicării)
+   * @returns Promise care indică succesul sau eșecul trimiterii
+   */
+  public static async sendNewMessageNotificationToClient(
+    client: any, // Acceptă orice format client
+    messageContent: string,
+    senderName: string,
+    requestOrOfferTitle: string,
+    messageId: string = `message_client_${Date.now()}`
+  ): Promise<boolean> {
+    const debugInfo = `[Mesaj Nou pentru CLIENT] De la: ${senderName}, Cerere/Ofertă: ${requestOrOfferTitle}, ID Mesaj: ${messageId}`;
+    console.log(`\n💬 === EmailService.sendNewMessageNotificationToClient - Trimitere notificare mesaj nou către CLIENT ===`);
+    console.log(`📧 Destinatar: ${client.name} (${client.email})`);
+    console.log(`📤 Expeditor: ${senderName}`);
+    console.log(`📌 Referitor la: ${requestOrOfferTitle}`);
+    console.log(`🔢 ID Mesaj: ${messageId}`);
+    console.log(`📝 Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}`);
+    
+    const subject = `Mesaj nou de la ${senderName}`;
+    
+    // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
+    const uniqueSubject = `${subject} [${messageId}]`;
+    
+    // Truncăm mesajul dacă este prea lung
+    const truncatedMessage = messageContent.length > 150 
+      ? messageContent.substring(0, 147) + '...' 
+      : messageContent;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #3b82f6; padding: 20px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Mesaj nou</h2>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px;">Bună ziua, ${client.name},</p>
+          <p style="font-size: 16px;">Ați primit un mesaj nou de la <strong>${senderName}</strong> referitor la "${requestOrOfferTitle}":</p>
+          <div style="background-color: #f7fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; font-style: italic;">"${truncatedMessage}"</p>
+          </div>
+          <p style="font-size: 16px;">Puteți vizualiza conversația completă și răspunde din contul dvs.</p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="https://auto-service-app.replit.app/client-dashboard?tab=messages" 
+               style="background-color: #3b82f6; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Vezi mesajele
+            </a>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
+            <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
+              Acest email a fost trimis automat de aplicația Auto Service.
+            </p>
+            <p style="color: #718096; font-size: 14px; margin-top: 0;">
+              Puteți dezactiva notificările prin email din 
+              <a href="https://auto-service-app.replit.app/client-dashboard?tab=account" style="color: #3b82f6; text-decoration: none;">
+                setările contului dvs
+              </a>.
+            </p>
+          </div>
+        </div>
+        <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+          <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+        </div>
+      </div>
+    `;
+
+    try {
+      // Trimitem email-ul folosind noul parametru de debugging
+      const result = await this.sendEmail(
+        client.email, 
+        uniqueSubject, 
+        html, 
+        undefined, // text content
+        debugInfo // info debugging
+      );
+      console.log(`💬 EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`);
+      return result;
+    } catch (error) {
+      console.error(`💬 EmailService.sendNewMessageNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}:`, error);
+      // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
+      return false;
+    }
+  }
+  
+  /**
+   * Trimite notificare de ofertă nouă către client
+   * @param client Clientul care primește notificarea
+   * @param offerTitle Titlul ofertei
+   * @param providerName Numele service provider-ului
+   * @param requestTitle Titlul cererii originale
+   * @param offerId ID unic pentru ofertă (pentru prevenirea duplicării)
+   * @returns Promise care indică succesul sau eșecul trimiterii
+   */
+  public static async sendNewOfferNotificationToClient(
+    client: any, // Acceptă orice format client
+    offerTitle: string,
+    providerName: string,
+    requestTitle: string,
+    offerId: string = `offer_${Date.now()}`
+  ): Promise<boolean> {
+    const debugInfo = `[Ofertă Nouă pentru CLIENT] De la: ${providerName}, Ofertă: ${offerTitle}, Cerere: ${requestTitle}, ID: ${offerId}`;
+    console.log(`\n📋 === EmailService.sendNewOfferNotificationToClient - Trimitere notificare ofertă nouă către CLIENT ===`);
+    console.log(`📧 Destinatar: ${client.name} (${client.email})`);
+    console.log(`📤 Service Provider: ${providerName}`);
+    console.log(`📌 Titlu ofertă: ${offerTitle}`);
+    console.log(`📝 Cerere originală: ${requestTitle}`);
+    console.log(`🔢 ID Ofertă: ${offerId}`);
+    
+    const subject = `Ofertă nouă de la ${providerName}`;
+    
+    // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
+    const uniqueSubject = `${subject} [${offerId}]`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #10b981; padding: 20px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Ofertă nouă</h2>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px;">Bună ziua, ${client.name},</p>
+          <p style="font-size: 16px;">Ați primit o ofertă nouă de la <strong>${providerName}</strong> pentru cererea dumneavoastră "${requestTitle}":</p>
+          <div style="background-color: #f7fafc; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #10b981;">${offerTitle}</h3>
+          </div>
+          <p style="font-size: 16px;">Puteți vizualiza detaliile complete ale ofertei și răspunde din contul dvs.</p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="https://auto-service-app.replit.app/client-dashboard?tab=offers" 
+               style="background-color: #10b981; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Vezi oferta
+            </a>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
+            <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
+              Acest email a fost trimis automat de aplicația Auto Service.
+            </p>
+            <p style="color: #718096; font-size: 14px; margin-top: 0;">
+              Puteți dezactiva notificările prin email din 
+              <a href="https://auto-service-app.replit.app/client-dashboard?tab=account" style="color: #10b981; text-decoration: none;">
+                setările contului dvs
+              </a>.
+            </p>
+          </div>
+        </div>
+        <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+          <!-- ID Ofertă: ${offerId} - Folosit pentru prevenirea duplicării -->
+        </div>
+      </div>
+    `;
+
+    try {
+      // Trimitem email-ul folosind parametrul de debugging
+      const result = await this.sendEmail(
+        client.email, 
+        uniqueSubject, 
+        html, 
+        undefined, // text content
+        debugInfo // info debugging
+      );
+      console.log(`📋 EmailService.sendNewOfferNotificationToClient - Email trimis cu succes către ${client.email} pentru oferta ${offerId}`);
+      return result;
+    } catch (error) {
+      console.error(`📋 EmailService.sendNewOfferNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru oferta ${offerId}:`, error);
+      // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
+      return false;
+    }
+  }
 }

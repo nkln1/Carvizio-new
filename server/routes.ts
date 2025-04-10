@@ -2055,19 +2055,11 @@ export function registerRoutes(app: Express): void {
               console.log(`- Titlu cerere: "${requestTitle}"`);
               console.log(`- Conținut mesaj: "${message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content}"`);
               
-              // Adaptăm obiectul client pentru EmailService (care așteaptă format de Service Provider)
-              const clientForEmail = {
-                id: client.id,
-                companyName: client.name, // Folosim name ca și "companyName"
-                email: client.email,
-                phone: client.phone || ''
-              };
-              
-              // Trimitem email de notificare
+              // Trimitem email de notificare către client
               try {
-                console.log(`Se trimite email-ul către client...`);
-                await EmailService.sendNewMessageNotification(
-                  clientForEmail,
+                console.log(`Se trimite email-ul către client folosind noua metodă specializată pentru clienți...`);
+                await EmailService.sendNewMessageNotificationToClient(
+                  client, // Trimitem obiectul client direct
                   message.content,
                   senderName,
                   requestTitle,
