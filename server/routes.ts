@@ -1449,22 +1449,14 @@ export function registerRoutes(app: Express): void {
             console.log(`- Titlu oferta: "${offer.title}"`);
             console.log(`- Preț: ${offer.price} RON`);
             
-            // Adaptăm obiectul client pentru EmailService (care așteaptă format de Service Provider)
-            const clientForEmail = {
-              id: client.id,
-              companyName: client.name, // Folosim name ca și "companyName"
-              email: client.email,
-              phone: client.phone || ''
-            };
-            
-            // Pregătim date pentru email - conversie pentru a folosi metoda existentă de trimitere ofertă acceptată
-            // (care e similar cu o ofertă nouă, doar că trimisă în sens invers)
+            // Folosim metoda specializată pentru notificări de ofertă nouă către client
             try {
-              console.log(`Se trimite email-ul către client...`);
-              await EmailService.sendOfferAcceptedNotification(
-                clientForEmail,
+              console.log(`Se trimite email-ul către client folosind noua metodă specializată pentru notificări de ofertă...`);
+              await EmailService.sendNewOfferNotificationToClient(
+                client, // Trimitem obiectul client direct
                 offer.title,
                 provider.companyName,
+                request?.title || 'Cerere service auto',
                 `offer_new_${offer.id}_${Date.now()}`
               );
               console.log(`✓ Email de notificare ofertă nouă trimis cu succes către clientul ${client.name} (${client.email})`);
