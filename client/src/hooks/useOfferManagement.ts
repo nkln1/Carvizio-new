@@ -76,20 +76,20 @@ export function useOfferManagement() {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'NEW_OFFER' && data.payload) {
         console.log('New offer received via WebSocket:', data.payload);
-        
+
         // Play notification sound
         NotificationHelper.playNotificationSound('offer');
-        
+
         // Show browser notification
         NotificationHelper.showBrowserNotification(
           'Ofertă nouă', 
           `Ați primit o ofertă nouă: ${data.payload.title || 'Verificați detaliile în aplicație'}`
         );
-        
+
         // Invalidate offers to get the latest data
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
-        
+
         // Show toast notification
         toast({
           title: "Ofertă nouă",
@@ -97,7 +97,7 @@ export function useOfferManagement() {
         });
       }
     };
-    
+
     // Add WebSocket handler
     if (window.addWebSocketMessageHandler) {
       const removeHandler = window.addWebSocketMessageHandler(handleWebSocketMessage);
