@@ -375,6 +375,39 @@ export class EmailService {
     messageId,
     debugInfo,
   ) {
+    // Creăm un mesaj de log detaliat pentru debugging
+    const logMessage = `
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: ${new Date().toISOString()}
+Destinatar: ${serviceProvider?.companyName || 'N/A'} (${serviceProvider?.email || 'N/A'})
+Destinatar ID: ${serviceProvider?.id || 'N/A'}
+Expeditor: ${senderName || 'N/A'}
+Subiect: ${requestOrOfferTitle || 'N/A'}
+ID mesaj: ${messageId || 'N/A'}
+Debug Info: ${debugInfo || 'N/A'}
+`;
+
+    // Logarea în consolă și într-un fișier pentru debugging ulterior
+    console.log(logMessage);
+    
+    try {
+      const fs = await import('fs');
+      fs.appendFileSync('public/logs/email-debug.txt', logMessage + '\n');
+    } catch (logErr) {
+      console.error('Nu s-a putut scrie în fișierul de log:', logErr);
+    }
+
+    // Verificări de siguranță pentru a preveni erorile
+    if (!serviceProvider) {
+      console.error('❌ serviceProvider este null sau undefined');
+      return false;
+    }
+
+    if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
+      console.error(`❌ Email invalid pentru service provider: "${serviceProvider.email}"`);
+      return false;
+    }
+
     console.log(
       `\n==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====`,
     );
@@ -427,22 +460,39 @@ export class EmailService {
         `Trimitere email pentru mesaj nou către service: ${serviceProvider.email}`,
       );
 
+      // Log important înainte de trimitere
+      console.log(`[DEBUG] Înainte de trimitere - destinatar real: ${serviceProvider.email}`);
+
       const result = await this.sendEmail(
-        serviceProvider.email,
-        uniqueSubject,
-        html,
-        undefined, // text content
-        emailId, // message ID
+        serviceProvider.email, // Adresa de email a destinatarului
+        uniqueSubject,        // Subiectul email-ului
+        html,                 // Conținutul HTML
+        undefined,            // Text content (opțional)
+        emailId,              // ID unic pentru mesaj
       );
 
       if (result) {
         console.log(
           `✅ EmailService.sendNewMessageNotification - Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId || "nou"}`,
         );
+        // Adaugă înregistrare de succes în log
+        try {
+          const fs = await import('fs');
+          fs.appendFileSync('public/logs/email-debug.txt', `✅ SUCCES: Email trimis la ${serviceProvider.email} la ${new Date().toISOString()}\n`);
+        } catch (logErr) {
+          console.error('Nu s-a putut actualiza log-ul de succes:', logErr);
+        }
       } else {
         console.error(
           `❌ EmailService.sendNewMessageNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId || "nou"}`,
         );
+        // Adaugă înregistrare de eșec în log
+        try {
+          const fs = await import('fs');
+          fs.appendFileSync('public/logs/email-debug.txt', `❌ EȘEC: Email către ${serviceProvider.email} a eșuat la ${new Date().toISOString()}\n`);
+        } catch (logErr) {
+          console.error('Nu s-a putut actualiza log-ul de eșec:', logErr);
+        }
       }
 
       return result;
@@ -451,6 +501,15 @@ export class EmailService {
         `❌ EmailService.sendNewMessageNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId || "nou"}:`,
         error,
       );
+      
+      // Adaugă eroare în log
+      try {
+        const fs = await import('fs');
+        fs.appendFileSync('public/logs/email-debug.txt', `❌ EROARE: ${error.message} la ${new Date().toISOString()}\n`);
+      } catch (logErr) {
+        console.error('Nu s-a putut actualiza log-ul de eroare:', logErr);
+      }
+      
       return false;
     }
   }
