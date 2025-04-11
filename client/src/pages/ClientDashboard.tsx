@@ -83,6 +83,13 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
+      // Adăugăm rolul 'client' la toate notificările primite pentru a fi procesate corect
+      // de NotificationHelper
+      if (!data.userRole) {
+        data.userRole = 'client';
+      }
+      
+      // Actualizăm datele din cache
       if (data.type === 'NEW_OFFER') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
       } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
@@ -93,6 +100,21 @@ export default function ClientDashboard() {
         queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
         // Also invalidate unread messages count
         queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
+      }
+      
+      // Utilizăm NotificationHelper pentru a procesa notificările
+      try {
+        // Importăm dinamic NotificationHelper pentru a evita probleme de dependențe circulare
+        import("@/lib/notifications").then((module) => {
+          const NotificationHelper = module.default;
+          // Verificăm dacă utilizatorul are permisiunea de a primi notificări
+          if (NotificationHelper.checkPermission() === 'granted') {
+            // Procesăm notificarea
+            NotificationHelper.handleNotificationEvent(data);
+          }
+        });
+      } catch (error) {
+        console.error('Eroare la procesarea notificării:', error);
       }
     };
 
