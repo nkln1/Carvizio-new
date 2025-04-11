@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
-import NotificationHelper from '@/lib/notifications';
+import NotificationHelper from '@/lib/notifications'; // Added import for NotificationHelper
 
 const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
 const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
@@ -205,57 +205,6 @@ export function useMessagesManagement(
       throw error;
     }
   }, [activeConversation, baseEndpoint, queryClient, isClient, toast]);
-
-  // Check for new messages in the WebSocket service
-  useEffect(() => {
-    // If this is a client dashboard, we can set up a subscription for new messages
-    if (isClient && auth.currentUser) {
-      const handleNewMessage = async (data: any) => {
-        if (data.type === 'NEW_MESSAGE' && data.payload) {
-          const { payload } = data;
-          
-          // Only show notification if the receiver is the client
-          if (payload.receiverRole === 'client') {
-            console.log('New message received via WebSocket for client:', payload);
-            
-            try {
-              // Play notification sound
-              NotificationHelper.playNotificationSound('message');
-              
-              // Show browser notification if allowed
-              NotificationHelper.showBrowserNotification(
-                'Mesaj nou', 
-                payload.content && payload.content.length > 50 
-                  ? `${payload.content.substring(0, 50)}...` 
-                  : payload.content || 'Ați primit un mesaj nou'
-              );
-              
-              // Refresh messages and conversation data
-              queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
-              queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/conversations`] });
-              queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-              
-              // Show toast notification
-              toast({
-                title: "Mesaj nou",
-                description: "Ați primit un mesaj nou",
-              });
-            } catch (err) {
-              console.error('Error processing new message notification:', err);
-            }
-          }
-        }
-      };
-      
-      // Add WebSocket handler for client side
-      if (window.addWebSocketMessageHandler) {
-        const removeHandler = window.addWebSocketMessageHandler(handleNewMessage);
-        return () => {
-          if (removeHandler) removeHandler();
-        };
-      }
-    }
-  }, [isClient, baseEndpoint, queryClient, toast]);
 
   return {
     activeConversation,

@@ -76,10 +76,10 @@ class FirebaseMessaging {
       // Înregistrăm service worker-ul - asigurăm-ne că folosim calea corectă
       // În producție, firebase-messaging-sw.js ar trebui să fie în directorul rădăcină
       const swUrl = '/firebase-messaging-sw.js';
-
+      
       // Verificăm dacă avem deja un service worker înregistrat
       const existingRegistration = await navigator.serviceWorker.getRegistration(swUrl);
-
+      
       if (existingRegistration) {
         console.log('Service Worker Firebase deja înregistrat, îl folosim pe cel existent', existingRegistration);
         this.swRegistration = existingRegistration;
@@ -90,10 +90,10 @@ class FirebaseMessaging {
         });
         console.log('Service Worker Firebase înregistrat cu succes', this.swRegistration);
       }
-
+      
       // Trimite configurația Firebase către Service Worker
       this.sendConfigToServiceWorker();
-
+      
       // Ascultăm pentru actualizările service worker-ului
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         console.log('Service Worker controller a fost schimbat, retrimitem configurația');
@@ -101,7 +101,7 @@ class FirebaseMessaging {
       });
     } catch (error) {
       console.error('Eroare la înregistrarea service worker-ului Firebase:', error);
-
+      
       // Încercăm o soluție alternativă folosind service worker-ul existent
       try {
         const existingRegistration = await navigator.serviceWorker.ready;
@@ -126,7 +126,7 @@ class FirebaseMessaging {
 
     // Creăm un MessageChannel pentru comunicarea bidirecțională
     const messageChannel = new MessageChannel();
-
+    
     // Configurăm handler-ul pentru răspunsurile de la Service Worker
     messageChannel.port1.onmessage = (event) => {
       console.log('Răspuns de la Service Worker Firebase:', event.data);
@@ -172,13 +172,13 @@ class FirebaseMessaging {
 
       // În loc să folosim FCM pentru token, generăm un token unic pentru identificare
       this.fcmToken = this.generateDeviceToken();
-
+      
       console.log('Token FCM generat alternativ:', this.fcmToken);
-
+      
       // Salvăm tokenul în cookies pentru a-l putea folosi la reîncărcarea paginii
       if (this.fcmToken) {
         Cookie.set('fcm_token', this.fcmToken, { expires: 30, secure: true, sameSite: 'Strict' });
-
+        
         // Înregistrăm tokenul pe server
         await this.registerTokenWithServer();
       }
@@ -186,7 +186,7 @@ class FirebaseMessaging {
       console.error('Eroare la obținerea/actualizarea token-ului FCM:', error);
     }
   }
-
+  
   /**
    * Generează un token unic pentru dispozitiv
    */
@@ -195,10 +195,10 @@ class FirebaseMessaging {
     const timestamp = new Date().getTime();
     const random = Math.floor(Math.random() * 1000000000);
     const browserInfo = navigator.userAgent;
-
+    
     // Creăm un hash simplu bazat pe aceste informații
     const tokenData = `${timestamp}-${random}-${browserInfo}`;
-
+    
     // Convertim în base64 pentru un format mai compact
     return btoa(tokenData).substring(0, 40);
   }
@@ -219,9 +219,9 @@ class FirebaseMessaging {
         console.error('Utilizatorul nu este autentificat pentru înregistrarea token-ului FCM');
         return;
       }
-
+      
       const authToken = await currentUser.getIdToken();
-
+      
       const response = await fetch('/api/notifications/register-token', {
         method: 'POST',
         headers: {
@@ -252,14 +252,14 @@ class FirebaseMessaging {
   private setupForegroundListener(): void {
     // Versiune simplificată care nu folosește Firebase Messaging
     console.log('Înregistrând listener alternativ pentru mesaje în prim-plan');
-
+    
     // În loc să folosim Firebase Messaging, creem propriul nostru EventListener
     window.addEventListener('app-notification', (event: any) => {
       console.log('Eveniment app-notification declanșat:', event.detail);
-
+      
       const payload = event.detail;
       if (!payload) return;
-
+      
       // Extragem datele din payload
       const notificationTitle = payload.title || 'Notificare nouă';
       const notificationOptions: NotificationOptions = {
@@ -290,7 +290,7 @@ class FirebaseMessaging {
       // Folosim Service Worker-ul pentru a afișa notificarea
       this.swRegistration.showNotification(title, options)
         .catch(error => console.error('Eroare la afișarea notificării:', error));
-
+      
       // Redăm sunetul pentru notificare
       this.playNotificationSound();
     } catch (error) {
