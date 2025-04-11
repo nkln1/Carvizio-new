@@ -73,7 +73,7 @@ export class EmailService {
       });
 
       const data = await response.json();
-      
+
       if (!data.success) {
         console.error(`EmailService.sendEmail - Eroare API Elastic Email: ${JSON.stringify(data)}`);
         return false;
@@ -200,6 +200,7 @@ export class EmailService {
    */
   static async sendNewMessageNotification(serviceProvider, messageContent, senderName, requestOrOfferTitle, messageId, debugInfo) {
     const uniqueSubject = `Mesaj nou: ${requestOrOfferTitle}`;
+    const actualMessageId = `message_service_${messageId || Date.now()}`;
 
     // Trunchiază mesajul dacă este prea lung pentru preview
     const messagePreview = messageContent.length > 100 
@@ -225,22 +226,30 @@ export class EmailService {
           <br>
           Puteți dezactiva notificările prin email din setările contului dvs.
         </p>
-        <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+        <!-- ID Mesaj: ${actualMessageId} - Folosit pentru prevenirea duplicării -->
       </div>
     `;
 
     try {
+      console.log(`EmailService.sendNewMessageNotification - Încercare trimitere email către ${serviceProvider.email} pentru mesaj ${actualMessageId}`);
+
       const result = await this.sendEmail(
         serviceProvider.email, 
         uniqueSubject, 
         html, 
         undefined, // text content
-        debugInfo || `message_${messageId}` // info debugging + message ID
+        debugInfo || actualMessageId // info debugging + message ID
       );
-      console.log(`EmailService.sendNewMessageNotification - Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
+
+      if (result) {
+        console.log(`EmailService.sendNewMessageNotification - Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${actualMessageId}`);
+      } else {
+        console.error(`EmailService.sendNewMessageNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${actualMessageId}`);
+      }
+
       return result;
     } catch (error) {
-      console.error(`EmailService.sendNewMessageNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}:`, error);
+      console.error(`EmailService.sendNewMessageNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${actualMessageId}:`, error);
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
     }
