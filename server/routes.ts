@@ -2049,15 +2049,24 @@ export function registerRoutes(app: Express): void {
               
               // Trimitem email de notificare către client
               try {
-                console.log(`Se trimite email-ul către client...`);
-                await EmailService.sendNewMessageNotificationToClient(
+                console.log(`Se trimite email-ul către client. NOTIFICARE EMAIL CLIENT ACTIVATĂ...`);
+                // Adăugăm un identificator unic pentru acest email pentru a-l putea urmări mai ușor în logs
+                const emailId = `message_${message.id}_${Date.now()}`;
+                console.log(`ID email pentru depanare: ${emailId}`);
+                
+                const emailResult = await EmailService.sendNewMessageNotificationToClient(
                   client,
                   message.content,
                   senderName,
                   requestTitle,
-                  `message_${message.id}_${Date.now()}`
+                  emailId
                 );
-                console.log(`✓ Email trimis cu succes către client ${client.name} (${client.email})`);
+                
+                if (emailResult) {
+                  console.log(`✓ Email trimis cu succes către client ${client.name} (${client.email})`);
+                } else {
+                  console.log(`⚠️ Trimiterea email-ului către client ${client.name} (${client.email}) a avut probleme`);
+                }
               } catch (err) {
                 console.error(`✗ EROARE la trimiterea email-ului către client:`, err);
               }
