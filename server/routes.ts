@@ -2362,6 +2362,78 @@ export function registerRoutes(app: Express): void {
         }
       });
       
+      // Trimitem notificare prin email pentru noul mesaj către client
+      try {
+        console.log(`=== PROCES EMAIL NOTIFICARE MESAJ NOU (SERVICE->CLIENT) ===`);
+        
+        // Client obținut deja la linia 2327
+        if (receiver) {
+          console.log(`Client găsit: ${receiver.name} (${receiver.email})`);
+          
+          // Verificăm preferințele pentru notificări
+          console.log(`Verificăm preferințele pentru notificări email pentru client...`);
+          const preferences = await storage.getClientNotificationPreferences(receiver.id);
+          
+          console.log(`Preferințe găsite în baza de date pentru client: ${!!preferences}`);
+          if (preferences) {
+            console.log(`Preferințe specifice pentru client ID ${receiver.id}:`);
+            console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+            console.log(`- Notificări email pentru mesaje noi: ${preferences.newMessageEmailEnabled ? 'DA' : 'NU'}`);
+          } else {
+            console.log(`Nu există preferințe în baza de date pentru client, se vor folosi valorile implicite (toate notificările activate)`);
+          }
+          
+          // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+          const shouldSendEmail = !preferences || 
+              (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
+              
+          console.log(`Decizie de trimitere email către client: ${shouldSendEmail ? 'DA' : 'NU'}`);
+          
+          if (shouldSendEmail) {
+            console.log(`Pregătim trimiterea email-ului de notificare către client...`);
+            
+            // Avem deja detaliile cererii și mesajului
+            const requestTitle = request ? request.title : "Cerere service auto";
+            
+            console.log(`Informații pentru email către client:`);
+            console.log(`- Destinatar: ${receiver.name} (${receiver.email})`);
+            console.log(`- Expeditor: ${sender.companyName}`);
+            console.log(`- Titlu cerere: "${requestTitle}"`);
+            console.log(`- Conținut mesaj: "${content.length > 50 ? content.substring(0, 50) + '...' : content}"`);
+            
+            // Trimitem email de notificare către client
+            try {
+              console.log(`Se trimite email-ul către client...`);
+              // Identificator unic pentru acest email
+              const emailId = `message_${message.id}_${Date.now()}`;
+              console.log(`ID email pentru depanare: ${emailId}`);
+              
+              const emailResult = await EmailService.sendNewMessageNotificationToClient(
+                receiver,
+                content,
+                sender.companyName,
+                requestTitle,
+                emailId
+              );
+              
+              if (emailResult) {
+                console.log(`✓ Email trimis cu succes către client ${receiver.name} (${receiver.email})`);
+              } else {
+                console.log(`⚠️ Trimiterea email-ului către client ${receiver.name} (${receiver.email}) a avut probleme`);
+              }
+            } catch (err) {
+              console.error(`✗ EROARE la trimiterea email-ului către client:`, err);
+            }
+          } else {
+            console.log(`Nu se trimite email de notificare pentru mesaj nou către clientul ${receiver.name} conform preferințelor`);
+          }
+        } else {
+          console.log(`Clientul cu ID ${message.receiverId} nu a fost găsit pentru trimiterea email-ului`);
+        }
+      } catch (emailError) {
+        console.error("Eroare la trimiterea email-ului de notificare pentru mesaj nou:", emailError);
+      }
+      
       // Send push notification via Firebase Cloud Messaging
       try {
         // Admin is already imported at the top of the file
