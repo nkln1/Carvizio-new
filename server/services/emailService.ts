@@ -3,7 +3,7 @@
  */
 
 import fetch from 'node-fetch';
-import { type ServiceProvider } from '@shared/schema';
+import { type ServiceProvider, type Client } from '@shared/schema';
 
 // Tipuri pentru serviciul de email - conform documentație Elastic Email API v2
 interface EmailPayload {
