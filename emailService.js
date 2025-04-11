@@ -385,8 +385,9 @@ export class EmailService {
       `Conținut: ${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}`,
     );
 
-    // Generăm un ID unic pentru acest email - asigurăm că are întotdeauna o valoare
-    const emailId = `service_message_${messageId || Date.now()}_${Date.now()}`;
+    // Generăm un ID unic pentru acest email - asigurăm că are un format consistent
+    const uniqueMessageId = messageId || `msg_${Date.now()}`;
+    const emailId = `service_message_${uniqueMessageId}`;
     const uniqueSubject = `Mesaj nou: ${requestOrOfferTitle}`;
 
     // Trunchiază mesajul dacă este prea lung pentru preview
