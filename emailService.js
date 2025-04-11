@@ -10,7 +10,7 @@ export class EmailService {
   static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
   static fromEmail = "notificari@carvizio.ro";
   static fromName = "Auto Service App";
-  static baseUrl = "https://api.elasticemail.com/v2/email/send";
+  static baseUrl = "https://api.elasticemail.com/v2";
 
   // Static getters for better encapsulation
   static getApiKey() {
@@ -84,11 +84,12 @@ export class EmailService {
         `[${emailId}] 🔄 Trimitere request către Elastic Email API...`,
       );
 
-      const response = await fetch(this.baseUrl, {
+      const response = await fetch(`${this.baseUrl}/email/send`, {
         method: "POST",
         body: params,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          "X-ElasticEmail-ApiKey": this.apiKey,
         },
       });
 
@@ -162,11 +163,12 @@ export class EmailService {
         `,
         );
 
-        await fetch(this.baseUrl, {
+        await fetch(`${this.baseUrl}/email/send`, {
           method: "POST",
           body: diagnosticParams,
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
+            "X-ElasticEmail-ApiKey": this.apiKey,
           },
         });
       } catch (diagError) {
@@ -223,7 +225,7 @@ export class EmailService {
           <h3 style="margin-top: 0; color: #333;">${requestTitle}</h3>
         </div>
         <p>
-          <a href="https://app.carvizio.ro/service-dashboard?tab=requests" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+          <a href="https://auto-service-app.replit.app/service-dashboard?tab=requests" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
             Vezi cererea
           </a>
         </p>
@@ -308,7 +310,7 @@ export class EmailService {
           <h3 style="margin-top: 0; color: #333;">${offerTitle}</h3>
         </div>
         <p>
-          <a href="https://app.carvizio.ro/service-dashboard?tab=accepted-offers" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+          <a href="https://auto-service-app.replit.app/service-dashboard?tab=accepted-offers" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
             Vezi detalii
           </a>
         </p>
@@ -406,7 +408,7 @@ export class EmailService {
           <p style="margin-bottom: 0; color: #666; font-style: italic;">"${messagePreview}"</p>
         </div>
         <p>
-          <a href="https://app.carvizio.ro/service-dashboard?tab=messages" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+          <a href="https://auto-service-app.replit.app/service-dashboard?tab=messages" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
             Răspunde
           </a>
         </p>
@@ -515,7 +517,7 @@ export class EmailService {
           <p style="margin-bottom: 0; color: #666; font-style: italic;">"${reviewPreview}"</p>
         </div>
         <p>
-          <a href="https://app.carvizio.ro/service-dashboard?tab=reviews" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+          <a href="https://auto-service-app.replit.app/service-dashboard?tab=reviews" style="display: inline-block; background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
             Vezi recenziile
           </a>
         </p>
