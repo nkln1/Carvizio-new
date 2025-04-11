@@ -1,17 +1,16 @@
-
 /**
  * JavaScript version of the EmailService for testing purposes
  * This is a direct port of the TypeScript EmailService to JavaScript
  */
 
-import fetch from 'node-fetch';
+import fetch from "node-fetch";
 
 export class EmailService {
   // Define static properties
   static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
-  static fromEmail = 'notificari@carvizio.ro';
-  static fromName = 'Auto Service App';
-  static baseUrl = 'https://api.elasticemail.com/v2/email/send';
+  static fromEmail = "notificari@carvizio.ro";
+  static fromName = "Auto Service App";
+  static baseUrl = "https://api.elasticemail.com/v2/email/send";
 
   // Static getters for better encapsulation
   static getApiKey() {
@@ -41,18 +40,23 @@ export class EmailService {
    */
   static async sendEmail(to, subject, htmlContent, textContent, messageId) {
     // Generate a unique ID for tracking if none provided
-    const emailId = messageId || `email_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-    
+    const emailId =
+      messageId || `email_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
     console.log(`[${emailId}] 📧 Trimitere email: "${subject}" către ${to}`);
-    
+
     if (!this.apiKey) {
-      console.error(`[${emailId}] ❌ API key pentru Elastic Email nu este configurat`);
+      console.error(
+        `[${emailId}] ❌ API key pentru Elastic Email nu este configurat`,
+      );
       return false;
     }
 
     // Verificare adresă de email destinatar
-    if (!to || !to.includes('@') || to.trim() === '') {
-      console.error(`[${emailId}] ❌ Adresă de email destinatar invalidă: "${to}"`);
+    if (!to || !to.includes("@") || to.trim() === "") {
+      console.error(
+        `[${emailId}] ❌ Adresă de email destinatar invalidă: "${to}"`,
+      );
       return false;
     }
 
@@ -63,9 +67,9 @@ export class EmailService {
       to,
       subject,
       bodyHtml: htmlContent,
-      bodyText: textContent || '',
+      bodyText: textContent || "",
       messageID: emailId,
-      isTransactional: true
+      isTransactional: true,
     };
 
     try {
@@ -76,24 +80,30 @@ export class EmailService {
         }
       });
 
-      console.log(`[${emailId}] 🔄 Trimitere request către Elastic Email API...`);
-      
+      console.log(
+        `[${emailId}] 🔄 Trimitere request către Elastic Email API...`,
+      );
+
       const response = await fetch(this.baseUrl, {
-        method: 'POST',
+        method: "POST",
         body: params,
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
       });
 
       // Verificăm răspunsul HTTP
       if (!response.ok) {
-        console.error(`[${emailId}] ❌ Eroare HTTP de la Elastic Email API: ${response.status} ${response.statusText}`);
+        console.error(
+          `[${emailId}] ❌ Eroare HTTP de la Elastic Email API: ${response.status} ${response.statusText}`,
+        );
         try {
           const errorData = await response.text();
           console.error(`[${emailId}] ❌ Răspuns eroare: ${errorData}`);
         } catch (parseError) {
-          console.error(`[${emailId}] ❌ Nu s-a putut citi răspunsul de eroare`);
+          console.error(
+            `[${emailId}] ❌ Nu s-a putut citi răspunsul de eroare`,
+          );
         }
         return false;
       }
@@ -103,16 +113,23 @@ export class EmailService {
       try {
         data = await response.json();
       } catch (jsonError) {
-        console.error(`[${emailId}] ❌ Eroare la parsarea răspunsului JSON:`, jsonError);
+        console.error(
+          `[${emailId}] ❌ Eroare la parsarea răspunsului JSON:`,
+          jsonError,
+        );
         return false;
       }
 
       if (!data.success) {
-        console.error(`[${emailId}] ❌ Eroare API Elastic Email: ${JSON.stringify(data)}`);
+        console.error(
+          `[${emailId}] ❌ Eroare API Elastic Email: ${JSON.stringify(data)}`,
+        );
         return false;
       }
 
-      console.log(`[${emailId}] ✅ Email trimis cu succes! MessageID: ${data.data?.messageid || 'N/A'}`);
+      console.log(
+        `[${emailId}] ✅ Email trimis cu succes! MessageID: ${data.data?.messageid || "N/A"}`,
+      );
       return true;
     } catch (error) {
       console.error(`[${emailId}] ❌ Eroare la trimiterea email-ului:`, error);
@@ -120,36 +137,45 @@ export class EmailService {
         console.error(`[${emailId}] ❌ Detalii eroare:`, error.message);
         console.error(`[${emailId}] ❌ Stack trace:`, error.stack);
       }
-      
+
       // Încercăm să trimitem un email de diagnosticare în caz de eșec
       try {
         console.log(`[${emailId}] 🔍 Încercare trimitere email diagnostic...`);
         const diagnosticParams = new URLSearchParams();
-        diagnosticParams.append('apikey', this.apiKey);
-        diagnosticParams.append('from', this.fromEmail);
-        diagnosticParams.append('fromName', `${this.fromName} - Diagnostic`);
-        diagnosticParams.append('to', this.fromEmail); // Trimitem către adresa noastră pentru diagnostic
-        diagnosticParams.append('subject', `[TEST DIAGNOSTIC] Eroare trimitere email: ${subject}`);
-        diagnosticParams.append('bodyHtml', `
+        diagnosticParams.append("apikey", this.apiKey);
+        diagnosticParams.append("from", this.fromEmail);
+        diagnosticParams.append("fromName", `${this.fromName} - Diagnostic`);
+        diagnosticParams.append("to", this.fromEmail); // Trimitem către adresa noastră pentru diagnostic
+        diagnosticParams.append(
+          "subject",
+          `[TEST DIAGNOSTIC] Eroare trimitere email: ${subject}`,
+        );
+        diagnosticParams.append(
+          "bodyHtml",
+          `
           <h2>Eroare la trimiterea unui email</h2>
           <p><strong>ID Email:</strong> ${emailId}</p>
           <p><strong>Destinatar original:</strong> ${to}</p>
           <p><strong>Subiect original:</strong> ${subject}</p>
           <p><strong>Eroare:</strong> ${error instanceof Error ? error.message : String(error)}</p>
           <p>Acest email este trimis automat pentru diagnosticarea problemelor cu sistemul de notificări.</p>
-        `);
-        
+        `,
+        );
+
         await fetch(this.baseUrl, {
-          method: 'POST',
+          method: "POST",
           body: diagnosticParams,
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
         });
       } catch (diagError) {
-        console.error(`[${emailId}] ❌ Și email-ul de diagnosticare a eșuat:`, diagError);
+        console.error(
+          `[${emailId}] ❌ Și email-ul de diagnosticare a eșuat:`,
+          diagError,
+        );
       }
-      
+
       return false;
     }
   }
@@ -167,13 +193,23 @@ export class EmailService {
    * @param {string} debugInfo - Informații de debugging (opțional)
    * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
    */
-  static async sendNewRequestNotification(serviceProvider, requestTitle, clientName, requestId, debugInfo) {
-    console.log(`\n==== TRIMITERE EMAIL NOTIFICARE CERERE NOUĂ PENTRU SERVICE ====`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+  static async sendNewRequestNotification(
+    serviceProvider,
+    requestTitle,
+    clientName,
+    requestId,
+    debugInfo,
+  ) {
+    console.log(
+      `\n==== TRIMITERE EMAIL NOTIFICARE CERERE NOUĂ PENTRU SERVICE ====`,
+    );
+    console.log(
+      `Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`,
+    );
     console.log(`Client: ${clientName}`);
     console.log(`Titlu cerere: ${requestTitle}`);
     console.log(`ID cerere: ${requestId}`);
-    
+
     // Generăm un ID unic pentru acest email
     const emailId = `service_request_${requestId || Date.now()}_${Date.now()}`;
     const uniqueSubject = `Cerere nouă: ${requestTitle}`;
@@ -201,25 +237,34 @@ export class EmailService {
     `;
 
     try {
-      console.log(`Trimitere email pentru cerere nouă către: ${serviceProvider.email}`);
-      
-      const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        emailId // message ID
+      console.log(
+        `Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
       );
-      
+
+      const result = await this.sendEmail(
+        serviceProvider.email,
+        uniqueSubject,
+        html,
+        undefined, // text content
+        emailId, // message ID
+      );
+
       if (result) {
-        console.log(`✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId || 'nouă'}`);
+        console.log(
+          `✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId || "nouă"}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewRequestNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId || 'nouă'}`);
+        console.error(
+          `❌ EmailService.sendNewRequestNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId || "nouă"}`,
+        );
       }
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId || 'nouă'}:`, error);
+      console.error(
+        `❌ EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId || "nouă"}:`,
+        error,
+      );
       return false;
     }
   }
@@ -233,13 +278,23 @@ export class EmailService {
    * @param {string} debugInfo - Informații de debugging (opțional)
    * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
    */
-  static async sendOfferAcceptedNotification(serviceProvider, offerTitle, clientName, offerId, debugInfo) {
-    console.log(`\n==== TRIMITERE EMAIL NOTIFICARE OFERTĂ ACCEPTATĂ PENTRU SERVICE ====`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+  static async sendOfferAcceptedNotification(
+    serviceProvider,
+    offerTitle,
+    clientName,
+    offerId,
+    debugInfo,
+  ) {
+    console.log(
+      `\n==== TRIMITERE EMAIL NOTIFICARE OFERTĂ ACCEPTATĂ PENTRU SERVICE ====`,
+    );
+    console.log(
+      `Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`,
+    );
     console.log(`Client: ${clientName}`);
     console.log(`Titlu ofertă: ${offerTitle}`);
     console.log(`ID ofertă: ${offerId}`);
-    
+
     // Generăm un ID unic pentru acest email
     const emailId = `service_accepted_offer_${offerId || Date.now()}_${Date.now()}`;
     const uniqueSubject = `Ofertă acceptată: ${offerTitle}`;
@@ -267,25 +322,34 @@ export class EmailService {
     `;
 
     try {
-      console.log(`Trimitere email pentru ofertă acceptată către: ${serviceProvider.email}`);
-      
-      const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        emailId // message ID
+      console.log(
+        `Trimitere email pentru ofertă acceptată către: ${serviceProvider.email}`,
       );
-      
+
+      const result = await this.sendEmail(
+        serviceProvider.email,
+        uniqueSubject,
+        html,
+        undefined, // text content
+        emailId, // message ID
+      );
+
       if (result) {
-        console.log(`✅ EmailService.sendOfferAcceptedNotification - Email trimis cu succes către ${serviceProvider.email} pentru oferta ${offerId || 'acceptată'}`);
+        console.log(
+          `✅ EmailService.sendOfferAcceptedNotification - Email trimis cu succes către ${serviceProvider.email} pentru oferta ${offerId || "acceptată"}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendOfferAcceptedNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId || 'acceptată'}`);
+        console.error(
+          `❌ EmailService.sendOfferAcceptedNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId || "acceptată"}`,
+        );
       }
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendOfferAcceptedNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId || 'acceptată'}:`, error);
+      console.error(
+        `❌ EmailService.sendOfferAcceptedNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId || "acceptată"}:`,
+        error,
+      );
       return false;
     }
   }
@@ -300,22 +364,36 @@ export class EmailService {
    * @param {string} debugInfo - Informații de debugging (opțional)
    * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
    */
-  static async sendNewMessageNotification(serviceProvider, messageContent, senderName, requestOrOfferTitle, messageId, debugInfo) {
-    console.log(`\n==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+  static async sendNewMessageNotification(
+    serviceProvider,
+    messageContent,
+    senderName,
+    requestOrOfferTitle,
+    messageId,
+    debugInfo,
+  ) {
+    console.log(
+      `\n==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====`,
+    );
+    console.log(
+      `Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`,
+    );
     console.log(`Expeditor: ${senderName}`);
     console.log(`Subiect: ${requestOrOfferTitle}`);
     console.log(`ID mesaj: ${messageId}`);
-    console.log(`Conținut: ${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}`);
-    
+    console.log(
+      `Conținut: ${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}`,
+    );
+
     // Generăm un ID unic pentru acest email - asigurăm că are întotdeauna o valoare
     const emailId = `service_message_${messageId || Date.now()}_${Date.now()}`;
     const uniqueSubject = `Mesaj nou: ${requestOrOfferTitle}`;
 
     // Trunchiază mesajul dacă este prea lung pentru preview
-    const messagePreview = messageContent.length > 100 
-      ? messageContent.substring(0, 100) + '...' 
-      : messageContent;
+    const messagePreview =
+      messageContent.length > 100
+        ? messageContent.substring(0, 100) + "..."
+        : messageContent;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -341,25 +419,34 @@ export class EmailService {
     `;
 
     try {
-      console.log(`Trimitere email pentru mesaj nou către service: ${serviceProvider.email}`);
-      
-      const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        emailId // message ID
+      console.log(
+        `Trimitere email pentru mesaj nou către service: ${serviceProvider.email}`,
       );
-      
+
+      const result = await this.sendEmail(
+        serviceProvider.email,
+        uniqueSubject,
+        html,
+        undefined, // text content
+        emailId, // message ID
+      );
+
       if (result) {
-        console.log(`✅ EmailService.sendNewMessageNotification - Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId || 'nou'}`);
+        console.log(
+          `✅ EmailService.sendNewMessageNotification - Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId || "nou"}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewMessageNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId || 'nou'}`);
+        console.error(
+          `❌ EmailService.sendNewMessageNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId || "nou"}`,
+        );
       }
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewMessageNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId || 'nou'}:`, error);
+      console.error(
+        `❌ EmailService.sendNewMessageNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId || "nou"}:`,
+        error,
+      );
       return false;
     }
   }
@@ -374,32 +461,46 @@ export class EmailService {
    * @param {string} debugInfo - Informații de debugging (opțional)
    * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
    */
-  static async sendNewReviewNotification(serviceProvider, clientName, rating, reviewContent, reviewId, debugInfo) {
-    console.log(`\n==== TRIMITERE EMAIL NOTIFICARE RECENZIE NOUĂ PENTRU SERVICE ====`);
-    console.log(`Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+  static async sendNewReviewNotification(
+    serviceProvider,
+    clientName,
+    rating,
+    reviewContent,
+    reviewId,
+    debugInfo,
+  ) {
+    console.log(
+      `\n==== TRIMITERE EMAIL NOTIFICARE RECENZIE NOUĂ PENTRU SERVICE ====`,
+    );
+    console.log(
+      `Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`,
+    );
     console.log(`Client: ${clientName}`);
     console.log(`Rating: ${rating}/5`);
     console.log(`ID recenzie: ${reviewId}`);
-    console.log(`Conținut: ${reviewContent?.substring(0, 50)}${reviewContent?.length > 50 ? '...' : ''}`);
-    
+    console.log(
+      `Conținut: ${reviewContent?.substring(0, 50)}${reviewContent?.length > 50 ? "..." : ""}`,
+    );
+
     // Generăm un ID unic pentru acest email
     const emailId = `service_review_${reviewId || Date.now()}_${Date.now()}`;
     const uniqueSubject = `Recenzie nouă: ${clientName} (${rating}/5 stele)`;
 
     // Generăm reprezentarea vizuală a rating-ului cu stele
-    let ratingStars = '';
+    let ratingStars = "";
     for (let i = 0; i < 5; i++) {
       if (i < rating) {
-        ratingStars += '★'; // Stea plină
+        ratingStars += "★"; // Stea plină
       } else {
-        ratingStars += '☆'; // Stea goală
+        ratingStars += "☆"; // Stea goală
       }
     }
 
     // Trunchiază recenzia dacă este prea lungă pentru preview
-    const reviewPreview = reviewContent && reviewContent.length > 200 
-      ? reviewContent.substring(0, 200) + '...' 
-      : reviewContent || '(Fără comentarii)';
+    const reviewPreview =
+      reviewContent && reviewContent.length > 200
+        ? reviewContent.substring(0, 200) + "..."
+        : reviewContent || "(Fără comentarii)";
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -427,25 +528,34 @@ export class EmailService {
     `;
 
     try {
-      console.log(`Trimitere email pentru recenzie nouă către: ${serviceProvider.email}`);
-      
-      const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        emailId // message ID
+      console.log(
+        `Trimitere email pentru recenzie nouă către: ${serviceProvider.email}`,
       );
-      
+
+      const result = await this.sendEmail(
+        serviceProvider.email,
+        uniqueSubject,
+        html,
+        undefined, // text content
+        emailId, // message ID
+      );
+
       if (result) {
-        console.log(`✅ EmailService.sendNewReviewNotification - Email trimis cu succes către ${serviceProvider.email} pentru recenzia ${reviewId || 'nouă'}`);
+        console.log(
+          `✅ EmailService.sendNewReviewNotification - Email trimis cu succes către ${serviceProvider.email} pentru recenzia ${reviewId || "nouă"}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewReviewNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId || 'nouă'}`);
+        console.error(
+          `❌ EmailService.sendNewReviewNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId || "nouă"}`,
+        );
       }
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewReviewNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId || 'nouă'}:`, error);
+      console.error(
+        `❌ EmailService.sendNewReviewNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId || "nouă"}:`,
+        error,
+      );
       return false;
     }
   }
@@ -464,21 +574,32 @@ export class EmailService {
    * @param {string} messageId - ID unic pentru mesaj (pentru prevenirea duplicării)
    * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
    */
-  static async sendNewMessageNotificationToClient(client, messageContent, senderName, requestOrOfferTitle, messageId = `message_client_${Date.now()}`) {
-    console.log(`\n==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE CLIENT ====`);
+  static async sendNewMessageNotificationToClient(
+    client,
+    messageContent,
+    senderName,
+    requestOrOfferTitle,
+    messageId = `message_client_${Date.now()}`,
+  ) {
+    console.log(
+      `\n==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE CLIENT ====`,
+    );
     console.log(`Destinatar: ${client.name} (${client.email})`);
     console.log(`Expeditor: ${senderName}`);
     console.log(`Referitor la: ${requestOrOfferTitle}`);
     console.log(`ID Mesaj: ${messageId}`);
-    console.log(`Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}`);
-    
+    console.log(
+      `Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}`,
+    );
+
     const uniqueSubject = `Mesaj nou de la ${senderName}`;
-    
+
     // Truncăm mesajul dacă este prea lung
-    const truncatedMessage = messageContent.length > 150 
-      ? messageContent.substring(0, 147) + '...' 
-      : messageContent;
-    
+    const truncatedMessage =
+      messageContent.length > 150
+        ? messageContent.substring(0, 147) + "..."
+        : messageContent;
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #3b82f6; padding: 20px; text-align: center;">
@@ -517,29 +638,38 @@ export class EmailService {
     `;
 
     try {
-      console.log(`Trimitere email pentru mesaj nou către client: ${client.email}`);
-      
-      const result = await this.sendEmail(
-        client.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        messageId // message ID
+      console.log(
+        `Trimitere email pentru mesaj nou către client: ${client.email}`,
       );
-      
+
+      const result = await this.sendEmail(
+        client.email,
+        uniqueSubject,
+        html,
+        undefined, // text content
+        messageId, // message ID
+      );
+
       if (result) {
-        console.log(`✅ EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`);
+        console.log(
+          `✅ EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewMessageNotificationToClient - Eșec la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}`);
+        console.error(
+          `❌ EmailService.sendNewMessageNotificationToClient - Eșec la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}`,
+        );
       }
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewMessageNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}:`, error);
+      console.error(
+        `❌ EmailService.sendNewMessageNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}:`,
+        error,
+      );
       return false;
     }
   }
-  
+
   /**
    * Trimite notificare de ofertă nouă către client
    * @param {Object} client - Clientul care primește notificarea
@@ -549,16 +679,24 @@ export class EmailService {
    * @param {string} offerId - ID unic pentru ofertă (pentru prevenirea duplicării)
    * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
    */
-  static async sendNewOfferNotificationToClient(client, offerTitle, providerName, requestTitle, offerId = `offer_${Date.now()}`) {
-    console.log(`\n==== TRIMITERE EMAIL NOTIFICARE OFERTĂ NOUĂ CĂTRE CLIENT ====`);
+  static async sendNewOfferNotificationToClient(
+    client,
+    offerTitle,
+    providerName,
+    requestTitle,
+    offerId = `offer_${Date.now()}`,
+  ) {
+    console.log(
+      `\n==== TRIMITERE EMAIL NOTIFICARE OFERTĂ NOUĂ CĂTRE CLIENT ====`,
+    );
     console.log(`Destinatar: ${client.name} (${client.email})`);
     console.log(`Service Provider: ${providerName}`);
     console.log(`Titlu ofertă: ${offerTitle}`);
     console.log(`Cerere originală: ${requestTitle}`);
     console.log(`ID Ofertă: ${offerId}`);
-    
+
     const uniqueSubject = `Ofertă nouă de la ${providerName}`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #10b981; padding: 20px; text-align: center;">
@@ -597,25 +735,34 @@ export class EmailService {
     `;
 
     try {
-      console.log(`Trimitere email pentru ofertă nouă către client: ${client.email}`);
-      
-      const result = await this.sendEmail(
-        client.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        offerId // message ID
+      console.log(
+        `Trimitere email pentru ofertă nouă către client: ${client.email}`,
       );
-      
+
+      const result = await this.sendEmail(
+        client.email,
+        uniqueSubject,
+        html,
+        undefined, // text content
+        offerId, // message ID
+      );
+
       if (result) {
-        console.log(`✅ EmailService.sendNewOfferNotificationToClient - Email trimis cu succes către ${client.email} pentru oferta ${offerId}`);
+        console.log(
+          `✅ EmailService.sendNewOfferNotificationToClient - Email trimis cu succes către ${client.email} pentru oferta ${offerId}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewOfferNotificationToClient - Eșec la trimiterea email-ului către ${client.email} pentru oferta ${offerId}`);
+        console.error(
+          `❌ EmailService.sendNewOfferNotificationToClient - Eșec la trimiterea email-ului către ${client.email} pentru oferta ${offerId}`,
+        );
       }
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewOfferNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru oferta ${offerId}:`, error);
+      console.error(
+        `❌ EmailService.sendNewOfferNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru oferta ${offerId}:`,
+        error,
+      );
       return false;
     }
   }
