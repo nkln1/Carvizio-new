@@ -616,7 +616,7 @@ export class EmailService {
           </div>
           <p style="font-size: 16px;">Puteți vizualiza conversația completă și răspunde din contul dvs.</p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="https://app.carvizio.ro/client-dashboard?tab=messages" 
+            <a href="https://auto-service-app.replit.app/client-dashboard?tab=messages" 
                style="background-color: #3b82f6; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
               Vezi mesajele
             </a>
@@ -627,7 +627,7 @@ export class EmailService {
             </p>
             <p style="color: #718096; font-size: 14px; margin-top: 0;">
               Puteți dezactiva notificările prin email din 
-              <a href="https://app.carvizio.ro/client-dashboard?tab=account" style="color: #3b82f6; text-decoration: none;">
+              <a href="https://auto-service-app.replit.app/client-dashboard?tab=account" style="color: #3b82f6; text-decoration: none;">
                 setările contului dvs
               </a>.
             </p>
@@ -713,7 +713,7 @@ export class EmailService {
           </div>
           <p style="font-size: 16px;">Puteți vizualiza detaliile complete ale ofertei și răspunde din contul dvs.</p>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="https://app.carvizio.ro/client-dashboard?tab=offers" 
+            <a href="https://auto-service-app.replit.app/client-dashboard?tab=offers" 
                style="background-color: #10b981; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
               Vezi oferta
             </a>
@@ -724,7 +724,7 @@ export class EmailService {
             </p>
             <p style="color: #718096; font-size: 14px; margin-top: 0;">
               Puteți dezactiva notificările prin email din 
-              <a href="https://app.carvizio.ro/client-dashboard?tab=account" style="color: #10b981; text-decoration: none;">
+              <a href="https://auto-service-app.replit.app/client-dashboard?tab=account" style="color: #10b981; text-decoration: none;">
                 setările contului dvs
               </a>.
             </p>
