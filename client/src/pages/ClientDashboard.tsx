@@ -89,6 +89,11 @@ export default function ClientDashboard() {
       if (data.type === 'NEW_OFFER') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
         
+        // Register window.addWebSocketMessageHandler for global access
+        if (!window.addWebSocketMessageHandler) {
+          window.addWebSocketMessageHandler = websocketService.addMessageHandler;
+        }
+        
         // Afișăm notificare pentru ofertă nouă direct
         if (Notification.permission === 'granted') {
           const notificationOptions = {
@@ -147,6 +152,9 @@ export default function ClientDashboard() {
       }
     };
 
+    // Make sure the WebSocket handler is available globally
+    window.addWebSocketMessageHandler = websocketService.addMessageHandler;
+    
     const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
     return () => {
       removeHandler();

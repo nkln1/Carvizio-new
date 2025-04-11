@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { OfferWithProvider, ViewedOffer } from "@shared/schema";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import NotificationHelper from '@/lib/notifications';
 
 export function useOfferManagement() {
   const queryClient = useQueryClient();
@@ -70,6 +71,42 @@ export function useOfferManagement() {
     }
   };
 
+  // Listen for new offers via WebSocket
+  useEffect(() => {
+    const handleWebSocketMessage = (data: any) => {
+      if (data.type === 'NEW_OFFER' && data.payload) {
+        console.log('New offer received via WebSocket:', data.payload);
+        
+        // Play notification sound
+        NotificationHelper.playNotificationSound('offer');
+        
+        // Show browser notification
+        NotificationHelper.showBrowserNotification(
+          'Ofertă nouă', 
+          `Ați primit o ofertă nouă: ${data.payload.title || 'Verificați detaliile în aplicație'}`
+        );
+        
+        // Invalidate offers to get the latest data
+        queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/client/viewed-offers"] });
+        
+        // Show toast notification
+        toast({
+          title: "Ofertă nouă",
+          description: "Ați primit o ofertă nouă. Verificați detaliile în secțiunea Oferte.",
+        });
+      }
+    };
+    
+    // Add WebSocket handler
+    if (window.addWebSocketMessageHandler) {
+      const removeHandler = window.addWebSocketMessageHandler(handleWebSocketMessage);
+      return () => {
+        if (removeHandler) removeHandler();
+      };
+    }
+  }, [queryClient, toast]);
+
   // Calculate new offers count whenever offers or viewedOffers change
   useEffect(() => {
     const newOffers = offers.filter(offer => 
@@ -81,6 +118,13 @@ export function useOfferManagement() {
       newOffersCount: newOffers.length
     });
     setNewOffersCount(newOffers.length);
+
+    // Notify about new offers when they first appear
+    if (newOffers.length > 0 && viewedOffers.length > 0) {
+      // This means we have existing viewed offers and new ones have just arrived
+      // Good time to notify the user
+      NotificationHelper.playNotificationSound('offer');
+    }
   }, [offers, viewedOffers]);
 
   return {

@@ -1,410 +1,342 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { Bell, BellOff, Mail, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Mail, AlertTriangle, Loader2 } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ClientNotificationPreference } from "@shared/schema";
-import NotificationHelper from '@/lib/notifications';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { auth } from "@/lib/firebase";
+import NotificationHelper from "@/lib/notifications";
 
-// Tipul pentru preferințele de notificări pentru UI
-interface NotificationPreferences {
-  id: number;
-  clientId: number;
+interface NotificationPreference {
   emailNotificationsEnabled: boolean;
   newOfferEmailEnabled: boolean;
   newMessageEmailEnabled: boolean;
-  
-  browserNotificationsEnabled: boolean;
-  newOfferBrowserEnabled: boolean;
-  newMessageBrowserEnabled: boolean;
-  browserPermission: boolean;
+  offerStatusEmailEnabled: boolean;
+  soundNotificationsEnabled?: boolean;
 }
 
-// API-ul va furniza valorile implicite sau cele existente
-const defaultValues = {
-  emailNotificationsEnabled: true,
-  newOfferEmailEnabled: true,
-  newMessageEmailEnabled: true,
-  
-  browserNotificationsEnabled: true,
-  newOfferBrowserEnabled: true,
-  newMessageBrowserEnabled: true,
-  browserPermission: false
-};
-
-export default function NotificationPreferences() {
+export const NotificationPreferences = () => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<string>("email");
-
-  // Stare locală pentru permisiunea browser-ului
-  const [hasBrowserPermission, setHasBrowserPermission] = useState<boolean>(false);
-  const [requestingPermission, setRequestingPermission] = useState<boolean>(false);
-
-  // Verificăm dacă API-ul de notificări este disponibil
-  const notificationsAvailable = NotificationHelper.isSupported();
-
-  // Obținem preferințele de notificări
-  const { data: preferences, isLoading, error } = useQuery<NotificationPreferences>({
-    queryKey: ['/api/client/notification-preferences'],
-    refetchOnWindowFocus: false
+  const [preferences, setPreferences] = useState<NotificationPreference>({
+    emailNotificationsEnabled: true,
+    newOfferEmailEnabled: true,
+    newMessageEmailEnabled: true,
+    offerStatusEmailEnabled: true,
+    soundNotificationsEnabled: true
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-  // Detectare permisiune browser la încărcare
+  // Fetch notification preferences
   useEffect(() => {
-    if (notificationsAvailable) {
-      const currentPermission = NotificationHelper.checkPermission();
-      setHasBrowserPermission(currentPermission === 'granted');
+    const fetchPreferences = async () => {
+      try {
+        setIsLoading(true);
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('No authentication token available');
 
-      // Actualizăm starea când se schimbă preferințele
-      if (preferences) {
-        // Sincronizăm permisiunea reală cu cea din baza de date
-        if (preferences.browserPermission !== (currentPermission === 'granted')) {
-          setTimeout(() => {
-            handleToggleChange('browserPermission', currentPermission === 'granted');
-          }, 500);
+        const response = await fetch('/api/client/notification-preferences', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch notification preferences: ${response.status}`);
         }
 
-        setHasBrowserPermission(currentPermission === 'granted');
+        const data = await response.json();
+        console.log('Fetched notification preferences:', data);
+
+        setPreferences({
+          emailNotificationsEnabled: data.emailNotificationsEnabled ?? true,
+          newOfferEmailEnabled: data.newOfferEmailEnabled ?? true,
+          newMessageEmailEnabled: data.newMessageEmailEnabled ?? true,
+          offerStatusEmailEnabled: data.offerStatusEmailEnabled ?? true,
+          soundNotificationsEnabled: data.soundNotificationsEnabled ?? true
+        });
+      } catch (error) {
+        console.error('Error fetching notification preferences:', error);
+        toast({
+          variant: "destructive",
+          title: "Eroare",
+          description: "Nu s-au putut încărca preferințele de notificare."
+        });
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, [preferences, notificationsAvailable]);
-
-  // Mutație pentru actualizarea preferințelor
-  const updateMutation = useMutation({
-    mutationFn: async (updatedPreferences: NotificationPreferences) => {
-      console.log('Trimit cerere de actualizare a preferințelor:', updatedPreferences);
-      const response = await apiRequest('POST', '/api/client/notification-preferences', updatedPreferences);
-      if (!response.ok) {
-        console.error('Eroare la actualizarea preferințelor, status:', response.status);
-        throw new Error('Nu am putut actualiza preferințele de notificări');
-      }
-      const data = await response.json();
-      console.log('Răspuns actualizare preferințe:', data);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/client/notification-preferences'] });
-      toast({
-        title: "Succes",
-        description: "Preferințele de notificări au fost actualizate",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Eroare",
-        description: "Nu am putut actualiza preferințele de notificări",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Manipulator pentru schimbarea unei preferințe
-  const handleToggleChange = (key: keyof NotificationPreferences, value: boolean) => {
-    if (!preferences) return;
-
-    const updatedPreferences = {
-      ...preferences,
-      [key]: value
     };
 
-    // Dacă dezactivăm toate notificările email, dezactivăm și preferințele individuale
-    if (key === 'emailNotificationsEnabled' && !value) {
-      updatedPreferences.newOfferEmailEnabled = false;
-      updatedPreferences.newMessageEmailEnabled = false;
-    }
+    fetchPreferences();
+  }, [toast]);
 
-    // Dacă dezactivăm toate notificările din browser, dezactivăm și preferințele individuale
-    if (key === 'browserNotificationsEnabled' && !value) {
-      updatedPreferences.newOfferBrowserEnabled = false;
-      updatedPreferences.newMessageBrowserEnabled = false;
-    }
+  // Handle toggle change
+  const handleToggleChange = async (key: keyof NotificationPreference, checked: boolean) => {
+    try {
+      const updatedPreferences = {
+        ...preferences,
+        [key]: checked
+      };
+      setPreferences(updatedPreferences);
 
-    updateMutation.mutate(updatedPreferences);
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
+
+      const response = await fetch('/api/client/notification-preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedPreferences)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update notification preferences: ${response.status}`);
+      }
+
+      toast({
+        title: "Succes",
+        description: "Preferințele de notificare au fost actualizate."
+      });
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-au putut actualiza preferințele de notificare."
+      });
+
+      // Revert the state change
+      setPreferences(preferences);
+    }
   };
 
-  // Manipulator pentru solicitarea permisiunii de notificări browser
-  const handleRequestPermission = async () => {
-    if (!notificationsAvailable) return;
-
+  // Send test email
+  const handleSendTestEmail = async () => {
     try {
-      setRequestingPermission(true);
-      // Folosim NotificationHelper pentru solicitarea permisiunii
-      const granted = await NotificationHelper.requestPermission();
-      setHasBrowserPermission(granted);
+      setTestEmailStatus('loading');
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No authentication token available');
 
-      // Test notificare dacă permisiunea a fost acordată
-      if (granted) {
-        setTimeout(() => {
-          NotificationHelper.showNotification('Notificări activate', {
-            body: 'Veți primi notificări pentru oferte noi și mesaje importante',
-            icon: '/favicon.ico'
-          });
-        }, 500);
+      // Get user profile to make sure we have the email address
+      const profileResponse = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!profileResponse.ok) {
+        throw new Error(`Failed to fetch profile: ${profileResponse.status}`);
       }
 
-      // Actualizăm și în backend
-      if (preferences) {
-        const updatedPreferences = {
-          ...preferences,
-          browserPermission: granted
-        };
+      const profile = await profileResponse.json();
 
-        updateMutation.mutate(updatedPreferences);
+      // Call test email endpoint
+      const response = await fetch('/api/client/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: profile.email,
+          name: profile.name || 'Client'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send test email: ${response.status}`);
       }
-    } catch (error) {
+
+      setTestEmailStatus('success');
       toast({
+        title: "Email de test trimis",
+        description: "Verificați căsuța de email pentru a confirma că notificările funcționează."
+      });
+
+      // Play sound notification to demonstrate
+      NotificationHelper.playNotificationSound('notification');
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      setTestEmailStatus('error');
+      toast({
+        variant: "destructive",
         title: "Eroare",
-        description: "Nu am putut solicita permisiunea pentru notificări browser",
-        variant: "destructive"
+        description: "Nu s-a putut trimite email-ul de test."
       });
     } finally {
-      setRequestingPermission(false);
+      // Reset status after a while
+      setTimeout(() => {
+        setTestEmailStatus('idle');
+      }, 3000);
     }
   };
 
-  // Afișăm un loading state
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Preferințe Notificări
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Test sound notification
+  const handleTestSound = () => {
+    NotificationHelper.playNotificationSound('notification');
+    toast({
+      title: "Test sunet",
+      description: "Testare sunet de notificare"
+    });
+  };
 
-  // Afișăm o eroare dacă nu putem încărca preferințele
-  if (error || !preferences) {
-    return (
-      <Card>
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle className="text-[#00aff5] flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Preferințe Notificări
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center p-8 gap-2">
-            <AlertTriangle className="h-8 w-8 text-amber-500" />
-            <p className="text-gray-500">Nu am putut încărca preferințele de notificări. Încearcă din nou mai târziu.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  if (isLoading) {
+    return <div>Se încarcă preferințele de notificare...</div>;
   }
 
   return (
     <Card>
-      <CardHeader className="border-b bg-gray-50">
-        <CardTitle className="text-[#00aff5] flex items-center gap-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
           Preferințe Notificări
         </CardTitle>
         <CardDescription>
-          Gestionează modul în care primești notificări despre oferte și mesaje
+          Configurați preferințele pentru notificările primite prin email și browser
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
-        <Accordion type="single" collapsible className="w-full">
-          {/* Secțiunea de notificări email */}
-          <AccordionItem value="email">
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex items-center gap-2 text-lg font-medium">
-                <Mail className="h-5 w-5" />
-                Notificări prin email
+
+      <CardContent>
+        <div className="space-y-4">
+          <div className="mb-6 space-y-4 bg-blue-50 p-4 rounded-md">
+            <h3 className="font-medium text-blue-700 flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Notificări Email
+            </h3>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <Label htmlFor="email-notifications" className="text-gray-900">
+                  Notificări email
+                </Label>
+                <p className="text-sm text-gray-500">
+                  Activați sau dezactivați toate notificările prin email
+                </p>
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-4 space-y-4">
-              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <div>
-                  <Label htmlFor="email-notifications-master" className="font-medium text-gray-900">
-                    Toate notificările email
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Activează sau dezactivează toate notificările prin email
-                  </p>
-                </div>
-                <Switch 
-                  id="email-notifications-master"
-                  checked={preferences.emailNotificationsEnabled}
-                  onCheckedChange={(checked) => handleToggleChange('emailNotificationsEnabled', checked)}
-                />
+              <Switch 
+                id="email-notifications"
+                checked={preferences.emailNotificationsEnabled}
+                onCheckedChange={(checked) => handleToggleChange('emailNotificationsEnabled', checked)}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <Label 
+                  htmlFor="new-offer-email" 
+                  className={`${!preferences.emailNotificationsEnabled ? 'text-gray-400' : 'text-gray-900'}`}
+                >
+                  Oferte noi
+                </Label>
               </div>
+              <Switch 
+                id="new-offer-email"
+                checked={preferences.newOfferEmailEnabled}
+                disabled={!preferences.emailNotificationsEnabled}
+                onCheckedChange={(checked) => handleToggleChange('newOfferEmailEnabled', checked)}
+              />
+            </div>
 
-              <div className="space-y-3 pl-1">
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-offer-email" 
-                      className={`${!preferences.emailNotificationsEnabled ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Oferte noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-offer-email"
-                    checked={preferences.newOfferEmailEnabled}
-                    disabled={!preferences.emailNotificationsEnabled}
-                    onCheckedChange={(checked) => handleToggleChange('newOfferEmailEnabled', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-message-email" 
-                      className={`${!preferences.emailNotificationsEnabled ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Mesaje noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-message-email"
-                    checked={preferences.newMessageEmailEnabled}
-                    disabled={!preferences.emailNotificationsEnabled}
-                    onCheckedChange={(checked) => handleToggleChange('newMessageEmailEnabled', checked)}
-                  />
-                </div>
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <Label 
+                  htmlFor="new-message-email" 
+                  className={`${!preferences.emailNotificationsEnabled ? 'text-gray-400' : 'text-gray-900'}`}
+                >
+                  Mesaje noi
+                </Label>
               </div>
-            </AccordionContent>
-          </AccordionItem>
+              <Switch 
+                id="new-message-email"
+                checked={preferences.newMessageEmailEnabled}
+                disabled={!preferences.emailNotificationsEnabled}
+                onCheckedChange={(checked) => handleToggleChange('newMessageEmailEnabled', checked)}
+              />
+            </div>
 
-          {/* Secțiunea de notificări browser */}
-          <AccordionItem value="browser">
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex items-center gap-2 text-lg font-medium">
-                <Bell className="h-5 w-5" />
-                Notificări browser
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <Label 
+                  htmlFor="offer-status-email" 
+                  className={`${!preferences.emailNotificationsEnabled ? 'text-gray-400' : 'text-gray-900'}`}
+                >
+                  Actualizări status oferte
+                </Label>
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-4 space-y-4">
-              {!notificationsAvailable && (
-                <div className="bg-amber-50 p-4 rounded-md mb-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-amber-800 text-sm">
-                      Notificările în browser nu sunt disponibile în acest browser sau context. Încearcă să utilizezi un browser modern pentru a activa această funcționalitate.
-                    </p>
-                  </div>
-                </div>
-              )}
+              <Switch 
+                id="offer-status-email"
+                checked={preferences.offerStatusEmailEnabled}
+                disabled={!preferences.emailNotificationsEnabled}
+                onCheckedChange={(checked) => handleToggleChange('offerStatusEmailEnabled', checked)}
+              />
+            </div>
 
-              {notificationsAvailable && !hasBrowserPermission && (
-                <div className="bg-blue-50 p-4 rounded-md mb-4">
-                  <div className="flex flex-col gap-3">
-                    <p className="text-blue-800 text-sm">
-                      Trebuie să acorzi permisiunea browserului pentru a primi notificări. Apasă butonul de mai jos pentru a activa notificările.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleRequestPermission}
-                      disabled={requestingPermission}
-                      className="w-full sm:w-auto"
-                    >
-                      {requestingPermission && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Solicită permisiunea browserului
-                    </Button>
-                  </div>
-                </div>
-              )}
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                onClick={handleSendTestEmail}
+                disabled={!preferences.emailNotificationsEnabled || testEmailStatus === 'loading'}
+                variant={testEmailStatus === 'success' ? 'outline' : 
+                        testEmailStatus === 'error' ? 'destructive' : 'secondary'}
+              >
+                {testEmailStatus === 'loading' ? 'Se trimite...' : 
+                 testEmailStatus === 'success' ? 'Email trimis ✓' : 
+                 testEmailStatus === 'error' ? 'Eroare la trimitere' : 
+                 'Trimite email de test'}
+              </Button>
+            </div>
+          </div>
 
-              {notificationsAvailable && hasBrowserPermission && (
-                <div className="bg-green-50 p-4 rounded-md mb-4">
-                  <div className="flex flex-col gap-3">
-                    <p className="text-green-800 text-sm">
-                      Notificările în browser sunt activate. Poți testa funcționalitatea cu butonul de mai jos.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        NotificationHelper.testNotification();
-                        toast({
-                          title: "Notificare de test",
-                          description: "Notificarea de test a fost afișată în browser",
-                        });
-                      }}
-                      className="w-full sm:w-auto bg-green-100 hover:bg-green-200 text-green-800"
-                    >
-                      Testează notificările
-                    </Button>
-                  </div>
-                </div>
-              )}
+          <div className="mb-6 space-y-4 bg-purple-50 p-4 rounded-md">
+            <h3 className="font-medium text-purple-700 flex items-center gap-2">
+              <Volume2 className="h-5 w-5" />
+              Notificări în browser
+            </h3>
 
-              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <div>
-                  <Label htmlFor="browser-notifications-master" className="font-medium text-gray-900">
-                    Toate notificările browser
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Activează sau dezactivează toate notificările din browser
-                  </p>
-                </div>
-                <Switch 
-                  id="browser-notifications-master"
-                  checked={preferences.browserNotificationsEnabled}
-                  disabled={!hasBrowserPermission}
-                  onCheckedChange={(checked) => handleToggleChange('browserNotificationsEnabled', checked)}
-                />
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <Label htmlFor="sound-notifications" className="text-gray-900">
+                  Notificări sonore
+                </Label>
+                <p className="text-sm text-gray-500">
+                  Activați sau dezactivați sunetele pentru notificări
+                </p>
               </div>
+              <Switch 
+                id="sound-notifications"
+                checked={preferences.soundNotificationsEnabled}
+                onCheckedChange={(checked) => handleToggleChange('soundNotificationsEnabled', checked)}
+              />
+            </div>
 
-              <div className="space-y-3 pl-1">
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-offer-browser" 
-                      className={`${!preferences.browserNotificationsEnabled || !hasBrowserPermission ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Oferte noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-offer-browser"
-                    checked={preferences.newOfferBrowserEnabled}
-                    disabled={!preferences.browserNotificationsEnabled || !hasBrowserPermission}
-                    onCheckedChange={(checked) => handleToggleChange('newOfferBrowserEnabled', checked)}
-                  />
-                </div>
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                onClick={handleTestSound}
+                disabled={!preferences.soundNotificationsEnabled}
+                variant="secondary"
+              >
+                Testează sunetul
+              </Button>
+            </div>
+          </div>
 
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <Label 
-                      htmlFor="new-message-browser" 
-                      className={`${!preferences.browserNotificationsEnabled || !hasBrowserPermission ? 'text-gray-400' : 'text-gray-900'}`}
-                    >
-                      Mesaje noi primite
-                    </Label>
-                  </div>
-                  <Switch 
-                    id="new-message-browser"
-                    checked={preferences.newMessageBrowserEnabled}
-                    disabled={!preferences.browserNotificationsEnabled || !hasBrowserPermission}
-                    onCheckedChange={(checked) => handleToggleChange('newMessageBrowserEnabled', checked)}
-                  />
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+          <div className="bg-gray-50 p-4 rounded-md mt-4">
+            <p className="text-sm text-gray-500 flex items-center gap-2">
+              <BellOff className="h-4 w-4" />
+              Notificările în browser vor continua să funcționeze indiferent de setările de email.
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
-}
+};
