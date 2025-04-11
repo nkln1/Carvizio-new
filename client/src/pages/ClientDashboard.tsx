@@ -78,48 +78,79 @@ export default function ClientDashboard() {
         setLocation("/");
       }
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [setLocation]);
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
-      // Adăugăm rolul 'client' la toate notificările primite pentru a fi procesate corect
-      // de NotificationHelper
-      if (!data.userRole) {
-        data.userRole = 'client';
-      }
-      
       // Actualizăm datele din cache
       if (data.type === 'NEW_OFFER') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+        
+        // Afișăm notificare pentru ofertă nouă direct
+        if (Notification.permission === 'granted') {
+          const notificationOptions = {
+            body: `Ai primit o ofertă nouă: ${data.payload?.title || 'Detalii în aplicație'}`,
+            icon: '/favicon.ico',
+            tag: `offer-${Date.now()}`,
+            requireInteraction: true
+          };
+          
+          try {
+            new Notification('Ofertă nouă', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru ofertă nouă:', error);
+          }
+        }
       } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
         queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
+        
+        // Afișăm notificare pentru schimbare status
+        if (Notification.permission === 'granted' && data.type === 'OFFER_STATUS_CHANGED' && data.payload?.status === 'Accepted') {
+          const notificationOptions = {
+            body: `Statusul ofertei s-a schimbat: ${data.payload?.status || 'Actualizat'}`,
+            icon: '/favicon.ico',
+            tag: `status-${Date.now()}`,
+            requireInteraction: true
+          };
+          
+          try {
+            new Notification('Status actualizat', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru schimbare status:', error);
+          }
+        }
       } else if (data.type === 'NEW_MESSAGE') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/messages"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
         // Also invalidate unread messages count
         queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-      }
-      
-      // Utilizăm NotificationHelper pentru a procesa notificările
-      try {
-        // Importăm dinamic NotificationHelper pentru a evita probleme de dependențe circulare
-        import("@/lib/notifications").then((module) => {
-          const NotificationHelper = module.default;
-          // Verificăm dacă utilizatorul are permisiunea de a primi notificări
-          if (NotificationHelper.checkPermission() === 'granted') {
-            // Procesăm notificarea
-            NotificationHelper.handleNotificationEvent(data);
+        
+        // Afișăm notificare pentru mesaj nou direct
+        if (Notification.permission === 'granted') {
+          const notificationOptions = {
+            body: `Ai primit un mesaj nou: ${data.payload?.content || 'Deschide pentru a citi'}`,
+            icon: '/favicon.ico',
+            tag: `message-${Date.now()}`,
+            requireInteraction: true
+          };
+          
+          try {
+            new Notification('Mesaj nou', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru mesaj nou:', error);
           }
-        });
-      } catch (error) {
-        console.error('Eroare la procesarea notificării:', error);
+        }
       }
     };
 
     const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-    return () => removeHandler();
+    return () => {
+      removeHandler();
+    };
   }, [queryClient]);
 
   useEffect(() => {
@@ -258,8 +289,8 @@ export default function ClientDashboard() {
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
         onCreateRequest={() => setShowRequestDialog(true)}
-        newOffersCount={newOffersCount > 0 ? newOffersCount : undefined}
-        unreadMessagesCount={unreadMessagesCount > 0 ? unreadMessagesCount : undefined}
+        newOffersCount={newOffersCount > 0 ? newOffersCount : 0}
+        unreadMessagesCount={unreadMessagesCount > 0 ? unreadMessagesCount : 0}
       />
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -275,8 +306,8 @@ export default function ClientDashboard() {
             isMenuOpen={isMenuOpen}
             setIsMenuOpen={setIsMenuOpen}
             onCreateRequest={() => setShowRequestDialog(true)}
-            newOffersCount={newOffersCount}
-            unreadMessagesCount={unreadMessagesCount}
+            newOffersCount={newOffersCount > 0 ? newOffersCount : 0}
+            unreadMessagesCount={unreadMessagesCount > 0 ? unreadMessagesCount : 0}
             isMobile={true}
           />
         </SheetContent>
