@@ -87,7 +87,7 @@ export default function useNotifications() {
 declare global {
   interface Window {
     showNotificationViaSW?: (title: string, options?: NotificationOptions) => Promise<any>;
-    startBackgroundMessageCheck?: (userId: number, userRole: 'client' | 'service', token: string) => Promise<any>;
+    startBackgroundMessageCheck?: (options?: any) => Promise<any>;
     stopBackgroundMessageCheck?: () => Promise<any>;
   }
 }

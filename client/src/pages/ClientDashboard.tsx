@@ -24,7 +24,6 @@ import { useCarManagement } from "@/hooks/useCarManagement";
 import { useOfferManagement } from "@/hooks/useOfferManagement";
 import { CarDialog } from "@/components/car/CarDialog";
 import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
-import NotificationHelper from "@/lib/notifications";
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
@@ -74,67 +73,18 @@ export default function ClientDashboard() {
   });
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      if (!firebaseUser) {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) {
         setLocation("/");
-      } else if (user && user.id && window.startBackgroundMessageCheck) {
-        // Initialize background message checking for notifications
-        firebaseUser.getIdToken().then(token => {
-          if (NotificationHelper.isSupported() && NotificationHelper.checkPermission() === 'granted') {
-            try {
-              console.log("Inițierea verificării mesajelor în fundal pentru utilizatorul", user.id);
-              
-              // Start background checking using Service Worker
-              NotificationHelper.startBackgroundMessageCheck(user.id, 'client', token);
-              
-              console.log("Notificări active - vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.");
-            } catch (error) {
-              console.error("Eroare la inițierea verificării mesajelor în fundal:", error);
-            }
-          } else if (NotificationHelper.checkPermission() !== 'granted') {
-            console.log("Permisiunile pentru notificări nu sunt acordate");
-            // Show a toast to inform the user
-            toast({
-              title: "Notificări dezactivate",
-              description: "Permite notificările pentru a primi alerte de mesaje noi.",
-              variant: "default",
-            });
-          }
-        });
       }
     });
-    
-    // Clean up background check when component is unmounted
-    return () => {
-      unsubscribe();
-      // Check if the method exists before calling it
-      if (typeof NotificationHelper.stopBackgroundMessageCheck === 'function') {
-        NotificationHelper.stopBackgroundMessageCheck();
-      }
-    };
-  }, [setLocation, user, toast]);
+    return () => unsubscribe();
+  }, [setLocation]);
 
   useEffect(() => {
     const handleWebSocketMessage = (data: any) => {
       if (data.type === 'NEW_OFFER') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-        
-        // Show browser notification for new offers if we have permission
-        if (Notification.permission === 'granted' && NotificationHelper.isSupported()) {
-          NotificationHelper.showNotification('Ofertă nouă', {
-            body: 'Ați primit o ofertă nouă pentru cererea dvs.',
-            icon: '/favicon.ico',
-            badge: '/favicon.ico',
-            tag: 'new-offer-' + new Date().getTime(),
-            requireInteraction: true,
-            data: {
-              url: '/client-dashboard?tab=offers',
-              timestamp: new Date().getTime(),
-              shouldPlaySound: true,
-              soundUrl: '/sounds/offer.mp3'
-            }
-          });
-        }
       } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
         queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
@@ -143,23 +93,6 @@ export default function ClientDashboard() {
         queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
         // Also invalidate unread messages count
         queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-        
-        // Show browser notification for new messages if we have permission
-        if (Notification.permission === 'granted' && NotificationHelper.isSupported()) {
-          NotificationHelper.showNotification('Mesaj nou', {
-            body: 'Ați primit un mesaj nou',
-            icon: '/favicon.ico',
-            badge: '/favicon.ico',
-            tag: 'new-message-' + new Date().getTime(),
-            requireInteraction: true,
-            data: {
-              url: '/client-dashboard?tab=messages',
-              timestamp: new Date().getTime(),
-              shouldPlaySound: true,
-              soundUrl: '/sounds/message.mp3'
-            }
-          });
-        }
       }
     };
 

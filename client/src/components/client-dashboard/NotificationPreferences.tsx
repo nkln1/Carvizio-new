@@ -335,18 +335,7 @@ export default function NotificationPreferences() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => {
-                        NotificationHelper.testNotification('Notificare de test', {
-                          body: 'Aceasta este o notificare de test pentru client',
-                          icon: '/favicon.ico',
-                          badge: '/favicon.ico',
-                          requireInteraction: true,
-                          data: {
-                            url: '/client-dashboard',
-                            timestamp: new Date().getTime(),
-                            shouldPlaySound: true,
-                            soundUrl: '/sounds/notification.mp3'
-                          }
-                        });
+                        NotificationHelper.testNotification();
                         toast({
                           title: "Notificare de test",
                           description: "Notificarea de test a fost afișată în browser",
@@ -354,7 +343,7 @@ export default function NotificationPreferences() {
                       }}
                       className="w-full sm:w-auto bg-green-100 hover:bg-green-200 text-green-800"
                     >
-                      Testeazăă notificările
+                      Testează notificările
                     </Button>
                   </div>
                 </div>
