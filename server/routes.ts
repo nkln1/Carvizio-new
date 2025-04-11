@@ -2949,6 +2949,81 @@ export function registerRoutes(app: Express): void {
         }
       });
       
+      // Trimitem notificare prin email pentru noul mesaj către receiver (service provider)
+      try {
+        console.log(`=== PROCES EMAIL NOTIFICARE MESAJ NOU (CLIENT->SERVICE) ===`);
+        
+        // Obținem datele furnizorului de servicii
+        const serviceProvider = await storage.getServiceProvider(receiverId);
+        
+        if (serviceProvider) {
+          console.log(`Service Provider găsit: ${serviceProvider.companyName} (${serviceProvider.email})`);
+          
+          // Verificăm preferințele pentru notificări
+          console.log(`Verificăm preferințele pentru notificări email...`);
+          const preferences = await storage.getNotificationPreferences(serviceProvider.id);
+          
+          console.log(`Preferințe găsite în baza de date: ${!!preferences}`);
+          if (preferences) {
+            console.log(`Preferințe specifice pentru service provider ID ${serviceProvider.id}:`);
+            console.log(`- Notificări email activate global: ${preferences.emailNotificationsEnabled ? 'DA' : 'NU'}`);
+            console.log(`- Notificări email pentru mesaje noi: ${preferences.newMessageEmailEnabled ? 'DA' : 'NU'}`);
+          } else {
+            console.log(`Nu există preferințe în baza de date, se vor folosi valorile implicite (toate notificările activate)`);
+          }
+          
+          // Evaluăm dacă trebuie să trimitem email-ul conform preferințelor
+          const shouldSendEmail = !preferences || 
+              (preferences.emailNotificationsEnabled && preferences.newMessageEmailEnabled);
+              
+          console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
+          
+          if (shouldSendEmail) {
+            console.log(`Pregătim trimiterea email-ului de notificare...`);
+            
+            // Obținem detaliile cererii pentru a include în email
+            const request = await storage.getRequest(requestId);
+            const senderName = client.name;
+            const requestTitle = request ? request.title : "Cerere service auto";
+            
+            console.log(`Informații pentru email:`);
+            console.log(`- Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`);
+            console.log(`- Expeditor: ${senderName}`);
+            console.log(`- Titlu cerere: "${requestTitle}"`);
+            console.log(`- Conținut mesaj: "${content.length > 50 ? content.substring(0, 50) + '...' : content}"`);
+            
+            // Trimitem email de notificare
+            try {
+              console.log(`Se trimite email-ul...`);
+              const emailId = `message_${message.id}_${Date.now()}`;
+              console.log(`ID email pentru depanare: ${emailId}`);
+              
+              const emailResult = await EmailService.sendNewMessageNotification(
+                serviceProvider,
+                content,
+                senderName,
+                requestTitle,
+                emailId
+              );
+              
+              if (emailResult) {
+                console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+              } else {
+                console.log(`⚠️ Trimiterea email-ului către service provider ${serviceProvider.companyName} a avut probleme`);
+              }
+            } catch (err) {
+              console.error(`✗ EROARE la trimiterea email-ului:`, err);
+            }
+          } else {
+            console.log(`Nu se trimite email de notificare pentru mesaj nou către ${serviceProvider.companyName} conform preferințelor`);
+          }
+        } else {
+          console.log(`Furnizorul de servicii cu ID ${receiverId} nu a fost găsit pentru trimiterea email-ului`);
+        }
+      } catch (emailError) {
+        console.error("Eroare la trimiterea email-ului de notificare pentru mesaj nou:", emailError);
+      }
+      
       // Send push notification via Firebase Cloud Messaging
       try {
         // Use the already imported admin module instead of require
