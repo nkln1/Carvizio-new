@@ -17,7 +17,7 @@ interface NotificationPreference {
   soundNotificationsEnabled?: boolean;
 }
 
-export const NotificationPreferences = () => {
+export default function NotificationPreferences() {
   const { toast } = useToast();
   const [preferences, setPreferences] = useState<NotificationPreference>({
     emailNotificationsEnabled: true,
