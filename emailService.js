@@ -146,7 +146,8 @@ export class EmailService {
         diagnosticParams.append("apikey", this.apiKey);
         diagnosticParams.append("from", this.fromEmail);
         diagnosticParams.append("fromName", `${this.fromName} - Diagnostic`);
-        diagnosticParams.append("to", this.fromEmail); // Trimitem către adresa noastră pentru diagnostic
+        // Folosim adresa notificari@carvizio.ro explicit pentru diagnostic
+        diagnosticParams.append("to", "notificari@carvizio.ro"); 
         diagnosticParams.append(
           "subject",
           `[TEST DIAGNOSTIC] Eroare trimitere email: ${subject}`,
