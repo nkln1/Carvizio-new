@@ -652,44 +652,91 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
       console.log(`🔄 Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
 
-      // Trimitem email-ul folosind try-catch separat pentru mai multă robustețe
-      let result: boolean;
+      // Construim parametrii pentru trimiterea directă, fără a folosi sendEmail
+      // Această abordare directă asigură că mesajul este trimis corect
+      const params = new URLSearchParams();
+      params.append('apikey', this.apiKey);
+      params.append('to', serviceProvider.email);
+      params.append('from', this.fromEmail);
+      params.append('fromName', this.fromName);
+      params.append('subject', uniqueSubject);
+      params.append('bodyHtml', html);
+      params.append('bodyText', text);
+
+      console.log(`🔄 Trimitere directă a email-ului către API Elastic Email...`);
+      
+      // Trecem la trimiterea directă a email-ului folosind fetch
+      const startTime = Date.now();
+      const response = await fetch(`${this.baseUrl}/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-ElasticEmail-ApiKey': this.apiKey
+        },
+        body: params
+      });
+      const endTime = Date.now();
+      
+      console.log(`⏱️ Durata cerere directă API: ${endTime - startTime}ms`);
+      console.log(`📊 Răspuns primit: [${response.status}] ${response.statusText}`);
+      
+      const contentType = response.headers.get('content-type');
+      let responseData;
+      
       try {
-        result = await this.sendEmail(
-          serviceProvider.email, 
-          uniqueSubject, 
-          html, 
-          text, // Adăugăm conținut text pentru compatibilitate
-          debugInfo // info debugging
-        );
-        
-        if (result) {
-          console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
         } else {
-          console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
-          
-          // Încercăm să trimitem un email de diagnosticare
+          responseData = await response.text();
+        }
+        console.log(`📄 Răspuns API:`, responseData);
+      } catch (parseError) {
+        console.warn(`⚠️ Nu am putut parsa răspunsul:`, parseError);
+      }
+      
+      const success = response.ok;
+      
+      if (success) {
+        console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
+      } else {
+        console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
+        
+        // Trimitem un email de diagnosticare
+        try {
           console.log(`🔄 Încercare email de diagnosticare...`);
-          const diagResult = await this.sendEmail(
-            'notificari@carvizio.ro', // Adresa pentru diagnosticare
-            `[DIAGNOSTIC] ${uniqueSubject}`,
-            `<h1>Test diagnostic - Eșec trimitere notificare mesaj nou</h1>
+          const diagParams = new URLSearchParams();
+          diagParams.append('apikey', this.apiKey);
+          diagParams.append('to', 'notificari@carvizio.ro');
+          diagParams.append('from', this.fromEmail);
+          diagParams.append('fromName', 'Auto Service App - ERROR');
+          diagParams.append('subject', `[DIAGNOSTIC] ${uniqueSubject}`);
+          diagParams.append('bodyHtml', `
+            <h1>Test diagnostic - Eșec trimitere notificare mesaj nou</h1>
             <p>Acest email este un test de diagnostic pentru o notificare de mesaj nou care nu a putut fi trimisă la adresa destinatarului original.</p>
             <p><strong>Destinatar original:</strong> ${serviceProvider.email}</p>
             <p><strong>Mesaj de la:</strong> ${senderName}</p>
-            <p><strong>Referitor la:</strong> ${requestOrOfferTitle}</p>`,
-            `Test diagnostic - Eșec trimitere notificare mesaj nou\n\nDestinatarul original: ${serviceProvider.email}\nMesaj de la: ${senderName}\nReferitor la: ${requestOrOfferTitle}`,
-            `[DIAGNOSTIC] ${debugInfo}`
-          );
-          console.log(`📊 Rezultat email diagnostic: ${diagResult ? 'SUCCESS' : 'FAILURE'}`);
+            <p><strong>Referitor la:</strong> ${requestOrOfferTitle}</p>
+            <p><strong>Detalii eroare:</strong> Status ${response.status} - ${response.statusText}</p>
+            <p><strong>Răspuns:</strong> ${JSON.stringify(responseData)}</p>
+          `);
+          
+          const diagResponse = await fetch(`${this.baseUrl}/email/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-ElasticEmail-ApiKey': this.apiKey
+            },
+            body: diagParams
+          });
+          
+          console.log(`📊 Rezultat email diagnostic: ${diagResponse.ok ? 'SUCCESS' : 'FAILURE'}`);
+        } catch (diagError) {
+          console.error(`❌ Eroare la trimiterea emailului de diagnosticare:`, diagError);
         }
-      } catch (innerError) {
-        console.error(`❌ Excepție în timpul trimiterii email-ului:`, innerError);
-        result = false;
       }
       
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====\n`);
-      return result;
+      return success;
     } catch (error) {
       console.error(`❌ EmailService.sendNewMessageNotification - Eroare generală:`, error);
       
@@ -697,6 +744,26 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       if (error instanceof Error) {
         console.error(`❌ Detalii eroare: ${error.message}`);
         console.error(`❌ Stack trace: ${error.stack}`);
+      }
+      
+      // Încercăm un alt mod de trimitere ca ultimă încercare
+      try {
+        console.log(`🔄 Încercare ultimă șansă folosind sendEmail...`);
+        const lastResortResult = await this.sendEmail(
+          serviceProvider.email,
+          uniqueSubject,
+          html,
+          text,
+          `[LAST_RESORT] ${debugInfo}`
+        );
+        
+        console.log(`📊 Rezultat încercare ultimă șansă: ${lastResortResult ? 'SUCCESS' : 'FAILURE'}`);
+        
+        if (lastResortResult) {
+          return true;
+        }
+      } catch (lastResortError) {
+        console.error(`❌ Și încercarea de ultimă șansă a eșuat:`, lastResortError);
       }
       
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE =====\n`);
