@@ -534,32 +534,47 @@ Puteți dezactiva notificările prin email din setările contului dvs.
     requestOrOfferTitle: string,
     messageId: string = `message_${Date.now()}`
   ): Promise<boolean> {
-    // Validăm și normalizăm datele serviceProvider pentru a evita erorile
+    console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====`);
+    console.log(`📊 Date furnizor servicii:`, JSON.stringify(serviceProvider, null, 2));
+    
+    // Validare robustă a datelor de intrare
     if (!serviceProvider) {
       console.error(`❌ EmailService.sendNewMessageNotification - serviceProvider este null sau undefined`);
+      return false;
+    }
+
+    // Verificăm dacă serviceProvider este șir de caractere (eroare posibilă)
+    if (typeof serviceProvider === 'string') {
+      console.error(`❌ EmailService.sendNewMessageNotification - serviceProvider este șir de caractere în loc de obiect: "${serviceProvider}"`);
       return false;
     }
 
     // Normalizăm numele companiei (verificăm toate formatele posibile)
     const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
     
-    // Validăm și normalizăm email-ul
-    if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
+    // Validare robustă pentru email
+    if (!serviceProvider.email) {
+      console.error(`❌ EmailService.sendNewMessageNotification - Email lipsă pentru service provider`, serviceProvider);
+      return false;
+    }
+    
+    if (typeof serviceProvider.email !== 'string' || !serviceProvider.email.includes('@')) {
       console.error(`❌ EmailService.sendNewMessageNotification - Email invalid pentru service provider: "${serviceProvider.email}"`);
       return false;
     }
 
     const debugInfo = `[Mesaj Nou] De la: ${senderName}, Cerere/Ofertă: ${requestOrOfferTitle}, ID Mesaj: ${messageId}`;
-    console.log(`=== EmailService.sendNewMessageNotification - Trimitere notificare mesaj nou ===`);
-    console.log(`Destinatar: ${companyName} (${serviceProvider.email})`);
-    console.log(`Expeditor: ${senderName}`);
-    console.log(`Referitor la: ${requestOrOfferTitle}`);
-    console.log(`ID Mesaj: ${messageId}`);
-    console.log(`Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}`);
     
+    // Logare extinsă pentru diagnosticare completă
+    console.log(`📧 Detalii notificare:`);
+    console.log(`   • Destinatar: ${companyName} (${serviceProvider.email})`);
+    console.log(`   • Expeditor: ${senderName}`);
+    console.log(`   • Referitor la: ${requestOrOfferTitle}`);
+    console.log(`   • ID Mesaj: ${messageId}`);
+    console.log(`   • Conținut mesaj: "${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}"`);
+    
+    // Construim subiectul cu identificator unic
     const subject = `Mesaj nou de la ${senderName}`;
-    
-    // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
     const uniqueSubject = `${subject} [${messageId}]`;
     
     // Truncăm mesajul dacă este prea lung
@@ -567,57 +582,116 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       ? messageContent.substring(0, 147) + '...' 
       : messageContent;
     
+    // Template HTML îmbunătățit pentru notificarea prin email
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #4a5568;">Mesaj nou</h2>
-        <p>Bună ziua, ${companyName},</p>
-        <p>Ați primit un mesaj nou de la <strong>${senderName}</strong> referitor la "${requestOrOfferTitle}":</p>
-        <div style="background-color: #f7fafc; border-left: 4px solid #f6ad55; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; font-style: italic;">"${truncatedMessage}"</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #f6ad55; padding: 20px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Mesaj nou</h2>
         </div>
-        <p>Puteți vizualiza conversația completă și răspunde din contul dvs.</p>
-        <p>
-          <a href="https://auto-service-app.replit.app/service-dashboard?tab=mesaje" 
-             style="background-color: #f6ad55; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
-            Vezi mesajele
-          </a>
-        </p>
-        <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
-          Acest email a fost trimis automat de aplicația Auto Service.
-          <br>
-          Puteți dezactiva notificările prin email din setările contului dvs.
-        </p>
-        <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+        <div style="padding: 20px;">
+          <p style="font-size: 16px;">Bună ziua, <strong>${companyName}</strong>,</p>
+          <p style="font-size: 16px;">Ați primit un mesaj nou de la <strong>${senderName}</strong> referitor la "${requestOrOfferTitle}":</p>
+          <div style="background-color: #f7fafc; border-left: 4px solid #f6ad55; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; font-style: italic;">"${truncatedMessage}"</p>
+          </div>
+          <p style="font-size: 16px;">Puteți vizualiza conversația completă și răspunde din contul dvs.</p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="https://auto-service-app.replit.app/service-dashboard?tab=mesaje" 
+               style="background-color: #f6ad55; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Vezi mesajele
+            </a>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
+            <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
+              Acest email a fost trimis automat de aplicația Auto Service.
+            </p>
+            <p style="color: #718096; font-size: 14px; margin-top: 0;">
+              Puteți dezactiva notificările prin email din 
+              <a href="https://auto-service-app.replit.app/service-dashboard?tab=account" style="color: #f6ad55; text-decoration: none;">
+                setările contului dvs
+              </a>.
+            </p>
+          </div>
+        </div>
+        <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+          <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+        </div>
       </div>
     `;
 
+    // Conținut text simplu pentru clienții de email care nu suportă HTML
+    const text = `
+Mesaj nou de la ${senderName}
+
+Bună ziua, ${companyName},
+
+Ați primit un mesaj nou de la ${senderName} referitor la "${requestOrOfferTitle}":
+
+"${truncatedMessage}"
+
+Puteți vizualiza conversația completă și răspunde accesând: 
+https://auto-service-app.replit.app/service-dashboard?tab=mesaje
+
+Acest email a fost trimis automat de aplicația Auto Service.
+Puteți dezactiva notificările prin email din setările contului dvs.
+
+© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.
+`;
+
     try {
-      console.log(`🔄 Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
-      
+      console.log(`🔄 Verificare API key Elastic Email...`);
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
         console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
+        console.error(`📝 Variabile de mediu disponibile:`, Object.keys(process.env).filter(key => 
+          !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')).join(', '));
         return false;
       }
-
-      // Trimitem email-ul cu logging extins pentru debugging
-      const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        undefined, // text content
-        debugInfo // info debugging
-      );
       
-      if (result) {
-        console.log(`✅ EmailService.sendNewMessageNotification - Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
-      } else {
-        console.error(`❌ EmailService.sendNewMessageNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
+      console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
+      console.log(`🔄 Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
+
+      // Trimitem email-ul folosind try-catch separat pentru mai multă robustețe
+      let result: boolean;
+      try {
+        result = await this.sendEmail(
+          serviceProvider.email, 
+          uniqueSubject, 
+          html, 
+          text, // Adăugăm conținut text pentru compatibilitate
+          debugInfo // info debugging
+        );
+        
+        if (result) {
+          console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
+        } else {
+          console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
+          
+          // Încercăm să trimitem un email de diagnosticare
+          console.log(`🔄 Încercare email de diagnosticare...`);
+          const diagResult = await this.sendEmail(
+            'notificari@carvizio.ro', // Adresa pentru diagnosticare
+            `[DIAGNOSTIC] ${uniqueSubject}`,
+            `<h1>Test diagnostic - Eșec trimitere notificare mesaj nou</h1>
+            <p>Acest email este un test de diagnostic pentru o notificare de mesaj nou care nu a putut fi trimisă la adresa destinatarului original.</p>
+            <p><strong>Destinatar original:</strong> ${serviceProvider.email}</p>
+            <p><strong>Mesaj de la:</strong> ${senderName}</p>
+            <p><strong>Referitor la:</strong> ${requestOrOfferTitle}</p>`,
+            `Test diagnostic - Eșec trimitere notificare mesaj nou\n\nDestinatarul original: ${serviceProvider.email}\nMesaj de la: ${senderName}\nReferitor la: ${requestOrOfferTitle}`,
+            `[DIAGNOSTIC] ${debugInfo}`
+          );
+          console.log(`📊 Rezultat email diagnostic: ${diagResult ? 'SUCCESS' : 'FAILURE'}`);
+        }
+      } catch (innerError) {
+        console.error(`❌ Excepție în timpul trimiterii email-ului:`, innerError);
+        result = false;
       }
       
+      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====\n`);
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewMessageNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}:`, error);
+      console.error(`❌ EmailService.sendNewMessageNotification - Eroare generală:`, error);
       
       // Adăugăm detalii despre eroare pentru debugging
       if (error instanceof Error) {
@@ -625,7 +699,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.error(`❌ Stack trace: ${error.stack}`);
       }
       
-      // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
+      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE =====\n`);
       return false;
     }
   }
