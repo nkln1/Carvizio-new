@@ -1722,13 +1722,22 @@ export function registerRoutes(app: Express): void {
             // Trimitem email de notificare
             try {
               console.log(`Se trimite email-ul...`);
-              await EmailService.sendOfferAcceptedNotification(
+              // Adăugăm un identificator unic pentru acest email
+              const emailId = `offer_${offer.id}_${Date.now()}`;
+              console.log(`ID email pentru depanare: ${emailId}`);
+              
+              const emailResult = await EmailService.sendOfferAcceptedNotification(
                 serviceProvider,
                 offerTitle, 
                 client.name,
-                `offer_${offer.id}_${Date.now()}`
+                emailId
               );
-              console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+              
+              if (emailResult) {
+                console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+              } else {
+                console.log(`⚠️ Trimiterea email-ului către service provider ${serviceProvider.companyName} (${serviceProvider.email}) a eșuat`);
+              }
             } catch (err) {
               console.error(`✗ EROARE la trimiterea email-ului:`, err);
             }
