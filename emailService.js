@@ -408,11 +408,14 @@ Debug Info: ${debugInfo || 'N/A'}
       return false;
     }
 
+    // Procesăm numele companiei - verificăm ambele formate posibile (companyName și company_name)
+    const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
+    
     console.log(
       `\n==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====`,
     );
     console.log(
-      `Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`,
+      `Destinatar: ${companyName} (${serviceProvider.email})`,
     );
     console.log(`Expeditor: ${senderName}`);
     console.log(`Subiect: ${requestOrOfferTitle}`);
@@ -435,7 +438,7 @@ Debug Info: ${debugInfo || 'N/A'}
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
         <h2 style="color: #00aff5; margin-bottom: 20px;">Mesaj nou</h2>
-        <p>Bună ${serviceProvider.companyName},</p>
+        <p>Bună ${companyName},</p>
         <p>Aveți un mesaj nou de la <strong>${senderName}</strong> referitor la:</p>
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
           <h3 style="margin-top: 0; color: #333;">${requestOrOfferTitle}</h3>
@@ -532,11 +535,14 @@ Debug Info: ${debugInfo || 'N/A'}
     reviewId,
     debugInfo,
   ) {
+    // Procesăm numele companiei - verificăm ambele formate posibile (companyName și company_name)
+    const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
+    
     console.log(
       `\n==== TRIMITERE EMAIL NOTIFICARE RECENZIE NOUĂ PENTRU SERVICE ====`,
     );
     console.log(
-      `Destinatar: ${serviceProvider.companyName} (${serviceProvider.email})`,
+      `Destinatar: ${companyName} (${serviceProvider.email})`,
     );
     console.log(`Client: ${clientName}`);
     console.log(`Rating: ${rating}/5`);
