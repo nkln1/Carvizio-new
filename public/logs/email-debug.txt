@@ -9,3 +9,36 @@ ID mesaj: test_message_1744611601950
 Debug Info: N/A
 
 ✅ SUCCES: Email trimis la nkln@yahoo.com la 2025-04-14T06:20:02.067Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:09:35.345Z
+Destinatar: Service Test Standard (adresa_ta_de_email@exemplu.com)
+Destinatar ID: 999
+Expeditor: Client Test
+Subiect: Cerere de testare a notificărilor
+ID mesaj: test_message_1744614575345
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la adresa_ta_de_email@exemplu.com la 2025-04-14T07:09:35.468Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:09:41.832Z
+Destinatar: N/A (adresa_ta_de_email@exemplu.com)
+Destinatar ID: 998
+Expeditor: Client Test
+Subiect: Cerere de testare a notificărilor
+ID mesaj: test_message_1744614581832
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la adresa_ta_de_email@exemplu.com la 2025-04-14T07:09:41.954Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:09:48.319Z
+Destinatar: N/A (adresa_ta_de_email@exemplu.com)
+Destinatar ID: N/A
+Expeditor: Client Test
+Subiect: Cerere de testare a notificărilor
+ID mesaj: test_message_1744614588319
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la adresa_ta_de_email@exemplu.com la 2025-04-14T07:09:48.441Z
