@@ -42,3 +42,36 @@ ID mesaj: test_message_1744614588319
 Debug Info: N/A
 
 ✅ SUCCES: Email trimis la adresa_ta_de_email@exemplu.com la 2025-04-14T07:09:48.441Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:18:13.565Z
+Destinatar: Service Test Standard (adresa_email_de_test@domeniu.com)
+Destinatar ID: 999
+Expeditor: Client Test
+Subiect: Cerere de testare a notificărilor
+ID mesaj: test_message_1744615093565
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la adresa_email_de_test@domeniu.com la 2025-04-14T07:18:13.886Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:18:20.238Z
+Destinatar: N/A (adresa_email_de_test@domeniu.com)
+Destinatar ID: 998
+Expeditor: Client Test
+Subiect: Cerere de testare a notificărilor
+ID mesaj: test_message_1744615100238
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la adresa_email_de_test@domeniu.com la 2025-04-14T07:18:20.354Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:18:26.698Z
+Destinatar: N/A (adresa_email_de_test@domeniu.com)
+Destinatar ID: N/A
+Expeditor: Client Test
+Subiect: Cerere de testare a notificărilor
+ID mesaj: test_message_1744615106698
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la adresa_email_de_test@domeniu.com la 2025-04-14T07:18:26.813Z
