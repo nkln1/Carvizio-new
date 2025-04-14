@@ -1986,14 +1986,23 @@ export function registerRoutes(app: Express): void {
               // Trimitem email de notificare
               try {
                 console.log(`Se trimite email-ul...`);
-                await EmailService.sendNewMessageNotification(
+                // Adăugăm un identificator unic pentru acest email pentru a-l putea urmări mai ușor în logs
+                const emailId = `message_${message.id}_${Date.now()}`;
+                console.log(`ID email pentru depanare: ${emailId}`);
+                
+                const emailResult = await EmailService.sendNewMessageNotification(
                   serviceProvider,
                   message.content,
                   senderName,
                   requestTitle,
-                  `message_${message.id}_${Date.now()}`
+                  emailId
                 );
-                console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                
+                if (emailResult) {
+                  console.log(`✓ Email trimis cu succes către ${serviceProvider.companyName} (${serviceProvider.email})`);
+                } else {
+                  console.log(`⚠️ Trimiterea email-ului către service provider ${serviceProvider.companyName} (${serviceProvider.email}) a eșuat`);
+                }
               } catch (err) {
                 console.error(`✗ EROARE la trimiterea email-ului:`, err);
               }
