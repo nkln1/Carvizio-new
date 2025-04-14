@@ -1,0 +1,11 @@
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T06:20:01.950Z
+Destinatar: NKLN Service (nkln@yahoo.com)
+Destinatar ID: 1
+Expeditor: Client Test Automat
+Subiect: Test Reparație frâne
+ID mesaj: test_message_1744611601950
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la nkln@yahoo.com la 2025-04-14T06:20:02.067Z
