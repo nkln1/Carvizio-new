@@ -75,3 +75,25 @@ ID mesaj: test_message_1744615106698
 Debug Info: N/A
 
 ✅ SUCCES: Email trimis la adresa_email_de_test@domeniu.com la 2025-04-14T07:18:26.813Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:29:39.842Z
+Destinatar: Cata SRL (c.adetu@yahoo.com)
+Destinatar ID: 15
+Expeditor: Mihai
+Subiect: test revizie cadoprint
+ID mesaj: test_db_message_460_1744615779841
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la c.adetu@yahoo.com la 2025-04-14T07:29:40.303Z
+
+==== TRIMITERE EMAIL NOTIFICARE MESAJ NOU CĂTRE SERVICE ====
+Timestamp: 2025-04-14T07:29:40.303Z
+Destinatar: Cata SRL (c.adetu@yahoo.com)
+Destinatar ID: 15
+Expeditor: Mihai
+Subiect: test revizie cadoprint
+ID mesaj: test_api_message_1744615780303
+Debug Info: N/A
+
+✅ SUCCES: Email trimis la c.adetu@yahoo.com la 2025-04-14T07:29:40.417Z
