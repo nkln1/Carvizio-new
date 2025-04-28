@@ -33,7 +33,11 @@ export function useMessagesManagement(
 
   // Calculate pagination values
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const totalPages = items => Math.ceil(items.length / itemsPerPage);
+  
+  // Use proper type definition to fix TypeScript error
+  const totalPages = <T extends Array<unknown>>(items: T): number => {
+    return Math.ceil(items.length / itemsPerPage);
+  };
 
   // Mark conversation as read
   const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
@@ -132,8 +136,8 @@ export function useMessagesManagement(
   });
 
   // Get paginated conversations for filtered results
-  const getPaginatedConversations = (conversations: any[]) => {
-    return conversations.slice(startIndex, startIndex + itemsPerPage);
+  const getPaginatedConversations = <T extends Array<unknown>>(conversations: T): T => {
+    return conversations.slice(startIndex, startIndex + itemsPerPage) as T;
   };
 
   // Get paginated conversations

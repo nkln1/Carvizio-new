@@ -774,18 +774,31 @@ async function checkForNewReviews(userId, userRole, token) {
 async function getNotificationPreferences(token) {
   if (!token) {
     console.warn('[Service Worker] Nu se pot obține preferințele de notificări fără token');
-    return null;
+    // Return default preferences instead of null to avoid blocking notifications
+    return {
+      browserNotificationsEnabled: true,
+      newRequestBrowserEnabled: true,
+      acceptedOfferBrowserEnabled: true,
+      newMessageBrowserEnabled: true,
+      newReviewBrowserEnabled: true,
+      browserPermission: true
+    };
   }
 
-  // Dacă avem deja preferințele în configurare, le returnăm
+  // Dacă avem deja preferințele în configurare și nu au trecut mai mult de 5 minute, le returnăm
   if (backgroundCheckConfig.notificationPreferences) {
-    return backgroundCheckConfig.notificationPreferences;
+    const preferencesAge = Date.now() - (backgroundCheckConfig.preferencesTimestamp || 0);
+    if (preferencesAge < 5 * 60 * 1000) { // 5 minutes
+      return backgroundCheckConfig.notificationPreferences;
+    }
   }
 
   // URL-ul pentru API-ul de obținere a preferințelor
   const apiUrl = '/api/service/notification-preferences';
 
   try {
+    console.log('[Service Worker] Obținerea preferințelor de notificări cu token...');
+    
     const response = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -795,25 +808,54 @@ async function getNotificationPreferences(token) {
 
     if (!response.ok) {
       console.warn('[Service Worker] Nu s-au putut obține preferințele de notificări:', response.status);
-      return null;
+      
+      // If we can't get preferences, use default values that allow notifications
+      // rather than blocking them entirely
+      return {
+        browserNotificationsEnabled: true,
+        newRequestBrowserEnabled: true,
+        acceptedOfferBrowserEnabled: true,
+        newMessageBrowserEnabled: true,
+        newReviewBrowserEnabled: true,
+        browserPermission: true
+      };
     }
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       console.warn('[Service Worker] Răspunsul pentru preferințe nu este JSON valid:', contentType);
-      return null;
+      
+      // Use default values that allow notifications if response isn't valid JSON
+      return {
+        browserNotificationsEnabled: true,
+        newRequestBrowserEnabled: true,
+        acceptedOfferBrowserEnabled: true,
+        newMessageBrowserEnabled: true,
+        newReviewBrowserEnabled: true,
+        browserPermission: true
+      };
     }
 
     const preferences = await response.json();
     console.log('[Service Worker] Preferințe de notificări obținute:', preferences);
 
-    // Salvăm preferințele în configurare
+    // Salvăm preferințele în configurare și timestamp-ul
     backgroundCheckConfig.notificationPreferences = preferences;
+    backgroundCheckConfig.preferencesTimestamp = Date.now();
 
     return preferences;
   } catch (error) {
     console.error('[Service Worker] Eroare la obținerea preferințelor de notificări:', error);
-    return null;
+    
+    // Return default values that allow notifications instead of null
+    return {
+      browserNotificationsEnabled: true,
+      newRequestBrowserEnabled: true,
+      acceptedOfferBrowserEnabled: true,
+      newMessageBrowserEnabled: true,
+      newReviewBrowserEnabled: true,
+      browserPermission: true
+    };
   }
 }
 
