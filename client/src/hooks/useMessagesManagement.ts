@@ -179,17 +179,28 @@ export function useMessagesManagement(
 
       const newMessage = await response.json();
 
-      // Update messages cache with proper ordering
+      // Store message ID to prevent duplication
+      const messageId = newMessage.id;
+      
+      // Option 1: Only update the cache (don't invalidate and refetch)
       queryClient.setQueryData(
         [`${baseEndpoint}/messages`, activeConversation.requestId],
         (old: Message[] | undefined) => {
-          const currentMessages = [...(old || [])];
+          // If no old messages, just return the new one
+          if (!old) return [newMessage];
+          
+          // Check if the message already exists to prevent duplication
+          const messageExists = old.some(msg => msg.id === messageId);
+          if (messageExists) return old;
+          
+          // Add the new message only if it doesn't exist
+          const currentMessages = [...old];
           currentMessages.push(newMessage);
           return currentMessages;
         }
       );
 
-      // Invalidate conversations to update last message
+      // Invalidate conversations to update last message, but don't invalidate messages
       await queryClient.invalidateQueries({
         queryKey: [`${baseEndpoint}/conversations`]
       });
