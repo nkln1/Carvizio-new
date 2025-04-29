@@ -19,7 +19,7 @@ export class EmailService {
   // Definim proprietățile statice înainte de block-ul static pentru a evita accesul înainte de inițializare
   private static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
   private static fromEmail = 'notificari@carvizio.ro'; // Adresa verificată pentru domeniul carvizio.ro
-  private static fromName = 'Auto Service App';
+  private static fromName = 'Carvizio.ro';
   private static baseUrl = 'https://api.elasticemail.com/v2';
 
   static {
@@ -229,7 +229,7 @@ export class EmailService {
             </div>
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
               <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
-                Acest email a fost trimis automat de aplicația Auto Service.
+                Acest email a fost trimis automat de aplicația Carvizio.ro.
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
@@ -240,7 +240,7 @@ export class EmailService {
             </div>
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
-            <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+            <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
             <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
           </div>
         </div>
@@ -259,10 +259,10 @@ export class EmailService {
   Puteți vizualiza detaliile complete ale cererii și răspunde accesând: 
   https://auto-service-app.replit.app/service-dashboard?tab=cereri
 
-  Acest email a fost trimis automat de aplicația Auto Service.
+  Acest email a fost trimis automat de aplicația Carvizio.ro.
   Puteți dezactiva notificările prin email din setările contului dvs.
 
-  © ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.
+  © ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.
       `;
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
@@ -363,7 +363,7 @@ export class EmailService {
             </a>
           </p>
           <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
-            Acest email a fost trimis automat de aplicația Auto Service.
+            Acest email a fost trimis automat de aplicația Carvizio.ro.
             <br>
             Puteți dezactiva notificările prin email din setările contului dvs.
           </p>
@@ -492,7 +492,7 @@ export class EmailService {
             </div>
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
               <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
-                Acest email a fost trimis automat de aplicația Auto Service.
+                Acest email a fost trimis automat de aplicația Carvizio.ro.
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
@@ -503,7 +503,7 @@ export class EmailService {
             </div>
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
-            <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+            <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
             <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
           </div>
         </div>
@@ -522,10 +522,10 @@ Ați primit un mesaj nou de la ${senderName} referitor la "${requestOrOfferTitle
 Puteți vizualiza conversația completă și răspunde accesând: 
 https://auto-service-app.replit.app/service-dashboard?tab=mesaje
 
-Acest email a fost trimis automat de aplicația Auto Service.
+Acest email a fost trimis automat de aplicația Carvizio.ro.
 Puteți dezactiva notificările prin email din setările contului dvs.
 
-© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.
+© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.
       `;
 
       console.log(`🔄 Verificare API key Elastic Email...`);
@@ -658,7 +658,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
             </a>
           </p>
           <p style="color: #718096; font-size: 0.9em; margin-top: 30px;">
-            Acest email a fost trimis automat de aplicația Auto Service.
+            Acest email a fost trimis automat de aplicația Carvizio.ro.
             <br>
             Puteți dezactiva notificările prin email din setările contului dvs.
           </p>
@@ -760,7 +760,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
             </div>
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
               <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
-                Acest email a fost trimis automat de aplicația Auto Service.
+                Acest email a fost trimis automat de aplicația Carvizio.ro.
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
@@ -771,7 +771,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
             </div>
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
-            <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+            <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
             <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
           </div>
         </div>
@@ -844,7 +844,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
             </div>
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 20px;">
               <p style="color: #718096; font-size: 14px; margin-top: 0; margin-bottom: 5px;">
-                Acest email a fost trimis automat de aplicația Auto Service.
+                Acest email a fost trimis automat de aplicația Carvizio.ro.
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
@@ -855,7 +855,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
             </div>
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
-            <p style="margin: 0;">© ${new Date().getFullYear()} Auto Service App. Toate drepturile rezervate.</p>
+            <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
             <!-- ID Ofertă: ${offerId} - Folosit pentru prevenirea duplicării -->
           </div>
         </div>
