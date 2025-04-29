@@ -547,11 +547,11 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
       console.log(`🔄 [${uniqueExecutionId}] Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
 
-      // TRIMITERE SIMPLIFICATĂ: UN SINGUR APEL LA TRIMITERE EMAIL - FĂRĂ VARIABILE INTERMEDIARE
+      // TRIMITERE SIMPLIFICATĂ: UN SINGUR APEL LA TRIMITERE EMAIL
       const startTime = Date.now();
       
-      // Trimitere directă, fără a stoca rezultatul temporar în alte variabile
-      const directResult = await this.sendEmail(
+      // Trimitere directă cu un singur apel, păstrând rezultatul
+      const emailResult = await this.sendEmail(
         serviceProvider.email, 
         uniqueSubject, 
         html, 
@@ -562,9 +562,9 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       const endTime = Date.now();
 
       console.log(`⏱️ Durata trimitere email: ${endTime - startTime}ms`);
-      console.log(`📊 Rezultat direct trimitere email: ${directResult ? 'SUCCESS' : 'FAILURE'}`);
+      console.log(`📊 Rezultat trimitere email: ${emailResult ? 'SUCCESS' : 'FAILURE'}`);
 
-      if (directResult) {
+      if (emailResult) {
         console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
       } else {
         console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
@@ -572,7 +572,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       }
 
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====\n`);
-      return directResult;
+      return emailResult;
     } catch (error) {
       console.error(`❌ EmailService.sendNewMessageNotification [${uniqueExecutionId}] - Eroare generală:`, error);
 
