@@ -422,8 +422,11 @@ export class EmailService {
     requestOrOfferTitle: string,
     messageId: string = `message_${Date.now()}`
   ): Promise<boolean> {
+    // Adăugăm un flag pentru a preveni executarea multiplă din cauza apelurilor asincrone
+    const uniqueExecutionId = `msg_exec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====`);
+
     try {
-      console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====`);
       console.log(`📊 Date furnizor servicii:`, JSON.stringify(serviceProvider, null, 2));
 
       // Validare robustă a datelor de intrare
@@ -452,19 +455,23 @@ export class EmailService {
         return false;
       }
 
-      const debugInfo = `[Mesaj Nou] De la: ${senderName}, Cerere/Ofertă: ${requestOrOfferTitle}, ID Mesaj: ${messageId}`;
+      // Construim un ID de execuție unic pentru acest mesaj (prevenție dublare)
+      const execMessageId = `${messageId}_${uniqueExecutionId}`;
+      console.log(`🆔 ID Execuție unic generat: ${execMessageId}`);
+
+      const debugInfo = `[Mesaj Nou] De la: ${senderName}, Cerere/Ofertă: ${requestOrOfferTitle}, ID Mesaj: ${execMessageId}`;
 
       // Logare extinsă pentru diagnosticare completă
       console.log(`📧 Detalii notificare:`);
       console.log(`   • Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`   • Expeditor: ${senderName}`);
       console.log(`   • Referitor la: ${requestOrOfferTitle}`);
-      console.log(`   • ID Mesaj: ${messageId}`);
+      console.log(`   • ID Mesaj: ${execMessageId}`);
       console.log(`   • Conținut mesaj: "${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}"`);
 
       // Construim subiectul cu identificator unic
       const subject = `Mesaj nou de la ${senderName}`;
-      const uniqueSubject = `${subject} [${messageId}]`;
+      const uniqueSubject = `${subject} [${execMessageId}]`;
 
       // Truncăm mesajul dacă este prea lung
       const truncatedMessage = messageContent.length > 150 
@@ -504,7 +511,7 @@ export class EmailService {
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
             <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
-            <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+            <!-- ID Execuție: ${execMessageId} - Folosit pentru prevenirea duplicării -->
           </div>
         </div>
       `;
@@ -538,37 +545,36 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       }
 
       console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
-      console.log(`🔄 Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
+      console.log(`🔄 [${uniqueExecutionId}] Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
 
-      console.log(`🔄 Trimitere email folosind metoda sendEmail...`);
-
-      // Trimitem email-ul o singură dată
+      // TRIMITERE SIMPLIFICATĂ: UN SINGUR APEL LA TRIMITERE EMAIL - FĂRĂ VARIABILE INTERMEDIARE
       const startTime = Date.now();
-      const result = await this.sendEmail(
+      
+      // Trimitere directă, fără a stoca rezultatul temporar în alte variabile
+      const directResult = await this.sendEmail(
         serviceProvider.email, 
         uniqueSubject, 
         html, 
         text, 
-        String(messageId)
+        execMessageId // folosim ID-ul unic de execuție
       );
+      
       const endTime = Date.now();
 
       console.log(`⏱️ Durata trimitere email: ${endTime - startTime}ms`);
-      console.log(`📊 Rezultat trimitere email: ${result ? 'SUCCESS' : 'FAILURE'}`);
+      console.log(`📊 Rezultat direct trimitere email: ${directResult ? 'SUCCESS' : 'FAILURE'}`);
 
-      if (result) {
-        console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
+      if (directResult) {
+        console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
       } else {
-        console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
-
-        // Înregistrăm detalii despre eșec pentru depanare
+        console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
         console.error(`📝 Detalii eșec: Email către ${serviceProvider.email}, Subiect: ${uniqueSubject}`);
       }
 
-      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====\n`);
-      return result;
+      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====\n`);
+      return directResult;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewMessageNotification - Eroare generală:`, error);
+      console.error(`❌ EmailService.sendNewMessageNotification [${uniqueExecutionId}] - Eroare generală:`, error);
 
       // Adăugăm detalii despre eroare pentru debugging
       if (error instanceof Error) {
@@ -580,7 +586,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.error(`📝 Detalii eroare completă:`, error);
       console.error(`📝 Date trimitere: Email către ${serviceProvider?.email}, De la: ${senderName}, Titlu: ${requestOrOfferTitle}`);
 
-      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE =====\n`);
+      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE [${uniqueExecutionId}] =====\n`);
       return false;
     }
   }
