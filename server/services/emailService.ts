@@ -540,87 +540,31 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
       console.log(`🔄 Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
 
-      // Construim parametrii pentru trimiterea directă, fără a folosi sendEmail
-      // Această abordare directă asigură că mesajul este trimis corect
-      const params = new URLSearchParams();
-      params.append('apikey', this.apiKey);
-      params.append('to', serviceProvider.email);
-      params.append('from', this.fromEmail);
-      params.append('fromName', this.fromName);
-      params.append('subject', uniqueSubject);
-      params.append('bodyHtml', html);
-      params.append('bodyText', text);
-
-      console.log(`🔄 Trimitere directă a email-ului către API Elastic Email...`);
+      console.log(`🔄 Trimitere email folosind metoda sendEmail...`);
       
-      // Trecem la trimiterea directă a email-ului folosind fetch
+      // Folosim doar metoda sendEmail pentru a evita dublarea email-urilor
       const startTime = Date.now();
-      const response = await fetch(`${this.baseUrl}/email/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-ElasticEmail-ApiKey': this.apiKey
-        },
-        body: params
-      });
+      const result = await this.sendEmail(
+        serviceProvider.email, 
+        uniqueSubject, 
+        html, 
+        text, 
+        String(messageId)
+      );
       const endTime = Date.now();
       
-      console.log(`⏱️ Durata cerere directă API: ${endTime - startTime}ms`);
-      console.log(`📊 Răspuns primit: [${response.status}] ${response.statusText}`);
+      console.log(`⏱️ Durata trimitere email: ${endTime - startTime}ms`);
+      console.log(`📊 Rezultat trimitere email: ${result ? 'SUCCESS' : 'FAILURE'}`);
       
-      const contentType = response.headers.get('content-type');
-      let responseData;
-      
-      try {
-        if (contentType && contentType.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          responseData = await response.text();
-        }
-        console.log(`📄 Răspuns API:`, responseData);
-      } catch (parseError) {
-        console.warn(`⚠️ Nu am putut parsa răspunsul:`, parseError);
-      }
-      
-      const success = response.ok;
+      const success = result;
       
       if (success) {
         console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
       } else {
         console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
         
-        // Trimitem un email de diagnosticare
-        try {
-          console.log(`🔄 Încercare email de diagnosticare...`);
-          const diagParams = new URLSearchParams();
-          diagParams.append('apikey', this.apiKey);
-          diagParams.append('to', 'notificari@carvizio.ro');
-          diagParams.append('from', this.fromEmail);
-          diagParams.append('fromName', 'Auto Service App - ERROR');
-          diagParams.append('subject', `[DIAGNOSTIC] ${uniqueSubject}`);
-          diagParams.append('bodyHtml', `
-            <h1>Test diagnostic - Eșec trimitere notificare mesaj nou</h1>
-            <p>Acest email este un test de diagnostic pentru o notificare de mesaj nou care nu a putut fi trimisă la adresa destinatarului original.</p>
-            <p><strong>Destinatar original:</strong> ${serviceProvider.email}</p>
-            <p><strong>Mesaj de la:</strong> ${senderName}</p>
-            <p><strong>Referitor la:</strong> ${requestOrOfferTitle}</p>
-            <p><strong>Detalii eroare:</strong> Status ${response.status} - ${response.statusText}</p>
-            <p><strong>Răspuns:</strong> ${JSON.stringify(responseData)}</p>
-          `);
-          
-          const diagResponse = await fetch(`${this.baseUrl}/email/send`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'X-ElasticEmail-ApiKey': this.apiKey
-            },
-            body: diagParams
-          });
-          
-          console.log(`📊 Rezultat email diagnostic: ${diagResponse.ok ? 'SUCCESS' : 'FAILURE'}`);
-        } catch (diagError) {
-          console.error(`❌ Eroare la trimiterea emailului de diagnosticare:`, diagError);
-        }
+        // Înregistrăm detalii despre eșec pentru depanare
+        console.error(`📝 Detalii eșec: Email către ${serviceProvider.email}, Subiect: ${uniqueSubject}`);
       }
       
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====\n`);
@@ -634,25 +578,9 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.error(`❌ Stack trace: ${error.stack}`);
       }
       
-      // Încercăm un alt mod de trimitere ca ultimă încercare
-      try {
-        console.log(`🔄 Încercare ultimă șansă folosind sendEmail...`);
-        const lastResortResult = await this.sendEmail(
-          serviceProvider.email,
-          `Mesaj nou de la ${senderName} [${messageId}]`,
-          `<p>Ați primit un mesaj nou de la ${senderName} referitor la "${requestOrOfferTitle}":</p><p>"${messageContent}"</p>`,
-          `Ați primit un mesaj nou de la ${senderName} referitor la "${requestOrOfferTitle}":\n\n"${messageContent}"`,
-          `[LAST_RESORT] ${messageId}`
-        );
-        
-        console.log(`📊 Rezultat încercare ultimă șansă: ${lastResortResult ? 'SUCCESS' : 'FAILURE'}`);
-        
-        if (lastResortResult) {
-          return true;
-        }
-      } catch (lastResortError) {
-        console.error(`❌ Și încercarea de ultimă șansă a eșuat:`, lastResortError);
-      }
+      // În caz de eroare, logăm informații detaliate pentru depanare
+      console.error(`📝 Detalii eroare completă:`, error);
+      console.error(`📝 Date trimitere: Email către ${serviceProvider?.email}, De la: ${senderName}, Titlu: ${requestOrOfferTitle}`);
       
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE =====\n`);
       return false;
