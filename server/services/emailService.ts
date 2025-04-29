@@ -21,6 +21,8 @@ export class EmailService {
   private static fromEmail = 'notificari@carvizio.ro'; // Adresa verificată pentru domeniul carvizio.ro
   private static fromName = 'Carvizio.ro';
   private static baseUrl = 'https://api.elasticemail.com/v2';
+  // Map pentru a stoca ID-urile mesajelor trimise recent pentru a preveni duplicarea
+  private static _sentMessageIds: Map<string, number>;
 
   static {
     console.log('EmailService initialization:');
@@ -422,9 +424,30 @@ export class EmailService {
     requestOrOfferTitle: string,
     messageId: string = `message_${Date.now()}`
   ): Promise<boolean> {
-    // Adăugăm un flag pentru a preveni executarea multiplă din cauza apelurilor asincrone
+    // FLAG LOCAL pentru blocare duplicare - folosim ID unic combinat pentru fiecare execuție
     const uniqueExecutionId = `msg_exec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Cache global - Folosim un Map static pentru a stoca ID-urile mesajelor trimise recent
+    // Aceasta oferă o protecție suplimentară împotriva duplicării în același proces
+    if (!this._sentMessageIds) {
+      this._sentMessageIds = new Map<string, number>();
+    }
+    
+    // Calculăm un identificator compus care include toate datele relevante pentru a identifica un email identic
+    const messageSignature = `${serviceProvider.email}_${senderName}_${messageId}`;
+    
+    // Verificăm dacă un mesaj identic a fost trimis recent (în ultimele 15 secunde)
+    const lastSentTime = this._sentMessageIds.get(messageSignature);
+    const now = Date.now();
+    if (lastSentTime && (now - lastSentTime < 15000)) {
+      console.log(`\n⚠️ PREVENIRE DUPLICARE: Mesaj similar către ${serviceProvider.email} deja trimis acum ${Math.round((now - lastSentTime)/1000)} secunde. ID: ${messageSignature}`);
+      console.log(`⏭️ Ignorăm al doilea apel pentru a evita duplicarea email-urilor.`);
+      return true; // Returnăm succes, dar nu trimitem de fapt un al doilea email
+    }
+    
+    // Înregistrăm în log începutul procesului
     console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====`);
+    console.log(`📝 ID Mesaj: ${messageId} | Execuție: ${uniqueExecutionId}`);
 
     try {
       console.log(`📊 Date furnizor servicii:`, JSON.stringify(serviceProvider, null, 2));
@@ -511,7 +534,7 @@ export class EmailService {
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
             <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
-            <!-- ID Execuție: ${execMessageId} - Folosit pentru prevenirea duplicării -->
+            <!-- ID Unic: ${execMessageId} - Previne duplicarea -->
           </div>
         </div>
       `;
@@ -533,6 +556,7 @@ Acest email a fost trimis automat de aplicația Carvizio.ro.
 Puteți dezactiva notificările prin email din setările contului dvs.
 
 © ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.
+ID unic: ${execMessageId}
       `;
 
       console.log(`🔄 Verificare API key Elastic Email...`);
@@ -547,16 +571,21 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
       console.log(`🔄 [${uniqueExecutionId}] Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
 
-      // TRIMITERE SIMPLIFICATĂ: UN SINGUR APEL LA TRIMITERE EMAIL
+      // UN SINGUR APEL LA TRIMITERE EMAIL - BLOCAT DE MUTEX PENTRU A PREVENI APELURI CONCURENTE
+      console.log(`🔒 [${uniqueExecutionId}] Marcăm mesajul ca fiind în curs de trimitere pentru a preveni duplicarea`);
+      // Înregistrăm mesajul ca fiind în curs de trimitere
+      this._sentMessageIds.set(messageSignature, now);
+      
       const startTime = Date.now();
       
-      // Trimitere directă cu un singur apel, păstrând rezultatul
+      // IMPORTANT: Aici este SINGURUL LOC din această metodă unde se face trimiterea email-ului,
+      // și este protejat împotriva duplicării prin control de concurență
       const emailResult = await this.sendEmail(
         serviceProvider.email, 
         uniqueSubject, 
         html, 
         text, 
-        execMessageId // folosim ID-ul unic de execuție
+        execMessageId
       );
       
       const endTime = Date.now();
@@ -569,6 +598,8 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       } else {
         console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
         console.error(`📝 Detalii eșec: Email către ${serviceProvider.email}, Subiect: ${uniqueSubject}`);
+        // Eliminăm mesajul din cache în caz de eșec pentru a permite reîncercarea
+        this._sentMessageIds.delete(messageSignature);
       }
 
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====\n`);
@@ -585,6 +616,9 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       // În caz de eroare, logăm informații detaliate pentru depanare
       console.error(`📝 Detalii eroare completă:`, error);
       console.error(`📝 Date trimitere: Email către ${serviceProvider?.email}, De la: ${senderName}, Titlu: ${requestOrOfferTitle}`);
+
+      // Eliminăm mesajul din cache în caz de eroare pentru a permite reîncercarea
+      this._sentMessageIds.delete(messageSignature);
 
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE [${uniqueExecutionId}] =====\n`);
       return false;
