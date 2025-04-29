@@ -542,7 +542,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
 
       console.log(`🔄 Trimitere email folosind metoda sendEmail...`);
       
-      // Folosim doar metoda sendEmail pentru a evita dublarea email-urilor
+      // Trimitem email-ul o singură dată
       const startTime = Date.now();
       const result = await this.sendEmail(
         serviceProvider.email, 
@@ -556,9 +556,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`⏱️ Durata trimitere email: ${endTime - startTime}ms`);
       console.log(`📊 Rezultat trimitere email: ${result ? 'SUCCESS' : 'FAILURE'}`);
       
-      const success = result;
-      
-      if (success) {
+      if (result) {
         console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${messageId}`);
       } else {
         console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${messageId}`);
@@ -568,7 +566,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       }
       
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) =====\n`);
-      return success;
+      return result;
     } catch (error) {
       console.error(`❌ EmailService.sendNewMessageNotification - Eroare generală:`, error);
       
