@@ -379,11 +379,12 @@ export default function NotificationPreferences() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => {
-                        // Afișăm o notificare locală de test în browser
+                        // Afișăm doar o notificare locală de test în browser - fără a trimite email
                         NotificationHelper.testNotification();
+                        // Nu folosim emiterea evenimentelor WebSocket pentru a preveni trimiterea de email-uri
                         toast({
                           title: "Notificare de test",
-                          description: "Notificarea de test a fost afișată în browser",
+                          description: "Notificarea de test a fost afișată doar în browser",
                         });
                       }}
                       className="w-full sm:w-auto bg-green-100 hover:bg-green-200 text-green-800"

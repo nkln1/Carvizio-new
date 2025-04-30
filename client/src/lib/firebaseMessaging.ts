@@ -351,45 +351,30 @@ class FirebaseMessaging {
    */
   private setupForegroundListener(): void {
     // Versiune simplificată care nu folosește Firebase Messaging
-    console.log(`[${this.userRole}] Înregistrând listener pentru notificări în prim-plan`);
-    
-    // Asigurăm că nu avem duplicate de event listeners
-    window.removeEventListener('app-notification', this.handleAppNotification);
+    console.log('Înregistrând listener alternativ pentru mesaje în prim-plan');
     
     // În loc să folosim Firebase Messaging, creem propriul nostru EventListener
-    window.addEventListener('app-notification', this.handleAppNotification);
-    
-    // Trimitem un eveniment de test pentru a verifica că listener-ul funcționează
-    console.log(`[${this.userRole}] Test listener notificări activ`);
-  }
-  
-  /**
-   * Manipulator pentru evenimentele de notificare (definit ca proprietate de clasă pentru a putea fi îndepărtat)
-   */
-  private handleAppNotification = (event: any) => {
-    console.log(`[${this.userRole}] Eveniment app-notification primit:`, event.detail);
-    
-    const payload = event.detail;
-    if (!payload) return;
-    
-    // Extragem datele din payload
-    const notificationTitle = payload.title || 'Notificare nouă';
-    const notificationOptions: NotificationOptions = {
-      body: payload.body || 'Aveți o notificare nouă',
-      icon: '/favicon.ico',
-      badge: '/favicon.ico',
-      tag: payload.tag || `${this.userRole}-${Date.now()}`, // Folosim role-ul pentru a evita conflictele
-      data: payload.data || { 
-        userRole: this.userRole,
-        userId: this.userId,
-        timestamp: Date.now()
-      },
-      vibrate: [200, 100, 200],
-      requireInteraction: true
-    };
+    window.addEventListener('app-notification', (event: any) => {
+      console.log('Eveniment app-notification declanșat:', event.detail);
+      
+      const payload = event.detail;
+      if (!payload) return;
+      
+      // Extragem datele din payload
+      const notificationTitle = payload.title || 'Notificare nouă';
+      const notificationOptions: NotificationOptions = {
+        body: payload.body || 'Aveți o notificare nouă',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: payload.tag || 'default',
+        data: payload.data || {},
+        vibrate: [200, 100, 200],
+        requireInteraction: true
+      };
 
-    // Afișăm notificarea
-    this.showNotification(notificationTitle, notificationOptions);
+      // Afișăm notificarea
+      this.showNotification(notificationTitle, notificationOptions);
+    });
   }
 
   /**
@@ -439,18 +424,9 @@ class FirebaseMessaging {
    * Curăță resursele și eliberează memoria
    */
   public cleanup(): void {
-    console.log(`[${this.userRole}] Curățare resurse notificări`);
-    
-    // Elimină event listener-ul pentru notificări
-    window.removeEventListener('app-notification', this.handleAppNotification);
-    
-    // Resetează starea
     this.fcmToken = null;
     this.userId = null;
     this.userRole = null;
-    this.swRegistration = null;
-    
-    console.log('Resurse notificări curățate');
   }
 }
 
