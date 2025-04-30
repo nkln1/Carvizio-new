@@ -248,7 +248,7 @@ export class EmailService {
       console.log(`   • ID Cerere: ${requestId}`);
 
       const subject = `Cerere nouă de la ${clientName}`;
-      
+
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
@@ -418,8 +418,9 @@ export class EmailService {
       console.log(`ID Ofertă: ${offerId}`);
 
       const subject = `Ofertă acceptată de ${clientName}`;
-      // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
-      const uniqueSubject = `${subject} [${offerId}]`;
+      // Nu mai adăugăm ID-ul în subiect
+      const uniqueSubject = subject;
+
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -751,9 +752,7 @@ ID unic: ${execMessageId}
             if (timestamp < cacheTimeout) {
               keysToDelete.push(key);
             }
-          });
-
-          // Ștergem intrările vechi
+          });          // Ștergem intrările vechi
           keysToDelete.forEach((key) => this._sentMessageIds.delete(key));
           console.log(
             `🧹 [Anti-duplicare] ${keysToDelete.length} intrări vechi eliminate`,
@@ -856,8 +855,8 @@ ID unic: ${execMessageId}
       );
 
       const subject = `Recenzie nouă de la ${clientName}`;
-      // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
-      const uniqueSubject = `${subject} [${reviewId}]`;
+      // Nu mai adăugăm ID-ul în subiect
+      const uniqueSubject = subject;
 
       // Generăm stele pentru rating
       const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
@@ -1013,7 +1012,7 @@ ID unic: ${execMessageId}
 
       const subject = `Mesaj nou de la ${senderName}`;
       // Nu mai adăugăm niciun ID în subiect, folosim subiectul simplu
-    const uniqueSubject = subject;
+      const uniqueSubject = subject;
 
       // Truncăm mesajul dacă este prea lung
       const truncatedMessage =
@@ -1155,8 +1154,8 @@ ID unic: ${uniqueExecutionId}
 
       const subject = `Ofertă nouă de la ${providerName}`;
 
-      // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
-      const uniqueSubject = `${subject} [${offerId}]`;
+      // Nu mai adăugăm ID-ul în subiect
+      const uniqueSubject = subject;
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
