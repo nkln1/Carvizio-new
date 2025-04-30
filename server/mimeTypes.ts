@@ -8,7 +8,7 @@ export function setCustomMimeTypes(app: Express) {
     const extension = path.extname(url.split('?')[0]).toLowerCase(); // Ignorăm parametrii query
 
     // Debugging pentru a vedea ce fișiere sunt cerute
-    if (url.includes('sw.js') || url.includes('.tsx') || url.includes('.ts')) {
+    if (url.includes('sw.js') || url.includes('.tsx') || url.includes('.ts') || url.includes('.js')) {
       console.log(`[MIME Type Debug] Requested: ${url}, extension: ${extension}`);
     }
 
@@ -45,8 +45,8 @@ export function setCustomMimeTypes(app: Express) {
         extension === '.mjs') {
       res.setHeader('Content-Type', 'application/javascript');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      
-      if (url.includes('sw.js') || url.includes('.tsx') || url.includes('.ts')) {
+
+      if (url.includes('sw.js') || url.includes('.tsx') || url.includes('.ts') || url.includes('.js')) {
         console.log(`[MIME Type] Set application/javascript for ${url}`);
       }
     }
@@ -56,11 +56,11 @@ export function setCustomMimeTypes(app: Express) {
     }
 
     // Asigurăm că Service Worker-ul și alte resurse importante nu sunt cache-uite
-    if (url.includes('sw.js') || url.includes('.tsx') || url.includes('.ts')) {
+    if (url.includes('sw.js') || url.includes('.tsx') || url.includes('.ts') || url.includes('.js')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      
+
       if (url.includes('sw.js')) {
         res.setHeader('Service-Worker-Allowed', '/');
       }
@@ -75,7 +75,7 @@ export function setCustomMimeTypes(app: Express) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
   });
-  
+
   // Asigurăm că sw.js este tratat corect ca JavaScript indiferent de extensie
   app.get('/sw.js', (req, res, next) => {
     res.setHeader('Content-Type', 'application/javascript');
