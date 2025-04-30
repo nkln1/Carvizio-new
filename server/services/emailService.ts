@@ -2,8 +2,8 @@
  * Serviciu pentru trimiterea notificărilor prin email folosind Elastic Email API
  */
 
-import fetch from 'node-fetch';
-import { type ServiceProvider, type Client } from '@shared/schema';
+import fetch from "node-fetch";
+import { type ServiceProvider, type Client } from "@shared/schema";
 
 // Tipuri pentru serviciul de email - conform documentație Elastic Email API v2
 interface EmailPayload {
@@ -18,18 +18,18 @@ interface EmailPayload {
 export class EmailService {
   // Definim proprietățile statice înainte de block-ul static pentru a evita accesul înainte de inițializare
   private static apiKey = process.env.ELASTIC_EMAIL_API_KEY;
-  private static fromEmail = 'notificari@carvizio.ro'; // Adresa verificată pentru domeniul carvizio.ro
-  private static fromName = 'Carvizio.ro';
-  private static baseUrl = 'https://api.elasticemail.com/v2';
+  private static fromEmail = "notificari@carvizio.ro"; // Adresa verificată pentru domeniul carvizio.ro
+  private static fromName = "Carvizio.ro";
+  private static baseUrl = "https://api.elasticemail.com/v2";
   // Map pentru a stoca ID-urile mesajelor trimise recent pentru a preveni duplicarea
   private static _sentMessageIds: Map<string, number>;
 
   static {
-    console.log('EmailService initialization:');
-    console.log('- API Key configured:', this.apiKey ? 'YES' : 'NO');
-    console.log('- From Email:', this.fromEmail);
-    console.log('- From Name:', this.fromName);
-    console.log('- API Base URL:', this.baseUrl);
+    console.log("EmailService initialization:");
+    console.log("- API Key configured:", this.apiKey ? "YES" : "NO");
+    console.log("- From Email:", this.fromEmail);
+    console.log("- From Name:", this.fromName);
+    console.log("- API Base URL:", this.baseUrl);
   }
 
   /**
@@ -78,7 +78,7 @@ export class EmailService {
     subject: string,
     htmlContent: string,
     textContent?: string,
-    messageId?: string
+    messageId?: string,
   ): Promise<boolean> {
     try {
       // Adăugăm un ID unic la subiect dacă este furnizat un messageId
@@ -87,9 +87,20 @@ export class EmailService {
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
-        console.error('API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY');
-        console.error(`📝 Variabile de mediu disponibile:`, Object.keys(process.env).filter(key => 
-          !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')).join(', '));
+        console.error(
+          "API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY",
+        );
+        console.error(
+          `📝 Variabile de mediu disponibile:`,
+          Object.keys(process.env)
+            .filter(
+              (key) =>
+                !key.includes("SECRET") &&
+                !key.includes("KEY") &&
+                !key.includes("TOKEN"),
+            )
+            .join(", "),
+        );
         return false;
       }
 
@@ -99,7 +110,7 @@ export class EmailService {
         From: this.fromEmail,
         FromName: this.fromName,
         Subject: finalSubject,
-        BodyHTML: htmlContent
+        BodyHTML: htmlContent,
       };
 
       // Adăugăm conținutul text dacă este furnizat
@@ -112,16 +123,16 @@ export class EmailService {
       Object.entries(payload).forEach(([key, value]) => {
         params.append(key.toLowerCase(), value);
       });
-      params.append('apikey', this.apiKey);
+      params.append("apikey", this.apiKey);
 
       // Trimitem cererea către API
       const response = await fetch(`${this.baseUrl}/email/send`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-ElasticEmail-ApiKey': this.apiKey
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-ElasticEmail-ApiKey": this.apiKey,
         },
-        body: params
+        body: params,
       });
 
       // Verificăm răspunsul
@@ -130,17 +141,25 @@ export class EmailService {
         // Verificăm și rezultatul dat de API-ul Elastic Email
         if (data.success) {
           // Email trimis cu succes
-          console.log(`✅ Email trimis cu succes către ${to} - Subject: ${finalSubject}`);
+          console.log(
+            `✅ Email trimis cu succes către ${to} - Subject: ${finalSubject}`,
+          );
           return true;
         } else {
           // API-ul a răspuns, dar nu a putut trimite email-ul
-          console.error(`❌ Eroare la trimiterea email-ului către ${to}:`, data.error || 'Eroare necunoscută de la API');
+          console.error(
+            `❌ Eroare la trimiterea email-ului către ${to}:`,
+            data.error || "Eroare necunoscută de la API",
+          );
           return false;
         }
       } else {
         // Cererea către API a eșuat
         const errorText = await response.text();
-        console.error(`❌ Eroare HTTP ${response.status} la trimiterea email-ului către ${to}:`, errorText);
+        console.error(
+          `❌ Eroare HTTP ${response.status} la trimiterea email-ului către ${to}:`,
+          errorText,
+        );
         return false;
       }
     } catch (error) {
@@ -166,36 +185,56 @@ export class EmailService {
     serviceProvider: any,
     requestTitle: string,
     clientName: string,
-    requestId: string | number = `request_${Date.now()}`
+    requestId: string | number = `request_${Date.now()}`,
   ): Promise<boolean> {
     try {
-      console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU CERERE NOUĂ =====`);
-      console.log(`📊 Date furnizor servicii:`, JSON.stringify(serviceProvider, null, 2));
+      console.log(
+        `\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU CERERE NOUĂ =====`,
+      );
+      console.log(
+        `📊 Date furnizor servicii:`,
+        JSON.stringify(serviceProvider, null, 2),
+      );
 
       // Validăm și normalizăm datele serviceProvider pentru a evita erorile
       if (!serviceProvider) {
-        console.error(`❌ EmailService.sendNewRequestNotification - serviceProvider este null sau undefined`);
+        console.error(
+          `❌ EmailService.sendNewRequestNotification - serviceProvider este null sau undefined`,
+        );
         return false;
       }
 
       // Verificăm dacă serviceProvider este șir de caractere (eroare posibilă)
-      if (typeof serviceProvider === 'string') {
-        console.error(`❌ EmailService.sendNewRequestNotification - serviceProvider este șir de caractere în loc de obiect: "${serviceProvider}"`);
+      if (typeof serviceProvider === "string") {
+        console.error(
+          `❌ EmailService.sendNewRequestNotification - serviceProvider este șir de caractere în loc de obiect: "${serviceProvider}"`,
+        );
         return false;
       }
 
       // Normalizăm numele companiei (verificăm toate formatele posibile)
-      const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
+      const companyName =
+        serviceProvider.companyName ||
+        serviceProvider.company_name ||
+        "Service Auto";
 
       // Verificăm dacă avem un email valid
       if (!serviceProvider.email) {
-        console.error(`❌ EmailService.sendNewRequestNotification - Email lipsă pentru service provider`, serviceProvider);
+        console.error(
+          `❌ EmailService.sendNewRequestNotification - Email lipsă pentru service provider`,
+          serviceProvider,
+        );
         return false;
       }
 
       // Validăm formatul de email
-      if (typeof serviceProvider.email !== 'string' || !serviceProvider.email.includes('@')) {
-        console.error(`❌ EmailService.sendNewRequestNotification - Email invalid pentru service provider: "${serviceProvider.email}"`);
+      if (
+        typeof serviceProvider.email !== "string" ||
+        !serviceProvider.email.includes("@")
+      ) {
+        console.error(
+          `❌ EmailService.sendNewRequestNotification - Email invalid pentru service provider: "${serviceProvider.email}"`,
+        );
         return false;
       }
 
@@ -224,7 +263,7 @@ export class EmailService {
             </div>
             <p style="font-size: 16px;">Puteți vizualiza detaliile complete ale cererii și răspunde din contul dvs.</p>
             <div style="text-align: center; margin: 25px 0;">
-              <a href="https://auto-service-app.replit.app/service-dashboard?tab=cereri" 
+              <a href="https://carvizio.ro/service-dashboard" 
                  style="background-color: #4f46e5; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Vezi cererea
               </a>
@@ -235,7 +274,7 @@ export class EmailService {
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
-                <a href="https://auto-service-app.replit.app/service-dashboard?tab=account" style="color: #4f46e5; text-decoration: none;">
+                <a href="https://carvizio.ro/service-dashboard" style="color: #4f46e5; text-decoration: none;">
                   setările contului dvs
                 </a>.
               </p>
@@ -259,7 +298,7 @@ export class EmailService {
   ${requestTitle}
 
   Puteți vizualiza detaliile complete ale cererii și răspunde accesând: 
-  https://auto-service-app.replit.app/service-dashboard?tab=cereri
+  https://carvizio.ro/service-dashboard
 
   Acest email a fost trimis automat de aplicația Carvizio.ro.
   Puteți dezactiva notificările prin email din setările contului dvs.
@@ -269,34 +308,58 @@ export class EmailService {
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
-        console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
-        console.error(`📝 Variabile de mediu disponibile:`, Object.keys(process.env).filter(key => 
-          !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')).join(', '));
+        console.error(
+          `❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`,
+        );
+        console.error(
+          `📝 Variabile de mediu disponibile:`,
+          Object.keys(process.env)
+            .filter(
+              (key) =>
+                !key.includes("SECRET") &&
+                !key.includes("KEY") &&
+                !key.includes("TOKEN"),
+            )
+            .join(", "),
+        );
         return false;
       }
 
-      console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
-      console.log(`🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`);
+      console.log(
+        `✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : "N/A"}`,
+      );
+      console.log(
+        `🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
+      );
 
       // Trimitem email-ul folosind noul parametru de debugging
       const result = await this.sendEmail(
-        serviceProvider.email, 
-        subject, 
-        html, 
-        text, 
-        String(requestId)
+        serviceProvider.email,
+        subject,
+        html,
+        text,
+        String(requestId),
       );
 
       if (result) {
-        console.log(`✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`);
+        console.log(
+          `✅ EmailService.sendNewRequestNotification - Email trimis cu succes către ${serviceProvider.email} pentru cererea ${requestId}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewRequestNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}`);
+        console.error(
+          `❌ EmailService.sendNewRequestNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru cererea ${requestId}`,
+        );
       }
 
-      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU CERERE NOUĂ =====\n`);
+      console.log(
+        `🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU CERERE NOUĂ =====\n`,
+      );
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului pentru cererea ${requestId}:`, error);
+      console.error(
+        `❌ EmailService.sendNewRequestNotification - Eroare la trimiterea email-ului pentru cererea ${requestId}:`,
+        error,
+      );
 
       // Adăugăm detalii despre eroare pentru debugging
       if (error instanceof Error) {
@@ -320,26 +383,35 @@ export class EmailService {
     serviceProvider: any,
     offerTitle: string,
     clientName: string,
-    offerId: string | number = `offer_${Date.now()}`
+    offerId: string | number = `offer_${Date.now()}`,
   ): Promise<boolean> {
     try {
       // Validăm și normalizăm datele serviceProvider pentru a evita erorile
       if (!serviceProvider) {
-        console.error(`❌ EmailService.sendOfferAcceptedNotification - serviceProvider este null sau undefined`);
+        console.error(
+          `❌ EmailService.sendOfferAcceptedNotification - serviceProvider este null sau undefined`,
+        );
         return false;
       }
 
       // Normalizăm numele companiei (verificăm toate formatele posibile)
-      const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
+      const companyName =
+        serviceProvider.companyName ||
+        serviceProvider.company_name ||
+        "Service Auto";
 
       // Validăm și normalizăm email-ul
-      if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
-        console.error(`❌ EmailService.sendOfferAcceptedNotification - Email invalid pentru service provider: "${serviceProvider.email}"`);
+      if (!serviceProvider.email || !serviceProvider.email.includes("@")) {
+        console.error(
+          `❌ EmailService.sendOfferAcceptedNotification - Email invalid pentru service provider: "${serviceProvider.email}"`,
+        );
         return false;
       }
 
       const debugInfo = `[Ofertă Acceptată] Client: ${clientName}, Titlu: ${offerTitle}, ID: ${offerId}`;
-      console.log(`=== EmailService.sendOfferAcceptedNotification - Trimitere notificare ofertă acceptată ===`);
+      console.log(
+        `=== EmailService.sendOfferAcceptedNotification - Trimitere notificare ofertă acceptată ===`,
+      );
       console.log(`Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`Client: ${clientName}`);
       console.log(`Titlu ofertă: ${offerTitle}`);
@@ -359,7 +431,7 @@ export class EmailService {
           </div>
           <p>Puteți contacta clientul și continua procesul.</p>
           <p>
-            <a href="https://auto-service-app.replit.app/service-dashboard?tab=oferte&status=acceptate" 
+            <a href="https://carvizio.ro/service-dashboard" 
               style="background-color: #38a169; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
               Vezi oferta acceptată
             </a>
@@ -375,28 +447,37 @@ export class EmailService {
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
-        console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
+        console.error(
+          `❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`,
+        );
         return false;
       }
 
       // Trimitem email-ul folosind noul parametru de debugging
       const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
+        serviceProvider.email,
+        uniqueSubject,
+        html,
         undefined, // text content
-        debugInfo // info debugging
+        debugInfo, // info debugging
       );
 
       if (result) {
-        console.log(`✅ EmailService.sendOfferAcceptedNotification - Email trimis cu succes către ${serviceProvider.email} pentru oferta ${offerId}`);
+        console.log(
+          `✅ EmailService.sendOfferAcceptedNotification - Email trimis cu succes către ${serviceProvider.email} pentru oferta ${offerId}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendOfferAcceptedNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId}`);
+        console.error(
+          `❌ EmailService.sendOfferAcceptedNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId}`,
+        );
       }
 
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendOfferAcceptedNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId}:`, error);
+      console.error(
+        `❌ EmailService.sendOfferAcceptedNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru oferta ${offerId}:`,
+        error,
+      );
 
       // Adăugăm detalii despre eroare pentru debugging
       if (error instanceof Error) {
@@ -422,68 +503,94 @@ export class EmailService {
     messageContent: string,
     senderName: string,
     requestOrOfferTitle: string,
-    messageId: string = `message_${Date.now()}`
+    messageId: string = `message_${Date.now()}`,
   ): Promise<boolean> {
     // CONTROL STRICT ANTI-DUPLICARE: Folosim email+messageId+timestamp ca semnătură unică
     if (!this._sentMessageIds) {
       this._sentMessageIds = new Map<string, number>();
-      console.log(`✅ [Anti-duplicare] Inițializare cache prevenire duplicare email-uri`);
+      console.log(
+        `✅ [Anti-duplicare] Inițializare cache prevenire duplicare email-uri`,
+      );
     }
-    
+
     // IMPORTANT: Includerea messageId original în semnătură
     // Acest id ar trebui să fie unic per mesaj în baza de date
     const messageSignature = `MSG_${serviceProvider.email}_${messageId}`;
-    
+
     // Verificăm dacă am trimis deja acest mesaj specific (cache cu păstrare mai lungă - 2 minute)
     const now = Date.now();
     const lastSentTime = this._sentMessageIds.get(messageSignature);
     const DUPLICATE_PREVENTION_WINDOW = 120000; // 2 minute
-    
-    if (lastSentTime && (now - lastSentTime < DUPLICATE_PREVENTION_WINDOW)) {
-      const secondsAgo = Math.round((now - lastSentTime)/1000);
-      console.log(`\n🛑 BLOCARE DUPLICARE: Mesaj identic către ${serviceProvider.email} deja trimis acum ${secondsAgo} secunde.`);
+
+    if (lastSentTime && now - lastSentTime < DUPLICATE_PREVENTION_WINDOW) {
+      const secondsAgo = Math.round((now - lastSentTime) / 1000);
+      console.log(
+        `\n🛑 BLOCARE DUPLICARE: Mesaj identic către ${serviceProvider.email} deja trimis acum ${secondsAgo} secunde.`,
+      );
       console.log(`🔒 Signature: ${messageSignature}`);
       console.log(`⏭️ Email blocat pentru prevenirea duplicării.`);
       return true; // Simulăm succes pentru a nu întrerupe fluxul aplicației
     }
-    
+
     // Blocăm imediat această semnătură pentru a preveni procesare paralelă
     this._sentMessageIds.set(messageSignature, now);
-    console.log(`🔐 [Anti-duplicare] Înregistrat ID mesaj: ${messageSignature}`);
-    
+    console.log(
+      `🔐 [Anti-duplicare] Înregistrat ID mesaj: ${messageSignature}`,
+    );
+
     // Adăugăm un ID de execuție unic pentru logging - nu afectează logica de cache
     const uniqueExecutionId = `exec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    
+
     // Înregistrăm în log începutul procesului
-    console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====`);
+    console.log(
+      `\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====`,
+    );
     console.log(`📝 ID Mesaj: ${messageId} | Execuție: ${uniqueExecutionId}`);
 
     try {
-      console.log(`📊 Date furnizor servicii:`, JSON.stringify(serviceProvider, null, 2));
+      console.log(
+        `📊 Date furnizor servicii:`,
+        JSON.stringify(serviceProvider, null, 2),
+      );
 
       // Validare robustă a datelor de intrare
       if (!serviceProvider) {
-        console.error(`❌ EmailService.sendNewMessageNotification - serviceProvider este null sau undefined`);
+        console.error(
+          `❌ EmailService.sendNewMessageNotification - serviceProvider este null sau undefined`,
+        );
         return false;
       }
 
       // Verificăm dacă serviceProvider este șir de caractere (eroare posibilă)
-      if (typeof serviceProvider === 'string') {
-        console.error(`❌ EmailService.sendNewMessageNotification - serviceProvider este șir de caractere în loc de obiect: "${serviceProvider}"`);
+      if (typeof serviceProvider === "string") {
+        console.error(
+          `❌ EmailService.sendNewMessageNotification - serviceProvider este șir de caractere în loc de obiect: "${serviceProvider}"`,
+        );
         return false;
       }
 
       // Normalizăm numele companiei (verificăm toate formatele posibile)
-      const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
+      const companyName =
+        serviceProvider.companyName ||
+        serviceProvider.company_name ||
+        "Service Auto";
 
       // Verificăm dacă avem un email valid
       if (!serviceProvider.email) {
-        console.error(`❌ EmailService.sendNewMessageNotification - Email lipsă pentru service provider`, serviceProvider);
+        console.error(
+          `❌ EmailService.sendNewMessageNotification - Email lipsă pentru service provider`,
+          serviceProvider,
+        );
         return false;
       }
 
-      if (typeof serviceProvider.email !== 'string' || !serviceProvider.email.includes('@')) {
-        console.error(`❌ EmailService.sendNewMessageNotification - Email invalid pentru service provider: "${serviceProvider.email}"`);
+      if (
+        typeof serviceProvider.email !== "string" ||
+        !serviceProvider.email.includes("@")
+      ) {
+        console.error(
+          `❌ EmailService.sendNewMessageNotification - Email invalid pentru service provider: "${serviceProvider.email}"`,
+        );
         return false;
       }
 
@@ -499,7 +606,9 @@ export class EmailService {
       console.log(`   • Expeditor: ${senderName}`);
       console.log(`   • Referitor la: ${requestOrOfferTitle}`);
       console.log(`   • ID Mesaj: ${execMessageId}`);
-      console.log(`   • Conținut mesaj: "${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}"`);
+      console.log(
+        `   • Conținut mesaj: "${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}"`,
+      );
 
       // Construim subiectul fără identificator în textul vizibil
       const subject = `Mesaj nou de la ${senderName}`;
@@ -507,26 +616,27 @@ export class EmailService {
       const uniqueSubject = subject;
 
       // Truncăm mesajul dacă este prea lung
-      const truncatedMessage = messageContent.length > 150 
-        ? messageContent.substring(0, 147) + '...' 
-        : messageContent;
+      const truncatedMessage =
+        messageContent.length > 150
+          ? messageContent.substring(0, 147) + "..."
+          : messageContent;
 
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-          <div style="background-color: #f6ad55; padding: 20px; text-align: center;">
+          <div style="background-color: #00aff5; padding: 20px; text-align: center;">
             <h2 style="color: white; margin: 0;">Mesaj nou</h2>
           </div>
           <div style="padding: 20px;">
             <p style="font-size: 16px;">Bună ziua, <strong>${companyName}</strong>,</p>
             <p style="font-size: 16px;">Ați primit un mesaj nou de la <strong>${senderName}</strong> referitor la "${requestOrOfferTitle}":</p>
-            <div style="background-color: #f7fafc; border-left: 4px solid #f6ad55; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <div style="background-color: #f7fafc; border-left: 4px solid #00aff5; padding: 15px; margin: 20px 0; border-radius: 4px;">
               <p style="margin: 0; font-style: italic;">"${truncatedMessage}"</p>
             </div>
             <p style="font-size: 16px;">Puteți vizualiza conversația completă și răspunde din contul dvs.</p>
             <div style="text-align: center; margin: 25px 0;">
-              <a href="https://auto-service-app.replit.app/service-dashboard?tab=mesaje" 
-                 style="background-color: #f6ad55; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+              <a href="https://carvizio.ro/service-dashboard" 
+                 style="background-color: #00aff5; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Vezi mesajele
               </a>
             </div>
@@ -536,7 +646,7 @@ export class EmailService {
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
-                <a href="https://auto-service-app.replit.app/service-dashboard?tab=account" style="color: #f6ad55; text-decoration: none;">
+                <a href="https://carvizio.ro/service-dashboard" style="color: #00aff5; text-decoration: none;">
                   setările contului dvs
                 </a>.
               </p>
@@ -560,7 +670,7 @@ Ați primit un mesaj nou de la ${senderName} referitor la "${requestOrOfferTitle
 "${truncatedMessage}"
 
 Puteți vizualiza conversația completă și răspunde accesând: 
-https://auto-service-app.replit.app/service-dashboard?tab=mesaje
+https://carvizio.ro/service-dashboard
 
 Acest email a fost trimis automat de aplicația Carvizio.ro.
 Puteți dezactiva notificările prin email din setările contului dvs.
@@ -572,71 +682,103 @@ ID unic: ${execMessageId}
       console.log(`🔄 Verificare API key Elastic Email...`);
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
-        console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
-        console.error(`📝 Variabile de mediu disponibile:`, Object.keys(process.env).filter(key => 
-          !key.includes('SECRET') && !key.includes('KEY') && !key.includes('TOKEN')).join(', '));
+        console.error(
+          `❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`,
+        );
+        console.error(
+          `📝 Variabile de mediu disponibile:`,
+          Object.keys(process.env)
+            .filter(
+              (key) =>
+                !key.includes("SECRET") &&
+                !key.includes("KEY") &&
+                !key.includes("TOKEN"),
+            )
+            .join(", "),
+        );
         return false;
       }
 
-      console.log(`✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : 'N/A'}`);
-      console.log(`🔄 [${uniqueExecutionId}] Trimitere email pentru mesaj nou către: ${serviceProvider.email}`);
+      console.log(
+        `✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : "N/A"}`,
+      );
+      console.log(
+        `🔄 [${uniqueExecutionId}] Trimitere email pentru mesaj nou către: ${serviceProvider.email}`,
+      );
 
       // UN SINGUR APEL LA TRIMITERE EMAIL - BLOCAT DE MUTEX PENTRU A PREVENI APELURI CONCURENTE
-      console.log(`🔒 [${uniqueExecutionId}] Marcăm mesajul ca fiind în curs de trimitere pentru a preveni duplicarea`);
+      console.log(
+        `🔒 [${uniqueExecutionId}] Marcăm mesajul ca fiind în curs de trimitere pentru a preveni duplicarea`,
+      );
       // Înregistrăm mesajul ca fiind în curs de trimitere
       this._sentMessageIds.set(messageSignature, now);
-      
+
       const startTime = Date.now();
-      
+
       // IMPORTANT: Aici este SINGURUL LOC din această metodă unde se face trimiterea email-ului,
       // și este protejat împotriva duplicării prin control de concurență
       const emailResult = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
-        text, 
-        null // Eliminare ID din subiect, păstrăm controlul de duplicare prin cache
+        serviceProvider.email,
+        uniqueSubject,
+        html,
+        text,
+        null,
       );
-      
+
       const endTime = Date.now();
 
       console.log(`⏱️ Durata trimitere email: ${endTime - startTime}ms`);
-      console.log(`📊 Rezultat trimitere email: ${emailResult ? 'SUCCESS' : 'FAILURE'}`);
+      console.log(
+        `📊 Rezultat trimitere email: ${emailResult ? "SUCCESS" : "FAILURE"}`,
+      );
 
       if (emailResult) {
-        console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
+        console.log(
+          `✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${execMessageId}`,
+        );
         // Păstrăm ID-ul în cache doar în caz de succes
         this._sentMessageIds.set(messageSignature, now);
-        
+
         // Curățare automată cache pentru a preveni memory leak
         if (this._sentMessageIds.size > 1000) {
           console.log(`🧹 [Anti-duplicare] Curățare cache (>1000 intrări)`);
-          
+
           const keysToDelete = [];
           const cacheTimeout = now - DUPLICATE_PREVENTION_WINDOW;
-          
+
           // Identificăm intrările vechi
           this._sentMessageIds.forEach((timestamp, key) => {
             if (timestamp < cacheTimeout) {
               keysToDelete.push(key);
             }
           });
-          
+
           // Ștergem intrările vechi
-          keysToDelete.forEach(key => this._sentMessageIds.delete(key));
-          console.log(`🧹 [Anti-duplicare] ${keysToDelete.length} intrări vechi eliminate`);
+          keysToDelete.forEach((key) => this._sentMessageIds.delete(key));
+          console.log(
+            `🧹 [Anti-duplicare] ${keysToDelete.length} intrări vechi eliminate`,
+          );
         }
       } else {
-        console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
-        console.error(`📝 Detalii eșec: Email către ${serviceProvider.email}, Subiect: ${uniqueSubject}`);
+        console.error(
+          `❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${execMessageId}`,
+        );
+        console.error(
+          `📝 Detalii eșec: Email către ${serviceProvider.email}, Subiect: ${uniqueSubject}`,
+        );
         // Eliminăm mesajul din cache în caz de eșec pentru a permite reîncercarea
         this._sentMessageIds.delete(messageSignature);
       }
 
-      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====\n`);
+      console.log(
+        `🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====\n`,
+      );
       return emailResult;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewMessageNotification [${uniqueExecutionId}] - Eroare generală:`, error);
+      console.error(
+        `❌ EmailService.sendNewMessageNotification [${uniqueExecutionId}] - Eroare generală:`,
+        error,
+      );
 
       // Adăugăm detalii despre eroare pentru debugging
       if (error instanceof Error) {
@@ -646,13 +788,19 @@ ID unic: ${execMessageId}
 
       // În caz de eroare, logăm informații detaliate pentru depanare
       console.error(`📝 Detalii eroare completă:`, error);
-      console.error(`📝 Date trimitere: Email către ${serviceProvider?.email}, De la: ${senderName}, Titlu: ${requestOrOfferTitle}`);
+      console.error(
+        `📝 Date trimitere: Email către ${serviceProvider?.email}, De la: ${senderName}, Titlu: ${requestOrOfferTitle}`,
+      );
 
       // IMPORTANT: Eliminăm mesajul din cache în caz de eroare pentru a permite reîncercarea
       this._sentMessageIds.delete(messageSignature);
-      console.log(`🔓 [Anti-duplicare] Cache eliberat pentru ID: ${messageSignature} după eroare`);
+      console.log(
+        `🔓 [Anti-duplicare] Cache eliberat pentru ID: ${messageSignature} după eroare`,
+      );
 
-      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE [${uniqueExecutionId}] =====\n`);
+      console.log(
+        `🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE [${uniqueExecutionId}] =====\n`,
+      );
       return false;
     }
   }
@@ -670,45 +818,57 @@ ID unic: ${execMessageId}
     clientName: string,
     rating: number,
     reviewContent: string,
-    reviewId: string | number = `review_${Date.now()}`
+    reviewId: string | number = `review_${Date.now()}`,
   ): Promise<boolean> {
     try {
       // Validăm și normalizăm datele serviceProvider pentru a evita erorile
       if (!serviceProvider) {
-        console.error(`❌ EmailService.sendNewReviewNotification - serviceProvider este null sau undefined`);
+        console.error(
+          `❌ EmailService.sendNewReviewNotification - serviceProvider este null sau undefined`,
+        );
         return false;
       }
 
       // Normalizăm numele companiei (verificăm toate formatele posibile)
-      const companyName = serviceProvider.companyName || serviceProvider.company_name || "Service Auto";
+      const companyName =
+        serviceProvider.companyName ||
+        serviceProvider.company_name ||
+        "Service Auto";
 
       // Validăm și normalizăm email-ul
-      if (!serviceProvider.email || !serviceProvider.email.includes('@')) {
-        console.error(`❌ EmailService.sendNewReviewNotification - Email invalid pentru service provider: "${serviceProvider.email}"`);
+      if (!serviceProvider.email || !serviceProvider.email.includes("@")) {
+        console.error(
+          `❌ EmailService.sendNewReviewNotification - Email invalid pentru service provider: "${serviceProvider.email}"`,
+        );
         return false;
       }
 
       const debugInfo = `[Recenzie Nouă] Client: ${clientName}, Rating: ${rating}/5, ID: ${reviewId}`;
-      console.log(`=== EmailService.sendNewReviewNotification - Trimitere notificare recenzie nouă ===`);
+      console.log(
+        `=== EmailService.sendNewReviewNotification - Trimitere notificare recenzie nouă ===`,
+      );
       console.log(`Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`Client: ${clientName}`);
       console.log(`Rating: ${rating}/5`);
       console.log(`ID Recenzie: ${reviewId}`);
-      console.log(`Conținut recenzie (primele 50 caractere): ${reviewContent?.substring(0, 50)}${reviewContent?.length > 50 ? '...' : ''}`);
+      console.log(
+        `Conținut recenzie (primele 50 caractere): ${reviewContent?.substring(0, 50)}${reviewContent?.length > 50 ? "..." : ""}`,
+      );
 
       const subject = `Recenzie nouă de la ${clientName}`;
       // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
       const uniqueSubject = `${subject} [${reviewId}]`;
 
       // Generăm stele pentru rating
-      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+      const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
 
       // Verificăm dacă reviewContent există și apoi truncăm
       let truncatedReview = "";
       if (reviewContent) {
-        truncatedReview = reviewContent.length > 200 
-          ? reviewContent.substring(0, 197) + '...' 
-          : reviewContent;
+        truncatedReview =
+          reviewContent.length > 200
+            ? reviewContent.substring(0, 197) + "..."
+            : reviewContent;
       } else {
         truncatedReview = "(Fără text recenzie)";
       }
@@ -724,7 +884,7 @@ ID unic: ${execMessageId}
           </div>
           <p>Puteți vizualiza toate recenziile din contul dvs.</p>
           <p>
-            <a href="https://auto-service-app.replit.app/service-dashboard?tab=recenzii" 
+            <a href="https://carvizio.ro/service-dashboard" 
                style="background-color: #d69e2e; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">
               Vezi recenziile
             </a>
@@ -738,32 +898,43 @@ ID unic: ${execMessageId}
         </div>
       `;
 
-      console.log(`🔄 Trimitere email pentru recenzie nouă către: ${serviceProvider.email}`);
+      console.log(
+        `🔄 Trimitere email pentru recenzie nouă către: ${serviceProvider.email}`,
+      );
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
-        console.error(`❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`);
+        console.error(
+          `❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`,
+        );
         return false;
       }
 
       // Trimitem email-ul folosind noul parametru de debugging
       const result = await this.sendEmail(
-        serviceProvider.email, 
-        uniqueSubject, 
-        html, 
+        serviceProvider.email,
+        uniqueSubject,
+        html,
         undefined, // text content
-        debugInfo // info debugging
+        debugInfo, // info debugging
       );
 
       if (result) {
-        console.log(`✅ EmailService.sendNewReviewNotification - Email trimis cu succes către ${serviceProvider.email} pentru recenzia ${reviewId}`);
+        console.log(
+          `✅ EmailService.sendNewReviewNotification - Email trimis cu succes către ${serviceProvider.email} pentru recenzia ${reviewId}`,
+        );
       } else {
-        console.error(`❌ EmailService.sendNewReviewNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId}`);
+        console.error(
+          `❌ EmailService.sendNewReviewNotification - Eșec la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId}`,
+        );
       }
 
       return result;
     } catch (error) {
-      console.error(`❌ EmailService.sendNewReviewNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId}:`, error);
+      console.error(
+        `❌ EmailService.sendNewReviewNotification - Eroare la trimiterea email-ului către ${serviceProvider.email} pentru recenzia ${reviewId}:`,
+        error,
+      );
 
       // Adăugăm detalii despre eroare pentru debugging
       if (error instanceof Error) {
@@ -791,42 +962,48 @@ ID unic: ${execMessageId}
     messageContent: string,
     senderName: string,
     requestOrOfferTitle: string,
-    messageId: string = `message_client_${Date.now()}`
+    messageId: string = `message_client_${Date.now()}`,
   ): Promise<boolean> {
     try {
       const debugInfo = `[Mesaj Nou pentru CLIENT] De la: ${senderName}, Cerere/Ofertă: ${requestOrOfferTitle}, ID Mesaj: ${messageId}`;
-      console.log(`\n💬 === EmailService.sendNewMessageNotificationToClient - Trimitere notificare mesaj nou către CLIENT ===`);
+      console.log(
+        `\n💬 === EmailService.sendNewMessageNotificationToClient - Trimitere notificare mesaj nou către CLIENT ===`,
+      );
       console.log(`📧 Destinatar: ${client.name} (${client.email})`);
       console.log(`📤 Expeditor: ${senderName}`);
       console.log(`📌 Referitor la: ${requestOrOfferTitle}`);
       console.log(`🔢 ID Mesaj: ${messageId}`);
-      console.log(`📝 Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}`);
+      console.log(
+        `📝 Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}`,
+      );
 
       const subject = `Mesaj nou de la ${senderName}`;
 
-      // Nu mai adăugăm ID-ul în subiect, păstrăm subiectul simplu
-      const uniqueSubject = subject;
+      // CLIENT
+      // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
+      const uniqueSubject = `${subject}`;
 
       // Truncăm mesajul dacă este prea lung
-      const truncatedMessage = messageContent.length > 150 
-        ? messageContent.substring(0, 147) + '...' 
-        : messageContent;
+      const truncatedMessage =
+        messageContent.length > 150
+          ? messageContent.substring(0, 147) + "..."
+          : messageContent;
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-          <div style="background-color: #3b82f6; padding: 20px; text-align: center;">
+          <div style="background-color: #00aff5; padding: 20px; text-align: center;">
             <h2 style="color: white; margin: 0;">Mesaj nou</h2>
           </div>
           <div style="padding: 20px;">
             <p style="font-size: 16px;">Bună ziua, ${client.name},</p>
             <p style="font-size: 16px;">Ați primit un mesaj nou de la <strong>${senderName}</strong> referitor la "${requestOrOfferTitle}":</p>
-            <div style="background-color: #f7fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <div style="background-color: #f7fafc; border-left: 4px solid #00aff5; padding: 15px; margin: 20px 0; border-radius: 4px;">
               <p style="margin: 0; font-style: italic;">"${truncatedMessage}"</p>
             </div>
             <p style="font-size: 16px;">Puteți vizualiza conversația completă și răspunde din contul dvs.</p>
             <div style="text-align: center; margin: 25px 0;">
-              <a href="https://auto-service-app.replit.app/client-dashboard?tab=messages" 
-                 style="background-color: #3b82f6; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
+              <a href="https://carvizio.ro/dashboard" 
+                 style="background-color: #00aff5; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Vezi mesajele
               </a>
             </div>
@@ -836,7 +1013,7 @@ ID unic: ${execMessageId}
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
-                <a href="https://auto-service-app.replit.app/client-dashboard?tab=account" style="color: #3b82f6; text-decoration: none;">
+                <a href="https://carvizio.ro/dashboard" style="color: #00aff5; text-decoration: none;">
                   setările contului dvs
                 </a>.
               </p>
@@ -851,16 +1028,21 @@ ID unic: ${execMessageId}
 
       // Trimitem email-ul folosind noul parametru de debugging
       const result = await this.sendEmail(
-        client.email, 
-        uniqueSubject, 
-        html, 
+        client.email,
+        uniqueSubject,
+        html,
         undefined, // text content
-        null // Eliminăm ID-ul din subiectul email-ului
+        null,
       );
-      console.log(`💬 EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`);
+      console.log(
+        `💬 EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`,
+      );
       return result;
     } catch (error) {
-      console.error(`💬 EmailService.sendNewMessageNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}:`, error);
+      console.error(
+        `💬 EmailService.sendNewMessageNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}:`,
+        error,
+      );
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
     }
@@ -880,11 +1062,13 @@ ID unic: ${execMessageId}
     offerTitle: string,
     providerName: string,
     requestTitle: string,
-    offerId: string = `offer_${Date.now()}`
+    offerId: string = `offer_${Date.now()}`,
   ): Promise<boolean> {
     try {
       const debugInfo = `[Ofertă Nouă pentru CLIENT] De la: ${providerName}, Ofertă: ${offerTitle}, Cerere: ${requestTitle}, ID: ${offerId}`;
-      console.log(`\n📋 === EmailService.sendNewOfferNotificationToClient - Trimitere notificare ofertă nouă către CLIENT ===`);
+      console.log(
+        `\n📋 === EmailService.sendNewOfferNotificationToClient - Trimitere notificare ofertă nouă către CLIENT ===`,
+      );
       console.log(`📧 Destinatar: ${client.name} (${client.email})`);
       console.log(`📤 Service Provider: ${providerName}`);
       console.log(`📌 Titlu ofertă: ${offerTitle}`);
@@ -909,7 +1093,7 @@ ID unic: ${execMessageId}
             </div>
             <p style="font-size: 16px;">Puteți vizualiza detaliile complete ale ofertei și răspunde din contul dvs.</p>
             <div style="text-align: center; margin: 25px 0;">
-              <a href="https://auto-service-app.replit.app/client-dashboard?tab=offers" 
+              <a href="https://carvizio.ro/dashboard" 
                  style="background-color: #10b981; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Vezi oferta
               </a>
@@ -920,7 +1104,7 @@ ID unic: ${execMessageId}
               </p>
               <p style="color: #718096; font-size: 14px; margin-top: 0;">
                 Puteți dezactiva notificările prin email din 
-                <a href="https://auto-service-app.replit.app/client-dashboard?tab=account" style="color: #10b981; text-decoration: none;">
+                <a href="https://carvizio.ro/dashboard" style="color: #10b981; text-decoration: none;">
                   setările contului dvs
                 </a>.
               </p>
@@ -935,16 +1119,21 @@ ID unic: ${execMessageId}
 
       // Trimitem email-ul folosind parametrul de debugging
       const result = await this.sendEmail(
-        client.email, 
-        uniqueSubject, 
-        html, 
+        client.email,
+        uniqueSubject,
+        html,
         undefined, // text content
-        debugInfo // info debugging
+        debugInfo, // info debugging
       );
-      console.log(`📋 EmailService.sendNewOfferNotificationToClient - Email trimis cu succes către ${client.email} pentru oferta ${offerId}`);
+      console.log(
+        `📋 EmailService.sendNewOfferNotificationToClient - Email trimis cu succes către ${client.email} pentru oferta ${offerId}`,
+      );
       return result;
     } catch (error) {
-      console.error(`📋 EmailService.sendNewOfferNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru oferta ${offerId}:`, error);
+      console.error(
+        `📋 EmailService.sendNewOfferNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru oferta ${offerId}:`,
+        error,
+      );
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
     }
