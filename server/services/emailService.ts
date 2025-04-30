@@ -964,10 +964,44 @@ ID unic: ${execMessageId}
     requestOrOfferTitle: string,
     messageId: string = `message_client_${Date.now()}`,
   ): Promise<boolean> {
-    try {
-      const debugInfo = `[Mesaj Nou pentru CLIENT] De la: ${senderName}, Cerere/Ofertă: ${requestOrOfferTitle}, ID Mesaj: ${messageId}`;
+    // CONTROL ANTI-DUPLICARE: Inițializăm cache-ul dacă nu există
+    if (!this._sentMessageIds) {
+      this._sentMessageIds = new Map<string, number>();
       console.log(
-        `\n💬 === EmailService.sendNewMessageNotificationToClient - Trimitere notificare mesaj nou către CLIENT ===`,
+        `✅ [Anti-duplicare] Inițializare cache prevenire duplicare email-uri (client)`,
+      );
+    }
+
+    // Semnătură unică pentru control anti-duplicare
+    const messageSignature = `MSG_CLIENT_${client.email}_${messageId}`;
+
+    // Verificăm dacă am trimis deja acest mesaj
+    const now = Date.now();
+    const lastSentTime = this._sentMessageIds.get(messageSignature);
+    const DUPLICATE_PREVENTION_WINDOW = 120000; // 2 minute
+
+    if (lastSentTime && now - lastSentTime < DUPLICATE_PREVENTION_WINDOW) {
+      const secondsAgo = Math.round((now - lastSentTime) / 1000);
+      console.log(
+        `\n🛑 BLOCARE DUPLICARE CLIENT: Mesaj identic către ${client.email} deja trimis acum ${secondsAgo} secunde.`,
+      );
+      console.log(`🔒 Signature: ${messageSignature}`);
+      console.log(`⏭️ Email blocat pentru prevenirea duplicării.`);
+      return true; // Simulăm succes pentru a nu întrerupe fluxul aplicației
+    }
+
+    // Blocăm imediat această semnătură pentru a preveni procesare paralelă
+    this._sentMessageIds.set(messageSignature, now);
+    console.log(
+      `🔐 [Anti-duplicare CLIENT] Înregistrat ID mesaj: ${messageSignature}`,
+    );
+
+    // ID execuție unic pentru logging
+    const uniqueExecutionId = `exec_client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    try {
+      console.log(
+        `\n💬 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (CLIENT) [${uniqueExecutionId}] =====`,
       );
       console.log(`📧 Destinatar: ${client.name} (${client.email})`);
       console.log(`📤 Expeditor: ${senderName}`);
@@ -978,10 +1012,7 @@ ID unic: ${execMessageId}
       );
 
       const subject = `Mesaj nou de la ${senderName}`;
-
-      // CLIENT
-      // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
-      const uniqueSubject = `${subject}`;
+      const uniqueSubject = subject;
 
       // Truncăm mesajul dacă este prea lung
       const truncatedMessage =
@@ -1021,29 +1052,75 @@ ID unic: ${execMessageId}
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
             <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
-            <!-- ID Mesaj: ${messageId} - Folosit pentru prevenirea duplicării -->
+            <!-- ID Unic: ${uniqueExecutionId} - Previne duplicarea -->
           </div>
         </div>
       `;
 
-      // Trimitem email-ul folosind noul parametru de debugging
+      const text = `
+Mesaj nou de la ${senderName}
+
+Bună ziua, ${client.name},
+
+Ați primit un mesaj nou de la ${senderName} referitor la "${requestOrOfferTitle}":
+
+"${truncatedMessage}"
+
+Puteți vizualiza conversația completă și răspunde accesând: 
+https://carvizio.ro/dashboard
+
+Acest email a fost trimis automat de aplicația Carvizio.ro.
+Puteți dezactiva notificările prin email din setările contului dvs.
+
+© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.
+ID unic: ${uniqueExecutionId}
+      `;
+
+      // Verificăm API key
+      console.log(`🔄 Verificare API key Elastic Email pentru client...`);
+      if (!this.apiKey) {
+        console.error(`❌ API key pentru Elastic Email nu este configurat!`);
+        return false;
+      }
+
+      console.log(`🔄 [${uniqueExecutionId}] Trimitere email pentru mesaj nou către client: ${client.email}`);
+
+      // Trimitem emailul
+      const startTime = Date.now();
       const result = await this.sendEmail(
         client.email,
         uniqueSubject,
         html,
-        undefined, // text content
-        null,
+        text,
+        messageId // Folosim messageId, nu null, pentru anti-duplicare
       );
-      console.log(
-        `💬 EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`,
-      );
+      const endTime = Date.now();
+
+      console.log(`⏱️ Durata trimitere email către client: ${endTime - startTime}ms`);
+      console.log(`📊 Rezultat trimitere email către client: ${result ? "SUCCESS" : "FAILURE"}`);
+
+      if (result) {
+        console.log(`✅ Email trimis cu succes către client ${client.email} pentru mesajul ${messageId}`);
+        this._sentMessageIds.set(messageSignature, now);
+      } else {
+        console.error(`❌ Eșec la trimiterea email-ului către client ${client.email} pentru mesajul ${messageId}`);
+        this._sentMessageIds.delete(messageSignature);
+      }
+
+      console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (CLIENT) [${uniqueExecutionId}] =====\n`);
       return result;
     } catch (error) {
-      console.error(
-        `💬 EmailService.sendNewMessageNotificationToClient - Eroare la trimiterea email-ului către ${client.email} pentru mesajul ${messageId}:`,
-        error,
-      );
-      // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
+      console.error(`❌ EmailService.sendNewMessageNotificationToClient - Eroare generală:`, error);
+
+      if (error instanceof Error) {
+        console.error(`❌ Detalii eroare: ${error.message}`);
+        console.error(`❌ Stack trace: ${error.stack}`);
+      }
+
+      // Eliminăm mesajul din cache în caz de eroare
+      this._sentMessageIds.delete(messageSignature);
+      console.log(`🔓 [Anti-duplicare CLIENT] Cache eliberat pentru ID: ${messageSignature} după eroare`);
+
       return false;
     }
   }
