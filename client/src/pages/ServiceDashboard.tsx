@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, QueryClient } from "@tanstack/react-query"; // Added QueryClient import
 import { Loader2, Mail, Menu, ExternalLink } from "lucide-react";
 import type { User as UserType, ServiceProviderUser } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,8 @@ import MessagesTab from "@/components/service-dashboard/MessagesTab";
 import AccountTab from "@/components/service-dashboard/AccountTab";
 import { useServiceOfferManagement } from "@/hooks/useServiceOfferManagement";
 import NotificationHelper from "@/lib/notifications";
+import { useWebSocket } from '@/hooks/useWebSocket'; // Added WebSocket hook import
+
 
 type TabId = "cereri" | "oferte-trimise" | "oferte-acceptate" | "mesaje" | "cont";
 
@@ -45,13 +47,15 @@ export default function ServiceDashboard() {
   const [activeConversation, setActiveConversation] = useState<ConversationInfo | null>(null);
   const [newRequestsCount, setNewRequestsCount] = useState<number>(0);
   const { toast } = useToast();
+  const queryClient = new QueryClient(); // Initialize QueryClient
 
   // Use the service offer management hook to get the new accepted offers count
   const { newAcceptedOffersCount } = useServiceOfferManagement();
 
   // Query pentru conversații noi
-  const { data: conversations = [] } = useQuery<any[]>({
+  const { data: conversations = [] } = useQuery({
     queryKey: ['/api/service/conversations'],
+    queryFn: () => fetch('/api/service/conversations').then(res => res.json()),
     refetchInterval: 10000, // Reîmprospătare la fiecare 10 secunde
   });
 
@@ -60,11 +64,13 @@ export default function ServiceDashboard() {
 
   const unreadConversationsCount = conversations.filter(conv => conv.unreadCount > 0).length;
 
-  const { data: userProfile, isLoading } = useQuery<ServiceProviderUser>({
+  const { data: userProfile, isLoading } = useQuery({
     queryKey: ['/api/auth/me'],
+    queryFn: () => fetch('/api/auth/me').then(res => res.json()),
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -79,10 +85,10 @@ export default function ServiceDashboard() {
           if (NotificationHelper.isSupported() && NotificationHelper.checkPermission() === 'granted') {
             try {
               console.log("Inițierea verificării mesajelor în fundal pentru utilizatorul", user.id);
-              
+
               // Pornim verificarea pe fundal folosind Service Worker
               NotificationHelper.startBackgroundMessageCheck(user.id, 'service', token);
-              
+
               // Doar logăm în consolă că notificările sunt active, fără toast
               console.log("Notificări active - vei primi notificări de mesaje noi chiar și când tab-ul este inactiv.");
             } catch (error) {
@@ -112,7 +118,7 @@ export default function ServiceDashboard() {
   }, [setLocation, user, toast]);
 
   // Query to fetch viewed requests
-  const { data: viewedRequestIds = [] } = useQuery<number[]>({
+  const { data: viewedRequestIds = [] } = useQuery({
     queryKey: ['/api/service/viewed-requests'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
@@ -188,7 +194,7 @@ export default function ServiceDashboard() {
       try {
         // Navigate to service profile page using username
         setLocation(`/service/${userProfile.username}`);
-console.log('Navigating to service profile with username:', userProfile.username);
+        console.log('Navigating to service profile with username:', userProfile.username);
       } catch (error) {
         console.error('Navigation error:', error);
         toast({
@@ -205,6 +211,97 @@ console.log('Navigating to service profile with username:', userProfile.username
       });
     }
   };
+
+  const { websocketService, addMessageHandler, removeMessageHandler } = useWebSocket('/api/websocket'); // Added WebSocket hook usage
+
+  useEffect(() => {
+    const handleWebSocketMessage = (data: any) => {
+      // Actualizăm datele din cache
+      if (data.type === 'NEW_REQUEST') {
+        queryClient.invalidateQueries({ queryKey: ["/api/service/requests"] });
+
+        // Afișăm notificare pentru cerere nouă direct
+        if (Notification.permission === 'granted') {
+          const notificationOptions = {
+            body: `Ai primit o cerere nouă: ${data.payload?.title || 'Detalii în aplicație'}`,
+            icon: '/favicon.ico',
+            tag: `request-${Date.now()}`,
+            requireInteraction: true
+          };
+
+          try {
+            new Notification('Cerere nouă', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru cerere nouă:', error);
+          }
+        }
+      } else if (data.type === 'OFFER_STATUS_CHANGED' && data.payload?.status === 'Accepted') {
+        queryClient.invalidateQueries({ queryKey: ["/api/service/sent-offers"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/service/accepted-offers"] });
+
+        // Afișăm notificare pentru ofertă acceptată
+        if (Notification.permission === 'granted') {
+          const notificationOptions = {
+            body: `Oferta ta a fost acceptată: ${data.payload?.title || 'Detalii în aplicație'}`,
+            icon: '/favicon.ico',
+            tag: `offer-accepted-${Date.now()}`,
+            requireInteraction: true
+          };
+
+          try {
+            new Notification('Ofertă acceptată', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru ofertă acceptată:', error);
+          }
+        }
+      } else if (data.type === 'NEW_MESSAGE') {
+        queryClient.invalidateQueries({ queryKey: ["/api/service/messages"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/service/conversations"] });
+        // Also invalidate unread messages count
+        queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
+
+        // Afișăm notificare pentru mesaj nou direct
+        if (Notification.permission === 'granted') {
+          const notificationOptions = {
+            body: `Ai primit un mesaj nou: ${data.payload?.content || 'Deschide pentru a citi'}`,
+            icon: '/favicon.ico',
+            tag: `message-${Date.now()}`,
+            requireInteraction: true
+          };
+
+          try {
+            new Notification('Mesaj nou', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru mesaj nou:', error);
+          }
+        }
+      } else if (data.type === 'NEW_REVIEW') {
+        queryClient.invalidateQueries({ queryKey: ["/api/service/reviews"] });
+
+        // Afișăm notificare pentru recenzie nouă
+        if (Notification.permission === 'granted') {
+          const notificationOptions = {
+            body: `Ai primit o recenzie nouă: ${data.payload?.rating ? '★'.repeat(data.payload.rating) : 'Detalii în aplicație'}`,
+            icon: '/favicon.ico',
+            tag: `review-${Date.now()}`,
+            requireInteraction: true
+          };
+
+          try {
+            new Notification('Recenzie nouă', notificationOptions);
+          } catch (error) {
+            console.error('Eroare la afișarea notificării pentru recenzie nouă:', error);
+          }
+        }
+      }
+    };
+
+    const removeHandler = addMessageHandler(handleWebSocketMessage);
+    return () => {
+      removeHandler();
+    };
+  }, [addMessageHandler, queryClient]);
+
 
   if (!user || isLoading) {
     return (

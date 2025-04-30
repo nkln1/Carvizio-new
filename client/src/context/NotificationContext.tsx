@@ -39,14 +39,26 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     const initializeNotifications = async () => {
       if (isLoggedIn && user && user.id && !isInitialized) {
+        console.log(`Inițializare notificări pentru ${user.role} cu ID: ${user.id}`);
         const firebaseMessaging = FirebaseMessaging.getInstance();
 
         // Determinăm rolul utilizatorului
         const userRole = user.role === 'service' ? 'service' : 'client';
 
-        // Inițializăm Firebase Messaging
-        const result = await firebaseMessaging.initialize(user.id, userRole);
-        setIsEnabled(result);
+        // Verificăm permisiunile existente
+        if (Notification.permission === 'granted') {
+          console.log('Permisiuni notificări deja acordate, inițializăm direct.');
+          setPermission('granted');
+          
+          // Inițializăm Firebase Messaging
+          const result = await firebaseMessaging.initialize(user.id, userRole);
+          console.log(`Rezultat inițializare notificări: ${result ? 'Succes' : 'Eșec'}`);
+          setIsEnabled(result);
+        } else {
+          console.log('Permisiuni notificări noi necesare.');
+          // Nu solicităm permisiuni automat, lăsăm utilizatorul să activeze explicit
+        }
+        
         setIsInitialized(true);
 
         // Actualizăm numărul de mesaje necitite
