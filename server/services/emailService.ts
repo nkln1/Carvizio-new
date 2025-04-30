@@ -81,82 +81,43 @@ export class EmailService {
     messageId?: string,
   ): Promise<boolean> {
     try {
-      // PRIORITATE MAXIMĂ: Eliminăm complet orice ID din subiect
-      let cleanSubject = subject;
+      console.log(`📧 Începere trimitere email către: ${to}`);
       
-      // Curățăm AGRESIV subiectul de orice text ce poate conține ID request
-      // Verificăm prezența pattern-urilor specifice ID-urilor
-      if (cleanSubject.includes('request_') || 
-          cleanSubject.includes('[request_') || 
-          cleanSubject.includes('_17') || 
-          cleanSubject.match(/\[\w+_\d+_\d+\]/)) {
-        
-        console.error(`⚠️ BLOCARE SUBIECT PERICULOS DETECTAT: "${cleanSubject}"`);
-        
-        // Aplicăm multiple pattern-uri de curățare pentru siguranță
-        cleanSubject = cleanSubject
-          // Elimină orice între [request_XXX]
-          .replace(/\s*\[request_[^\]]*\]\s*/g, '')
-          // Elimină pattern-uri de tip request_XXX
-          .replace(/\s*request_\d+_\d+\s*/g, '')
-          // Elimină orice pattern de tip [xxx_123_456]
-          .replace(/\s*\[\w+_\d+_\d+\]\s*/g, '');
-          
-        console.log(`🛡️ Subiect FORȚAT curățat: "${cleanSubject}"`);
+      // =====================================================================
+      // HARDCODĂM SUBIECTE SIGURE - INTERVENȚIE DE URGENȚĂ ÎMPOTRIVA ID-URILOR
+      // =====================================================================
+      let safeSubject = "Notificare Carvizio";
+      
+      // Verificăm categoriile de subiecte și atribuim valori sigure, fără variabile
+      if (subject.includes("Cerere nouă")) {
+        safeSubject = "Cerere nouă de client";
+      } else if (subject.includes("Ofertă")) {
+        safeSubject = "Ofertă servicii auto";
+      } else if (subject.includes("Mesaj")) {
+        safeSubject = "Mesaj nou primit";
+      } else if (subject.includes("Recenzie")) {
+        safeSubject = "Recenzie nouă primită";
       }
       
-      // Verificare finală
-      if (cleanSubject.includes('request_') || cleanSubject.includes('[request_')) {
-        console.error(`⚠️ ALERTĂ CRITICĂ: Subiectul ÎNCĂ conține ID dubios după curățare: "${cleanSubject}"`);
-        console.error(`⚠️ FORȚĂM SUBIECT SIGUR!`);
-        
-        // În caz extrem, extragem doar prima parte a subiectului înainte de orice ID suspect
-        if (cleanSubject.includes('de la')) {
-          // Extrage pattern de tip "Cerere nouă de la XXX"
-          const matches = cleanSubject.match(/(.*?de la\s+[^[]+)/);
-          if (matches && matches[1]) {
-            cleanSubject = matches[1].trim();
-            console.log(`🔒 Subiect extras de urgență: "${cleanSubject}"`);
-          } else {
-            // Fallback absolut - folosim un subiect generic
-            cleanSubject = "Notificare Carvizio";
-            console.log(`⚠️ Fallback la subiect generic: "${cleanSubject}"`);
-          }
-        }
-      }
+      // Afișăm subiectul original versus cel hardcodat pentru debugging
+      console.log(`📧 Subiect original: "${subject}"`);
+      console.log(`📧 Subiect HARDCODAT sigur: "${safeSubject}"`);
       
-      // Verificăm API key-ul și afișăm detalii pentru debugging
+      // Verificăm API key-ul
       if (!this.apiKey) {
-        console.error(
-          "API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY",
-        );
-        console.error(
-          `📝 Variabile de mediu disponibile:`,
-          Object.keys(process.env)
-            .filter(
-              (key) =>
-                !key.includes("SECRET") &&
-                !key.includes("KEY") &&
-                !key.includes("TOKEN"),
-            )
-            .join(", "),
-        );
+        console.error("API key pentru Elastic Email nu este configurat!");
         return false;
       }
 
-      // Construim payload-ul pentru API cu subiectul FINAL curățat
+      // Construim payload-ul pentru API cu subiectul HARDCODAT
       const payload: EmailPayload = {
         To: to,
         From: this.fromEmail,
         FromName: this.fromName,
-        Subject: cleanSubject, // Subiect garantat fără ID
+        Subject: safeSubject, // Folosim DOAR subiectul hardcodat
         BodyHTML: htmlContent,
       };
       
-      // Logare explicită pentru debugging și verificare finală
-      console.log(`📧 Trimitere email cu subiect FINAL: "${cleanSubject}"`);
-      console.log(`📧 VERIFICARE FINALĂ: ${cleanSubject.includes('request_') ? '⚠️ EROARE - conține ID' : '✅ OK - fără ID'}`);
-
       // Adăugăm conținutul text dacă este furnizat
       if (textContent) {
         payload.BodyText = textContent;
@@ -182,38 +143,23 @@ export class EmailService {
       // Verificăm răspunsul
       if (response.ok) {
         const data = await response.json();
-        // Verificăm și rezultatul dat de API-ul Elastic Email
         if (data.success) {
-          // Email trimis cu succes
-          console.log(
-            `✅ Email trimis cu succes către ${to} - Subject: ${finalSubject}`,
-          );
+          console.log(`✅ Email trimis cu succes către ${to} - Subject: ${safeSubject}`);
           return true;
         } else {
-          // API-ul a răspuns, dar nu a putut trimite email-ul
-          console.error(
-            `❌ Eroare la trimiterea email-ului către ${to}:`,
-            data.error || "Eroare necunoscută de la API",
-          );
+          console.error(`❌ Eroare la trimiterea email-ului către ${to}:`, data.error || "Eroare necunoscută de la API");
           return false;
         }
       } else {
-        // Cererea către API a eșuat
         const errorText = await response.text();
-        console.error(
-          `❌ Eroare HTTP ${response.status} la trimiterea email-ului către ${to}:`,
-          errorText,
-        );
+        console.error(`❌ Eroare HTTP ${response.status} la trimiterea email-ului către ${to}:`, errorText);
         return false;
       }
     } catch (error) {
-      // Excepție la trimiterea email-ului
       console.error(`❌ Excepție la trimiterea email-ului către ${to}:`, error);
-
       if (error instanceof Error) {
         console.error(`Detalii eroare: ${error.message}`);
       }
-
       return false;
     }
   }
@@ -235,11 +181,7 @@ export class EmailService {
       console.log(
         `\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU CERERE NOUĂ =====`,
       );
-      console.log(
-        `📊 Date furnizor servicii:`,
-        JSON.stringify(serviceProvider, null, 2),
-      );
-
+      
       // Validăm și normalizăm datele serviceProvider pentru a evita erorile
       if (!serviceProvider) {
         console.error(
@@ -287,13 +229,13 @@ export class EmailService {
       console.log(`   • Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`   • Client: ${clientName}`);
       console.log(`   • Titlu cerere: ${requestTitle}`);
-      console.log(`   • ID intern cerere: ${requestId}`);
 
-      // ATENȚIE: Folosim un subiect FIX fără nicio referință la ID
-      // Acest subiect nu va fi modificat și nu va include niciun ID
-      const plainSubject = `Cerere nouă de la ${clientName}`;
+      // =====================================================================
+      // IMPORTANT - SUBIECT HARD-CODED FĂRĂ NICIUN ID SAU REFERINȚĂ DINAMICĂ
+      // =====================================================================
+      const FIXED_SUBJECT = "Cerere nouă de la client";
       
-      console.log(`✅ Subiect email FIXAT (garantat fără ID): "${plainSubject}"`);
+      console.log(`✅ SUBIECT FORȚAT STATIC (FĂRĂ VARIABILE): "${FIXED_SUBJECT}"`);
 
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
@@ -334,7 +276,7 @@ export class EmailService {
 
       // Conținut text simplu pentru clienții de email care nu suportă HTML
       const text = `
-  Cerere nouă de la ${clientName}
+  Cerere nouă
 
   Bună ziua, ${companyName},
 
@@ -356,54 +298,56 @@ export class EmailService {
         console.error(
           `❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`,
         );
-        console.error(
-          `📝 Variabile de mediu disponibile:`,
-          Object.keys(process.env)
-            .filter(
-              (key) =>
-                !key.includes("SECRET") &&
-                !key.includes("KEY") &&
-                !key.includes("TOKEN"),
-            )
-            .join(", "),
-        );
         return false;
       }
 
-      console.log(
-        `✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : "N/A"}`,
-      );
+      console.log(`🔄 TRIMITERE EMAIL CU SUBIECT FIX: "${FIXED_SUBJECT}"`);
       
-      // DEBUGGING SPECIAL! Verificăm dacă subiectul conține ID
-      if (plainSubject.includes('request_') || plainSubject.includes('[request_')) {
-        console.error(`⚠️ ALERTĂ CRITICĂ: Subiectul ÎNCĂ conține ID-ul cererii: "${plainSubject}"`);
-        console.error(`⚠️ Acest lucru nu ar trebui să se întâmple niciodată.`);
+      // Înlocuim trimiterea normală cu o trimitere directă către API
+      // fără a folosi sendEmail (pentru a evita orice manipulare a subiectului)
+      
+      // Construim parametrii pentru API
+      const params = new URLSearchParams();
+      params.append("apikey", this.apiKey);
+      params.append("from", this.fromEmail);
+      params.append("fromName", this.fromName);
+      params.append("to", serviceProvider.email);
+      params.append("subject", FIXED_SUBJECT);  // IMPORTANT - AICI ESTE CHEIA PROBLEMEI
+      params.append("bodyHtml", html);
+      params.append("bodyText", text);
+      
+      console.log(`🚀 Trimitere directă către API Elastic Email cu subiect FIX`);
+      
+      // Trimitem cererea direct la API
+      const response = await fetch(`${this.baseUrl}/email/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-ElasticEmail-ApiKey": this.apiKey,
+        },
+        body: params,
+      });
+      
+      // Verificăm răspunsul
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          console.log(`✅ Email trimis cu succes direct prin API către ${serviceProvider.email}`);
+          console.log(`✅ Subiect utilizat (garantat): "${FIXED_SUBJECT}"`);
+          return true;
+        } else {
+          console.error(`❌ API a răspuns cu eroare:`, data.error);
+          return false;
+        }
       } else {
-        console.log(`✅ VERIFICARE SUBIECT: OK - Nu conține ID request: "${plainSubject}"`);
-      }
-      
-      console.log(`🔄 Trimitere email DIRECT pentru cerere nouă către: ${serviceProvider.email}`);
-      
-      // Trimitem email-ul direct, fără a mai folosi niciun parametru adițional
-      // Apel complet izolat - fără nicio referință la requestId sau alte variabile care ar putea
-      // introduce ID-ul cererii prin efecte secundare
-      try {
-        // APEL DIRECT CU PARAMETRI EXPLICIȚI
-        const emailResult = await this.sendEmail(
-          serviceProvider.email,  // destinatar
-          plainSubject,           // subiect fix
-          html,                   // conținut HTML
-          text,                   // conținut text
-          null                    // fără ID de tracking
-        );
-        
-        console.log(`📧 Rezultat trimitere email: ${emailResult ? "SUCCES" : "EȘEC"}`);
-        console.log(`📧 Subiect utilizat (final): "${plainSubject}"`);
-        return emailResult;
-      } catch (emailError) {
-        console.error(`❌ Eroare la trimiterea email-ului:`, emailError);
+        const errorText = await response.text();
+        console.error(`❌ Eroare HTTP ${response.status}:`, errorText);
         return false;
       }
+    } catch (error) {
+      console.error(`❌ Excepție fatală la trimiterea email-ului:`, error);
+      return false;
+    }
 
       if (result) {
         console.log(
