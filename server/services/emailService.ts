@@ -81,21 +81,50 @@ export class EmailService {
     messageId?: string,
   ): Promise<boolean> {
     try {
-      // IMPORTANT: Subiectul trebuie să fie exact așa cum este furnizat
-      // Nu adăugăm ID-uri sau alte informații în subiect
-      const finalSubject = subject;
+      // PRIORITATE MAXIMĂ: Eliminăm complet orice ID din subiect
+      let cleanSubject = subject;
       
-      // Verificăm subiectul pentru a ne asigura că nu conține ID-uri de cereri
-      // Verificăm dacă subiectul conține ID-uri de cereri și le eliminăm
-      let cleanSubject = finalSubject;
-      if (cleanSubject.includes('request_') || cleanSubject.includes('[request_')) {
-        console.error(`❌ EROARE DETECTATĂ: Subiectul conține încă un ID de cerere: "${cleanSubject}"`);
-        console.error(`❌ Se va trimite email cu subiect curat în schimb.`);
-        // Curățăm subiectul de orice ID-uri
-        cleanSubject = cleanSubject.replace(/\s*\[request_[^\]]*\]\s*/g, '');
-        console.log(`✅ Subiect corectat: "${cleanSubject}"`);
+      // Curățăm AGRESIV subiectul de orice text ce poate conține ID request
+      // Verificăm prezența pattern-urilor specifice ID-urilor
+      if (cleanSubject.includes('request_') || 
+          cleanSubject.includes('[request_') || 
+          cleanSubject.includes('_17') || 
+          cleanSubject.match(/\[\w+_\d+_\d+\]/)) {
+        
+        console.error(`⚠️ BLOCARE SUBIECT PERICULOS DETECTAT: "${cleanSubject}"`);
+        
+        // Aplicăm multiple pattern-uri de curățare pentru siguranță
+        cleanSubject = cleanSubject
+          // Elimină orice între [request_XXX]
+          .replace(/\s*\[request_[^\]]*\]\s*/g, '')
+          // Elimină pattern-uri de tip request_XXX
+          .replace(/\s*request_\d+_\d+\s*/g, '')
+          // Elimină orice pattern de tip [xxx_123_456]
+          .replace(/\s*\[\w+_\d+_\d+\]\s*/g, '');
+          
+        console.log(`🛡️ Subiect FORȚAT curățat: "${cleanSubject}"`);
       }
-
+      
+      // Verificare finală
+      if (cleanSubject.includes('request_') || cleanSubject.includes('[request_')) {
+        console.error(`⚠️ ALERTĂ CRITICĂ: Subiectul ÎNCĂ conține ID dubios după curățare: "${cleanSubject}"`);
+        console.error(`⚠️ FORȚĂM SUBIECT SIGUR!`);
+        
+        // În caz extrem, extragem doar prima parte a subiectului înainte de orice ID suspect
+        if (cleanSubject.includes('de la')) {
+          // Extrage pattern de tip "Cerere nouă de la XXX"
+          const matches = cleanSubject.match(/(.*?de la\s+[^[]+)/);
+          if (matches && matches[1]) {
+            cleanSubject = matches[1].trim();
+            console.log(`🔒 Subiect extras de urgență: "${cleanSubject}"`);
+          } else {
+            // Fallback absolut - folosim un subiect generic
+            cleanSubject = "Notificare Carvizio";
+            console.log(`⚠️ Fallback la subiect generic: "${cleanSubject}"`);
+          }
+        }
+      }
+      
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
         console.error(
@@ -115,17 +144,18 @@ export class EmailService {
         return false;
       }
 
-      // Construim payload-ul pentru API cu subiectul curățat
+      // Construim payload-ul pentru API cu subiectul FINAL curățat
       const payload: EmailPayload = {
         To: to,
         From: this.fromEmail,
         FromName: this.fromName,
-        Subject: cleanSubject, // Folosim subiectul curățat de ID-uri
+        Subject: cleanSubject, // Subiect garantat fără ID
         BodyHTML: htmlContent,
       };
       
-      // Logare explicită pentru debugging
-      console.log(`📧 Trimitere email cu subiect: "${cleanSubject}"`);
+      // Logare explicită pentru debugging și verificare finală
+      console.log(`📧 Trimitere email cu subiect FINAL: "${cleanSubject}"`);
+      console.log(`📧 VERIFICARE FINALĂ: ${cleanSubject.includes('request_') ? '⚠️ EROARE - conține ID' : '✅ OK - fără ID'}`);
 
       // Adăugăm conținutul text dacă este furnizat
       if (textContent) {
@@ -252,8 +282,6 @@ export class EmailService {
         return false;
       }
 
-      const debugInfo = `[Cerere Nouă] Client: ${clientName}, Titlu: ${requestTitle}, ID: ${requestId}`;
-
       // Logare extinsă pentru diagnosticare completă
       console.log(`📧 Detalii notificare:`);
       console.log(`   • Destinatar: ${companyName} (${serviceProvider.email})`);
@@ -261,9 +289,11 @@ export class EmailService {
       console.log(`   • Titlu cerere: ${requestTitle}`);
       console.log(`   • ID intern cerere: ${requestId}`);
 
-      // Subiect simplu, garantat fără ID
-      const subject = `Cerere nouă de la ${clientName}`;
-      console.log(`✓ Subiect email generat (verificat fără ID): "${subject}"`);
+      // ATENȚIE: Folosim un subiect FIX fără nicio referință la ID
+      // Acest subiect nu va fi modificat și nu va include niciun ID
+      const plainSubject = `Cerere nouă de la ${clientName}`;
+      
+      console.log(`✅ Subiect email FIXAT (garantat fără ID): "${plainSubject}"`);
 
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
@@ -343,27 +373,37 @@ export class EmailService {
       console.log(
         `✅ API key configurat: ${this.apiKey ? `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}` : "N/A"}`,
       );
-      console.log(
-        `🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
-      );
-
-      // Nu folosim niciun ID în subiect sau în conținutul vizibil al email-ului
-      // Generăm un ID intern doar pentru controlul duplicatelor
-      const internalId = `internal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Înregistrăm explicit ce se trimite pentru debugging
-      console.log(`📧 Se trimite email către: ${serviceProvider.email}`);
-      console.log(`📧 Subiect EMAIL FINAL (verificat): "${subject}"`);
-      console.log(`📧 Fără niciun ID în subiect sau parametri de tracking`);
+      // DEBUGGING SPECIAL! Verificăm dacă subiectul conține ID
+      if (plainSubject.includes('request_') || plainSubject.includes('[request_')) {
+        console.error(`⚠️ ALERTĂ CRITICĂ: Subiectul ÎNCĂ conține ID-ul cererii: "${plainSubject}"`);
+        console.error(`⚠️ Acest lucru nu ar trebui să se întâmple niciodată.`);
+      } else {
+        console.log(`✅ VERIFICARE SUBIECT: OK - Nu conține ID request: "${plainSubject}"`);
+      }
       
-      // Trimitem email-ul cu subiect curat, fără niciun parametru ID
-      const result = await this.sendEmail(
-        serviceProvider.email,
-        subject,
-        html,
-        text,
-        null // Explicit null - nu se trimite niciun ID deloc
-      );
+      console.log(`🔄 Trimitere email DIRECT pentru cerere nouă către: ${serviceProvider.email}`);
+      
+      // Trimitem email-ul direct, fără a mai folosi niciun parametru adițional
+      // Apel complet izolat - fără nicio referință la requestId sau alte variabile care ar putea
+      // introduce ID-ul cererii prin efecte secundare
+      try {
+        // APEL DIRECT CU PARAMETRI EXPLICIȚI
+        const emailResult = await this.sendEmail(
+          serviceProvider.email,  // destinatar
+          plainSubject,           // subiect fix
+          html,                   // conținut HTML
+          text,                   // conținut text
+          null                    // fără ID de tracking
+        );
+        
+        console.log(`📧 Rezultat trimitere email: ${emailResult ? "SUCCES" : "EȘEC"}`);
+        console.log(`📧 Subiect utilizat (final): "${plainSubject}"`);
+        return emailResult;
+      } catch (emailError) {
+        console.error(`❌ Eroare la trimiterea email-ului:`, emailError);
+        return false;
+      }
 
       if (result) {
         console.log(
