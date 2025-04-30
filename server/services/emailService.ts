@@ -248,7 +248,6 @@ export class EmailService {
       console.log(`   • ID Cerere: ${requestId}`);
 
       const subject = `Cerere nouă de la ${clientName}`;
-      // Nu mai adăugăm ID-ul în subiect, păstrăm subiectul simplu
       
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
@@ -333,13 +332,13 @@ export class EmailService {
         `🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
       );
 
-      // Trimitem email-ul fără ID în subiect
+      // Trimitem email-ul fără niciun ID în subiect
       const result = await this.sendEmail(
         serviceProvider.email,
         subject,
         html,
         text,
-        null, // Eliminăm ID-ul din subiect
+        null, // Asigurăm că nu se adaugă ID-ul în subiect
       );
 
       if (result) {
