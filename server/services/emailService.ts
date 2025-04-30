@@ -248,7 +248,8 @@ export class EmailService {
       console.log(`   • ID Cerere: ${requestId}`);
 
       const subject = `Cerere nouă de la ${clientName}`;
-
+      // Nu mai adăugăm ID-ul în subiect, păstrăm subiectul simplu
+      
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
@@ -332,13 +333,13 @@ export class EmailService {
         `🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
       );
 
-      // Trimitem email-ul folosind noul parametru de debugging
+      // Trimitem email-ul fără ID în subiect
       const result = await this.sendEmail(
         serviceProvider.email,
         subject,
         html,
         text,
-        String(requestId),
+        null, // Eliminăm ID-ul din subiect
       );
 
       if (result) {
