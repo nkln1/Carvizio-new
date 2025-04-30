@@ -1012,7 +1012,8 @@ ID unic: ${execMessageId}
       );
 
       const subject = `Mesaj nou de la ${senderName}`;
-      const uniqueSubject = subject;
+      // Nu mai adăugăm niciun ID în subiect, folosim subiectul simplu
+    const uniqueSubject = subject;
 
       // Truncăm mesajul dacă este prea lung
       const truncatedMessage =
@@ -1092,7 +1093,7 @@ ID unic: ${uniqueExecutionId}
         uniqueSubject,
         html,
         text,
-        null, // Nu mai trimitem messageId
+        null, // Asigurăm că nu se trimite niciun ID în subiect
       );
       const endTime = Date.now();
 
