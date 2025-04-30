@@ -424,26 +424,35 @@ export class EmailService {
     requestOrOfferTitle: string,
     messageId: string = `message_${Date.now()}`
   ): Promise<boolean> {
-    // FLAG LOCAL pentru blocare duplicare - folosim ID unic combinat pentru fiecare execuție
-    const uniqueExecutionId = `msg_exec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
-    // Cache global - Folosim un Map static pentru a stoca ID-urile mesajelor trimise recent
-    // Aceasta oferă o protecție suplimentară împotriva duplicării în același proces
+    // CONTROL STRICT ANTI-DUPLICARE: Folosim email+messageId+timestamp ca semnătură unică
     if (!this._sentMessageIds) {
       this._sentMessageIds = new Map<string, number>();
+      console.log(`✅ [Anti-duplicare] Inițializare cache prevenire duplicare email-uri`);
     }
     
-    // Calculăm un identificator compus care include toate datele relevante pentru a identifica un email identic
-    const messageSignature = `${serviceProvider.email}_${senderName}_${messageId}`;
+    // IMPORTANT: Includerea messageId original în semnătură
+    // Acest id ar trebui să fie unic per mesaj în baza de date
+    const messageSignature = `MSG_${serviceProvider.email}_${messageId}`;
     
-    // Verificăm dacă un mesaj identic a fost trimis recent (în ultimele 15 secunde)
-    const lastSentTime = this._sentMessageIds.get(messageSignature);
+    // Verificăm dacă am trimis deja acest mesaj specific (cache cu păstrare mai lungă - 2 minute)
     const now = Date.now();
-    if (lastSentTime && (now - lastSentTime < 15000)) {
-      console.log(`\n⚠️ PREVENIRE DUPLICARE: Mesaj similar către ${serviceProvider.email} deja trimis acum ${Math.round((now - lastSentTime)/1000)} secunde. ID: ${messageSignature}`);
-      console.log(`⏭️ Ignorăm al doilea apel pentru a evita duplicarea email-urilor.`);
-      return true; // Returnăm succes, dar nu trimitem de fapt un al doilea email
+    const lastSentTime = this._sentMessageIds.get(messageSignature);
+    const DUPLICATE_PREVENTION_WINDOW = 120000; // 2 minute
+    
+    if (lastSentTime && (now - lastSentTime < DUPLICATE_PREVENTION_WINDOW)) {
+      const secondsAgo = Math.round((now - lastSentTime)/1000);
+      console.log(`\n🛑 BLOCARE DUPLICARE: Mesaj identic către ${serviceProvider.email} deja trimis acum ${secondsAgo} secunde.`);
+      console.log(`🔒 Signature: ${messageSignature}`);
+      console.log(`⏭️ Email blocat pentru prevenirea duplicării.`);
+      return true; // Simulăm succes pentru a nu întrerupe fluxul aplicației
     }
+    
+    // Blocăm imediat această semnătură pentru a preveni procesare paralelă
+    this._sentMessageIds.set(messageSignature, now);
+    console.log(`🔐 [Anti-duplicare] Înregistrat ID mesaj: ${messageSignature}`);
+    
+    // Adăugăm un ID de execuție unic pentru logging - nu afectează logica de cache
+    const uniqueExecutionId = `exec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     
     // Înregistrăm în log începutul procesului
     console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) [${uniqueExecutionId}] =====`);
@@ -595,6 +604,27 @@ ID unic: ${execMessageId}
 
       if (emailResult) {
         console.log(`✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
+        // Păstrăm ID-ul în cache doar în caz de succes
+        this._sentMessageIds.set(messageSignature, now);
+        
+        // Curățare automată cache pentru a preveni memory leak
+        if (this._sentMessageIds.size > 1000) {
+          console.log(`🧹 [Anti-duplicare] Curățare cache (>1000 intrări)`);
+          
+          const keysToDelete = [];
+          const cacheTimeout = now - DUPLICATE_PREVENTION_WINDOW;
+          
+          // Identificăm intrările vechi
+          this._sentMessageIds.forEach((timestamp, key) => {
+            if (timestamp < cacheTimeout) {
+              keysToDelete.push(key);
+            }
+          });
+          
+          // Ștergem intrările vechi
+          keysToDelete.forEach(key => this._sentMessageIds.delete(key));
+          console.log(`🧹 [Anti-duplicare] ${keysToDelete.length} intrări vechi eliminate`);
+        }
       } else {
         console.error(`❌ Eșec la trimiterea email-ului către ${serviceProvider.email} pentru mesajul ${execMessageId}`);
         console.error(`📝 Detalii eșec: Email către ${serviceProvider.email}, Subiect: ${uniqueSubject}`);
@@ -617,8 +647,9 @@ ID unic: ${execMessageId}
       console.error(`📝 Detalii eroare completă:`, error);
       console.error(`📝 Date trimitere: Email către ${serviceProvider?.email}, De la: ${senderName}, Titlu: ${requestOrOfferTitle}`);
 
-      // Eliminăm mesajul din cache în caz de eroare pentru a permite reîncercarea
+      // IMPORTANT: Eliminăm mesajul din cache în caz de eroare pentru a permite reîncercarea
       this._sentMessageIds.delete(messageSignature);
+      console.log(`🔓 [Anti-duplicare] Cache eliberat pentru ID: ${messageSignature} după eroare`);
 
       console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU MESAJ NOU (SERVICE) CU EROARE [${uniqueExecutionId}] =====\n`);
       return false;
