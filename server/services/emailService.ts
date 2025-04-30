@@ -81,9 +81,20 @@ export class EmailService {
     messageId?: string,
   ): Promise<boolean> {
     try {
-      // Folosim direct subiectul furnizat, fără a adăuga ID-uri
-      // Acest lucru va preveni apariția ID-urilor în subiectul email-urilor
+      // IMPORTANT: Subiectul trebuie să fie exact așa cum este furnizat
+      // Nu adăugăm ID-uri sau alte informații în subiect
       const finalSubject = subject;
+      
+      // Verificăm subiectul pentru a ne asigura că nu conține ID-uri de cereri
+      // Verificăm dacă subiectul conține ID-uri de cereri și le eliminăm
+      let cleanSubject = finalSubject;
+      if (cleanSubject.includes('request_') || cleanSubject.includes('[request_')) {
+        console.error(`❌ EROARE DETECTATĂ: Subiectul conține încă un ID de cerere: "${cleanSubject}"`);
+        console.error(`❌ Se va trimite email cu subiect curat în schimb.`);
+        // Curățăm subiectul de orice ID-uri
+        cleanSubject = cleanSubject.replace(/\s*\[request_[^\]]*\]\s*/g, '');
+        console.log(`✅ Subiect corectat: "${cleanSubject}"`);
+      }
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
@@ -104,14 +115,17 @@ export class EmailService {
         return false;
       }
 
-      // Construim payload-ul pentru API
+      // Construim payload-ul pentru API cu subiectul curățat
       const payload: EmailPayload = {
         To: to,
         From: this.fromEmail,
         FromName: this.fromName,
-        Subject: finalSubject,
+        Subject: cleanSubject, // Folosim subiectul curățat de ID-uri
         BodyHTML: htmlContent,
       };
+      
+      // Logare explicită pentru debugging
+      console.log(`📧 Trimitere email cu subiect: "${cleanSubject}"`);
 
       // Adăugăm conținutul text dacă este furnizat
       if (textContent) {
@@ -247,8 +261,9 @@ export class EmailService {
       console.log(`   • Titlu cerere: ${requestTitle}`);
       console.log(`   • ID intern cerere: ${requestId}`);
 
-      // Subiect simplu, fără ID
+      // Subiect simplu, garantat fără ID
       const subject = `Cerere nouă de la ${clientName}`;
+      console.log(`✓ Subiect email generat (verificat fără ID): "${subject}"`);
 
       // Template HTML îmbunătățit pentru notificarea prin email
       const html = `
@@ -336,13 +351,18 @@ export class EmailService {
       // Generăm un ID intern doar pentru controlul duplicatelor
       const internalId = `internal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Trimitem email-ul cu subiect curat, fără ID
+      // Înregistrăm explicit ce se trimite pentru debugging
+      console.log(`📧 Se trimite email către: ${serviceProvider.email}`);
+      console.log(`📧 Subiect EMAIL FINAL (verificat): "${subject}"`);
+      console.log(`📧 Fără niciun ID în subiect sau parametri de tracking`);
+      
+      // Trimitem email-ul cu subiect curat, fără niciun parametru ID
       const result = await this.sendEmail(
         serviceProvider.email,
         subject,
         html,
         text,
-        null, // Nu mai trimitem niciun ID, nici măcar pentru tracking
+        null // Explicit null - nu se trimite niciun ID deloc
       );
 
       if (result) {
