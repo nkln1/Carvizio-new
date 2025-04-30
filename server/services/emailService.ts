@@ -804,8 +804,8 @@ ID unic: ${execMessageId}
 
       const subject = `Mesaj nou de la ${senderName}`;
 
-      // Adăugăm un identificator unic în subiect pentru a preveni gruparea mesajelor
-      const uniqueSubject = `${subject} [${messageId}]`;
+      // Nu mai adăugăm ID-ul în subiect, păstrăm subiectul simplu
+      const uniqueSubject = subject;
 
       // Truncăm mesajul dacă este prea lung
       const truncatedMessage = messageContent.length > 150 
@@ -855,7 +855,7 @@ ID unic: ${execMessageId}
         uniqueSubject, 
         html, 
         undefined, // text content
-        debugInfo // info debugging
+        null // Eliminăm ID-ul din subiectul email-ului
       );
       console.log(`💬 EmailService.sendNewMessageNotificationToClient - Email trimis cu succes către ${client.email} pentru mesajul ${messageId}`);
       return result;
