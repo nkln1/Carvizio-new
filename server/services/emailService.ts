@@ -595,7 +595,7 @@ ID unic: ${execMessageId}
         uniqueSubject, 
         html, 
         text, 
-        execMessageId
+        null // Eliminare ID din subiect, păstrăm controlul de duplicare prin cache
       );
       
       const endTime = Date.now();
