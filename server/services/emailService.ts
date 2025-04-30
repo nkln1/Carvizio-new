@@ -185,7 +185,7 @@ export class EmailService {
     serviceProvider: any,
     requestTitle: string,
     clientName: string,
-    requestId: string | number = `request_${Date.now()}`,
+    requestId: string | number = `internal_request_${Date.now()}`,
   ): Promise<boolean> {
     try {
       console.log(
@@ -332,17 +332,17 @@ export class EmailService {
         `🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
       );
 
-      // Folosim un identificator unic intern pentru prevenirea duplicării, 
-      // dar care nu va fi afișat în subiect
-      const emailId = `internal_request_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Nu folosim niciun ID în subiect sau în conținutul vizibil al email-ului
+      // Generăm un ID intern doar pentru controlul duplicatelor
+      const internalId = `internal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Trimitem email-ul fără niciun ID în subiect
+      // Trimitem email-ul cu subiect curat, fără ID
       const result = await this.sendEmail(
         serviceProvider.email,
         subject,
         html,
         text,
-        emailId, // Folosim ID-ul intern doar pentru tracking
+        null, // Nu mai trimitem niciun ID, nici măcar pentru tracking
       );
 
       if (result) {
