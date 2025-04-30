@@ -501,9 +501,10 @@ export class EmailService {
       console.log(`   • ID Mesaj: ${execMessageId}`);
       console.log(`   • Conținut mesaj: "${messageContent.substring(0, 50)}${messageContent.length > 50 ? '...' : ''}"`);
 
-      // Construim subiectul cu identificator unic
+      // Construim subiectul fără identificator în textul vizibil
       const subject = `Mesaj nou de la ${senderName}`;
-      const uniqueSubject = `${subject} [${execMessageId}]`;
+      // Folosim subject direct fără adăugarea ID-ului în subiect
+      const uniqueSubject = subject;
 
       // Truncăm mesajul dacă este prea lung
       const truncatedMessage = messageContent.length > 150 
