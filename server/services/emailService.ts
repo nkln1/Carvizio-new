@@ -1092,7 +1092,7 @@ ID unic: ${uniqueExecutionId}
         uniqueSubject,
         html,
         text,
-        messageId // Folosim messageId, nu null, pentru anti-duplicare
+        null, // Nu mai trimitem messageId
       );
       const endTime = Date.now();
 
