@@ -3142,30 +3142,11 @@ export function registerRoutes(app: Express): void {
                 
             console.log(`Decizie de trimitere email: ${shouldSendEmail ? 'DA' : 'NU'}`);
             
-            // Utilizăm ID-ul mesajului pentru a asigura că fiecare mesaj primește un email separat
-            // Adăugăm și timestamp-ul pentru a face identificatorul și mai unic
-            const emailIdentifier = `message_${message.id}_${Date.now()}`;
-            console.log(`Identificator unic email: ${emailIdentifier}`);
+            // Nu mai este necesar să trimitem email de notificare aici,
+            // deoarece am trimis deja mai sus la liniile ~3090 pentru a evita duplicarea
+            console.log(`Evităm trimiterea email-ului duplicat pentru mesajul #${message.id}`);
             
-            if (shouldSendEmail) {
-              console.log(`Pregătim trimiterea email-ului de notificare...`);
-              
-              try {
-                console.log(`Se trimite email-ul pentru mesajul #${message.id}...`);
-                await EmailService.sendNewMessageNotification(
-                  receiver,
-                  content,
-                  client.name,
-                  request.title || "Cerere service auto",
-                  `message_${message.id}_${Date.now()}`
-                );
-                console.log(`✓ Email trimis cu succes către ${receiver.companyName} (${receiver.email}) pentru mesajul #${message.id}`);
-              } catch (emailErr) {
-                console.error(`✗ EROARE la trimiterea email-ului pentru mesajul #${message.id}:`, emailErr);
-              }
-            } else {
-              console.log(`Nu se trimite email de notificare către ${receiver.companyName} conform preferințelor`);
-            }
+            // Notă: A doua verificare/trimitere email s-a eliminat pentru a evita duplicarea notificărilor email
           } catch (prefError) {
             console.error(`Eroare la obținerea preferințelor de notificare:`, prefError);
           }
