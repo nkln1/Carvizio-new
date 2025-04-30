@@ -81,9 +81,9 @@ export class EmailService {
     messageId?: string,
   ): Promise<boolean> {
     try {
-      // Adăugăm un ID unic la subiect dacă este furnizat un messageId
-      // Acest ID unic ajută la evitarea grupării email-urilor în inbox-ul utilizatorului
-      const finalSubject = messageId ? `${subject} [${messageId}]` : subject;
+      // Folosim direct subiectul furnizat, fără a adăuga ID-uri
+      // Acest lucru va preveni apariția ID-urilor în subiectul email-urilor
+      const finalSubject = subject;
 
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
@@ -338,7 +338,7 @@ export class EmailService {
         subject,
         html,
         text,
-        null, // Asigurăm că nu se adaugă ID-ul în subiect
+        null, // Trecem explicit null pentru a nu adăuga ID-ul în subiect
       );
 
       if (result) {
