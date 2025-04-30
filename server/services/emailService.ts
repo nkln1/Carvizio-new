@@ -245,8 +245,9 @@ export class EmailService {
       console.log(`   • Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`   • Client: ${clientName}`);
       console.log(`   • Titlu cerere: ${requestTitle}`);
-      console.log(`   • ID Cerere: ${requestId}`);
+      console.log(`   • ID intern cerere: ${requestId}`);
 
+      // Subiect simplu, fără ID
       const subject = `Cerere nouă de la ${clientName}`;
 
       // Template HTML îmbunătățit pentru notificarea prin email
@@ -282,7 +283,6 @@ export class EmailService {
           </div>
           <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
             <p style="margin: 0;">© ${new Date().getFullYear()} Carvizio.ro. Toate drepturile rezervate.</p>
-            <!-- ID Cerere: ${requestId} - Folosit pentru prevenirea duplicării -->
           </div>
         </div>
       `;
@@ -332,13 +332,17 @@ export class EmailService {
         `🔄 Trimitere email pentru cerere nouă către: ${serviceProvider.email}`,
       );
 
+      // Folosim un identificator unic intern pentru prevenirea duplicării, 
+      // dar care nu va fi afișat în subiect
+      const emailId = `internal_request_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       // Trimitem email-ul fără niciun ID în subiect
       const result = await this.sendEmail(
         serviceProvider.email,
         subject,
         html,
         text,
-        null, // Trecem explicit null pentru a nu adăuga ID-ul în subiect
+        emailId, // Folosim ID-ul intern doar pentru tracking
       );
 
       if (result) {
