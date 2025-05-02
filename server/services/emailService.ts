@@ -116,6 +116,8 @@ export class EmailService {
       return true;
     }
 
+    console.log(`🔍 [Rate limiting DEBUG] Verificare pentru ${email} (tip: ${emailType})`);
+
     // Inițializăm cache-ul dacă nu există
     if (!this._emailRateLimit) {
       this._emailRateLimit = new Map<string, EmailRateLimitEntry>();
@@ -129,6 +131,10 @@ export class EmailService {
     // indiferent de tipul notificării (mesaj, cerere, recenzie)
     const key = email.toLowerCase(); // Normalizăm email-ul pentru a evita probleme cu majuscule/minuscule
     const lastEmail = this._emailRateLimit.get(key);
+
+    // Verificăm conținutul cache-ului înainte de decizie
+    console.log(`🔍 [Rate limiting DEBUG] Conținut cache pentru ${key}:`, lastEmail ? 
+      JSON.stringify(lastEmail) : "Nu există intrare în cache");
 
     console.log(`🔍 [Rate limiting] Verificare pentru ${email} (tip: ${emailType})`);
     if (lastEmail) {
@@ -160,6 +166,11 @@ export class EmailService {
     });
     
     console.log(`✅ [Rate limiting] Email PERMIS pentru ${email} (tip: ${emailType})`);
+    console.log(`✅ [Rate limiting DEBUG] Cache actualizat pentru ${key} la timestamp ${now}`);
+    
+    // Afișăm starea cache-ului după actualizare
+    console.log(`📊 [Rate limiting DEBUG] Dimensiune cache după actualizare: ${this._emailRateLimit.size}`);
+    
     return true;
   }
 
@@ -171,12 +182,22 @@ export class EmailService {
   private static updateRateLimit(email: string, emailType: string): void {
     // Ofertele acceptate nu sunt supuse rate limiting-ului
     if (emailType === 'offer_accepted') {
+      console.log(`⏩ [Rate limiting] Actualizare cache ignorată pentru ofertă acceptată`);
       return;
+    }
+
+    // Verificăm că avem cache-ul inițializat
+    if (!this._emailRateLimit) {
+      this._emailRateLimit = new Map<string, EmailRateLimitEntry>();
+      console.log(`🔄 [Rate limiting] Inițializare cache rate limiting în updateRateLimit`);
     }
 
     // Actualizăm cache-ul cu timestamp-ul curent
     const key = email.toLowerCase(); // Normalizăm email-ul pentru consistență
     const timestamp = Date.now();
+    
+    console.log(`📝 [Rate limiting] ÎNAINTE DE ACTUALIZARE - Cache pentru ${key}:`, 
+                this._emailRateLimit.has(key) ? JSON.stringify(this._emailRateLimit.get(key)) : "Nu există");
     
     // Stocare în cache
     this._emailRateLimit.set(key, {
@@ -184,10 +205,20 @@ export class EmailService {
       emailType: emailType
     });
     
+    console.log(`📝 [Rate limiting] DUPĂ ACTUALIZARE - Cache pentru ${key}:`, 
+                JSON.stringify(this._emailRateLimit.get(key)));
+    
     console.log(`📝 [Rate limiting] Cache actualizat pentru ${email}. Următorul email permis după: ${new Date(timestamp + this.RATE_LIMIT_PERIOD).toLocaleTimeString()}`);
 
     // Afișăm starea actuală a cache-ului pentru debugging
     console.log(`📊 [Rate limiting] Număr total de intrări în cache: ${this._emailRateLimit.size}`);
+    
+    // Afișăm toate intrările din cache pentru debugging
+    console.log(`📊 [Rate limiting] Conținut complet cache:`);
+    this._emailRateLimit.forEach((entry, emailKey) => {
+      const timeAgo = Math.floor((Date.now() - entry.timestamp) / 60000);
+      console.log(`   - ${emailKey}: acum ${timeAgo} minute, tip: ${entry.emailType}`);
+    });
 
     // Curățare automată cache pentru a preveni memory leak
     if (this._emailRateLimit.size > 1000) {

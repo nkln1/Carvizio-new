@@ -41,6 +41,7 @@ async function testServiceNotifications() {
   
   // Testăm notificarea pentru mesaj nou
   console.log('\n3. Testare notificare MESAJ NOU...');
+  console.log('ATENȚIE: Dacă ultimul email a fost trimis în ultimele 30 minute, această notificare ar trebui să fie blocată de rate limit');
   const messageResponse = await fetch('http://localhost:5000/api/test-notifications/new-message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -48,7 +49,8 @@ async function testServiceNotifications() {
       serviceProviderId: serviceProvider.id,
       messageContent: 'Acesta este un mesaj de test pentru verificarea reparațiilor din sistemul de notificări',
       senderName: 'Client Test',
-      requestOrOfferTitle: 'Cerere testare sistem'
+      requestOrOfferTitle: 'Cerere testare sistem',
+      testRateLimit: true // Adăugat flag pentru testarea rate limitului
     })
   });
   
