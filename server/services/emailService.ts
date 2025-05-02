@@ -58,7 +58,7 @@ export class EmailService {
     console.log("- From Name:", this.fromName);
     console.log("- API Base URL:", this.baseUrl);
     console.log("- Email Rate Limiting:", `${this.RATE_LIMIT_PERIOD / 60000} minute(s)`);
-    
+
     // Inițializăm cache-ul pentru rate limiting
     this._emailRateLimit = new Map<string, EmailRateLimitEntry>();
   }
@@ -94,28 +94,43 @@ export class EmailService {
   public static getFromName(): string {
     return this.fromName;
   }
-  
+
   /**
    * Verifică dacă putem trimite un email unui utilizator în funcție de rata de limitare
    * @param email Email-ul destinatarului
-   * @param emailType Tipul de email (message, request, review, offer)
+   * @param emailType Tipul de email (message, request, review)
    * @returns true dacă putem trimite emailul, false dacă rata a fost depășită
    */
   private static checkRateLimit(email: string, emailType: string): boolean {
     // Ofertele acceptate sunt trimise imediat, fără rate limiting
     if (emailType === 'offer_accepted') {
+      console.log(`✅ [Rate limiting] Ofertele acceptate nu sunt supuse limitării de frecvență.`);
       return true;
     }
-    
+
     // Inițializăm cache-ul dacă nu există
     if (!this._emailRateLimit) {
       this._emailRateLimit = new Map<string, EmailRateLimitEntry>();
+      console.log(`✅ [Rate limiting] Inițializare cache rate limiting`);
     }
-    
+
     const now = Date.now();
-    const key = `${email}_${emailType}`;
+
+    // Folosim doar emailul ca și cheie pentru a limita toate tipurile de notificări per utilizator
+    // Acest lucru asigură că un utilizator nu primește mai mult de un email la fiecare 30 minute
+    // indiferent de tipul notificării (mesaj, cerere, recenzie)
+    const key = email;
     const lastEmail = this._emailRateLimit.get(key);
-    
+
+    console.log(`🔍 [Rate limiting] Verificare pentru ${email} (tip: ${emailType})`);
+    if (lastEmail) {
+      console.log(`🔍 [Rate limiting] Ultimul email trimis la: ${new Date(lastEmail.timestamp).toLocaleTimeString()}`);
+      console.log(`🔍 [Rate limiting] Tip precedent: ${lastEmail.emailType}`);
+      const timeSinceLast = now - lastEmail.timestamp;
+      console.log(`🔍 [Rate limiting] Timp de la ultimul email: ${Math.floor(timeSinceLast/1000)} secunde`);
+      console.log(`🔍 [Rate limiting] Perioadă de limitare: ${this.RATE_LIMIT_PERIOD/1000} secunde`);
+    }
+
     // Dacă nu există o înregistrare anterioară sau perioada de limitare a trecut
     if (!lastEmail || (now - lastEmail.timestamp) > this.RATE_LIMIT_PERIOD) {
       // Actualizăm cache-ul cu timestamp-ul curent
@@ -123,16 +138,16 @@ export class EmailService {
         timestamp: now, 
         emailType: emailType
       });
-      console.log(`✅ [Rate limiting] Email permis pentru ${email} (tip: ${emailType})`);
+      console.log(`✅ [Rate limiting] Email PERMIS pentru ${email} (tip: ${emailType})`);
       return true;
     }
-    
+
     // Calculăm timpul rămas până la expirarea perioadei de limitare
     const minutesLeft = Math.ceil((this.RATE_LIMIT_PERIOD - (now - lastEmail.timestamp)) / 60000);
     console.log(`🛑 [Rate limiting] Email BLOCAT pentru ${email} (tip: ${emailType}) - următorul email permis în ${minutesLeft} minute`);
     return false;
   }
-  
+
   /**
    * Actualizează cache-ul de rate limiting pentru un email trimis
    * @param email Email-ul destinatarului 
@@ -143,27 +158,27 @@ export class EmailService {
     if (emailType === 'offer_accepted') {
       return;
     }
-    
+
     // Actualizăm cache-ul cu timestamp-ul curent
-    const key = `${email}_${emailType}`;
+    const key = email; // Folosim doar emailul ca cheie
     this._emailRateLimit.set(key, {
       timestamp: Date.now(),
       emailType: emailType
     });
-    
+
     // Curățare automată cache pentru a preveni memory leak
     if (this._emailRateLimit.size > 1000) {
       console.log(`🧹 [Rate limiting] Curățare cache (>1000 intrări)`);
       const keysToDelete = [];
       const cacheTimeout = Date.now() - this.RATE_LIMIT_PERIOD;
-      
+
       // Identificăm intrările vechi
       this._emailRateLimit.forEach((entry, key) => {
         if (entry.timestamp < cacheTimeout) {
           keysToDelete.push(key);
         }
       });
-      
+
       // Ștergem intrările vechi
       keysToDelete.forEach(key => this._emailRateLimit.delete(key));
       console.log(`🧹 [Rate limiting] ${keysToDelete.length} intrări vechi eliminate`);
@@ -410,7 +425,7 @@ export class EmailService {
       console.log(`   • Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`   • Client: ${clientName}`);
       console.log(`   • Titlu cerere: ${requestTitle}`);
-      
+
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(serviceProvider.email, 'request')) {
         console.log(`⏳ Trimitere email amânată din cauza rate limiting pentru ${serviceProvider.email}`);
@@ -503,7 +518,7 @@ export class EmailService {
       if (result) {
         console.log(`✅ Email trimis cu succes către ${serviceProvider.email}`);
         console.log(`✅ Subiect utilizat: "${FIXED_SUBJECT}"`);
-        
+
         // Actualizăm cache-ul de rate limiting
         this.updateRateLimit(serviceProvider.email, 'request');
       } else {
@@ -734,19 +749,19 @@ export class EmailService {
       console.log(
         `   • Conținut mesaj: "${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}"`,
       );
-      
+
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(serviceProvider.email, 'message')) {
         console.log(`⏳ Trimitere email pentru mesaj nou BLOCATĂ din cauza rate limiting pentru ${serviceProvider.email}`);
-        
+
         // Ștergem mesajul din cache pentru a permite trimiterea la expirarea perioadei de rate limiting
         this._sentMessageIds.delete(messageSignature);
-        
+
         // Notă: Răspundem cu succes pentru a nu afecta restul aplicației
         console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL BLOCAT DE RATE LIMIT [${uniqueExecutionId}] =====\n`);
         return true;
       }
-      
+
       // Dacă trecem de rate limiting, înregistrăm imediat ID-ul pentru a preveni procesare paralelă
       this._sentMessageIds.set(messageSignature, now);
       console.log(`🔐 [Anti-duplicare] Înregistrat ID mesaj: ${messageSignature}`);
@@ -851,7 +866,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.log(
           `✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${uniqueExecutionId}`,
         );
-        
+
         // Actualizăm cache-ul de rate limiting
         this.updateRateLimit(serviceProvider.email, 'message');
 
@@ -958,7 +973,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(
         `Conținut recenzie (primele 50 caractere): ${reviewContent?.substring(0, 50)}${reviewContent?.length > 50 ? "..." : ""}`,
       );
-      
+
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(serviceProvider.email, 'review')) {
         console.log(`⏳ Trimitere email pentru recenzie nouă amânată din cauza rate limiting pentru ${serviceProvider.email}`);
@@ -1028,7 +1043,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.log(
           `✅ EmailService.sendNewReviewNotification - Email trimis cu succes către ${serviceProvider.email}`,
         );
-        
+
         // Actualizăm cache-ul de rate limiting
         this.updateRateLimit(serviceProvider.email, 'review');
       } else {
@@ -1112,16 +1127,16 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(
         `📝 Conținut mesaj (primele 50 caractere): ${messageContent.substring(0, 50)}${messageContent.length > 50 ? "..." : ""}`,
       );
-      
+
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(client.email, 'message_client')) {
         console.log(`⏳ Trimitere email pentru mesaj nou către client BLOCATĂ din cauza rate limiting pentru ${client.email}`);
-        
+
         // Nu marcăm mesajul ca trimis în acest caz
         console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL CLIENT BLOCAT DE RATE LIMIT [${uniqueExecutionId}] =====\n`);
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
       }
-      
+
       // Dacă trecem de rate limiting, înregistrăm ID-ul pentru a preveni procesare paralelă
       this._sentMessageIds.set(messageSignature, now);
       console.log(`🔐 [Anti-duplicare CLIENT] Înregistrat ID mesaj: ${messageSignature}`);
@@ -1219,7 +1234,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
 
       if (result) {
         console.log(`✅ Email trimis cu succes către client ${client.email}`);
-        
+
         // Actualizăm cache-ul de rate limiting
         this.updateRateLimit(client.email, 'message_client');
       } else {
@@ -1278,7 +1293,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`📤 Service Provider: ${providerName}`);
       console.log(`📌 Titlu ofertă: ${offerTitle}`);
       console.log(`📝 Cerere originală: ${requestTitle}`);
-      
+
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(client.email, 'offer_new')) {
         console.log(`⏳ Trimitere email pentru ofertă nouă către client amânată din cauza rate limiting pentru ${client.email}`);
