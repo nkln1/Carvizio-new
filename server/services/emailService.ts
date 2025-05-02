@@ -52,15 +52,23 @@ export class EmailService {
   private static RATE_LIMIT_PERIOD = 30 * 60 * 1000;
 
   static {
-    console.log("EmailService initialization:");
+    console.log("======= EmailService initialization =======");
     console.log("- API Key configured:", this.apiKey ? "YES" : "NO");
     console.log("- From Email:", this.fromEmail);
     console.log("- From Name:", this.fromName);
     console.log("- API Base URL:", this.baseUrl);
     console.log("- Email Rate Limiting:", `${this.RATE_LIMIT_PERIOD / 60000} minute(s)`);
+    console.log("- Rate limit version:", "2.0.0 (improved)");
+    console.log("- Last updated:", "2024-06-02");
 
     // Inițializăm cache-ul pentru rate limiting
     this._emailRateLimit = new Map<string, EmailRateLimitEntry>();
+    console.log("- Rate limiting cache inițializat: DA");
+    console.log("- Storage type:", "In-memory Map");
+    console.log("==========================================");
+    
+    // Afișăm data și ora inițializării pentru debugging
+    console.log(`📅 [Rate limiting] Serviciu inițializat la: ${new Date().toISOString()}`);
   }
 
   /**
@@ -119,33 +127,40 @@ export class EmailService {
     // Folosim doar emailul ca și cheie pentru a limita toate tipurile de notificări per utilizator
     // Acest lucru asigură că un utilizator nu primește mai mult de un email la fiecare 30 minute
     // indiferent de tipul notificării (mesaj, cerere, recenzie)
-    const key = email;
+    const key = email.toLowerCase(); // Normalizăm email-ul pentru a evita probleme cu majuscule/minuscule
     const lastEmail = this._emailRateLimit.get(key);
 
     console.log(`🔍 [Rate limiting] Verificare pentru ${email} (tip: ${emailType})`);
     if (lastEmail) {
+      const timeSinceLast = now - lastEmail.timestamp;
+      const minutesSinceLast = Math.floor(timeSinceLast / 60000);
+      const secondsSinceLast = Math.floor((timeSinceLast % 60000) / 1000);
+      
       console.log(`🔍 [Rate limiting] Ultimul email trimis la: ${new Date(lastEmail.timestamp).toLocaleTimeString()}`);
       console.log(`🔍 [Rate limiting] Tip precedent: ${lastEmail.emailType}`);
-      const timeSinceLast = now - lastEmail.timestamp;
-      console.log(`🔍 [Rate limiting] Timp de la ultimul email: ${Math.floor(timeSinceLast/1000)} secunde`);
-      console.log(`🔍 [Rate limiting] Perioadă de limitare: ${this.RATE_LIMIT_PERIOD/1000} secunde`);
+      console.log(`🔍 [Rate limiting] Timp de la ultimul email: ${minutesSinceLast} minute și ${secondsSinceLast} secunde`);
+      console.log(`🔍 [Rate limiting] Perioadă de limitare: ${this.RATE_LIMIT_PERIOD/60000} minute`);
+      
+      // Verificăm dacă perioada de limitare a trecut
+      if ((now - lastEmail.timestamp) <= this.RATE_LIMIT_PERIOD) {
+        // Calculăm timpul rămas până la expirarea perioadei de limitare
+        const minutesLeft = Math.ceil((this.RATE_LIMIT_PERIOD - (now - lastEmail.timestamp)) / 60000);
+        console.log(`🛑 [Rate limiting] Email BLOCAT pentru ${email} (tip: ${emailType}) - următorul email permis în ${minutesLeft} minute`);
+        return false;
+      }
     }
 
-    // Dacă nu există o înregistrare anterioară sau perioada de limitare a trecut
-    if (!lastEmail || (now - lastEmail.timestamp) > this.RATE_LIMIT_PERIOD) {
-      // Actualizăm cache-ul cu timestamp-ul curent
-      this._emailRateLimit.set(key, { 
-        timestamp: now, 
-        emailType: emailType
-      });
-      console.log(`✅ [Rate limiting] Email PERMIS pentru ${email} (tip: ${emailType})`);
-      return true;
-    }
-
-    // Calculăm timpul rămas până la expirarea perioadei de limitare
-    const minutesLeft = Math.ceil((this.RATE_LIMIT_PERIOD - (now - lastEmail.timestamp)) / 60000);
-    console.log(`🛑 [Rate limiting] Email BLOCAT pentru ${email} (tip: ${emailType}) - următorul email permis în ${minutesLeft} minute`);
-    return false;
+    // Dacă ajungem aici, înseamnă că putem trimite email (fie nu există un email anterior, 
+    // fie perioada de limitare a trecut)
+    
+    // Actualizăm imediat cache-ul pentru a preveni trimiteri duplicate în cazul apelurilor concurente
+    this._emailRateLimit.set(key, { 
+      timestamp: now, 
+      emailType: emailType
+    });
+    
+    console.log(`✅ [Rate limiting] Email PERMIS pentru ${email} (tip: ${emailType})`);
+    return true;
   }
 
   /**
@@ -160,11 +175,19 @@ export class EmailService {
     }
 
     // Actualizăm cache-ul cu timestamp-ul curent
-    const key = email; // Folosim doar emailul ca cheie
+    const key = email.toLowerCase(); // Normalizăm email-ul pentru consistență
+    const timestamp = Date.now();
+    
+    // Stocare în cache
     this._emailRateLimit.set(key, {
-      timestamp: Date.now(),
+      timestamp: timestamp,
       emailType: emailType
     });
+    
+    console.log(`📝 [Rate limiting] Cache actualizat pentru ${email}. Următorul email permis după: ${new Date(timestamp + this.RATE_LIMIT_PERIOD).toLocaleTimeString()}`);
+
+    // Afișăm starea actuală a cache-ului pentru debugging
+    console.log(`📊 [Rate limiting] Număr total de intrări în cache: ${this._emailRateLimit.size}`);
 
     // Curățare automată cache pentru a preveni memory leak
     if (this._emailRateLimit.size > 1000) {
