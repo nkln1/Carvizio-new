@@ -675,12 +675,6 @@ export class EmailService {
       return true; // Simulăm succes pentru a nu întrerupe fluxul aplicației
     }
 
-    // Blocăm imediat această semnătură pentru a preveni procesare paralelă
-    this._sentMessageIds.set(messageSignature, now);
-    console.log(
-      `🔐 [Anti-duplicare] Înregistrat ID mesaj: ${messageSignature}`,
-    );
-
     // Adăugăm un ID de execuție unic pentru logging - nu afectează logica de cache
     const uniqueExecutionId = `exec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
@@ -743,9 +737,19 @@ export class EmailService {
       
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(serviceProvider.email, 'message')) {
-        console.log(`⏳ Trimitere email pentru mesaj nou amânată din cauza rate limiting pentru ${serviceProvider.email}`);
-        return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
+        console.log(`⏳ Trimitere email pentru mesaj nou BLOCATĂ din cauza rate limiting pentru ${serviceProvider.email}`);
+        
+        // Ștergem mesajul din cache pentru a permite trimiterea la expirarea perioadei de rate limiting
+        this._sentMessageIds.delete(messageSignature);
+        
+        // Notă: Răspundem cu succes pentru a nu afecta restul aplicației
+        console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL BLOCAT DE RATE LIMIT [${uniqueExecutionId}] =====\n`);
+        return true;
       }
+      
+      // Dacă trecem de rate limiting, înregistrăm imediat ID-ul pentru a preveni procesare paralelă
+      this._sentMessageIds.set(messageSignature, now);
+      console.log(`🔐 [Anti-duplicare] Înregistrat ID mesaj: ${messageSignature}`);
 
       // Construim subiectul fără identificator în textul vizibil
       const FIXED_SUBJECT = "Mesaj nou primit";
@@ -818,6 +822,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.error(
           `❌ API key pentru Elastic Email nu este configurat! Verificați variabila de mediu ELASTIC_EMAIL_API_KEY`,
         );
+        this._sentMessageIds.delete(messageSignature);
         return false;
       }
 
@@ -846,8 +851,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
         console.log(
           `✅ Email trimis cu succes către ${serviceProvider.email} pentru mesajul ${uniqueExecutionId}`,
         );
-        // Păstrăm ID-ul în cache doar în caz de succes
-        this._sentMessageIds.set(messageSignature, now);
         
         // Actualizăm cache-ul de rate limiting
         this.updateRateLimit(serviceProvider.email, 'message');
@@ -1095,12 +1098,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       return true; // Simulăm succes pentru a nu întrerupe fluxul aplicației
     }
 
-    // Blocăm imediat această semnătură pentru a preveni procesare paralelă
-    this._sentMessageIds.set(messageSignature, now);
-    console.log(
-      `🔐 [Anti-duplicare CLIENT] Înregistrat ID mesaj: ${messageSignature}`,
-    );
-
     // ID execuție unic pentru logging
     const uniqueExecutionId = `exec_client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
@@ -1118,9 +1115,16 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(client.email, 'message_client')) {
-        console.log(`⏳ Trimitere email pentru mesaj nou către client amânată din cauza rate limiting pentru ${client.email}`);
+        console.log(`⏳ Trimitere email pentru mesaj nou către client BLOCATĂ din cauza rate limiting pentru ${client.email}`);
+        
+        // Nu marcăm mesajul ca trimis în acest caz
+        console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL CLIENT BLOCAT DE RATE LIMIT [${uniqueExecutionId}] =====\n`);
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
       }
+      
+      // Dacă trecem de rate limiting, înregistrăm ID-ul pentru a preveni procesare paralelă
+      this._sentMessageIds.set(messageSignature, now);
+      console.log(`🔐 [Anti-duplicare CLIENT] Înregistrat ID mesaj: ${messageSignature}`);
 
       const FIXED_SUBJECT = "Mesaj nou primit";
 
@@ -1188,6 +1192,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       console.log(`🔄 Verificare API key Elastic Email pentru client...`);
       if (!this.apiKey) {
         console.error(`❌ API key pentru Elastic Email nu este configurat!`);
+        this._sentMessageIds.delete(messageSignature);
         return false;
       }
 
@@ -1214,7 +1219,7 @@ Puteți dezactiva notificările prin email din setările contului dvs.
 
       if (result) {
         console.log(`✅ Email trimis cu succes către client ${client.email}`);
-        this._sentMessageIds.set(messageSignature, now);
+        
         // Actualizăm cache-ul de rate limiting
         this.updateRateLimit(client.email, 'message_client');
       } else {
