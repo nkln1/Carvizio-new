@@ -4,6 +4,7 @@ import { setupVite, serveStatic } from "./vite";
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import { setCustomMimeTypes } from "./mimeTypes";
+import { securityHeaders, generalRateLimiter, securityLogger, sanitizeInput } from "./middleware/securityMiddleware";
 
 const app = express();
 const server = http.createServer(app);
@@ -68,7 +69,15 @@ wss.on('close', () => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configure CORS and security headers
+// Apply security middleware
+app.use(securityHeaders);
+app.use(securityLogger);
+app.use(sanitizeInput);
+
+// Apply rate limiter for all routes (except static files)
+app.use('/api/', generalRateLimiter);
+
+// Configure CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -77,10 +86,6 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
-
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
   
   // Setăm Content-Type doar pentru API-uri, nu pentru fișiere statice
   if (req.path.startsWith('/api/')) {

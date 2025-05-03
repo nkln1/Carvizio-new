@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
 import { EmailService } from './services/emailService';
+import { authRateLimiter, logSecurityEvent } from './middleware/securityMiddleware';
 console.log('EmailService imported successfully:', EmailService ? 'Defined' : 'Undefined');
 
 // Extend the Express Request type to include firebaseUser
@@ -528,7 +529,7 @@ export function registerRoutes(app: Express): void {
   // Am mutat middleware-ul validateFirebaseToken la începutul funcției
 
   // User registration endpoint
-  app.post("/api/auth/register", validateFirebaseToken, async (req, res) => {
+  app.post("/api/auth/register", authRateLimiter, validateFirebaseToken, async (req, res) => {
     try {
       const { role, ...userData } = req.body;
       console.log("Registration attempt with data:", { ...userData, password: '[REDACTED]', role });
