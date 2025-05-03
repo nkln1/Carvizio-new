@@ -86,9 +86,7 @@ const clientSchema = z
     city: z.string().min(1, {
       message: "Te rugăm să selectezi localitatea.",
     }),
-    password: z.string().min(6, {
-      message: "Parola trebuie să conțină cel puțin 6 caractere.",
-    }),
+    password: passwordSchema,
     confirmPassword: z.string(),
     termsAccepted: z.boolean().refine(val => val === true, {
       message: "Trebuie să accepți termenii și condițiile pentru a continua.",
@@ -131,9 +129,7 @@ const serviceSchema = z
     city: z.string().min(1, {
       message: "Te rugăm să selectezi localitatea.",
     }),
-    password: z.string().min(6, {
-      message: "Parola trebuie să conțină cel puțin 6 caractere.",
-    }),
+    password: passwordSchema,
     confirmPassword: z.string(),
     termsAccepted: z.boolean().refine(val => val === true, {
       message: "Trebuie să accepți termenii și condițiile pentru a continua.",

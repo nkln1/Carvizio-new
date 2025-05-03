@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { Loader2 } from "lucide-react";
+import { validatePassword } from "@/lib/passwordValidation";
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -38,10 +39,12 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
       return;
     }
 
-    if (newPassword.length < 6) {
+    // Validăm cerințele pentru parole
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
       toast({
         title: "Eroare",
-        description: "Parola trebuie să aibă cel puțin 6 caractere",
+        description: passwordValidation.errors[0] || "Parola nu respectă cerințele de securitate",
         variant: "destructive",
       });
       return;
@@ -98,7 +101,8 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
         <DialogHeader>
           <DialogTitle>Schimbă Parola</DialogTitle>
           <DialogDescription>
-            Pentru a schimba parola, vă rugăm să introduceți parola curentă și noua parolă
+            Pentru a schimba parola, vă rugăm să introduceți parola curentă și noua parolă.
+            Parola nouă trebuie să conțină cel puțin 8 caractere, o literă mare, o literă mică și o cifră.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
