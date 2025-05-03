@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -29,6 +29,18 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -51,6 +63,8 @@ export function RequestsTab({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("active");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
 
   // Calculate request counts and filter requests by status
@@ -61,6 +75,11 @@ export function RequestsTab({
   const activeCount = activeRequests.length;
   const solvedCount = solvedRequests.length;
   const canceledCount = canceledRequests.length;
+
+  // Reset pagination when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   // Pentru debugging - verifică dacă datele vin corect și se filtrează corespunzător
   useEffect(() => {
@@ -124,6 +143,12 @@ export function RequestsTab({
       });
     }
     setShowDeleteDialog(false);
+  };
+
+  // Helpers for pagination
+  const getPaginatedRequests = (filteredRequests: RequestType[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRequests.slice(startIndex, startIndex + itemsPerPage);
   };
 
   // Helper function to render request row
@@ -193,35 +218,99 @@ export function RequestsTab({
     </TableRow>
   );
 
-  // Helper function to create a table for a specific request type
-  const renderRequestTable = (filteredRequests: RequestType[], emptyMessage: string) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Titlu</TableHead>
-          <TableHead>Data preferată</TableHead>
-          <TableHead>Data trimiterii</TableHead>
-          <TableHead>Locație</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Acțiuni</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {filteredRequests.length > 0 ? (
-          filteredRequests.map(renderRequestRow)
-        ) : (
-          <TableRow>
-            <TableCell
-              colSpan={6}
-              className="text-center text-muted-foreground"
-            >
-              {emptyMessage}
-            </TableCell>
-          </TableRow>
+  // Helper function to render paginated content
+  const renderPaginatedTable = (filteredRequests: RequestType[], emptyMessage: string) => {
+    const paginatedRequests = getPaginatedRequests(filteredRequests);
+    const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+
+    return (
+      <>
+        {filteredRequests.length > 0 && (
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm text-gray-500">
+              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} din {filteredRequests.length} cereri
+            </div>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Număr de cereri" />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50].map(num => (
+                  <SelectItem key={num} value={num.toString()}>{num} pe pagină</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
-      </TableBody>
-    </Table>
-  );
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Titlu</TableHead>
+              <TableHead>Data preferată</TableHead>
+              <TableHead>Data trimiterii</TableHead>
+              <TableHead>Locație</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Acțiuni</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedRequests.length > 0 ? (
+              paginatedRequests.map(renderRequestRow)
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  {emptyMessage}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        {totalPages > 1 && (
+          <Pagination className="mt-6">
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  variant="outline" size="icon"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <PaginationItem key={index}>
+                  <Button
+                    variant={currentPage === index + 1 ? "default" : "outline"}
+                    onClick={() => setCurrentPage(index + 1)}
+                    className="w-10"
+                  >
+                    {index + 1}
+                  </Button>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <Button
+                  variant="outline" size="icon"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </>
+    );
+  };
 
   return (
     <Card className="shadow-lg">
@@ -264,19 +353,19 @@ export function RequestsTab({
 
           {activeTab === "active" && (
             <div className="mt-2">
-              {renderRequestTable(activeRequests, "Nu există cereri active.")}
+              {renderPaginatedTable(activeRequests, "Nu există cereri active.")}
             </div>
           )}
 
           {activeTab === "solved" && (
             <div className="mt-2">
-              {renderRequestTable(solvedRequests, "Nu există cereri rezolvate.")}
+              {renderPaginatedTable(solvedRequests, "Nu există cereri rezolvate.")}
             </div>
           )}
 
           {activeTab === "canceled" && (
             <div className="mt-2">
-              {renderRequestTable(canceledRequests, "Nu există cereri anulate.")}
+              {renderPaginatedTable(canceledRequests, "Nu există cereri anulate.")}
             </div>
           )}
         </Tabs>
