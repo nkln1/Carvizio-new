@@ -130,47 +130,45 @@ export default function RequestsTab({ requests, isLoading, onCreateRequest }) {
           ) : (
             <div className="grid gap-4">
               {paginatedRequests.map((request) => (
-                <Card key={request.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-medium text-lg">{request.title}</h3>
-                          {getStatusBadge(request.status)}
-                        </div>
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                          {request.description}
-                        </p>
-                        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Filter className="h-4 w-4" />
-                            {request.cities?.join(", ")}
-                          </div>
-                        </div>
+                <div key={request.id} className="bg-white rounded-lg shadow p-4 mb-4 border border-gray-100">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-lg">{request.title}</h3>
+                        {getStatusBadge(request.status)}
                       </div>
-                      <div className="flex gap-2 self-end sm:self-center">
-                        <Button
-                          variant="outline"
-                          onClick={() => handleViewRequest(request)}
-                        >
-                          Vezi detalii
-                        </Button>
-                        {request.status === "Active" && (
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleCancelRequest(request.id)}
-                          >
-                            Anulează
-                          </Button>
-                        )}
+                      <p className="text-gray-600 mt-1 mb-2 line-clamp-2">{request.description}</p>
+                      <div className="flex gap-4 text-gray-500 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" /> 
+                          {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Filter className="h-4 w-4" /> 
+                          {request.cities?.join(", ")}
+                        </span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewRequest(request)}
+                      >
+                        Vezi detalii
+                      </Button>
+                      {request.status === "Active" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelRequest(request.id)}
+                        >
+                          Anulează
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
