@@ -76,6 +76,13 @@ app.use(securityHeaders);
 app.use(securityLogger);
 app.use(sanitizeInput);
 
+// Middleware suplimentar care suprascrie CSP pentru a elimina restricțiile
+app.use((req, res, next) => {
+  // Eliminăm complet CSP
+  res.removeHeader('Content-Security-Policy');
+  next();
+});
+
 // Apply rate limiter for all routes (except static files)
 app.use('/api/', generalRateLimiter);
 
