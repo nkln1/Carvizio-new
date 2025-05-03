@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { useMessagesManagement } from "@/hooks/useMessagesManagement";
 import MessagesView from "@/components/messages/MessagesView";
 import { ConversationList } from "./messages/ConversationList";
@@ -124,6 +125,7 @@ export default function MessagesTab({
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [wsInitialized, setWsInitialized] = useState(false);
   const [requestData, setRequestData] = useState<any>(null);
@@ -324,8 +326,14 @@ export default function MessagesTab({
     }
   };
 
-  // Filtrarea conversațiilor pe baza termenului de căutare
+  // Filtrarea conversațiilor pe baza termenului de căutare și a stării de new
   const filteredConversations = conversations.filter(conv => {
+    // Filtrul pentru mesaje noi
+    if (showOnlyNew && !conv.hasNewMessages && !conv.unreadCount) {
+      return false;
+    }
+    
+    // Filtrul pentru căutare
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -393,14 +401,30 @@ export default function MessagesTab({
             Mesaje
           </CardTitle>
           {!activeConversation && filteredConversations.length > 0 && (
-            <div className="relative w-[300px]">
-              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Caută conversații..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative w-[300px]">
+                <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Caută conversații..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-new-messages"
+                  checked={showOnlyNew}
+                  onCheckedChange={setShowOnlyNew}
+                />
+                <label
+                  htmlFor="show-new-messages"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  Doar mesaje noi
+                </label>
+              </div>
             </div>
           )}
         </div>
