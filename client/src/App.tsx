@@ -43,12 +43,29 @@ function Router() {
   );
 }
 
-// Component pentru inițializarea notificărilor
-const AppNotificationInitializer: React.FC = () => {
+// Component pentru inițializarea notificărilor și securității
+const AppInitializer: React.FC = () => {
   const [webSocketInitialized, setWebSocketInitialized] = React.useState(false);
+  const [csrfInitialized, setCsrfInitialized] = React.useState(false);
   
   React.useEffect(() => {
     console.log("[App] Încărcare aplicație...");
+
+    // Inițializare CSRF
+    const initializeCsrf = async () => {
+      try {
+        // Importăm dinamic modulul CSRF
+        const csrfModule = await import('./lib/csrfInitializer');
+        await csrfModule.initializeCsrfProtection();
+        setCsrfInitialized(true);
+        console.log("Protecție CSRF inițializată");
+      } catch (error) {
+        console.error("Eroare la inițializarea protecției CSRF:", error);
+      }
+    };
+
+    // Inițializăm protecția CSRF
+    initializeCsrf();
 
     // Pentru a evita problemele cu hook-urile, importăm direct tote modulele necesare
     const initializeNotifications = async () => {
@@ -223,7 +240,7 @@ const AppNotificationInitializer: React.FC = () => {
 };
 
 // Optimizăm componenta folosind React.memo pentru a preveni re-renderurile inutile
-const AppNotificationInitializerMemo = React.memo(AppNotificationInitializer);
+const AppInitializerMemo = React.memo(AppInitializer);
 
 const App = () => {
   return (
@@ -231,7 +248,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <NotificationProvider>
-            <AppNotificationInitializerMemo />
+            <AppInitializerMemo />
             <Navigation />
             <Router />
             <CookieBanner />

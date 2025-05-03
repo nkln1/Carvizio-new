@@ -59,6 +59,9 @@ export const getQueryFn: <T>(options: {
       },
     });
 
+    // Actualizăm tokenul CSRF din răspuns pentru cereri viitoare
+    updateCsrfToken(res);
+
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
     }
