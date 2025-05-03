@@ -935,7 +935,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Request management endpoints
-  app.post("/api/requests", validateFirebaseToken, async (req, res) => {
+  app.post("/api/requests", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -1158,7 +1158,7 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  app.patch("/api/requests/:id", validateFirebaseToken, async (req, res) => {
+  app.patch("/api/requests/:id", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -1384,8 +1384,8 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Fix create offer endpoint to include required fields
-  app.post("/api/service/offers", validateFirebaseToken, async (req, res) => {
+  // Fix create offer endpoint to include required fields and add CSRF protection
+  app.post("/api/service/offers", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
       if (!provider) {
@@ -1521,8 +1521,8 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Add profile update endpoints for both client and service provider
-  app.patch("/api/auth/profile", validateFirebaseToken, async (req, res) => {
+  // Add profile update endpoints for both client and service provider with CSRF protection
+  app.patch("/api/auth/profile", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const { userType } = req.session;
 
@@ -1682,8 +1682,8 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Add these endpoints after the existing /api/client/offers GET endpoint
-  app.post("/api/client/offers/:id/accept", validateFirebaseToken, async (req, res) => {
+  // Add these endpoints after the existing /api/client/offers GET endpoint with CSRF protection
+  app.post("/api/client/offers/:id/accept", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -1816,7 +1816,7 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/client/offers/:id/reject", validateFirebaseToken, async (req, res) => {
+  app.post("/api/client/offers/:id/reject", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -1848,8 +1848,8 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Add this after the reject offer endpoint (around line 857)
-  app.post("/api/client/offers/:id/cancel", validateFirebaseToken, async (req, res) => {
+  // Add this after the reject offer endpoint with CSRF protection
+  app.post("/api/client/offers/:id/cancel", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -1881,8 +1881,8 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Add endpoint to mark offer as viewed
-  app.post("/api/client/mark-offer-viewed/:offerId", validateFirebaseToken, async (req, res) => {
+  // Add endpoint to mark offer as viewed with CSRF protection
+  app.post("/api/client/mark-offer-viewed/:offerId", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       console.log('Marking offer as viewed - Request params:', req.params);
 
@@ -1932,8 +1932,8 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Updated message routes
-  app.post("/api/messages", validateFirebaseToken, async (req, res) => {
+  // Updated message routes with CSRF protection
+  app.post("/api/messages", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       console.log("Message request body:", req.body);
       const { content, receiverId, receiverRole, requestId } = req.body;
