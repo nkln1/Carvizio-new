@@ -382,7 +382,21 @@ export default function ClientDashboard() {
         open={showCarDialog}
         onOpenChange={setShowCarDialog}
         selectedCar={selectedCar}
-        onSubmit={selectedCar ? handleUpdateCar : handleCarSubmit}
+        onSubmit={async (data) => {
+          try {
+            if (selectedCar) {
+              await handleUpdateCar(data);
+              // Închide automat dialogul după actualizare reușită
+              setShowCarDialog(false);
+              setSelectedCar(undefined);
+            } else {
+              await handleCarSubmit(data);
+            }
+          } catch (error) {
+            console.error("Error handling car form submit:", error);
+            // În caz de eroare, dialogul rămâne deschis
+          }
+        }}
         onCancel={() => {
           setShowCarDialog(false);
           setSelectedCar(undefined);
