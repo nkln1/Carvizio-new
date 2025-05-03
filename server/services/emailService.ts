@@ -1562,6 +1562,19 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       if (!this.checkRateLimit(client.email, 'message_client')) {
         console.log(`⏳ Trimitere email pentru mesaj nou către client BLOCATĂ din cauza rate limiting pentru ${client.email}`);
 
+        // Adăugăm notificarea în digest pentru trimitere ulterioară
+        this.addToNotificationDigest(
+          client.email,
+          client.name,
+          'message_client',
+          requestOrOfferTitle,
+          senderName,
+          messageContent.substring(0, 100) + (messageContent.length > 100 ? '...' : ''),
+          messageId
+        );
+        
+        console.log(`📋 [Digest] Notificare de mesaj nou către client adăugată în digest pentru ${client.email}`);
+
         // Nu marcăm mesajul ca trimis în acest caz
         console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL CLIENT BLOCAT DE RATE LIMIT [${uniqueExecutionId}] =====\n`);
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
@@ -1727,6 +1740,20 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(client.email, 'offer_new')) {
         console.log(`⏳ Trimitere email pentru ofertă nouă către client amânată din cauza rate limiting pentru ${client.email}`);
+        
+        // Adăugăm notificarea în digest pentru trimitere ulterioară
+        this.addToNotificationDigest(
+          client.email,
+          client.name,
+          'offer_new',
+          offerTitle,
+          providerName,
+          `Pentru cererea: ${requestTitle}`,
+          offerId
+        );
+        
+        console.log(`📋 [Digest] Notificare de ofertă nouă adăugată în digest pentru ${client.email}`);
+        
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
       }
 
