@@ -80,6 +80,9 @@ class WebSocketService {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/socket`;  // Must match the path in server's WebSocketServer config
     
+    // Verificăm dacă adresa de websocket este permisă (pentru debugging)
+    console.log('[WebSocket] Permisă conexiunea către:', wsUrl);
+    
     if (isDev) {
       console.log('WebSocket URL (dev environment):', wsUrl);
     } else {

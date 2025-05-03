@@ -169,13 +169,28 @@ export function useMessagesManagement(
         offerId: activeConversation.offerId
       };
 
-      // Import and ensure CSRF token is available
-      const { ensureCsrfToken } = await import("@/lib/csrfInitializer");
-      await ensureCsrfToken();
+      // Primim un token CSRF fresh înainte de trimiterea mesajului
+      try {
+        console.log('Obținem un token CSRF nou înainte de a trimite mesajul...');
+        const healthCheckResponse = await fetch('/api/health-check', {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        const newToken = healthCheckResponse.headers.get('X-CSRF-Token');
+        if (newToken) {
+          console.log('Am obținut un token CSRF nou:', newToken.substring(0, 8) + '...');
+        } else {
+          console.warn('Nu s-a putut obține token CSRF din răspunsul health-check');
+        }
+      } catch (error) {
+        console.error('Eroare la obținerea tokenului CSRF:', error);
+      }
 
       // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
       let response;
       try {
+        console.log('Trimitem mesajul cu fetchWithCsrf la:', `${baseEndpoint}/messages/send`);
         response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
           method: 'POST',
           headers: {
@@ -183,9 +198,11 @@ export function useMessagesManagement(
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
           },
-          credentials: 'include',
+          credentials: 'include', // Esențial pentru a trimite cookie-urile cu CSRF token ID
           body: JSON.stringify(messagePayload)
         });
+        
+        console.log('Răspuns primit:', response.status);
       } catch (fetchError) {
         console.error('Network error sending message:', fetchError);
         throw new Error('Eroare de conectare la server. Verificați conexiunea la internet.');
@@ -194,14 +211,24 @@ export function useMessagesManagement(
       // Handle CSRF error specifically
       if (response.status === 403) {
         const errorText = await response.text();
+        console.error('Eroare 403 la trimiterea mesajului:', errorText);
+        
         if (errorText.includes('CSRF')) {
-          console.error('CSRF token error:', errorText);
+          console.error('Eroare de token CSRF detectată, încercăm reîmprospătarea...');
           
-          // Try to refresh the token and retry once
-          const { refreshCsrfToken } = await import("@/lib/csrfInitializer");
-          await refreshCsrfToken();
+          // Facem o cerere directă către health-check pentru a reîmprospăta tokenul
+          const healthCheckResponse = await fetch('/api/health-check', {
+            method: 'GET',
+            credentials: 'include'
+          });
+          
+          const newToken = healthCheckResponse.headers.get('X-CSRF-Token');
+          if (newToken) {
+            console.log('Token CSRF reîmprospătat cu succes:', newToken.substring(0, 8) + '...');
+          }
           
           // Retry the request with the new token
+          console.log('Reîncercăm trimiterea mesajului cu noul token...');
           response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
             method: 'POST',
             headers: {
@@ -212,6 +239,8 @@ export function useMessagesManagement(
             credentials: 'include',
             body: JSON.stringify(messagePayload)
           });
+          
+          console.log('Răspuns după reîncercare:', response.status);
         }
       }
       
