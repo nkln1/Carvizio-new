@@ -16,9 +16,15 @@ export async function apiRequest(
 ): Promise<Response> {
   const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
   // Obținem tokenul CSRF curent pentru cereri non-GET
-  const csrfToken = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase()) 
-    ? getCsrfToken() 
-    : null;
+  let csrfToken = "";
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase())) {
+    try {
+      csrfToken = await getCsrfToken();
+    } catch (error) {
+      console.error("Could not get CSRF token:", error);
+    }
+  }
+
 
   const res = await fetch(url, {
     method,

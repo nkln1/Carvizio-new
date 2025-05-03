@@ -88,7 +88,7 @@ export default function ClientDashboard() {
       // Actualizăm datele din cache
       if (data.type === 'NEW_OFFER') {
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-        
+
         // Afișăm notificare pentru ofertă nouă direct
         if (Notification.permission === 'granted') {
           const notificationOptions = {
@@ -97,7 +97,7 @@ export default function ClientDashboard() {
             tag: `offer-${Date.now()}`,
             requireInteraction: true
           };
-          
+
           try {
             new Notification('Ofertă nouă', notificationOptions);
           } catch (error) {
@@ -107,7 +107,7 @@ export default function ClientDashboard() {
       } else if (data.type === 'REQUEST_STATUS_CHANGED' || data.type === 'OFFER_STATUS_CHANGED') {
         queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
         queryClient.invalidateQueries({ queryKey: ["/api/client/offers"] });
-        
+
         // Afișăm notificare pentru schimbare status
         if (Notification.permission === 'granted' && data.type === 'OFFER_STATUS_CHANGED' && data.payload?.status === 'Accepted') {
           const notificationOptions = {
@@ -116,7 +116,7 @@ export default function ClientDashboard() {
             tag: `status-${Date.now()}`,
             requireInteraction: true
           };
-          
+
           try {
             new Notification('Status actualizat', notificationOptions);
           } catch (error) {
@@ -128,7 +128,7 @@ export default function ClientDashboard() {
         queryClient.invalidateQueries({ queryKey: ["/api/client/conversations"] });
         // Also invalidate unread messages count
         queryClient.invalidateQueries({ queryKey: ["unreadConversationsCount"] });
-        
+
         // Afișăm notificare pentru mesaj nou direct
         if (Notification.permission === 'granted') {
           const notificationOptions = {
@@ -137,7 +137,7 @@ export default function ClientDashboard() {
             tag: `message-${Date.now()}`,
             requireInteraction: true
           };
-          
+
           try {
             new Notification('Mesaj nou', notificationOptions);
           } catch (error) {
@@ -166,22 +166,32 @@ export default function ClientDashboard() {
   }, [activeTab]);
 
   const createRequestMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (requestData: any) => {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("No authentication token available");
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+
+      // Importam funcția pentru obținerea tokenului CSRF
+      const { getCsrfToken } = await import("@/lib/csrfToken");
+      const csrfToken = await getCsrfToken();
 
       const response = await fetch("/api/requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
+          "X-CSRF-Token": csrfToken,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestData),
+        credentials: "include", // Pentru a include cookie-urile în cerere
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create request");
+        console.error("Request failed with status:", response.status);
+        const errorBody = await response.text();
+        console.error("Error body:", errorBody);
+        throw new Error("Failed to create request");
       }
 
       return response.json();
