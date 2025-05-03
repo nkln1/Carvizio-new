@@ -28,25 +28,6 @@ interface EmailRateLimitEntry {
   messageId?: string;         // ID-ul mesajului/cererii (opțional)
 }
 
-// Interfață pentru acumularea notificărilor în perioada de rate limiting
-interface PendingNotification {
-  type: string;               // Tipul notificării: "message", "request", "review", "offer"
-  title?: string;             // Titlul cererii/ofertei
-  sender?: string;            // Numele expeditorului (pentru mesaje)
-  timestamp: number;          // Timestamp-ul notificării
-  content?: string;           // Conținut scurt/preview (pentru mesaje)
-  id: string | number;        // ID-ul unic al notificării
-}
-
-// Interfață pentru stocarea notificărilor acumulate per utilizator
-interface NotificationDigest {
-  email: string;              // Adresa email a utilizatorului
-  recipientName: string;      // Numele destinatarului (compania/numele)
-  pendingNotifications: PendingNotification[]; // Notificările acumulate
-  lastDigestSent: number;     // Timestamp-ul ultimului rezumat trimis
-  pendingSince: number;       // Timestamp-ul primei notificări acumulate 
-}
-
 // Tipuri pentru serviciul de email - conform documentație Elastic Email API v2
 interface EmailPayload {
   To: string; // Adresa email destinatar
@@ -67,8 +48,6 @@ export class EmailService {
   private static _sentMessageIds: Map<string, number>;
   // Map pentru controlul frecvenței emailurilor (rate limiting)
   private static _emailRateLimit: Map<string, EmailRateLimitEntry>;
-  // Map pentru notificările acumulate în perioada de rate limiting (pentru rezumat)
-  private static _notificationDigests: Map<string, NotificationDigest>;
   // Perioada de rate limiting în milisecunde (30 minute)
   private static RATE_LIMIT_PERIOD = 30 * 60 * 1000;
 
@@ -79,17 +58,12 @@ export class EmailService {
     console.log("- From Name:", this.fromName);
     console.log("- API Base URL:", this.baseUrl);
     console.log("- Email Rate Limiting:", `${this.RATE_LIMIT_PERIOD / 60000} minute(s)`);
-    console.log("- Rate limit version:", "3.0.0 (with digest)");
+    console.log("- Rate limit version:", "2.0.0 (improved)");
     console.log("- Last updated:", "2024-06-02");
 
     // Inițializăm cache-ul pentru rate limiting
     this._emailRateLimit = new Map<string, EmailRateLimitEntry>();
     console.log("- Rate limiting cache inițializat: DA");
-    
-    // Inițializăm map-ul pentru notificări acumulate
-    this._notificationDigests = new Map<string, NotificationDigest>();
-    console.log("- Notification digest cache inițializat: DA");
-    
     console.log("- Storage type:", "In-memory Map");
     console.log("==========================================");
     
@@ -249,7 +223,7 @@ export class EmailService {
     // Curățare automată cache pentru a preveni memory leak
     if (this._emailRateLimit.size > 1000) {
       console.log(`🧹 [Rate limiting] Curățare cache (>1000 intrări)`);
-      const keysToDelete: string[] = [];
+      const keysToDelete = [];
       const cacheTimeout = Date.now() - this.RATE_LIMIT_PERIOD;
 
       // Identificăm intrările vechi
@@ -262,251 +236,6 @@ export class EmailService {
       // Ștergem intrările vechi
       keysToDelete.forEach(key => this._emailRateLimit.delete(key));
       console.log(`🧹 [Rate limiting] ${keysToDelete.length} intrări vechi eliminate`);
-    }
-    
-    // Verifică dacă avem notificări acumulate pentru acest utilizator și dacă e timpul să trimitem un rezumat
-    this.checkAndSendDigestIfNeeded(email);
-  }
-  
-  /**
-   * Adaugă o notificare în rezumatul utilizatorului pentru trimitere ulterioară
-   * @param email Email-ul destinatarului
-   * @param recipientName Numele destinatarului (companie/persoană)
-   * @param notificationType Tipul notificării (message, request, review, offer)
-   * @param title Titlul cererii/ofertei (opțional)
-   * @param sender Expeditorul (pentru mesaje)
-   * @param content Conținutul scurt al notificării
-   * @param id ID-ul unic al notificării
-   */
-  private static addToNotificationDigest(
-    email: string,
-    recipientName: string,
-    notificationType: string,
-    title?: string,
-    sender?: string,
-    content?: string,
-    id?: string | number
-  ): void {
-    // Inițializăm map-ul pentru digest dacă nu există
-    if (!this._notificationDigests) {
-      this._notificationDigests = new Map<string, NotificationDigest>();
-      console.log(`🔄 [Digest] Inițializare cache pentru notificări acumulate`);
-    }
-    
-    const key = email.toLowerCase(); // Normalizăm email-ul
-    const now = Date.now();
-    const notificationId = id || `auto_${notificationType}_${now}_${Math.random().toString(36).substring(2, 7)}`;
-    
-    // Verificăm dacă există deja un digest pentru acest utilizator
-    if (!this._notificationDigests.has(key)) {
-      // Creem un nou digest
-      this._notificationDigests.set(key, {
-        email: email,
-        recipientName: recipientName,
-        pendingNotifications: [],
-        lastDigestSent: 0,
-        pendingSince: now
-      });
-      console.log(`📋 [Digest] Creat nou rezumat pentru ${email}`);
-    }
-    
-    // Obținem digestul existent
-    const digest = this._notificationDigests.get(key)!;
-    
-    // Adăugăm notificarea la lista de notificări în așteptare
-    digest.pendingNotifications.push({
-      type: notificationType,
-      title: title,
-      sender: sender,
-      timestamp: now,
-      content: content,
-      id: notificationId
-    });
-    
-    console.log(`📋 [Digest] Adăugat notificare de tip "${notificationType}" pentru ${email}`);
-    console.log(`📋 [Digest] Acum sunt ${digest.pendingNotifications.length} notificări în așteptare pentru ${email}`);
-  }
-  
-  /**
-   * Verifică dacă este timpul să trimitem un email de rezumat pentru notificările acumulate
-   * @param email Email-ul destinatarului
-   */
-  private static checkAndSendDigestIfNeeded(email: string): void {
-    if (!this._notificationDigests) {
-      return; // Nu avem notificări în așteptare
-    }
-    
-    const key = email.toLowerCase();
-    if (!this._notificationDigests.has(key)) {
-      return; // Nu există digest pentru acest utilizator
-    }
-    
-    const digest = this._notificationDigests.get(key)!;
-    const now = Date.now();
-    
-    // Verificăm dacă avem notificări în așteptare și dacă a trecut suficient timp de la prima notificare
-    if (digest.pendingNotifications.length > 0 && 
-        (now - digest.pendingSince >= this.RATE_LIMIT_PERIOD)) {
-      
-      console.log(`⏰ [Digest] Este timpul să trimitem rezumatul pentru ${email} (${digest.pendingNotifications.length} notificări)`);
-      
-      // Trimitem rezumatul
-      this.sendNotificationDigest(digest)
-        .then(success => {
-          if (success) {
-            console.log(`✅ [Digest] Rezumat trimis cu succes pentru ${email}`);
-            
-            // Resetăm digestul
-            this._notificationDigests.set(key, {
-              email: digest.email,
-              recipientName: digest.recipientName,
-              pendingNotifications: [],
-              lastDigestSent: now,
-              pendingSince: now
-            });
-          } else {
-            console.error(`❌ [Digest] Eroare la trimiterea rezumatului pentru ${email}`);
-          }
-        })
-        .catch(error => {
-          console.error(`❌ [Digest] Excepție la trimiterea rezumatului pentru ${email}:`, error);
-        });
-    }
-  }
-  
-  /**
-   * Trimite un email de rezumat cu toate notificările acumulate
-   * @param digest Digestul cu notificările acumulate
-   * @returns Promise care indică succesul sau eșecul trimiterii
-   */
-  private static async sendNotificationDigest(digest: NotificationDigest): Promise<boolean> {
-    try {
-      console.log(`📧 [Digest] Începere trimitere rezumat pentru ${digest.email}`);
-      
-      if (digest.pendingNotifications.length === 0) {
-        console.log(`⚠️ [Digest] Nu există notificări de trimis pentru ${digest.email}`);
-        return true; // Nu avem ce trimite, dar considerăm succes
-      }
-      
-      // Grupăm notificările după tip
-      const groupedNotifications = {
-        message: digest.pendingNotifications.filter(n => n.type === 'message' || n.type === 'message_client'),
-        request: digest.pendingNotifications.filter(n => n.type === 'request'),
-        review: digest.pendingNotifications.filter(n => n.type === 'review'),
-        offer: digest.pendingNotifications.filter(n => n.type === 'offer_new')
-      };
-      
-      // Construim subiectul
-      const subject = "Rezumat notificări Carvizio";
-      
-      // Construim conținutul HTML
-      let html = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <div style="background-color: #00aff5; padding: 20px; text-align: center; border-radius: 6px 6px 0 0;">
-            <h2 style="color: white; margin: 0;">Rezumat notificări Carvizio</h2>
-          </div>
-          
-          <div style="padding: 20px;">
-            <p>Bună ziua, ${digest.recipientName},</p>
-            <p>În ultima perioadă ați primit mai multe notificări. Iată un rezumat:</p>
-            
-            <div style="margin-top: 20px;">
-      `;
-      
-      // Adăugăm secțiunea pentru mesaje noi
-      if (groupedNotifications.message.length > 0) {
-        html += `
-          <div style="background-color: #f7fafc; border-left: 4px solid #00aff5; padding: 15px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; color: #2d3748;">📩 Mesaje noi (${groupedNotifications.message.length})</h3>
-            <p>Ați primit ${groupedNotifications.message.length} mesaje noi.</p>
-          </div>
-        `;
-      }
-      
-      // Adăugăm secțiunea pentru cereri noi
-      if (groupedNotifications.request.length > 0) {
-        html += `
-          <div style="background-color: #f7fafc; border-left: 4px solid #00aff5; padding: 15px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; color: #2d3748;">🔍 Cereri noi (${groupedNotifications.request.length})</h3>
-            <p>Ați primit ${groupedNotifications.request.length} cereri noi de servicii auto.</p>
-          </div>
-        `;
-      }
-      
-      // Adăugăm secțiunea pentru recenzii noi
-      if (groupedNotifications.review.length > 0) {
-        html += `
-          <div style="background-color: #f7fafc; border-left: 4px solid #00aff5; padding: 15px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; color: #2d3748;">⭐ Recenzii noi (${groupedNotifications.review.length})</h3>
-            <p>Ați primit ${groupedNotifications.review.length} recenzii noi.</p>
-          </div>
-        `;
-      }
-      
-      // Adăugăm secțiunea pentru oferte noi
-      if (groupedNotifications.offer.length > 0) {
-        html += `
-          <div style="background-color: #f7fafc; border-left: 4px solid #00aff5; padding: 15px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; color: #2d3748;">💼 Oferte noi (${groupedNotifications.offer.length})</h3>
-            <p>Ați primit ${groupedNotifications.offer.length} oferte noi.</p>
-          </div>
-        `;
-      }
-      
-      // Finalizăm HTML-ul
-      html += `
-            </div>
-            
-            <div style="margin-top: 30px; text-align: center;">
-              <a href="https://carvizio.ro/dashboard" 
-                style="background-color: #00aff5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
-                Accesează dashboard-ul
-              </a>
-            </div>
-            
-            <p style="margin-top: 30px; color: #718096; font-size: 0.9em;">
-              Acest email este un rezumat al notificărilor primite în ultima perioadă pe platforma Carvizio.
-              <br>
-              Puteți dezactiva notificările prin email din setările contului dvs.
-            </p>
-          </div>
-        </div>
-      `;
-      
-      // Versiunea text
-      const text = `
-Rezumat notificări Carvizio
-
-Bună ziua, ${digest.recipientName},
-
-În ultima perioadă ați primit mai multe notificări. Iată un rezumat:
-
-${groupedNotifications.message.length > 0 ? `📩 Mesaje noi: ${groupedNotifications.message.length}\n` : ''}
-${groupedNotifications.request.length > 0 ? `🔍 Cereri noi: ${groupedNotifications.request.length}\n` : ''}
-${groupedNotifications.review.length > 0 ? `⭐ Recenzii noi: ${groupedNotifications.review.length}\n` : ''}
-${groupedNotifications.offer.length > 0 ? `💼 Oferte noi: ${groupedNotifications.offer.length}\n` : ''}
-
-Pentru a vedea toate notificările, accesați dashboard-ul: https://carvizio.ro/dashboard
-
-Acest email este un rezumat al notificărilor primite în ultima perioadă pe platforma Carvizio.
-Puteți dezactiva notificările prin email din setările contului dvs.
-      `;
-      
-      // Generăm un ID unic pentru acest rezumat
-      const digestId = `digest_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      
-      // Trimitem email-ul
-      const result = await this.sendDirectEmail(
-        digest.email,
-        subject,
-        html,
-        text
-      );
-      
-      return result;
-    } catch (error) {
-      console.error(`❌ [Digest] Eroare la trimiterea rezumatului pentru ${digest.email}:`, error);
-      return false;
     }
   }
 
@@ -754,20 +483,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(serviceProvider.email, 'request')) {
         console.log(`⏳ Trimitere email amânată din cauza rate limiting pentru ${serviceProvider.email}`);
-        
-        // Adăugăm notificarea în digest pentru trimitere ulterioară
-        this.addToNotificationDigest(
-          serviceProvider.email,
-          companyName,
-          'request',
-          requestTitle,
-          clientName,
-          undefined,
-          requestId
-        );
-        
-        console.log(`📋 [Digest] Notificare de cerere nouă adăugată în digest pentru ${serviceProvider.email}`);
-        
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
       }
 
@@ -1157,19 +872,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       if (!this.checkRateLimit(serviceProvider.email, 'message')) {
         console.log(`⏳ Trimitere email pentru mesaj nou BLOCATĂ din cauza rate limiting pentru ${serviceProvider.email}`);
 
-        // Adăugăm notificarea în digest pentru trimitere ulterioară
-        this.addToNotificationDigest(
-          serviceProvider.email,
-          companyName,
-          'message',
-          requestOrOfferTitle,
-          senderName,
-          messageContent.substring(0, 100) + (messageContent.length > 100 ? '...' : ''),
-          messageId
-        );
-        
-        console.log(`📋 [Digest] Notificare de mesaj nou adăugată în digest pentru ${serviceProvider.email}`);
-
         // Ștergem mesajul din cache pentru a permite trimiterea la expirarea perioadei de rate limiting
         this._sentMessageIds.delete(messageSignature);
 
@@ -1393,20 +1095,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(serviceProvider.email, 'review')) {
         console.log(`⏳ Trimitere email pentru recenzie nouă amânată din cauza rate limiting pentru ${serviceProvider.email}`);
-        
-        // Adăugăm notificarea în digest pentru trimitere ulterioară
-        this.addToNotificationDigest(
-          serviceProvider.email,
-          companyName,
-          'review',
-          undefined,
-          clientName,
-          `Rating: ${rating}/5 - ${reviewContent?.substring(0, 100)}${reviewContent?.length > 100 ? '...' : ''}`,
-          reviewId
-        );
-        
-        console.log(`📋 [Digest] Notificare de recenzie nouă adăugată în digest pentru ${serviceProvider.email}`);
-        
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
       }
 
@@ -1561,19 +1249,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(client.email, 'message_client')) {
         console.log(`⏳ Trimitere email pentru mesaj nou către client BLOCATĂ din cauza rate limiting pentru ${client.email}`);
-
-        // Adăugăm notificarea în digest pentru trimitere ulterioară
-        this.addToNotificationDigest(
-          client.email,
-          client.name,
-          'message_client',
-          requestOrOfferTitle,
-          senderName,
-          messageContent.substring(0, 100) + (messageContent.length > 100 ? '...' : ''),
-          messageId
-        );
-        
-        console.log(`📋 [Digest] Notificare de mesaj nou către client adăugată în digest pentru ${client.email}`);
 
         // Nu marcăm mesajul ca trimis în acest caz
         console.log(`🔔 ===== SFÂRȘIT NOTIFICARE EMAIL CLIENT BLOCAT DE RATE LIMIT [${uniqueExecutionId}] =====\n`);
@@ -1740,20 +1415,6 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       // Verificăm rata de limitare pentru acest email
       if (!this.checkRateLimit(client.email, 'offer_new')) {
         console.log(`⏳ Trimitere email pentru ofertă nouă către client amânată din cauza rate limiting pentru ${client.email}`);
-        
-        // Adăugăm notificarea în digest pentru trimitere ulterioară
-        this.addToNotificationDigest(
-          client.email,
-          client.name,
-          'offer_new',
-          offerTitle,
-          providerName,
-          `Pentru cererea: ${requestTitle}`,
-          offerId
-        );
-        
-        console.log(`📋 [Digest] Notificare de ofertă nouă adăugată în digest pentru ${client.email}`);
-        
         return true; // Returnăm true pentru a nu afecta funcționalitatea existentă
       }
 
