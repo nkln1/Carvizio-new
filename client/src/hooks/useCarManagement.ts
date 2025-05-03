@@ -43,6 +43,8 @@ export function useCarManagement() {
         title: "Success",
         description: "Car added successfully",
       });
+      
+      // Reset selected car and return the new car
 
       queryClient.invalidateQueries({ queryKey: ["/api/cars"] });
       return newCar;

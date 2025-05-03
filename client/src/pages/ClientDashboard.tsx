@@ -391,6 +391,8 @@ export default function ClientDashboard() {
               setSelectedCar(undefined);
             } else {
               await handleCarSubmit(data);
+              // Închide automat dialogul după adăugarea unei mașini noi
+              setShowCarDialog(false);
             }
           } catch (error) {
             console.error("Error handling car form submit:", error);
