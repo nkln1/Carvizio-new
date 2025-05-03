@@ -23,7 +23,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   // Implementează Content Security Policy
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; img-src 'self' data: https: http:; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
   );
   
   // Strict Transport Security (doar în producție)
