@@ -24,14 +24,18 @@ export function useOfferManagement() {
   const markOfferAsViewed = async (offerId: number): Promise<void> => {
     try {
       console.log('Marking offer as viewed:', offerId);
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+      
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/mark-offer-viewed/${offerId}`, {
+      const response = await fetchWithCsrf(`/api/client/mark-offer-viewed/${offerId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
+          // fetchWithCsrf will automatically add the CSRF token
         }
       });
 
