@@ -75,12 +75,15 @@ export function RequestsTab({
 
   const handleDelete = async (requestId: number) => {
     try {
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+      
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
         throw new Error("No authentication token available");
       }
 
-      const response = await fetch(`/api/requests/${requestId}`, {
+      const response = await fetchWithCsrf(`/api/requests/${requestId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
