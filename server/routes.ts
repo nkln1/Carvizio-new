@@ -12,6 +12,7 @@ import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { serviceProviders, workingHours } from '@shared/schema';
 import { isClientUser, isServiceProviderUser } from "@shared/schema";
+// WebSocket server imported from index.ts
 import { wss } from './index';
 import { server } from './index';
 import * as fs from 'fs';
@@ -3714,36 +3715,41 @@ export function registerRoutes(app: Express): void {
   // We no longer create a new WebSocket server here because we're using the one imported from index.ts
   // This code was causing port conflict by creating two WebSocket servers
   
-  // Register a new message handler for specific WebSocket events
-  wss.on('connection', (ws) => {
-    // We'll keep this event handler to handle specific application-related WebSocket events
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        console.log('Received message in routes.ts handler:', data);
-        
-        // Handle different message types
-        switch (data.type) {
-          case 'OFFER_SENT':
-            // Broadcast to all connected clients
-            wss.clients.forEach(client => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                  type: 'NEW_OFFER',
-                  payload: data.payload,
-                  timestamp: new Date().toISOString()
-                }));
-              }
-            });
-            break;
-          default:
-            console.log('Unknown message type in routes.ts handler:', data.type);
+  // IMPORTANT: Nu mai înregistrăm un nou handler on('connection') aici, deoarece acesta e deja înregistrat în index.ts
+  // Aceasta este sursa conflictului care duce la probleme de comunicare și neresponsivitate.
+  
+  // În schimb, exportăm o funcție care poate fi folosită pentru a trimite notificări
+  const sendWebSocketNotification = (type, payload, targetUserId = null) => {
+    try {
+      const message = JSON.stringify({
+        type,
+        payload,
+        timestamp: Date.now(),
+        notificationId: `server-${type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+      });
+      
+      console.log(`Broadcasting WebSocket notification: ${type}`);
+      
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
         }
-      } catch (error) {
-        console.error('Error processing WebSocket message in routes.ts handler:', error);
-      }
-    });
-  });
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error sending WebSocket notification: ${error}`);
+      return false;
+    }
+  };
+  
+  // Acum gestionăm mesajele prin funcția sendWebSocketNotification
+  
+  // Exemplu de utilizare pentru trimiterea unei notificări pentru ofertă nouă:
+  // sendWebSocketNotification('NEW_OFFER', { offerId: 123, title: 'Ofertă nouă' });
+  
+  // Exemplu de utilizare pentru trimiterea unei notificări pentru mesaj nou:
+  // sendWebSocketNotification('NEW_MESSAGE', { messageId: 456, content: 'Mesaj nou' });
 
   // Am eliminat ruta duplicată, folosind cea definită la linia 253
 
