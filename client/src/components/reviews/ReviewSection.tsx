@@ -631,7 +631,9 @@ export function ReviewSection({
                             ))}
                           </div>
 
-                          <p className="text-gray-700 mb-1">{review.comment}</p>
+                          <p className="text-gray-700 mb-1 break-words whitespace-pre-wrap max-w-full">
+                            {review.comment}
+                          </p>
                         </div>
                       </>
                     )}
