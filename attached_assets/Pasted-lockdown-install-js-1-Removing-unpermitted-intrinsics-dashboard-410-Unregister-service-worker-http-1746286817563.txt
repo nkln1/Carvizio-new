@@ -1,0 +1,917 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+dashboard:410 Unregister service worker: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/
+dashboard:400 Ștergere cache vechi: service-dashboard-cache-v1.0.8
+dashboard:5 [App] Încărcare aplicație...
+hmr-disable.ts:161 [Mod Dezvoltare] HMR dezactivat - refresh manual necesar
+hmr-disable.ts:163 Toate conexiunile pentru Hot Module Replacement au fost blocate pentru stabilitate.
+chunk-RPCDYKBN.js?v=c975125b:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+websocket.ts:46 Initializing WebSocket service...
+websocket.ts:84 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+websocket.ts:87 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+websocket.ts:105 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+firebase.ts:34 Firebase Cloud Messaging este suportat în acest browser
+firebase.ts:55 Firebase auth state: Logged in
+firebase.ts:57 Email verified: true
+firebase.ts:47 Firebase persistence set to LOCAL
+AuthContext.tsx:84 Firebase persistence set to LOCAL
+AuthContext.tsx:84 Firebase persistence set to LOCAL
+sw.js?t=1746286483444&v=1.0.6:1276 [Service Worker] Script încărcat cu versiunea: v1.0.8
+dashboard:135 Service Worker înregistrat cu succes: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/
+sw.js?t=1746286483444&v=1.0.6:27 [Service Worker] Instalare în curs...
+dashboard:181 Permisiune pentru notificări acordată anterior
+websocket.ts:122 WebSocket connection established successfully
+websocket.ts:139 Raw WebSocket message received: {"type":"CONNECTED","message":"WebSocket connection established successfully"}
+websocket.ts:141 Received WebSocket message (parsed): {type: 'CONNECTED', message: 'WebSocket connection established successfully'}
+AuthContext.tsx:52 Token de autentificare actualizat și salvat pentru Service Worker
+AuthContext.tsx:52 Token de autentificare actualizat și salvat pentru Service Worker
+App.tsx:52 [App] Încărcare aplicație...
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+firebaseMessaging.ts:38 Inițializare notificări pentru client cu ID 3
+App.tsx:52 [App] Încărcare aplicație...
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+firebaseMessaging.ts:38 Inițializare notificări pentru client cu ID 3
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+App.tsx:83 Stare permisiune notificări: granted
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+App.tsx:83 Stare permisiune notificări: granted
+firebaseMessaging.ts:57 Permisiuni notificări acordate pentru client
+firebaseMessaging.ts:93 [client] Înregistrare Service Worker: /firebase-messaging-sw.js
+App.tsx:108 WebSocket conectat pentru notificări
+App.tsx:146 Notificările sunt active și configurate corect
+App.tsx:108 WebSocket conectat pentru notificări
+App.tsx:146 Notificările sunt active și configurate corect
+firebaseMessaging.ts:57 Permisiuni notificări acordate pentru client
+firebaseMessaging.ts:93 [client] Înregistrare Service Worker: /firebase-messaging-sw.js
+firebaseMessaging.ts:99 [client] Service Worker Firebase deja înregistrat: ServiceWorkerRegistration {installing: ServiceWorker, waiting: null, active: null, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+firebaseMessaging.ts:113 [client] Așteptăm instalarea Service Worker...
+firebaseMessaging.ts:99 [client] Service Worker Firebase deja înregistrat: ServiceWorkerRegistration {installing: ServiceWorker, waiting: null, active: null, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+firebaseMessaging.ts:113 [client] Așteptăm instalarea Service Worker...
+csrfInitializer.ts:21 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:104 [CSRF] Inițiem cerere pentru token CSRF
+csrfInitializer.ts:21 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfInitializer.ts:21 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+firebaseMessaging.ts:38 Inițializare notificări pentru client cu ID 3
+firebaseMessaging.ts:57 Permisiuni notificări acordate pentru client
+firebaseMessaging.ts:93 [client] Înregistrare Service Worker: /firebase-messaging-sw.js
+firebaseMessaging.ts:99 [client] Service Worker Firebase deja înregistrat: ServiceWorkerRegistration {installing: ServiceWorker, waiting: null, active: null, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+firebaseMessaging.ts:113 [client] Așteptăm instalarea Service Worker...
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: 3173bc47...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:31 [CSRF] Token CSRF inițializat cu succes
+csrfInitializer.ts:31 [CSRF] Token CSRF inițializat cu succes
+App.tsx:61 Protecție CSRF inițializată
+App.tsx:61 Protecție CSRF inițializată
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+sw.js?t=1746286483444&v=1.0.6:41 [Service Worker] Activare cu versiunea: v1.0.8
+firebaseMessaging.ts:117 [client] Service Worker activat cu succes
+sw.js?t=1746286483444&v=1.0.6:903 [Service Worker] Mesaj primit: {eventType: 'ping', eventId: '74649223037859617763', data: {…}}
+sw.js?t=1746286483444&v=1.0.6:1271 [Service Worker] Tip de mesaj necunoscut: undefined
+firebaseMessaging.ts:210 [client] Trimit configurația către Service Worker...
+firebaseMessaging.ts:117 [client] Service Worker activat cu succes
+firebaseMessaging.ts:210 [client] Trimit configurația către Service Worker...
+sw.js?t=1746286483444&v=1.0.6:903 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}, userInfo: {…}}
+firebaseMessaging.ts:117 [client] Service Worker activat cu succes
+firebaseMessaging.ts:210 [client] Trimit configurația către Service Worker...
+sw.js?t=1746286483444&v=1.0.6:1271 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+sw.js?t=1746286483444&v=1.0.6:903 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}, userInfo: {…}}
+sw.js?t=1746286483444&v=1.0.6:1271 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+sw.js?t=1746286483444&v=1.0.6:903 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}, userInfo: {…}}
+sw.js?t=1746286483444&v=1.0.6:1271 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: 3173bc47...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 0, viewedOffers: 15, newOffersCount: 0}
+csrfToken.ts:24 [CSRF] Token CSRF setat direct: b25719f3...
+csrfToken.ts:116 [CSRF] Token CSRF obținut cu succes: b25719f3...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:31 [CSRF] Token CSRF inițializat cu succes
+useUnreadMessagesCount.ts:36 Actualizare număr conversații necitite: 2
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 0, viewedOffers: 15, newOffersCount: 0}
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: 3173bc47...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: 3173bc47...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+useOfferManagement.ts:78 New offers calculation: {totalOffers: 22, viewedOffers: 15, newOffersCount: 7}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: 3173bc47...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: 3173bc47...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+firebaseMessaging.ts:198 [client] Timeout așteptând răspunsul Service Worker
+(anonymous) @ firebaseMessaging.ts:198
+setTimeout
+(anonymous) @ firebaseMessaging.ts:197
+sendConfigToServiceWorker @ firebaseMessaging.ts:191
+registerServiceWorker @ firebaseMessaging.ts:128
+await in registerServiceWorker
+initialize @ firebaseMessaging.ts:60
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:262 Token FCM generat pentru client: MTc0NjI4NjQ4NzY2Mi00OTI4MzQyOTQtTW96aWxs
+firebaseMessaging.ts:320 Înregistrare token pentru client (ID: 3)...
+firebaseMessaging.ts:198 [client] Timeout așteptând răspunsul Service Worker
+(anonymous) @ firebaseMessaging.ts:198
+setTimeout
+(anonymous) @ firebaseMessaging.ts:197
+sendConfigToServiceWorker @ firebaseMessaging.ts:191
+registerServiceWorker @ firebaseMessaging.ts:128
+await in registerServiceWorker
+initialize @ firebaseMessaging.ts:60
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=c975125b:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=c975125b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=c975125b:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:262 Token FCM generat pentru client: MTc0NjI4NjQ4NzY2NC01MjY4MjM4MzMtTW96aWxs
+firebaseMessaging.ts:320 Înregistrare token pentru client (ID: 3)...
+firebaseMessaging.ts:198 [client] Timeout așteptând răspunsul Service Worker
+(anonymous) @ firebaseMessaging.ts:198
+setTimeout
+(anonymous) @ firebaseMessaging.ts:197
+sendConfigToServiceWorker @ firebaseMessaging.ts:191
+registerServiceWorker @ firebaseMessaging.ts:128
+await in registerServiceWorker
+initialize @ firebaseMessaging.ts:60
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:262 Token FCM generat pentru client: MTc0NjI4NjQ4NzY2Ni00MzU0MTY3NjktTW96aWxs
+firebaseMessaging.ts:320 Înregistrare token pentru client (ID: 3)...
+hmr-disable.ts:95 
+            
+            
+           POST https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/notifications/register-token 403 (Forbidden)
+window.fetch @ hmr-disable.ts:95
+registerTokenWithServer @ firebaseMessaging.ts:322
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:275
+initialize @ firebaseMessaging.ts:67
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:344 Eroare la înregistrarea token-ului FCM pentru client: Error: Eroare server: 403 - {"error":"CSRF token missing"}
+    at FirebaseMessaging.registerTokenWithServer (firebaseMessaging.ts:337:15)
+    at async FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:275:28)
+    at async FirebaseMessaging.initialize (firebaseMessaging.ts:67:28)
+    at async initializeNotifications (NotificationContext.tsx:48:24)
+registerTokenWithServer @ firebaseMessaging.ts:344
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:275
+initialize @ firebaseMessaging.ts:67
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:69 Nu s-a putut actualiza token-ul FCM pentru client
+initialize @ firebaseMessaging.ts:69
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:95 
+            
+            
+           POST https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/notifications/register-token 403 (Forbidden)
+window.fetch @ hmr-disable.ts:95
+registerTokenWithServer @ firebaseMessaging.ts:322
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:275
+initialize @ firebaseMessaging.ts:67
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=c975125b:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=c975125b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=c975125b:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:344 Eroare la înregistrarea token-ului FCM pentru client: Error: Eroare server: 403 - {"error":"CSRF token missing"}
+    at FirebaseMessaging.registerTokenWithServer (firebaseMessaging.ts:337:15)
+    at async FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:275:28)
+    at async FirebaseMessaging.initialize (firebaseMessaging.ts:67:28)
+    at async initializeNotifications (NotificationContext.tsx:48:24)
+registerTokenWithServer @ firebaseMessaging.ts:344
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:275
+initialize @ firebaseMessaging.ts:67
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=c975125b:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=c975125b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=c975125b:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:69 Nu s-a putut actualiza token-ul FCM pentru client
+initialize @ firebaseMessaging.ts:69
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=c975125b:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=c975125b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=c975125b:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:95 
+            
+            
+           POST https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/notifications/register-token 403 (Forbidden)
+window.fetch @ hmr-disable.ts:95
+registerTokenWithServer @ firebaseMessaging.ts:322
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:275
+initialize @ firebaseMessaging.ts:67
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:344 Eroare la înregistrarea token-ului FCM pentru client: Error: Eroare server: 403 - {"error":"CSRF token missing"}
+    at FirebaseMessaging.registerTokenWithServer (firebaseMessaging.ts:337:15)
+    at async FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:275:28)
+    at async FirebaseMessaging.initialize (firebaseMessaging.ts:67:28)
+    at async initializeNotifications (NotificationContext.tsx:48:24)
+registerTokenWithServer @ firebaseMessaging.ts:344
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:275
+initialize @ firebaseMessaging.ts:67
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:69 Nu s-a putut actualiza token-ul FCM pentru client
+initialize @ firebaseMessaging.ts:69
+await in initialize
+initializeNotifications @ NotificationContext.tsx:48
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/messages/unread-count 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+countUnreadMessages @ NotificationContext.tsx:160
+initializeNotifications @ NotificationContext.tsx:53
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/messages/unread-count 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+countUnreadMessages @ NotificationContext.tsx:160
+initializeNotifications @ NotificationContext.tsx:53
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+invokePassiveEffectMountInDEV @ chunk-RPCDYKBN.js?v=c975125b:18324
+invokeEffectsInDev @ chunk-RPCDYKBN.js?v=c975125b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-RPCDYKBN.js?v=c975125b:19686
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19503
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/messages/unread-count 401 (Unauthorized)
+window.fetch @ hmr-disable.ts:95
+countUnreadMessages @ NotificationContext.tsx:160
+initializeNotifications @ NotificationContext.tsx:53
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:57
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:132 Selected conversation in MessagesTab: {userId: 1, userName: 'NKLN Service', requestId: 7, offerId: null, sourceTab: undefined, …}
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+csrfToken.ts:182 [CSRF] Folosim token pentru cerere (încercarea 1): d88c8475...
+csrfToken.ts:205 [CSRF] Request to /api/client/conversations/7/mark-read with method POST
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:209 [CSRF] Response status 200 from /api/client/conversations/7/mark-read
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+useUnreadMessagesCount.ts:36 Actualizare număr conversații necitite: 1
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:132 Selected conversation in MessagesTab: {userId: 1, userName: 'NKLN Service', requestId: 8, offerId: null, sourceTab: undefined, …}
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+csrfToken.ts:182 [CSRF] Folosim token pentru cerere (încercarea 1): d88c8475...
+csrfToken.ts:205 [CSRF] Request to /api/client/conversations/8/mark-read with method POST
+csrfToken.ts:209 [CSRF] Response status 200 from /api/client/conversations/8/mark-read
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+useMessagesManagement.ts:174 [Message] Reîmprospătăm token-ul CSRF înainte de a trimite mesajul...
+useMessagesManagement.ts:177 [Message] Eroare la reîmprospătarea tokenului CSRF: ReferenceError: refreshCsrfToken is not defined
+    at useMessagesManagement.ts:175:9
+    at async handleSendMessage (MessagesTab.tsx:399:21)
+    at async onSendMessage (MessagesView.tsx:57:7)
+(anonymous) @ useMessagesManagement.ts:177
+await in (anonymous)
+handleSendMessage @ MessagesTab.tsx:399
+onSendMessage @ MessagesView.tsx:57
+handleKeyDown @ MessagesView.tsx:81
+callCallback2 @ chunk-RPCDYKBN.js?v=c975125b:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=c975125b:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=c975125b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=c975125b:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=c975125b:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=c975125b:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=c975125b:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=c975125b:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=c975125b:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=c975125b:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=c975125b:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=c975125b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=c975125b:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=c975125b:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=c975125b:5449
+useMessagesManagement.ts:183 [Message] Trimitem mesajul la: /api/client/messages/send
+csrfToken.ts:182 [CSRF] Folosim token pentru cerere (încercarea 1): d88c8475...
+csrfToken.ts:205 [CSRF] Request to /api/client/messages/send with method POST
+websocket.ts:139 Raw WebSocket message received: {"type":"NEW_MESSAGE","payload":{"id":580,"requestId":8,"offerId":null,"senderId":3,"senderRole":"client","receiverId":1,"receiverRole":"service","content":"mesaj catre service 18.36","isRead":false,"isNew":true,"createdAt":"2025-05-03T15:36:13.944Z","senderName":"Catalinnnnn"},"timestamp":"2025-05-03T15:36:14.082Z"}
+websocket.ts:141 Received WebSocket message (parsed): {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:36:14.082Z'}
+websocket.ts:176 Received NEW_MESSAGE event: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:36:14.082Z', notificationId: 'websocket-NEW_MESSAGE-1746286574254-c8gue5'}
+websocket.ts:177 NEW_MESSAGE content: mesaj catre service 18.36
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:36:14.082Z', notificationId: 'websocket-NEW_MESSAGE-1746286574254-c8gue5'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:36:14.082Z', notificationId: 'websocket-NEW_MESSAGE-1746286574254-c8gue5'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286574254-c8gue5
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:36:14.082Z', notificationId: 'websocket-NEW_MESSAGE-1746286574254-c8gue5'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:36:14.082Z', notificationId: 'websocket-NEW_MESSAGE-1746286574254-c8gue5'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286574254-c8gue5
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:209 [CSRF] Response status 201 from /api/client/messages/send
+useMessagesManagement.ts:193 [Message] Răspuns primit: 201
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+useMessagesManagement.ts:174 [Message] Reîmprospătăm token-ul CSRF înainte de a trimite mesajul...
+useMessagesManagement.ts:177 [Message] Eroare la reîmprospătarea tokenului CSRF: ReferenceError: refreshCsrfToken is not defined
+    at useMessagesManagement.ts:175:9
+    at async handleSendMessage (MessagesTab.tsx:399:21)
+    at async onSendMessage (MessagesView.tsx:57:7)
+(anonymous) @ useMessagesManagement.ts:177
+await in (anonymous)
+handleSendMessage @ MessagesTab.tsx:399
+onSendMessage @ MessagesView.tsx:57
+handleKeyDown @ MessagesView.tsx:81
+callCallback2 @ chunk-RPCDYKBN.js?v=c975125b:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=c975125b:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=c975125b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=c975125b:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=c975125b:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=c975125b:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=c975125b:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=c975125b:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=c975125b:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=c975125b:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=c975125b:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=c975125b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=c975125b:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=c975125b:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=c975125b:5449
+useMessagesManagement.ts:183 [Message] Trimitem mesajul la: /api/client/messages/send
+csrfToken.ts:182 [CSRF] Folosim token pentru cerere (încercarea 1): d88c8475...
+csrfToken.ts:205 [CSRF] Request to /api/client/messages/send with method POST
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+websocket.ts:139 Raw WebSocket message received: {"type":"NEW_MESSAGE","payload":{"id":581,"requestId":8,"offerId":null,"senderId":3,"senderRole":"client","receiverId":1,"receiverRole":"service","content":"18.37","isRead":false,"isNew":true,"createdAt":"2025-05-03T15:37:42.195Z","senderName":"Catalinnnnn"},"timestamp":"2025-05-03T15:37:42.333Z"}
+websocket.ts:141 Received WebSocket message (parsed): {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:42.333Z'}
+websocket.ts:176 Received NEW_MESSAGE event: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:42.333Z', notificationId: 'websocket-NEW_MESSAGE-1746286662505-auyt6g'}
+websocket.ts:177 NEW_MESSAGE content: 18.37
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:42.333Z', notificationId: 'websocket-NEW_MESSAGE-1746286662505-auyt6g'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:42.333Z', notificationId: 'websocket-NEW_MESSAGE-1746286662505-auyt6g'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286662505-auyt6g
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:42.333Z', notificationId: 'websocket-NEW_MESSAGE-1746286662505-auyt6g'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:42.333Z', notificationId: 'websocket-NEW_MESSAGE-1746286662505-auyt6g'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286662505-auyt6g
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:209 [CSRF] Response status 201 from /api/client/messages/send
+useMessagesManagement.ts:193 [Message] Răspuns primit: 201
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+websocket.ts:139 Raw WebSocket message received: {"type":"NEW_MESSAGE","payload":{"id":582,"requestId":8,"offerId":null,"senderId":1,"senderRole":"service","receiverId":3,"receiverRole":"client","content":"mesaj catre client","isRead":false,"isNew":true,"createdAt":"2025-05-03T15:37:59.023Z","senderName":"NKLN Service","receiverName":"Catalinnnnn"},"timestamp":"2025-05-03T15:37:59.161Z"}
+websocket.ts:141 Received WebSocket message (parsed): {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:59.161Z'}
+websocket.ts:176 Received NEW_MESSAGE event: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:59.161Z', notificationId: 'websocket-NEW_MESSAGE-1746286679339-xgnsha'}
+websocket.ts:177 NEW_MESSAGE content: mesaj catre client
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:59.161Z', notificationId: 'websocket-NEW_MESSAGE-1746286679339-xgnsha'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:59.161Z', notificationId: 'websocket-NEW_MESSAGE-1746286679339-xgnsha'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286679339-xgnsha
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:59.161Z', notificationId: 'websocket-NEW_MESSAGE-1746286679339-xgnsha'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:37:59.161Z', notificationId: 'websocket-NEW_MESSAGE-1746286679339-xgnsha'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286679339-xgnsha
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+websocket.ts:139 Raw WebSocket message received: {"type":"NEW_MESSAGE","payload":{"id":583,"requestId":8,"offerId":null,"senderId":1,"senderRole":"service","receiverId":3,"receiverRole":"client","content":"18.38","isRead":false,"isNew":true,"createdAt":"2025-05-03T15:38:07.388Z","senderName":"NKLN Service","receiverName":"Catalinnnnn"},"timestamp":"2025-05-03T15:38:07.526Z"}
+websocket.ts:141 Received WebSocket message (parsed): {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:38:07.526Z'}
+websocket.ts:176 Received NEW_MESSAGE event: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:38:07.526Z', notificationId: 'websocket-NEW_MESSAGE-1746286687698-hfzhim'}
+websocket.ts:177 NEW_MESSAGE content: 18.38
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:38:07.526Z', notificationId: 'websocket-NEW_MESSAGE-1746286687698-hfzhim'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:38:07.526Z', notificationId: 'websocket-NEW_MESSAGE-1746286687698-hfzhim'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286687698-hfzhim
+App.tsx:113 Processing websocket message for notifications: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:38:07.526Z', notificationId: 'websocket-NEW_MESSAGE-1746286687698-hfzhim'}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:407 Procesare eveniment notificare: {type: 'NEW_MESSAGE', payload: {…}, timestamp: '2025-05-03T15:38:07.526Z', notificationId: 'websocket-NEW_MESSAGE-1746286687698-hfzhim'}
+notifications.ts:421 Notificare ignorată (duplicat) cu ID: websocket-NEW_MESSAGE-1746286687698-hfzhim
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+MessagesTab.tsx:235 All conversations with offerId: (10) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+csrfInitializer.ts:74 [CSRF] Pagina devine vizibilă, reîmprospătăm tokenul CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:77 [CSRF] Token CSRF reîmprospătat la revenirea la pagină
+csrfInitializer.ts:74 [CSRF] Pagina devine vizibilă, reîmprospătăm tokenul CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:77 [CSRF] Token CSRF reîmprospătat la revenirea la pagină
+csrfInitializer.ts:74 [CSRF] Pagina devine vizibilă, reîmprospătăm tokenul CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:77 [CSRF] Token CSRF reîmprospătat la revenirea la pagină
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+csrfInitializer.ts:74 [CSRF] Pagina devine vizibilă, reîmprospătăm tokenul CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:77 [CSRF] Token CSRF reîmprospătat la revenirea la pagină
+csrfInitializer.ts:74 [CSRF] Pagina devine vizibilă, reîmprospătăm tokenul CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:77 [CSRF] Token CSRF reîmprospătat la revenirea la pagină
+csrfInitializer.ts:74 [CSRF] Pagina devine vizibilă, reîmprospătăm tokenul CSRF...
+csrfToken.ts:262 [CSRF] Inițializare protecție CSRF...
+csrfToken.ts:265 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:77 [CSRF] Token CSRF reîmprospătat la revenirea la pagină
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: d88c8475...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
