@@ -1,0 +1,73 @@
+https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/client/messages/send 403 (Forbidden)
+window.fetch @ hmr-disable.ts:95
+fetchWithCsrf @ csrfToken.ts:80
+(anonymous) @ useMessagesManagement.ts:167
+await in (anonymous)
+handleSendMessage @ MessagesTab.tsx:399
+onSendMessage @ MessagesView.tsx:57
+handleKeyDown @ MessagesView.tsx:81
+callCallback2 @ chunk-RPCDYKBN.js?v=db03b450:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=db03b450:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=db03b450:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=db03b450:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=db03b450:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=db03b450:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=db03b450:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=db03b450:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=db03b450:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=db03b450:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=db03b450:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=db03b450:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=db03b450:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=db03b450:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=db03b450:5449Understand this error
+csrfToken.ts:17 Token CSRF actualizat
+useMessagesManagement.ts:179 Error sending message: {status: 403, body: '{"error":"Invalid CSRF token"}'}
+(anonymous) @ useMessagesManagement.ts:179
+await in (anonymous)
+handleSendMessage @ MessagesTab.tsx:399
+onSendMessage @ MessagesView.tsx:57
+handleKeyDown @ MessagesView.tsx:81
+callCallback2 @ chunk-RPCDYKBN.js?v=db03b450:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=db03b450:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=db03b450:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=db03b450:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=db03b450:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=db03b450:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=db03b450:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=db03b450:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=db03b450:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=db03b450:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=db03b450:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=db03b450:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=db03b450:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=db03b450:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=db03b450:5449Understand this error
+useMessagesManagement.ts:216 Error in sendMessage: Error: Failed to send message: {"error":"Invalid CSRF token"}
+    at useMessagesManagement.ts:183:15
+    at async handleSendMessage (MessagesTab.tsx:399:21)
+    at async onSendMessage (MessagesView.tsx:57:7)
+(anonymous) @ useMessagesManagement.ts:216
+await in (anonymous)
+handleSendMessage @ MessagesTab.tsx:399
+onSendMessage @ MessagesView.tsx:57
+handleKeyDown @ MessagesView.tsx:81
+callCallback2 @ chunk-RPCDYKBN.js?v=db03b450:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=db03b450:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=db03b450:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=db03b450:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=db03b450:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=db03b450:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=db03b450:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=db03b450:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=db03b450:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=db03b450:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=db03b450:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=db03b450:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=db03b450:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=db03b450:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=db03b450:5449Understand this error
+MessagesView.tsx:72 Error sending message: Error: Failed to send message: {"error":"Invalid CSRF token"}
+    at useMessagesManagement.ts:183:15
+    at async handleSendMessage (MessagesTab.tsx:399:21)
+    at async onSendMessage (

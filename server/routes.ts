@@ -2359,7 +2359,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Add this endpoint after the existing /api/messages GET endpoint
-  app.post("/api/service/messages/send", validateFirebaseToken, async (req, res) => {
+  app.post("/api/service/messages/send", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const { content, receiverId, requestId, offerId } = req.body;
 
@@ -3011,7 +3011,7 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/client/messages/send", validateFirebaseToken, async (req, res) => {
+  app.post("/api/client/messages/send", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       console.log('POST /api/client/messages/send - Start', req.body);
 
@@ -3305,7 +3305,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Add this endpoint after the other message-related endpoints
-  app.post("/api/service/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
+  app.post("/api/service/conversations/:requestId/mark-read", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const provider = await storage.getServiceProviderByFirebaseUid(req.firebaseUser!.uid);
       if (!provider) {
@@ -3329,7 +3329,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Add similar endpoint for client
-  app.post("/api/client/conversations/:requestId/mark-read", validateFirebaseToken, async (req, res) => {
+  app.post("/api/client/conversations/:requestId/mark-read", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
