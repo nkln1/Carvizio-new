@@ -3,12 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
-import NotificationHelper from '@/lib/notifications'; // Added import for NotificationHelper
-import { fetchWithCsrf } from "@/lib/csrfToken"; // Import fetchWithCsrf pentru protecție CSRF
+import NotificationHelper from '@/lib/notifications';
+import { fetchWithCsrf } from "@/lib/csrfToken";
 
-const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
-const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
-const CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
+const MESSAGES_STALE_TIME = 1000 * 5;
+const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10;
+const CONVERSATIONS_STALE_TIME = 1000 * 10;
 
 export interface ConversationInfo {
   userId: number;
@@ -29,18 +29,13 @@ export function useMessagesManagement(
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Define base endpoints based on user type
   const baseEndpoint = isClient ? '/api/client' : '/api/service';
-
-  // Calculate pagination values
   const startIndex = (currentPage - 1) * itemsPerPage;
-  
-  // Use proper type definition to fix TypeScript error
+
   const totalPages = <T extends Array<unknown>>(items: T): number => {
     return Math.ceil(items.length / itemsPerPage);
   };
 
-  // Mark conversation as read
   const markConversationAsRead = useCallback(async (requestId: number, userId: number) => {
     try {
       const token = await auth.currentUser?.getIdToken();
@@ -55,11 +50,8 @@ export function useMessagesManagement(
         body: JSON.stringify({ userId })
       });
 
-      // Invalidate queries to update UI
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/messages`] });
       await queryClient.invalidateQueries({ queryKey: [`${baseEndpoint}/conversations`] });
-
-      // Ensure invalidation for unread messages count
       await queryClient.invalidateQueries({ 
         queryKey: ["unreadConversationsCount"],
         exact: true
@@ -69,7 +61,6 @@ export function useMessagesManagement(
     }
   }, [baseEndpoint, queryClient]);
 
-  // Set initial conversation and mark as read if needed
   useEffect(() => {
     if (initialConversation && initialConversation.userId && initialConversation.requestId) {
       setActiveConversation({
@@ -80,12 +71,10 @@ export function useMessagesManagement(
         serviceProviderUsername: initialConversation.serviceProviderUsername
       });
 
-      // Mark as read when conversation is opened
       markConversationAsRead(initialConversation.requestId, initialConversation.userId);
     }
   }, [initialConversation, markConversationAsRead]);
 
-  // Messages query
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: [`${baseEndpoint}/messages`, activeConversation?.requestId],
     queryFn: async () => {
@@ -94,10 +83,9 @@ export function useMessagesManagement(
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Folosim fetch normal pentru GET - nu necesită CSRF
       const response = await fetch(`${baseEndpoint}/messages/${activeConversation.requestId}`, {
         method: 'GET',
-        credentials: 'include', // Include cookies pentru CSRF token ID
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
@@ -115,17 +103,15 @@ export function useMessagesManagement(
     refetchInterval: MESSAGES_STALE_TIME
   });
 
-  // Conversations query
   const { data: allConversations = [], isLoading: isLoadingConversations } = useQuery({
     queryKey: [`${baseEndpoint}/conversations`],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Folosim fetch normal pentru GET - nu necesită CSRF
       const response = await fetch(`${baseEndpoint}/conversations`, {
         method: 'GET',
-        credentials: 'include', // Include cookies pentru CSRF token ID
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
@@ -142,12 +128,10 @@ export function useMessagesManagement(
     refetchInterval: CONVERSATIONS_STALE_TIME
   });
 
-  // Get paginated conversations for filtered results
   const getPaginatedConversations = <T extends Array<unknown>>(conversations: T): T => {
     return conversations.slice(startIndex, startIndex + itemsPerPage) as T;
   };
 
-  // Get paginated conversations
   const conversations = getPaginatedConversations(allConversations);
   const totalConversationPages = totalPages(allConversations);
 
@@ -169,17 +153,13 @@ export function useMessagesManagement(
         offerId: activeConversation.offerId
       };
 
-      // Reîmprospătăm token-ul CSRF înainte de a trimite mesajul
       try {
         console.log('[Message] Reîmprospătăm token-ul CSRF înainte de a trimite mesajul...');
-        await refreshCsrfToken();
+        await import('../lib/csrfToken').then(({ refreshCsrfToken }) => refreshCsrfToken());
       } catch (error) {
         console.error('[Message] Eroare la reîmprospătarea tokenului CSRF:', error);
-        // Continuăm oricum, fetchWithCsrf va încerca să rezolve problema
       }
 
-      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
-      // Acum include și logica de reîncercare automată
       console.log('[Message] Trimitem mesajul la:', `${baseEndpoint}/messages/send`);
       const response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
         method: 'POST',
@@ -189,11 +169,10 @@ export function useMessagesManagement(
         },
         body: JSON.stringify(messagePayload)
       });
-      
+
       console.log('[Message] Răspuns primit:', response.status);
-      
+
       if (!response.ok) {
-        // Încercăm să preluăm informații despre eroare
         let errorMessage = "Eroare la trimiterea mesajului";
         try {
           const errorData = await response.json();
@@ -202,42 +181,34 @@ export function useMessagesManagement(
           try {
             errorMessage = await response.text() || errorMessage;
           } catch {
-            // Folosim mesajul implicit dacă nu putem extrage altul
           }
         }
-        
+
         console.error('[Message] Error sending message:', {
           status: response.status,
           message: errorMessage
         });
-        
+
         throw new Error(`Failed to send message: ${errorMessage}`);
       }
 
       const newMessage = await response.json();
-
-      // Store message ID to prevent duplication
       const messageId = newMessage.id;
-      
-      // Option 1: Only update the cache (don't invalidate and refetch)
+
       queryClient.setQueryData(
         [`${baseEndpoint}/messages`, activeConversation.requestId],
         (old: Message[] | undefined) => {
-          // If no old messages, just return the new one
           if (!old) return [newMessage];
-          
-          // Check if the message already exists to prevent duplication
+
           const messageExists = old.some(msg => msg.id === messageId);
           if (messageExists) return old;
-          
-          // Add the new message only if it doesn't exist
+
           const currentMessages = [...old];
           currentMessages.push(newMessage);
           return currentMessages;
         }
       );
 
-      // Invalidate conversations to update last message, but don't invalidate messages
       await queryClient.invalidateQueries({
         queryKey: [`${baseEndpoint}/conversations`]
       });

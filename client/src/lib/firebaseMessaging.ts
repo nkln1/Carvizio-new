@@ -317,14 +317,20 @@ class FirebaseMessaging {
       
       const authToken = await currentUser.getIdToken();
       
+      // Obținem un token CSRF valid
+      const { getCsrfToken, getOrFetchCsrfToken } = await import('./csrfToken');
+      const csrfToken = getCsrfToken() || await getOrFetchCsrfToken();
+      
       console.log(`Înregistrare token pentru ${this.userRole} (ID: ${this.userId})...`);
       
       const response = await fetch('/api/notifications/register-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${authToken}`,
+          'X-CSRF-Token': csrfToken
         },
+        credentials: 'include',
         body: JSON.stringify({
           token: this.fcmToken,
           userId: this.userId,
