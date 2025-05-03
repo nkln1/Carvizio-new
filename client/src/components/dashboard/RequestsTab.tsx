@@ -1,28 +1,10 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { FileSearch, Clock, Filter, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { useRequestsManagement } from "@/hooks/useRequestsManagement";
 import {
   Dialog,
   DialogContent,
@@ -30,447 +12,291 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
-import { auth } from "@/lib/firebase";
-import type { Request as RequestType } from "@shared/schema";
-import websocketService from "@/lib/websocket";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-
-interface RequestsTabProps {
-  requests: RequestType[];
-  isLoading: boolean;
-  onCreateRequest: () => void;
-}
-
-export function RequestsTab({
-  requests,
-  isLoading,
-  onCreateRequest,
-}: RequestsTabProps) {
-  const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
+export default function RequestsTab() {
   const [activeTab, setActiveTab] = useState("active");
-  const { toast } = useToast();
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const { requests, cancelRequest } = useRequestsManagement();
 
-  // Calculate request counts
-  const activeCount = requests.filter(req => req.status === "Active").length;
-  const solvedCount = requests.filter(req => req.status === "Rezolvat").length;
-  const canceledCount = requests.filter(req => req.status === "Anulat").length;
+  // Calculate request counts by status
+  const activeRequests = requests.filter((req) => req.status === "Active");
+  const completedRequests = requests.filter((req) => req.status === "Completed");
+  const cancelledRequests = requests.filter((req) => req.status === "Cancelled");
 
-  // WebSocket connection for real-time updates
-  useEffect(() => {
-    const handleWebSocketMessage = (data: any) => {
-      if (data.type === 'REQUEST_STATUS_CHANGED') {
-        queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-      }
-    };
-
-    const removeHandler = websocketService.addMessageHandler(handleWebSocketMessage);
-
-    return () => {
-      removeHandler();
-    };
-  }, []);
-
-  const handleDelete = async (requestId: number) => {
-    try {
-      // Import the fetchWithCsrf function from the csrfToken module
-      const { fetchWithCsrf } = await import('@/lib/csrfToken');
-      
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) {
-        throw new Error("No authentication token available");
-      }
-
-      const response = await fetchWithCsrf(`/api/requests/${requestId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: "Anulat" }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to cancel request");
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-
-      toast({
-        title: "Success",
-        description: "Cererea a fost anulată cu succes.",
-      });
-    } catch (error) {
-      console.error("Error canceling request:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Nu s-a putut anula cererea. Încercați din nou.",
-      });
+  // Helper function to get filtered requests based on status
+  const getFilteredRequests = () => {
+    switch (activeTab) {
+      case "active":
+        return activeRequests;
+      case "resolved":
+        return completedRequests;
+      case "cancelled":
+        return cancelledRequests;
+      default:
+        return activeRequests;
     }
-    setShowDeleteDialog(false);
+  };
+
+  const filteredRequests = getFilteredRequests();
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Active":
+        return <Badge className="bg-blue-500">Activă</Badge>;
+      case "Completed":
+        return <Badge className="bg-green-500">Rezolvată</Badge>;
+      case "Cancelled":
+        return <Badge className="bg-red-500">Anulată</Badge>;
+      default:
+        return <Badge className="bg-gray-500">{status}</Badge>;
+    }
+  };
+
+  const handleViewRequest = (request) => {
+    setSelectedRequest(request);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedRequest(null);
+  };
+
+  const handleCancelRequest = async (requestId) => {
+    if (window.confirm("Sigur doriți să anulați această cerere?")) {
+      await cancelRequest(requestId);
+    }
   };
 
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
         <CardTitle className="text-[#00aff5] flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Cererile mele
+          <FileSearch className="h-5 w-5" />
+          Cererile Mele
         </CardTitle>
+        <CardDescription>Istoricul și statusul cererilor tale</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-3 mb-4 bg-slate-100 p-1">
             <TabsTrigger
               value="active"
-              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
             >
-              Active ({activeCount})
+              Active ({activeRequests.length})
             </TabsTrigger>
             <TabsTrigger
-              value="solved"
-              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
+              value="resolved"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
             >
-              Rezolvate ({solvedCount})
+              Rezolvate ({completedRequests.length})
             </TabsTrigger>
             <TabsTrigger
-              value="canceled"
-              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white transition-colors"
+              value="cancelled"
+              className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white"
             >
-              Anulate ({canceledCount})
+              Anulate ({cancelledRequests.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titlu</TableHead>
-                  <TableHead>Data preferată</TableHead>
-                  <TableHead>Data trimiterii</TableHead>
-                  <TableHead>Locație</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Acțiuni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests
-                  .filter((req) => req.status === "Active")
-                  .map((request) => (
-                    <TableRow
-                      key={request.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <TableCell className="font-medium">
-                        {request.title}
-                      </TableCell>
-                      <TableCell>
-                        {format(
-                          new Date(request.preferredDate),
-                          "dd.MM.yyyy",
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        {request.cities?.join(", ")}, {request.county}
-                      </TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
-                          {request.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setShowViewDialog(true);
-                            }}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Detalii
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setShowDeleteDialog(true);
-                            }}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Anulează
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                {requests.filter((req) => req.status === "Active").length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-muted-foreground"
-                    >
-                      Nu există cereri active.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            {renderRequestsList(paginatedRequests, "Active")}
           </TabsContent>
-          
-          <TabsContent value="solved">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titlu</TableHead>
-                  <TableHead>Data preferată</TableHead>
-                  <TableHead>Data trimiterii</TableHead>
-                  <TableHead>Locație</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Acțiuni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests
-                  .filter((req) => req.status === "Rezolvat")
-                  .map((request) => (
-                    <TableRow
-                      key={request.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <TableCell className="font-medium">
-                        {request.title}
-                      </TableCell>
-                      <TableCell>
-                        {format(
-                          new Date(request.preferredDate),
-                          "dd.MM.yyyy",
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        {request.cities?.join(", ")}, {request.county}
-                      </TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                          {request.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setShowViewDialog(true);
-                            }}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Detalii
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                {requests.filter((req) => req.status === "Rezolvat").length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-muted-foreground"
-                    >
-                      Nu există cereri rezolvate.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+          <TabsContent value="resolved">
+            {renderRequestsList(paginatedRequests, "Completed")}
           </TabsContent>
-          
-          <TabsContent value="canceled">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titlu</TableHead>
-                  <TableHead>Data preferată</TableHead>
-                  <TableHead>Data trimiterii</TableHead>
-                  <TableHead>Locație</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Acțiuni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests
-                  .filter((req) => req.status === "Anulat")
-                  .map((request) => (
-                    <TableRow
-                      key={request.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <TableCell className="font-medium">
-                        {request.title}
-                      </TableCell>
-                      <TableCell>
-                        {format(
-                          new Date(request.preferredDate),
-                          "dd.MM.yyyy",
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        {request.cities?.join(", ")}, {request.county}
-                      </TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-sm bg-red-100 text-red-800">
-                          {request.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setShowViewDialog(true);
-                            }}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Detalii
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                {requests.filter((req) => req.status === "Anulat").length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-muted-foreground"
-                    >
-                      Nu există cereri anulate.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+          <TabsContent value="cancelled">
+            {renderRequestsList(paginatedRequests, "Cancelled")}
           </TabsContent>
         </Tabs>
       </CardContent>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Anulați această cerere?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Această acțiune nu poate fi anulată. Cererea va fi mutată în
-              categoria "Anulate".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Nu</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() =>
-                selectedRequest && handleDelete(selectedRequest.id)
-              }
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Da, anulează cererea
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+      {/* Request Details Dialog */}
+      <Dialog open={!!selectedRequest} onOpenChange={handleCloseDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalii Cerere</DialogTitle>
             <DialogDescription>
-              Vizualizați toate detaliile cererii selectate
+              Informații complete despre cererea ta
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
-            <div className="space-y-4">
+            <div className="space-y-6 py-4">
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Titlu
+                <h3 className="text-lg font-medium">
+                  {selectedRequest.title} {getStatusBadge(selectedRequest.status)}
                 </h3>
-                <p>{selectedRequest.title}</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Descriere
-                </h3>
-                <p className="whitespace-pre-line">
-                  {selectedRequest.description}
+                <p className="text-sm text-gray-500 mt-1">
+                  Creată la: {format(new Date(selectedRequest.createdAt), "dd.MM.yyyy")}
                 </p>
               </div>
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Data preferată
-                </h3>
-                <p>
-                  {format(
-                    new Date(selectedRequest.preferredDate),
-                    "dd.MM.yyyy",
-                  )}
-                </p>
+                <h4 className="text-md font-medium mb-2">Descriere</h4>
+                <p className="whitespace-pre-line">{selectedRequest.description}</p>
               </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Data trimiterii
-                </h3>
-                <p>
-                  {format(new Date(selectedRequest.createdAt), "dd.MM.yyyy")}
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-md font-medium mb-2">Detalii</h4>
+                  <div className="space-y-2">
+                    <p className="text-sm">
+                      <span className="font-medium">Data preferată:</span>{" "}
+                      {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Orașe:</span> {selectedRequest.cities.join(", ")}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Județ:</span> {selectedRequest.county}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-md font-medium mb-2">Vehicul</h4>
+                  <div className="space-y-2">
+                    <p className="text-sm">
+                      <span className="font-medium">Marcă:</span> {selectedRequest.carMake}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Model:</span> {selectedRequest.carModel}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">An:</span> {selectedRequest.carYear}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Locație
-                </h3>
-                <p>
-                  {selectedRequest.cities?.join(", ")}, {selectedRequest.county}
-                </p>
-              </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Status
-                </h3>
-                <span
-                  className={`px-2 py-1 rounded-full text-sm ${
-                    selectedRequest.status === "Active"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : selectedRequest.status === "Rezolvat"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {selectedRequest.status}
-                </span>
-              </div>
+
+              {selectedRequest.status === "Active" && (
+                <div className="flex justify-end mt-4">
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleCancelRequest(selectedRequest.id)}
+                  >
+                    Anulează Cererea
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
     </Card>
   );
+
+  function renderRequestsList(requests, expectedStatus) {
+    const currentRequests = requests.filter(req => req.status === expectedStatus);
+
+    if (currentRequests.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nu există cereri în această categorie</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="grid gap-4">
+          {currentRequests.map((request) => (
+            <Card key={request.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-medium text-lg">{request.title}</h3>
+                      {getStatusBadge(request.status)}
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                      {request.description}
+                    </p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Filter className="h-4 w-4" />
+                        {request.cities.join(", ")}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 self-end sm:self-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleViewRequest(request)}
+                    >
+                      Vezi detalii
+                    </Button>
+                    {request.status === "Active" && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleCancelRequest(request.id)}
+                      >
+                        Anulează
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-6">
+            <div className="text-sm text-gray-500">
+              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} din {filteredRequests.length} cereri
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </PaginationItem>
+                {Array.from({ length: totalPages }).map((_, index) => (
+                  <PaginationItem key={index}>
+                    <Button
+                      variant={currentPage === index + 1 ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => setCurrentPage(index + 1)}
+                      className={currentPage === index + 1 ? "bg-[#00aff5]" : ""}
+                    >
+                      {index + 1}
+                    </Button>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+      </>
+    );
+  }
 }
