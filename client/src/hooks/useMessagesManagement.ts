@@ -4,6 +4,7 @@ import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Message, Conversation } from "@shared/schema";
 import NotificationHelper from '@/lib/notifications'; // Added import for NotificationHelper
+import { fetchWithCsrf } from "@/lib/csrfToken"; // Import fetchWithCsrf pentru protecție CSRF
 
 const MESSAGES_STALE_TIME = 1000 * 5; // 5 seconds
 const UNREAD_CONVERSATIONS_STALE_TIME = 1000 * 10; // 10 seconds
@@ -45,7 +46,7 @@ export function useMessagesManagement(
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      await fetch(`${baseEndpoint}/conversations/${requestId}/mark-read`, {
+      await fetchWithCsrf(`${baseEndpoint}/conversations/${requestId}/mark-read`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -162,7 +163,8 @@ export function useMessagesManagement(
         offerId: activeConversation.offerId
       };
 
-      const response = await fetch(`${baseEndpoint}/messages/send`, {
+      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
+      const response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
