@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import { setCustomMimeTypes } from "./mimeTypes";
 import { securityHeaders, generalRateLimiter, securityLogger, sanitizeInput } from "./middleware/securityMiddleware";
+import { sqlInjectionProtection, databaseOperationMonitoring } from "./middleware/databaseSecurity";
 
 const app = express();
 // Configurare pentru a avea încredere în proxy-uri (necesar pentru express-rate-limit într-un mediu cu proxy)
@@ -75,6 +76,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(securityHeaders);
 app.use(securityLogger);
 app.use(sanitizeInput);
+
+// Middleware pentru protecția bazei de date
+app.use(sqlInjectionProtection);
+app.use(databaseOperationMonitoring);
 
 // Middleware suplimentar care suprascrie CSP pentru a elimina restricțiile
 app.use((req, res, next) => {
