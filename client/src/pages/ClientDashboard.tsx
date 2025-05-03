@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { NavigationItems } from "@/components/dashboard/NavigationItems";
 import { RequestForm } from "@/components/request/RequestForm";
-import { RequestsTab } from "@/components/dashboard/RequestsTab";
+import RequestsTab from "@/components/dashboard/RequestsTab";
 import { OffersTab } from "@/components/dashboard/OffersTab";
 import { CarsTab } from "@/components/dashboard/CarsTab";
 import { MessagesTab, InitialConversationProps } from "@/components/dashboard/MessagesTab";
