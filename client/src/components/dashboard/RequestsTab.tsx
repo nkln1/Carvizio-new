@@ -53,10 +53,14 @@ export function RequestsTab({
   const [showViewDialog, setShowViewDialog] = useState(false);
   const { toast } = useToast();
 
-  // Calculate request counts
-  const activeCount = requests.filter(req => req.status === "Active").length;
-  const solvedCount = requests.filter(req => req.status === "Rezolvat").length;
-  const canceledCount = requests.filter(req => req.status === "Anulat").length;
+  // Calculate request counts and filter requests by status
+  const activeRequests = requests.filter(req => req.status === "Active");
+  const solvedRequests = requests.filter(req => req.status === "Rezolvat");
+  const canceledRequests = requests.filter(req => req.status === "Anulat");
+  
+  const activeCount = activeRequests.length;
+  const solvedCount = solvedRequests.length;
+  const canceledCount = canceledRequests.length;
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -145,8 +149,12 @@ export function RequestsTab({
             </TabsTrigger>
           </TabsList>
 
-          {["active", "solved", "canceled"].map((tab) => (
-            <TabsContent key={tab} value={tab}>
+          {[
+            { id: "active", name: "Active", data: activeRequests },
+            { id: "solved", name: "Rezolvate", data: solvedRequests },
+            { id: "canceled", name: "Anulate", data: canceledRequests }
+          ].map((tab) => (
+            <TabsContent key={tab.id} value={tab.id}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -159,14 +167,7 @@ export function RequestsTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requests
-                    .filter((req) => {
-                      if (tab === "active") return req.status === "Active";
-                      if (tab === "solved") return req.status === "Rezolvat";
-                      if (tab === "canceled") return req.status === "Anulat";
-                      return false;
-                    })
-                    .map((request) => (
+                  {tab.data.map((request) => (
                       <TableRow
                         key={request.id}
                         className="hover:bg-gray-50 transition-colors"
@@ -231,12 +232,7 @@ export function RequestsTab({
                         </TableCell>
                       </TableRow>
                     ))}
-                  {requests.filter((req) => {
-                    if (tab === "active") return req.status === "Active";
-                    if (tab === "solved") return req.status === "Rezolvat";
-                    if (tab === "canceled") return req.status === "Anulat";
-                    return false;
-                  }).length === 0 && (
+                  {tab.data.length === 0 && (
                     <TableRow>
                       <TableCell
                         colSpan={6}
