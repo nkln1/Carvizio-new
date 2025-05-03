@@ -69,19 +69,16 @@ export function useCarManagement() {
         throw new Error("No authentication token available");
       }
 
-      // Import the function to get the CSRF token
-      const { getCsrfToken } = await import("@/lib/csrfToken");
-      const csrfToken = await getCsrfToken();
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import("@/lib/csrfToken");
 
-      const response = await fetch(`/api/cars/${selectedCar.id}`, {
+      const response = await fetchWithCsrf(`/api/cars/${selectedCar.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
-          "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify(carData),
-        credentials: "include", // Important to include cookies
       });
 
       if (!response.ok) {

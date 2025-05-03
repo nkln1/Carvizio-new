@@ -29,12 +29,13 @@ export function CarDialog({
     <Dialog
       open={open}
       onOpenChange={(open) => {
-        onOpenChange(open);
-        if (!open && pendingRequestData) {
+        if (!open) {
+          // Always call onCancel when dialog closes to reset form state
           setTimeout(() => {
             onCancel();
           }, 100);
         }
+        onOpenChange(open);
       }}
     >
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
