@@ -261,7 +261,7 @@ console.log('Navigating to service profile with username:', userProfile.username
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-[#00aff5]">Service</h1>
+              <h1 className="text-xl font-semibold text-[#00aff5]">Service Dashboard</h1>
               {userProfile && (
                 <Button
                   variant="outline"
