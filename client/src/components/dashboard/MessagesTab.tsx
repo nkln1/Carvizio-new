@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { MessageSquare, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ export function MessagesTab({
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [wsInitialized, setWsInitialized] = useState(false);
   const [requestData, setRequestData] = useState<any>(null);
@@ -210,8 +212,14 @@ export function MessagesTab({
     }
   };
 
-  // Filter conversations based on search term
+  // Filter conversations based on search term and new messages
   const filteredConversations = conversations.filter(conv => {
+    // Filter for new messages
+    if (showOnlyNew && !conv.hasNewMessages && !conv.unreadCount) {
+      return false;
+    }
+    
+    // Filter for search term
     if (!searchTerm) return true;
 
     const searchLower = searchTerm.toLowerCase();
@@ -245,14 +253,30 @@ export function MessagesTab({
             Mesaje
           </CardTitle>
           {!activeConversation && filteredConversations.length > 0 && (
-            <div className="relative w-[300px]">
-              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Caută conversații..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative w-[300px]">
+                <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Caută conversații..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-new-messages"
+                  checked={showOnlyNew}
+                  onCheckedChange={setShowOnlyNew}
+                />
+                <label
+                  htmlFor="show-new-messages"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  Doar mesaje noi
+                </label>
+              </div>
             </div>
           )}
         </div>
