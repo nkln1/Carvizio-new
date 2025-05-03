@@ -7,6 +7,8 @@ import { setCustomMimeTypes } from "./mimeTypes";
 import { securityHeaders, generalRateLimiter, securityLogger, sanitizeInput } from "./middleware/securityMiddleware";
 
 const app = express();
+// Configurare pentru a avea încredere în proxy-uri (necesar pentru express-rate-limit într-un mediu cu proxy)
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Export server for use in routes.ts

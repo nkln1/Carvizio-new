@@ -126,6 +126,8 @@ export function registerRoutes(app: Express): void {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.log(`[Auth Debug] No token provided in request for ${req.url}`);
       console.log(`[Auth Debug] Headers: ${JSON.stringify(req.headers)}`);
+      // Înregistrăm încercarea de acces fără token
+      logSecurityEvent("AUTH_NO_TOKEN", `No auth token provided for ${req.url}`, req);
       return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -138,6 +140,8 @@ export function registerRoutes(app: Express): void {
       next();
     } catch (error) {
       console.error(`[Auth Debug] Error verifying Firebase token for ${req.url}:`, error);
+      // Înregistrăm eroarea de validare a token-ului
+      logSecurityEvent("AUTH_INVALID_TOKEN", `Invalid token for ${req.url}`, req);
       return res.status(401).json({ error: 'Invalid token' });
     }
   };
@@ -589,7 +593,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Update the login route to handle user types correctly
-  app.post("/api/auth/login", validateFirebaseToken, async (req, res) => {
+  app.post("/api/auth/login", authRateLimiter, validateFirebaseToken, async (req, res) => {
     try {
       console.log("Login attempt with Firebase UID:", req.firebaseUser!.uid);
 
@@ -606,6 +610,8 @@ export function registerRoutes(app: Express): void {
 
       if (!user) {
         console.log("No user found for Firebase UID:", req.firebaseUser!.uid);
+        // Înregistrăm încercarea eșuată de autentificare
+        logSecurityEvent("LOGIN_FAILED", "User not found for Firebase UID", req, req.firebaseUser!.uid);
         return res.status(401).json({ error: "User not found" });
       }
 
@@ -1563,7 +1569,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Add phone check endpoint
-  app.post("/api/auth/check-phone", async (req, res) => {
+  app.post("/api/auth/check-phone", authRateLimiter, async (req, res) => {
     // Temporarily disabled phone number check
     res.status(200).json({ available: true });
   });
