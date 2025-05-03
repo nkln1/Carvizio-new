@@ -14,30 +14,31 @@ import StructuredData from "@/components/seo/StructuredData";
 export default function Home() {
   // Date structurate pentru pagina principală conform Schema.org
   const businessSchema = {
-    type: 'Organization' as const,
+    type: "Organization" as const,
     data: {
-      name: 'CARVIZIO',
-      url: 'https://auto-service-app.ro/',
-      logo: 'https://auto-service-app.ro/logo.png',
-      description: 'Platformă care conectează service-urile auto cu clienții, oferind o experiență simplificată pentru solicitarea și gestionarea serviciilor auto.'
-    }
+      name: "CARVIZIO",
+      url: "https://carvizio.ro/",
+      logo: "https://auto-service-app.ro/logo.png",
+      description:
+        "Prima platformă din RO care conectează clienții cu service-urile auto.",
+    },
   };
-  
+
   // Notă: Datele structurate pentru FAQ sunt acum definite direct în componenta FAQ
 
   return (
     <>
-      <SEOHeader 
+      <SEOHeader
         title="CARVIZIO - Găsește service auto rapid și ușor în România"
         description="Platforma CARVIZIO conectează clienții cu service-urile auto din România, oferind cereri personalizate, oferte transparente și programări online. Simplu, rapid și eficient."
         keywords="service auto, reparații auto, întreținere auto, oferte service, programare service auto, România, CARVIZIO"
-        canonicalUrl="https://auto-service-app.ro/"
+        canonicalUrl="https://carvizio.ro/"
         ogImage="/og-image.jpg"
       />
-      
+
       {/* Datele structurate pentru businessSchema */}
       <StructuredData schema={businessSchema} />
-      
+
       <div className="min-h-screen bg-gray-50">
         <ParallaxWrapper offset={0}>
           <Hero />
