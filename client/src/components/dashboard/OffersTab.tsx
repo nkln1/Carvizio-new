@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SendHorizontal, Clock, User, MessageSquare, Check, XCircle, Eye, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
@@ -30,8 +31,27 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Calculate offer counts and filter offers by status
+  const pendingOffers = offers.filter(offer => offer.status === "Pending");
+  const acceptedOffers = offers.filter(offer => offer.status === "Accepted");
+  const rejectedOffers = offers.filter(offer => offer.status === "Rejected");
+
+  const pendingCount = pendingOffers.length;
+  const acceptedCount = acceptedOffers.length;
+  const rejectedCount = rejectedOffers.length;
+
+  // For debugging - log data to verify filtering
+  useEffect(() => {
+    console.log("All offers:", offers);
+    console.log("Pending offers:", pendingOffers);
+    console.log("Accepted offers:", acceptedOffers);
+    console.log("Rejected offers:", rejectedOffers);
+  }, [offers]);
+
   // Reset pagination when tab changes
-  useEffect(() => { setCurrentPage(1); }, [activeTab]);
+  useEffect(() => { 
+    setCurrentPage(1); 
+  }, [activeTab]);
 
   const handleAction = async (offerId: number, action: () => Promise<void>) => {
     try {
@@ -63,7 +83,10 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/offers/${offer.id}/accept`, {
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+
+      const response = await fetchWithCsrf(`/api/client/offers/${offer.id}/accept`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -103,9 +126,15 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/offers/${offer.id}/reject`, {
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+
+      const response = await fetchWithCsrf(`/api/client/offers/${offer.id}/reject`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) throw new Error('Failed to reject offer');
@@ -131,7 +160,10 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/client/offers/${offer.id}/cancel`, {
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+
+      const response = await fetchWithCsrf(`/api/client/offers/${offer.id}/cancel`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -170,8 +202,7 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
     }
   };
 
-  // Helpers for filtering and pagination
-  const getFilteredOffers = (status: string) => offers.filter(offer => offer.status === status);
+  // Helpers for pagination
   const getPaginatedOffers = (filteredOffers: OfferWithProvider[]) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredOffers.slice(startIndex, startIndex + itemsPerPage);
@@ -295,18 +326,17 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
     );
   };
 
-  const renderPaginatedContent = (status: string) => {
-    const filteredOffers = getFilteredOffers(status);
-    const paginatedOffers = getPaginatedOffers(filteredOffers);
-    const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
+  const renderPaginatedContent = (offers: OfferWithProvider[]) => {
+    const paginatedOffers = getPaginatedOffers(offers);
+    const totalPages = Math.ceil(offers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
 
     return (
       <>
-        {filteredOffers.length > 0 && (
+        {offers.length > 0 && (
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-gray-500">
-              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredOffers.length)} din {filteredOffers.length} oferte
+              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, offers.length)} din {offers.length} oferte
             </div>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
               <SelectTrigger className="w-[180px]">
@@ -377,11 +407,6 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
     );
   }
 
-  // Filter offers by status
-  const pendingOffers = offers.filter((offer) => offer.status === "Pending");
-  const acceptedOffers = offers.filter((offer) => offer.status === "Accepted");
-  const rejectedOffers = offers.filter((offer) => offer.status === "Rejected");
-
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -392,31 +417,50 @@ export function OffersTab({ offers, onMessageClick, refreshRequests, viewedOffer
       </CardHeader>
 
       <CardContent className="p-4">
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs 
+          defaultValue="pending" 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full"
+        >
           <TabsList className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-0 mb-4 h-auto sm:h-10">
             <TabsTrigger
               value="pending"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white px-2 py-1.5 sm:py-2 text-sm whitespace-nowrap"
             >
-              Oferte Primite ({pendingOffers.length})
+              Oferte Primite ({pendingCount})
             </TabsTrigger>
             <TabsTrigger
               value="accepted"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white px-2 py-1.5 sm:py-2 text-sm whitespace-nowrap"
             >
-              Oferte Acceptate ({acceptedOffers.length})
+              Oferte Acceptate ({acceptedCount})
             </TabsTrigger>
             <TabsTrigger
               value="rejected"
               className="data-[state=active]:bg-[#00aff5] data-[state=active]:text-white px-2 py-1.5 sm:py-2 text-sm whitespace-nowrap"
             >
-              Oferte Respinse ({rejectedOffers.length})
+              Oferte Respinse ({rejectedCount})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pending">{renderPaginatedContent("Pending")}</TabsContent>
-          <TabsContent value="accepted">{renderPaginatedContent("Accepted")}</TabsContent>
-          <TabsContent value="rejected">{renderPaginatedContent("Rejected")}</TabsContent>
+          {activeTab === "pending" && (
+            <div className="mt-2">
+              {renderPaginatedContent(pendingOffers)}
+            </div>
+          )}
+
+          {activeTab === "accepted" && (
+            <div className="mt-2">
+              {renderPaginatedContent(acceptedOffers)}
+            </div>
+          )}
+
+          {activeTab === "rejected" && (
+            <div className="mt-2">
+              {renderPaginatedContent(rejectedOffers)}
+            </div>
+          )}
         </Tabs>
       </CardContent>
 
