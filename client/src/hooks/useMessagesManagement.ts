@@ -163,17 +163,52 @@ export function useMessagesManagement(
         offerId: activeConversation.offerId
       };
 
-      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
-      const response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(messagePayload)
-      });
+      // Import and ensure CSRF token is available
+      const { ensureCsrfToken } = await import("@/lib/csrfInitializer");
+      await ensureCsrfToken();
 
+      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
+      let response;
+      try {
+        response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(messagePayload)
+        });
+      } catch (fetchError) {
+        console.error('Network error sending message:', fetchError);
+        throw new Error('Eroare de conectare la server. Verificați conexiunea la internet.');
+      }
+
+      // Handle CSRF error specifically
+      if (response.status === 403) {
+        const errorText = await response.text();
+        if (errorText.includes('CSRF')) {
+          console.error('CSRF token error:', errorText);
+          
+          // Try to refresh the token and retry once
+          const { refreshCsrfToken } = await import("@/lib/csrfInitializer");
+          await refreshCsrfToken();
+          
+          // Retry the request with the new token
+          response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(messagePayload)
+          });
+        }
+      }
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error sending message:', {
@@ -217,7 +252,9 @@ export function useMessagesManagement(
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu s-a putut trimite mesajul. Încercați din nou."
+        description: error instanceof Error 
+          ? error.message 
+          : "Nu s-a putut trimite mesajul. Încercați din nou."
       });
       throw error;
     }

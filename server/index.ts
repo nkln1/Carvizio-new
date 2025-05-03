@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
+import cookieParser from 'cookie-parser';
 import { setCustomMimeTypes } from "./mimeTypes";
 import { securityHeaders, generalRateLimiter, securityLogger, sanitizeInput } from "./middleware/securityMiddleware";
 import { sqlInjectionProtection, databaseOperationMonitoring } from "./middleware/databaseSecurity";
@@ -72,6 +73,7 @@ wss.on('close', () => {
 // Configure middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser()); // Add cookie parser middleware
 
 // Apply security middleware
 app.use(securityHeaders);

@@ -7,6 +7,14 @@
 let csrfToken: string | null = null;
 
 /**
+ * Setează tokenul CSRF.  Adăugată pentru a permite setarea tokenului din fetchWithCsrf.
+ * @param token Noul token CSRF.
+ */
+function setCsrfToken(token: string): void {
+  csrfToken = token;
+}
+
+/**
  * Actualizează tokenul CSRF din header-ul răspunsului
  * @param response Răspunsul HTTP
  */
@@ -71,18 +79,53 @@ export function addCsrfHeader(config: RequestInit = {}): RequestInit {
  * @returns Promisiune cu răspunsul
  */
 export async function fetchWithCsrf(url: string, options: RequestInit = {}): Promise<Response> {
-  // Pentru metode care pot modifica date, adăugăm CSRF
-  const method = options.method?.toUpperCase() || 'GET';
-  const optionsWithCsrf = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) 
-    ? addCsrfHeader(options) 
-    : options;
-  
-  const response = await fetch(url, optionsWithCsrf);
-  
-  // Actualizăm tokenul CSRF la fiecare răspuns
-  updateCsrfToken(response);
-  
-  return response;
+  try {
+    // First, ensure we have a CSRF token by making a GET request to the healthcheck endpoint
+    if (!getCsrfToken()) {
+      try {
+        const healthCheckResponse = await window.fetch('/api/health-check', {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        const newToken = healthCheckResponse.headers.get('X-CSRF-Token');
+        if (newToken) {
+          setCsrfToken(newToken);
+          console.log('Retrieved new CSRF token from health-check');
+        }
+      } catch (healthCheckError) {
+        console.error('Error fetching CSRF token:', healthCheckError);
+      }
+    }
+
+    // Get the most recent CSRF token
+    const csrfToken = getCsrfToken();
+    console.log('Using CSRF token:', csrfToken ? csrfToken.substring(0, 8) + '...' : 'None');
+
+    // Create new options with the CSRF token in the headers
+    const newOptions: RequestInit = {
+      ...options,
+      credentials: 'include', // Always include credentials
+      headers: {
+        ...options.headers,
+        'X-CSRF-Token': csrfToken || '',
+      },
+    };
+
+    // Execute the fetch with the updated options
+    const response = await window.fetch(url, newOptions);
+
+    // Check for a new CSRF token in the response headers
+    const newToken = response.headers.get('X-CSRF-Token');
+    if (newToken) {
+      setCsrfToken(newToken);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Error in fetchWithCsrf:', error);
+    throw error;
+  }
 }
 
 /**
