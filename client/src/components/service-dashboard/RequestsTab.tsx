@@ -120,13 +120,17 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const markRequestAsViewed = async (requestId: number) => {
     try {
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+      
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      const response = await fetch(`/api/service/mark-request-viewed/${requestId}`, {
+      const response = await fetchWithCsrf(`/api/service/mark-request-viewed/${requestId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
+          // fetchWithCsrf will automatically add the CSRF token
         }
       });
 
@@ -137,16 +141,26 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
       await queryClient.invalidateQueries({ queryKey: ['/api/service/viewed-requests'] });
     } catch (error) {
       console.error('Error marking request as viewed:', error);
+      throw error; // Rethrow to allow the calling function to handle it
     }
   };
 
   const handleViewRequest = async (request: RequestType) => {
-    const isNew = !viewedRequestIds.includes(request.id);
-    if (isNew) {
-      await markRequestAsViewed(request.id);
+    try {
+      const isNew = !viewedRequestIds.includes(request.id);
+      if (isNew) {
+        await markRequestAsViewed(request.id);
+      }
+      setSelectedRequest(request);
+      setShowViewDialog(true);
+    } catch (error) {
+      console.error("Error viewing request details:", error);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu s-a putut marca cererea ca vizualizată. Încercați din nou.",
+      });
     }
-    setSelectedRequest(request);
-    setShowViewDialog(true);
   };
 
   const handleSubmitOfferClick = async (request: RequestType) => {
