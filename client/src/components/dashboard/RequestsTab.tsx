@@ -51,6 +51,7 @@ export function RequestsTab({
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
   const { toast } = useToast();
 
   // Calculate request counts
@@ -123,7 +124,7 @@ export function RequestsTab({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <Tabs defaultValue="active" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-3 mb-4 bg-slate-100 p-1">
             <TabsTrigger
               value="active"
