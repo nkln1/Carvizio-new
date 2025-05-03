@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileSearch, Clock, Filter, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
@@ -20,19 +21,22 @@ import {
 } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function RequestsTab() {
+export default function RequestsTab({ requests, isLoading, onCreateRequest }) {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  const { requests, cancelRequest } = useRequestsManagement();
+  const { cancelRequest } = useRequestsManagement();
+  const { toast } = useToast();
 
   // Calculate request counts by status
-  const activeRequests = requests.filter((req) => req.status === "Active");
-  const completedRequests = requests.filter((req) => req.status === "Completed");
-  const cancelledRequests = requests.filter((req) => req.status === "Cancelled");
+  const activeRequests = requests ? requests.filter((req) => req.status === "Active") : [];
+  const completedRequests = requests ? requests.filter((req) => req.status === "Completed" || req.status === "Rezolvat") : [];
+  const cancelledRequests = requests ? requests.filter((req) => req.status === "Cancelled" || req.status === "Anulat") : [];
 
-  // Helper function to get filtered requests based on status
+  // Helper function to get filtered requests based on active tab
   const getFilteredRequests = () => {
     switch (activeTab) {
       case "active":
@@ -56,8 +60,10 @@ export default function RequestsTab() {
       case "Active":
         return <Badge className="bg-blue-500">Activă</Badge>;
       case "Completed":
+      case "Rezolvat":
         return <Badge className="bg-green-500">Rezolvată</Badge>;
       case "Cancelled":
+      case "Anulat":
         return <Badge className="bg-red-500">Anulată</Badge>;
       default:
         return <Badge className="bg-gray-500">{status}</Badge>;
@@ -78,6 +84,12 @@ export default function RequestsTab() {
     }
   };
 
+  // Reset page when changing tabs
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    setCurrentPage(1);
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -88,7 +100,7 @@ export default function RequestsTab() {
         <CardDescription>Istoricul și statusul cererilor tale</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-3 mb-4 bg-slate-100 p-1">
             <TabsTrigger
               value="active"
@@ -110,15 +122,101 @@ export default function RequestsTab() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="active">
-            {renderRequestsList(paginatedRequests, "Active")}
-          </TabsContent>
-          <TabsContent value="resolved">
-            {renderRequestsList(paginatedRequests, "Completed")}
-          </TabsContent>
-          <TabsContent value="cancelled">
-            {renderRequestsList(paginatedRequests, "Cancelled")}
-          </TabsContent>
+          {paginatedRequests.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Nu există cereri în această categorie</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {paginatedRequests.map((request) => (
+                <Card key={request.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-lg">{request.title}</h3>
+                          {getStatusBadge(request.status)}
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                          {request.description}
+                        </p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {format(new Date(request.preferredDate), "dd.MM.yyyy")}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Filter className="h-4 w-4" />
+                            {request.cities?.join(", ")}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 self-end sm:self-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleViewRequest(request)}
+                        >
+                          Vezi detalii
+                        </Button>
+                        {request.status === "Active" && (
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleCancelRequest(request.id)}
+                          >
+                            Anulează
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6">
+              <div className="text-sm text-gray-500">
+                Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} din {filteredRequests.length} cereri
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).map((_, index) => (
+                    <PaginationItem key={index}>
+                      <Button
+                        variant={currentPage === index + 1 ? "default" : "outline"}
+                        size="icon"
+                        onClick={() => setCurrentPage(index + 1)}
+                        className={currentPage === index + 1 ? "bg-[#00aff5]" : ""}
+                      >
+                        {index + 1}
+                      </Button>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </Tabs>
       </CardContent>
 
@@ -154,7 +252,7 @@ export default function RequestsTab() {
                       {format(new Date(selectedRequest.preferredDate), "dd.MM.yyyy")}
                     </p>
                     <p className="text-sm">
-                      <span className="font-medium">Orașe:</span> {selectedRequest.cities.join(", ")}
+                      <span className="font-medium">Orașe:</span> {selectedRequest.cities?.join(", ")}
                     </p>
                     <p className="text-sm">
                       <span className="font-medium">Județ:</span> {selectedRequest.county}
@@ -193,110 +291,4 @@ export default function RequestsTab() {
       </Dialog>
     </Card>
   );
-
-  function renderRequestsList(requests, expectedStatus) {
-    const currentRequests = requests.filter(req => req.status === expectedStatus);
-
-    if (currentRequests.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Nu există cereri în această categorie</p>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="grid gap-4">
-          {currentRequests.map((request) => (
-            <Card key={request.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-medium text-lg">{request.title}</h3>
-                      {getStatusBadge(request.status)}
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                      {request.description}
-                    </p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {format(new Date(request.preferredDate), "dd.MM.yyyy")}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Filter className="h-4 w-4" />
-                        {request.cities.join(", ")}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 self-end sm:self-center">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleViewRequest(request)}
-                    >
-                      Vezi detalii
-                    </Button>
-                    {request.status === "Active" && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleCancelRequest(request.id)}
-                      >
-                        Anulează
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-6">
-            <div className="text-sm text-gray-500">
-              Afișare {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} din {filteredRequests.length} cereri
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                </PaginationItem>
-                {Array.from({ length: totalPages }).map((_, index) => (
-                  <PaginationItem key={index}>
-                    <Button
-                      variant={currentPage === index + 1 ? "default" : "outline"}
-                      size="icon"
-                      onClick={() => setCurrentPage(index + 1)}
-                      className={currentPage === index + 1 ? "bg-[#00aff5]" : ""}
-                    >
-                      {index + 1}
-                    </Button>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
-      </>
-    );
-  }
 }
