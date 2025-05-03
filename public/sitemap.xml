@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
   <!-- Pagina principală -->
   <url>
     <loc>https://auto-service-app.ro/</loc>
@@ -7,92 +11,94 @@
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  
-  <!-- Pagini principale -->
+
+  <!-- Pagina Despre Noi -->
   <url>
     <loc>https://auto-service-app.ro/about</loc>
-    <lastmod>2025-05-03</lastmod>
+    <lastmod>2025-05-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
+  <!-- Pagina cu Servicii -->
   <url>
     <loc>https://auto-service-app.ro/services</loc>
-    <lastmod>2025-05-03</lastmod>
+    <lastmod>2025-05-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  
+
+  <!-- Pagina de Contact -->
   <url>
     <loc>https://auto-service-app.ro/contact</loc>
     <lastmod>2025-05-03</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
-  
-  <!-- Tipuri de servicii -->
-  <url>
-    <loc>https://auto-service-app.ro/services/maintenance</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <url>
-    <loc>https://auto-service-app.ro/services/repairs</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <url>
-    <loc>https://auto-service-app.ro/services/diagnostics</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <url>
-    <loc>https://auto-service-app.ro/services/body-work</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <!-- Pagini informative -->
-  <url>
-    <loc>https://auto-service-app.ro/faq</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
+
+  <!-- Termeni și Condiții -->
   <url>
     <loc>https://auto-service-app.ro/terms</loc>
     <lastmod>2025-05-03</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
+
+  <!-- Politica de Confidențialitate -->
   <url>
     <loc>https://auto-service-app.ro/privacy</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <lastmod>2025-05-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
-  <!-- Pagini de autentificare - priorități scăzute pentru că sunt protejate -->
+
+  <!-- Întrebări Frecvente -->
   <url>
-    <loc>https://auto-service-app.ro/login</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <loc>https://auto-service-app.ro/faq</loc>
+    <lastmod>2025-05-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
-  
+
+  <!-- Pagina pentru furnizori de servicii -->
   <url>
-    <loc>https://auto-service-app.ro/register</loc>
-    <lastmod>2025-05-03</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <loc>https://auto-service-app.ro/for-service-providers</loc>
+    <lastmod>2025-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
+
+  <!-- Pagina pentru proprietari de mașini -->
+  <url>
+    <loc>https://auto-service-app.ro/for-car-owners</loc>
+    <lastmod>2025-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Pagini ale furnizorilor de servicii individuale (dinamice) -->
+  <url>
+    <loc>https://auto-service-app.ro/service-provider/auto-service-bucuresti</loc>
+    <lastmod>2025-05-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://auto-service-app.ro/service-provider/service-auto-cluj</loc>
+    <lastmod>2025-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://auto-service-app.ro/service-provider/auto-repair-timisoara</loc>
+    <lastmod>2025-05-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Notă: Pentru un site dinamic, este recomandat să generați sitemap-ul automat
+             folosind un script pe server pentru a include toate paginile furnizorilor de servicii -->
+
 </urlset>
