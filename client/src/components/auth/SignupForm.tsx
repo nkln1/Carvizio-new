@@ -39,6 +39,7 @@ import {
   signInWithEmailAndPassword,
   fetchSignInMethodsForEmail,
 } from "firebase/auth";
+import { passwordSchema } from "@/lib/passwordValidation";
 
 type UserRole = "client" | "service";
 
