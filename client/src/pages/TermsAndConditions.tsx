@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
+import SEOHeader from '@/components/seo/SEOHeader';
+import StructuredData from '@/components/seo/StructuredData';
 
-const AccordionItem = ({ title, children }) => {
+interface AccordionItemProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const AccordionItem: React.FC<AccordionItemProps> = ({ title, children }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -19,15 +26,44 @@ const AccordionItem = ({ title, children }) => {
 };
 
 export default function TermsAndConditions() {
-  return (
-    <div className="container mx-auto py-12 px-4 max-w-4xl">
-      <div className="mb-8">
-        <Link href="/" className="text-[#00aff5] hover:underline flex items-center">
-          &larr; Înapoi la pagina principală
-        </Link>
-      </div>
+  // Schema pentru date structurate - Document Legal (Termeni și Condiții)
+  const termsSchema = {
+    type: 'Document' as const,
+    data: {
+      name: "Termeni și Condiții CARVIZIO",
+      description: "Termenii și condițiile de utilizare a platformei Carvizio.ro pentru conectarea service-urilor auto cu clienții",
+      datePublished: "2023-12-01",
+      dateModified: "2024-05-01",
+      publisher: {
+        name: "CARVIZIO",
+        logo: "https://auto-service-app.ro/logo.png"
+      },
+      inLanguage: "ro"
+    }
+  };
 
-      <h1 className="text-3xl font-bold mb-6">Termeni și Condiții</h1>
+  return (
+    <>
+      {/* SEO Header cu metadate pentru pagina de Termeni și Condiții */}
+      <SEOHeader 
+        title="Termeni și Condiții | CARVIZIO - Platformă Service Auto"
+        description="Termenii și condițiile de utilizare a platformei Carvizio. Află despre drepturile și obligațiile utilizatorilor, responsabilități, protecția datelor personale și alte aspecte legale."
+        keywords="termeni și condiții Carvizio, condiții utilizare platformă service auto, aspecte legale service auto, drepturi utilizatori platformă auto"
+        canonicalUrl="https://auto-service-app.ro/terms-and-conditions"
+        ogType="article"
+      />
+      
+      {/* Datele structurate pentru pagina de Termeni și Condiții */}
+      <StructuredData schema={termsSchema} />
+      
+      <div className="container mx-auto py-12 px-4 max-w-4xl">
+        <div className="mb-8">
+          <Link href="/" className="text-[#00aff5] hover:underline flex items-center">
+            &larr; Înapoi la pagina principală
+          </Link>
+        </div>
+
+        <h1 className="text-3xl font-bold mb-6">Termeni și Condiții</h1>
 
       <AccordionItem title="1. Introducere">
         <p>Bine ați venit pe Carvizio.ro! Acest document stabilește termenii și condițiile de utilizare a platformei Carvizio.ro. Prin accesarea și utilizarea serviciilor noastre, acceptați și sunteți de acord să respectați acești termeni.</p>
@@ -40,17 +76,17 @@ export default function TermsAndConditions() {
 
       <AccordionItem title="2. Definiții">
         <p>În cadrul acestui document, următorii termeni vor avea semnificațiile de mai jos:</p>
-          <p>-	"Platformă" – Website-ul și aplicația Carvizio.ro, prin intermediul cărora se realizează conexiunea digitală între Clienți și Service-uri, incluzând toate funcționalitățile, modulele, conținutul și bazele de date asociate.</p>
-            <p>-	"Client" – Persoana fizică sau juridică ce utilizează platforma pentru a solicita oferte de preț pentru lucrări de întreținere și reparații auto sau alte servicii auto conexe.</p>
-            <p>-	"Service Auto" – Persoana juridică sau întreprinderea individuală înregistrată în platformă, care oferă servicii de reparații, întreținere sau alte lucrări auto ca răspuns la solicitările Clienților.</p>
-            <p>-	"Utilizator" – Orice persoană fizică sau juridică ce accesează sau utilizează platforma Carvizio.ro, indiferent dacă are sau nu un cont creat pe platformă.</p>
-            <p>-	"Cerere de Ofertă" – Solicitare transmisă prin intermediul platformei de către un Client, prin care se solicită Service-urilor înregistrate prezentarea unei estimări de preț și a condițiilor pentru efectuarea unei lucrări auto.</p>
-            <p>-	"Ofertă" – Răspunsul transmis prin platformă de către un Service Auto la o Cerere de Ofertă, conținând detalii privind prețul estimativ, durata lucrării, disponibilitatea și alte condiții relevante.</p>
-            <p>-	"Cont Utilizator" – Spațiul virtual asociat fiecărui Utilizator înregistrat pe platformă, accesibil pe baza unui nume de utilizator și a unei parole, care permite gestionarea activității în cadrul platformei.</p>
-            <p>-	"Termeni și Condiții" – Prezentul document ce reglementează drepturile și obligațiile părților implicate în utilizarea platformei Carvizio.ro.</p>
-            <p>-	"Servicii Auto" – Orice activitate de reparație, întreținere, verificare tehnică, montaj, demontare, vopsitorie, tinichigerie, diagnoză sau alte lucrări conexe asupra autovehiculelor.</p>
-            <p>-	"Date cu Caracter Personal" – Orice informație care permite identificarea directă sau indirectă a unui Utilizator, inclusiv, dar fără a se limita la: nume, prenume, adresa de email, număr de telefon, date despre vehicul.</p>
-            <p>-	"Politica de Confidențialitate" – Punctul 12 - reglementează modul în care Carvizio.ro colectează, utilizează, procesează și protejează datele personale ale Utilizatorilor.
+          <p>-  "Platformă" – Website-ul și aplicația Carvizio.ro, prin intermediul cărora se realizează conexiunea digitală între Clienți și Service-uri, incluzând toate funcționalitățile, modulele, conținutul și bazele de date asociate.</p>
+            <p>-        "Client" – Persoana fizică sau juridică ce utilizează platforma pentru a solicita oferte de preț pentru lucrări de întreținere și reparații auto sau alte servicii auto conexe.</p>
+            <p>-        "Service Auto" – Persoana juridică sau întreprinderea individuală înregistrată în platformă, care oferă servicii de reparații, întreținere sau alte lucrări auto ca răspuns la solicitările Clienților.</p>
+            <p>-        "Utilizator" – Orice persoană fizică sau juridică ce accesează sau utilizează platforma Carvizio.ro, indiferent dacă are sau nu un cont creat pe platformă.</p>
+            <p>-        "Cerere de Ofertă" – Solicitare transmisă prin intermediul platformei de către un Client, prin care se solicită Service-urilor înregistrate prezentarea unei estimări de preț și a condițiilor pentru efectuarea unei lucrări auto.</p>
+            <p>-        "Ofertă" – Răspunsul transmis prin platformă de către un Service Auto la o Cerere de Ofertă, conținând detalii privind prețul estimativ, durata lucrării, disponibilitatea și alte condiții relevante.</p>
+            <p>-        "Cont Utilizator" – Spațiul virtual asociat fiecărui Utilizator înregistrat pe platformă, accesibil pe baza unui nume de utilizator și a unei parole, care permite gestionarea activității în cadrul platformei.</p>
+            <p>-        "Termeni și Condiții" – Prezentul document ce reglementează drepturile și obligațiile părților implicate în utilizarea platformei Carvizio.ro.</p>
+            <p>-        "Servicii Auto" – Orice activitate de reparație, întreținere, verificare tehnică, montaj, demontare, vopsitorie, tinichigerie, diagnoză sau alte lucrări conexe asupra autovehiculelor.</p>
+            <p>-        "Date cu Caracter Personal" – Orice informație care permite identificarea directă sau indirectă a unui Utilizator, inclusiv, dar fără a se limita la: nume, prenume, adresa de email, număr de telefon, date despre vehicul.</p>
+            <p>-        "Politica de Confidențialitate" – Punctul 12 - reglementează modul în care Carvizio.ro colectează, utilizează, procesează și protejează datele personale ale Utilizatorilor.
 </p>
         
       </AccordionItem>

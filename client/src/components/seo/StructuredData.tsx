@@ -75,13 +75,40 @@ interface OrganizationSchema {
   foundingDate?: string;
 }
 
+// Definirea tipului pentru pagini tip Document (Termeni și Condiții, Politică Confidențialitate)
+interface DocumentSchema {
+  name: string;
+  description: string;
+  datePublished: string;
+  dateModified: string;
+  publisher: {
+    name: string;
+    logo?: string;
+  };
+  inLanguage?: string;
+}
+
+// Definirea tipului pentru pagini de contact
+interface ContactPageSchema {
+  name: string;
+  description: string;
+  contactPoint: {
+    telephone: string;
+    email: string;
+    contactType: string;
+  };
+  url: string;
+}
+
 type SchemaType = 
   | { type: 'LocalBusiness'; data: LocalBusinessSchema }
   | { type: 'Service'; data: ServiceSchema }
   | { type: 'Review'; data: ReviewSchema }
   | { type: 'FAQ'; data: FAQSchema }
   | { type: 'Breadcrumb'; data: BreadcrumbSchema }
-  | { type: 'Organization'; data: OrganizationSchema };
+  | { type: 'Organization'; data: OrganizationSchema }
+  | { type: 'Document'; data: DocumentSchema }
+  | { type: 'ContactPage'; data: ContactPageSchema };
 
 interface StructuredDataProps {
   schema: SchemaType;
@@ -185,6 +212,40 @@ const StructuredData: React.FC<StructuredDataProps> = ({ schema }) => {
         logo: {
           '@type': 'ImageObject',
           url: schema.data.logo
+        }
+      };
+      break;
+      
+    case 'Document':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: schema.data.name,
+        description: schema.data.description,
+        datePublished: schema.data.datePublished,
+        dateModified: schema.data.dateModified,
+        publisher: {
+          '@type': 'Organization',
+          name: schema.data.publisher.name,
+          logo: schema.data.publisher.logo ? {
+            '@type': 'ImageObject',
+            url: schema.data.publisher.logo
+          } : undefined
+        },
+        inLanguage: schema.data.inLanguage || 'ro'
+      };
+      break;
+      
+    case 'ContactPage':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'ContactPage',
+        name: schema.data.name,
+        description: schema.data.description,
+        url: schema.data.url,
+        contactPoint: {
+          '@type': 'ContactPoint',
+          ...schema.data.contactPoint
         }
       };
       break;
