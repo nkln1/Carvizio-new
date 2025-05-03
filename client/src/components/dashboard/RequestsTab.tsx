@@ -146,111 +146,233 @@ export function RequestsTab({
             </TabsTrigger>
           </TabsList>
 
-          {["active", "solved", "canceled"].map((tab) => (
-            <TabsContent key={tab} value={tab}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Titlu</TableHead>
-                    <TableHead>Data preferată</TableHead>
-                    <TableHead>Data trimiterii</TableHead>
-                    <TableHead>Locație</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Acțiuni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requests
-                    .filter((req) => {
-                      if (tab === "active") return req.status === "Active";
-                      if (tab === "solved") return req.status === "Rezolvat";
-                      if (tab === "canceled") return req.status === "Anulat";
-                      return false;
-                    })
-                    .map((request) => (
-                      <TableRow
-                        key={request.id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <TableCell className="font-medium">
-                          {request.title}
-                        </TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(request.preferredDate),
-                            "dd.MM.yyyy",
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          {request.cities?.join(", ")}, {request.county}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-sm ${
-                              request.status === "Active"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : request.status === "Rezolvat"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
+          <TabsContent value="active">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Titlu</TableHead>
+                  <TableHead>Data preferată</TableHead>
+                  <TableHead>Data trimiterii</TableHead>
+                  <TableHead>Locație</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Acțiuni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests
+                  .filter((req) => req.status === "Active")
+                  .map((request) => (
+                    <TableRow
+                      key={request.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <TableCell className="font-medium">
+                        {request.title}
+                      </TableCell>
+                      <TableCell>
+                        {format(
+                          new Date(request.preferredDate),
+                          "dd.MM.yyyy",
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {request.cities?.join(", ")}, {request.county}
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                          {request.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowViewDialog(true);
+                            }}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
                           >
-                            {request.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setShowViewDialog(true);
-                              }}
-                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                            >
-                              <Eye className="h-4 w-4" />
-                              Detalii
-                            </Button>
-                            {request.status !== "Anulat" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedRequest(request);
-                                  setShowDeleteDialog(true);
-                                }}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Anulează
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {requests.filter((req) => {
-                    if (tab === "active") return req.status === "Active";
-                    if (tab === "solved") return req.status === "Rezolvat";
-                    if (tab === "canceled") return req.status === "Anulat";
-                    return false;
-                  }).length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground"
-                      >
-                        Nu există cereri în această categorie.
+                            <Eye className="h-4 w-4" />
+                            Detalii
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowDeleteDialog(true);
+                            }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Anulează
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TabsContent>
-          ))}
+                  ))}
+                {requests.filter((req) => req.status === "Active").length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-muted-foreground"
+                    >
+                      Nu există cereri active.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          
+          <TabsContent value="solved">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Titlu</TableHead>
+                  <TableHead>Data preferată</TableHead>
+                  <TableHead>Data trimiterii</TableHead>
+                  <TableHead>Locație</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Acțiuni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests
+                  .filter((req) => req.status === "Rezolvat")
+                  .map((request) => (
+                    <TableRow
+                      key={request.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <TableCell className="font-medium">
+                        {request.title}
+                      </TableCell>
+                      <TableCell>
+                        {format(
+                          new Date(request.preferredDate),
+                          "dd.MM.yyyy",
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {request.cities?.join(", ")}, {request.county}
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                          {request.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowViewDialog(true);
+                            }}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Detalii
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                {requests.filter((req) => req.status === "Rezolvat").length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-muted-foreground"
+                    >
+                      Nu există cereri rezolvate.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          
+          <TabsContent value="canceled">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Titlu</TableHead>
+                  <TableHead>Data preferată</TableHead>
+                  <TableHead>Data trimiterii</TableHead>
+                  <TableHead>Locație</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Acțiuni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests
+                  .filter((req) => req.status === "Anulat")
+                  .map((request) => (
+                    <TableRow
+                      key={request.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <TableCell className="font-medium">
+                        {request.title}
+                      </TableCell>
+                      <TableCell>
+                        {format(
+                          new Date(request.preferredDate),
+                          "dd.MM.yyyy",
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(request.createdAt), "dd.MM.yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {request.cities?.join(", ")}, {request.county}
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-sm bg-red-100 text-red-800">
+                          {request.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowViewDialog(true);
+                            }}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Detalii
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                {requests.filter((req) => req.status === "Anulat").length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-muted-foreground"
+                    >
+                      Nu există cereri anulate.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TabsContent>
         </Tabs>
       </CardContent>
 
