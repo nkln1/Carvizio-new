@@ -45,6 +45,9 @@ const TabsContent = React.forwardRef<
       "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       className
     )}
+    // Adding forceMount to prevent unmounting of content on tab switch
+    // This helps maintain CSRF token state across tab changes
+    forceMount={true}
     {...props}
   />
 ))

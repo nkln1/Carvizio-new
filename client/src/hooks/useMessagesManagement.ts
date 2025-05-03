@@ -169,88 +169,49 @@ export function useMessagesManagement(
         offerId: activeConversation.offerId
       };
 
-      // Primim un token CSRF fresh înainte de trimiterea mesajului
+      // Reîmprospătăm token-ul CSRF înainte de a trimite mesajul
       try {
-        console.log('Obținem un token CSRF nou înainte de a trimite mesajul...');
-        const healthCheckResponse = await fetch('/api/health-check', {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        const newToken = healthCheckResponse.headers.get('X-CSRF-Token');
-        if (newToken) {
-          console.log('Am obținut un token CSRF nou:', newToken.substring(0, 8) + '...');
-        } else {
-          console.warn('Nu s-a putut obține token CSRF din răspunsul health-check');
-        }
+        console.log('[Message] Reîmprospătăm token-ul CSRF înainte de a trimite mesajul...');
+        await refreshCsrfToken();
       } catch (error) {
-        console.error('Eroare la obținerea tokenului CSRF:', error);
+        console.error('[Message] Eroare la reîmprospătarea tokenului CSRF:', error);
+        // Continuăm oricum, fetchWithCsrf va încerca să rezolve problema
       }
 
       // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
-      let response;
-      try {
-        console.log('Trimitem mesajul cu fetchWithCsrf la:', `${baseEndpoint}/messages/send`);
-        response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          },
-          credentials: 'include', // Esențial pentru a trimite cookie-urile cu CSRF token ID
-          body: JSON.stringify(messagePayload)
-        });
-        
-        console.log('Răspuns primit:', response.status);
-      } catch (fetchError) {
-        console.error('Network error sending message:', fetchError);
-        throw new Error('Eroare de conectare la server. Verificați conexiunea la internet.');
-      }
-
-      // Handle CSRF error specifically
-      if (response.status === 403) {
-        const errorText = await response.text();
-        console.error('Eroare 403 la trimiterea mesajului:', errorText);
-        
-        if (errorText.includes('CSRF')) {
-          console.error('Eroare de token CSRF detectată, încercăm reîmprospătarea...');
-          
-          // Facem o cerere directă către health-check pentru a reîmprospăta tokenul
-          const healthCheckResponse = await fetch('/api/health-check', {
-            method: 'GET',
-            credentials: 'include'
-          });
-          
-          const newToken = healthCheckResponse.headers.get('X-CSRF-Token');
-          if (newToken) {
-            console.log('Token CSRF reîmprospătat cu succes:', newToken.substring(0, 8) + '...');
-          }
-          
-          // Retry the request with the new token
-          console.log('Reîncercăm trimiterea mesajului cu noul token...');
-          response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify(messagePayload)
-          });
-          
-          console.log('Răspuns după reîncercare:', response.status);
-        }
-      }
+      // Acum include și logica de reîncercare automată
+      console.log('[Message] Trimitem mesajul la:', `${baseEndpoint}/messages/send`);
+      const response = await fetchWithCsrf(`${baseEndpoint}/messages/send`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(messagePayload)
+      });
+      
+      console.log('[Message] Răspuns primit:', response.status);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error sending message:', {
+        // Încercăm să preluăm informații despre eroare
+        let errorMessage = "Eroare la trimiterea mesajului";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          try {
+            errorMessage = await response.text() || errorMessage;
+          } catch {
+            // Folosim mesajul implicit dacă nu putem extrage altul
+          }
+        }
+        
+        console.error('[Message] Error sending message:', {
           status: response.status,
-          body: errorText
+          message: errorMessage
         });
-        throw new Error(`Failed to send message: ${errorText}`);
+        
+        throw new Error(`Failed to send message: ${errorMessage}`);
       }
 
       const newMessage = await response.json();
@@ -283,7 +244,7 @@ export function useMessagesManagement(
 
       return newMessage;
     } catch (error) {
-      console.error('Error in sendMessage:', error);
+      console.error('[Message] Error in sendMessage:', error);
       toast({
         variant: "destructive",
         title: "Eroare",

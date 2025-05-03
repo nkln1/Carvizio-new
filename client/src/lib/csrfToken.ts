@@ -162,13 +162,24 @@ export function addCsrfHeader(config: RequestInit = {}): RequestInit {
  * Funcție utilitară pentru a face cereri cu token CSRF
  * @param url URL-ul cererii
  * @param options Opțiuni pentru fetch
+ * @param retryCount Numărul de încercări (pentru reîncercări automate)
  * @returns Promisiune cu răspunsul
  */
-export async function fetchWithCsrf(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithCsrf(url: string, options: RequestInit = {}, retryCount: number = 1): Promise<Response> {
   try {
     // Asigură-te că avem un token CSRF valid (așteaptă dacă e necesar)
-    const csrfToken = await getOrFetchCsrfToken();
-    console.log('[CSRF] Folosim token pentru cerere:', csrfToken.substring(0, 8) + '...');
+    // Pentru reîncercări, solicită întotdeauna un token nou
+    let csrfToken;
+    if (retryCount < 3) {
+      // Folosește token-ul existent sau obține unul nou dacă nu există
+      csrfToken = await getOrFetchCsrfToken();
+    } else {
+      // Pentru reîncercări, forțează obținerea unui token nou
+      console.log('[CSRF] Forțăm reîmprospătarea token-ului CSRF...');
+      csrfToken = await refreshCsrfToken();
+    }
+    
+    console.log(`[CSRF] Folosim token pentru cerere (încercarea ${retryCount}):`, csrfToken.substring(0, 8) + '...');
     
     // Setează Content-Type corect dacă lipsește
     let contentType = 'application/json';
@@ -204,11 +215,43 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}): Pro
       console.log('[CSRF] New token received in response:', newToken.substring(0, 8) + '...');
     }
 
+    // If we get a CSRF error and haven't exceeded retry limit, try again
+    if (response.status === 403) {
+      const responseData = await response.clone().json().catch(() => ({}));
+      
+      if (responseData?.error?.includes('CSRF') && retryCount < 3) {
+        console.log(`[CSRF] Token invalid, retrying (${retryCount}/3)...`);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay before retry
+        return fetchWithCsrf(url, options, retryCount + 1);
+      }
+    }
+
     return response;
   } catch (error) {
     console.error('[CSRF] Error in fetchWithCsrf:', error);
     throw error;
   }
+}
+
+/**
+ * Forțează reîmprospătarea token-ului CSRF
+ * @returns Promisiune cu noul token CSRF
+ */
+export async function refreshCsrfToken(): Promise<string> {
+  console.log('[CSRF] Reîmprospătare forțată a token-ului CSRF...');
+  const response = await window.fetch('/api/health-check', {
+    method: 'GET',
+    credentials: 'include'
+  });
+  
+  const token = response.headers.get('X-CSRF-Token');
+  if (!token) {
+    throw new Error('Nu s-a putut obține token CSRF de la server');
+  }
+  
+  setCsrfToken(token);
+  console.log('[CSRF] Token CSRF reîmprospătat cu succes:', token.substring(0, 8) + '...');
+  return token;
 }
 
 /**
