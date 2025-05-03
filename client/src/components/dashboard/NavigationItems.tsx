@@ -67,76 +67,28 @@ export function NavigationItems({
             </div>
 
             <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-              <Button
-                key="cereri"
-                variant={activeTab === "requests" ? "default" : "ghost"}
-                onClick={() => handleTabChange("requests")}
-                className={`${
-                  activeTab === "requests"
-                    ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                    : ""
-                } relative p-2 h-auto min-h-9`}
-              >
-                <ShoppingBag className="h-5 w-5" />
-              </Button>
-              <Button
-                key="oferte"
-                variant={activeTab === "offers" ? "default" : "ghost"}
-                onClick={() => handleTabChange("offers")}
-                className={`${
-                  activeTab === "offers"
-                    ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                    : ""
-                } relative p-2 h-auto min-h-9`}
-              >
-                <PlusCircle className="h-5 w-5" />
-                {newOffersCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {newOffersCount}
-                  </span>
-                )}
-              </Button>
-              <Button
-                key="masini"
-                variant={activeTab === "car" ? "default" : "ghost"}
-                onClick={() => handleTabChange("car")}
-                className={`${
-                  activeTab === "car"
-                    ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                    : ""
-                } relative p-2 h-auto min-h-9`}
-              >
-                <Car className="h-5 w-5" />
-              </Button>
-              <Button
-                key="mesaje"
-                variant={activeTab === "messages" ? "default" : "ghost"}
-                onClick={() => handleTabChange("messages")}
-                className={`${
-                  activeTab === "messages"
-                    ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                    : ""
-                } relative p-2 h-auto min-h-9`}
-              >
-                <MessageCircle className="h-5 w-5" />
-                {unreadMessagesCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadMessagesCount}
-                  </span>
-                )}
-              </Button>
-              <Button
-                key="cont"
-                variant={activeTab === "profile" ? "default" : "ghost"}
-                onClick={() => handleTabChange("profile")}
-                className={`${
-                  activeTab === "profile"
-                    ? "bg-[#00aff5] hover:bg-[#0099d6]"
-                    : ""
-                } relative p-2 h-auto min-h-9`}
-              >
-                <User className="h-5 w-5" />
-              </Button>
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  onClick={() => handleTabChange(item.id)}
+                  className={`${
+                    activeTab === item.id
+                      ? "bg-[#00aff5] hover:bg-[#0099d6]"
+                      : ""
+                  } relative py-1 h-auto min-h-9 px-2 lg:px-3`}
+                >
+                  <div className="flex items-center">
+                    <span className="hidden lg:inline">{item.label}</span>
+                    <span className="lg:hidden">{item.icon}</span>
+                  </div>
+                  {item.count && item.count > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {item.count}
+                    </span>
+                  )}
+                </Button>
+              ))}
               <Button
                 onClick={onCreateRequest}
                 className="bg-[#00aff5] hover:bg-[#0099d6] ml-1 sm:ml-2 py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm whitespace-nowrap"
