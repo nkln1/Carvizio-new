@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /register
+Disallow: /dashboard/client
+Disallow: /dashboard/service
+Disallow: /profile
+Disallow: /api/
+Disallow: /socket
+
+# Permite crawling-ul paginilor publice
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /faq
+
+# Sitemap
+Sitemap: https://auto-service-app.ro/sitemap.xml
