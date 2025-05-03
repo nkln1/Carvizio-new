@@ -160,27 +160,45 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
   const handleSubmitOffer = async (values: any) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("No authentication token available");
+      if (!token) throw new Error('No authentication token available');
+
+      // Get the CSRF token from document cookies or headers
+      let csrfToken = '';
+      // Try to get from headers first
+      const csrfHeader = document.querySelector('meta[name="csrf-token"]');
+      if (csrfHeader && csrfHeader.getAttribute('content')) {
+        csrfToken = csrfHeader.getAttribute('content') || '';
+      }
+      // If not found in meta tag, try to get from localStorage
+      if (!csrfToken) {
+        csrfToken = localStorage.getItem('csrfToken') || '';
+      }
+
+      console.log("[Debug] Using CSRF token:", csrfToken ? `${csrfToken.substring(0, 8)}...` : 'missing');
 
       const response = await fetch(`/api/service/offers`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-CSRF-Token': csrfToken
         },
+        credentials: 'include', // Important for including cookies
         body: JSON.stringify({
           requestId: selectedRequest?.id,
-          ...values,
-        }),
+          ...values
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit offer");
+        throw new Error(errorData.message || errorData.error || 'Failed to submit offer');
       }
 
-      const data = await response.json();
+      const offerData = await response.json();
+      console.log("Offer submitted successfully:", offerData);
 
+      // Invalidate relevant queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ["/api/service/offers"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/service/requests"] });
 

@@ -93,10 +93,14 @@ export function SubmitOfferForm({
   const handleSubmit = async (values: OfferFormValues) => {
     try {
       setIsSubmitting(true);
+      
+      // Format dates before submitting
       const formattedValues = {
         ...values,
         availableDates: values.availableDates.map(date => date.toISOString())
       };
+      
+      // Pass the formatted values to the parent component's onSubmit
       await onSubmit(formattedValues);
       onClose();
     } catch (error) {

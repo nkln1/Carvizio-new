@@ -22,7 +22,7 @@ const tokenPromises: Array<{
 export function setCsrfToken(token: string): void {
   csrfToken = token;
   console.log('[CSRF] Token CSRF setat direct:', token.substring(0, 8) + '...');
-  
+
   // Rezolvă toate promisiunile în așteptare
   while (tokenPromises.length > 0) {
     const promise = tokenPromises.shift();
@@ -41,7 +41,7 @@ export function updateCsrfToken(response: Response): void {
   if (token) {
     csrfToken = token;
     console.log('[CSRF] Token CSRF actualizat:', token.substring(0, 8) + '...');
-    
+
     // Rezolvă toate promisiunile în așteptare
     while (tokenPromises.length > 0) {
       const promise = tokenPromises.shift();
@@ -61,7 +61,7 @@ export function extractCsrfToken(headers: Headers): void {
   if (token) {
     csrfToken = token;
     console.log('[CSRF] Token CSRF extras din headers:', token.substring(0, 8) + '...');
-    
+
     // Rezolvă toate promisiunile în așteptare
     while (tokenPromises.length > 0) {
       const promise = tokenPromises.shift();
@@ -89,35 +89,35 @@ export async function getOrFetchCsrfToken(): Promise<string> {
   if (csrfToken) {
     return csrfToken;
   }
-  
+
   // Dacă inițializarea e în curs, așteptăm rezultatul
   if (isInitializingToken) {
     return new Promise<string>((resolve, reject) => {
       tokenPromises.push({ resolve, reject });
     });
   }
-  
+
   // Altfel inițiem o cerere pentru token
   isInitializingToken = true;
-  
+
   try {
     console.log('[CSRF] Inițiem cerere pentru token CSRF');
     const response = await window.fetch('/api/health-check', {
       method: 'GET',
       credentials: 'include'
     });
-    
+
     const token = response.headers.get('X-CSRF-Token');
     if (!token) {
       throw new Error('Nu s-a putut obține token CSRF de la server');
     }
-    
+
     setCsrfToken(token);
     console.log('[CSRF] Token CSRF obținut cu succes:', token.substring(0, 8) + '...');
     return token;
   } catch (error) {
     console.error('[CSRF] Eroare la obținerea tokenului CSRF:', error);
-    
+
     // Respingem toate promisiunile în așteptare
     while (tokenPromises.length > 0) {
       const promise = tokenPromises.shift();
@@ -125,7 +125,7 @@ export async function getOrFetchCsrfToken(): Promise<string> {
         promise.reject(error instanceof Error ? error : new Error('Unknown error'));
       }
     }
-    
+
     throw error;
   } finally {
     isInitializingToken = false;
@@ -178,9 +178,9 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}, retr
       console.log('[CSRF] Forțăm reîmprospătarea token-ului CSRF...');
       csrfToken = await refreshCsrfToken();
     }
-    
+
     console.log(`[CSRF] Folosim token pentru cerere (încercarea ${retryCount}):`, csrfToken.substring(0, 8) + '...');
-    
+
     // Setează Content-Type corect dacă lipsește
     let contentType = 'application/json';
     if (options.headers) {
@@ -203,7 +203,7 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}, retr
     };
 
     console.log(`[CSRF] Request to ${url} with method ${newOptions.method || 'GET'}`);
-    
+
     // Execute the fetch with the updated options
     const response = await window.fetch(url, newOptions);
     console.log(`[CSRF] Response status ${response.status} from ${url}`);
@@ -218,7 +218,7 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}, retr
     // If we get a CSRF error and haven't exceeded retry limit, try again
     if (response.status === 403) {
       const responseData = await response.clone().json().catch(() => ({}));
-      
+
       if (responseData?.error?.includes('CSRF') && retryCount < 3) {
         console.log(`[CSRF] Token invalid, retrying (${retryCount}/3)...`);
         await new Promise(resolve => setTimeout(resolve, 500)); // Small delay before retry
@@ -243,12 +243,12 @@ export async function refreshCsrfToken(): Promise<string> {
     method: 'GET',
     credentials: 'include'
   });
-  
+
   const token = response.headers.get('X-CSRF-Token');
   if (!token) {
     throw new Error('Nu s-a putut obține token CSRF de la server');
   }
-  
+
   setCsrfToken(token);
   console.log('[CSRF] Token CSRF reîmprospătat cu succes:', token.substring(0, 8) + '...');
   return token;

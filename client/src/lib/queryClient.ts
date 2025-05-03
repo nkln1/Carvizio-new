@@ -20,11 +20,14 @@ export async function apiRequest(
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase())) {
     try {
       csrfToken = await getCsrfToken();
+      console.log(`[API Request] Using CSRF token for ${method} ${url}: ${csrfToken ? csrfToken.substring(0, 8) + '...' : 'missing'}`);
     } catch (error) {
       console.error("Could not get CSRF token:", error);
     }
   }
 
+  // Adăugăm și logging pentru depanare
+  console.log(`[API Request] ${method} ${url} | Auth Token: ${token ? "Present" : "Missing"} | CSRF Token: ${csrfToken ? "Present" : "Missing"}`);
 
   const res = await fetch(url, {
     method,
@@ -43,7 +46,22 @@ export async function apiRequest(
   // Actualizăm tokenul CSRF din răspuns (dacă există)
   updateCsrfToken(res);
 
-  await throwIfResNotOk(res);
+  if (!res.ok) {
+    const statusCode = res.status;
+    let errorMessage;
+    
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorData.error || res.statusText;
+      console.error(`[API Error] ${method} ${url} failed with status ${statusCode}: ${errorMessage}`);
+    } catch (e) {
+      errorMessage = res.statusText;
+      console.error(`[API Error] ${method} ${url} failed with status ${statusCode}`);
+    }
+    
+    throw new Error(`${statusCode}: ${errorMessage}`);
+  }
+  
   return res;
 }
 
