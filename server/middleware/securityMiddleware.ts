@@ -20,11 +20,12 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   // Activează XSS Protection în browsere
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
-  // Implementează Content Security Policy
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; img-src 'self' data: https: http:; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
-  );
+  // Content Security Policy temporar dezactivat pentru a evita probleme cu interfața
+  // Vom implementa o versiune mai bine configurată după ce toate problemele sunt rezolvate
+  // res.setHeader(
+  //   'Content-Security-Policy',
+  //   "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data: 'unsafe-inline';"
+  // );
   
   // Strict Transport Security (doar în producție)
   if (process.env.NODE_ENV === 'production') {
