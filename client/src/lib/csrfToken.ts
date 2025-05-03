@@ -10,8 +10,9 @@ let csrfToken: string | null = null;
  * Setează tokenul CSRF.  Adăugată pentru a permite setarea tokenului din fetchWithCsrf.
  * @param token Noul token CSRF.
  */
-function setCsrfToken(token: string): void {
+export function setCsrfToken(token: string): void {
   csrfToken = token;
+  console.log('Token CSRF setat direct:', token.substring(0, 8) + '...');
 }
 
 /**

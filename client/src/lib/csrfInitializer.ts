@@ -3,7 +3,24 @@
  * Asigură că avem mereu un token CSRF valid pentru cereri
  */
 
-import { setCsrfToken, getCsrfToken } from "./csrfToken";
+import { getCsrfToken } from "./csrfToken";
+
+// Explicit export needed for csrfToken.ts
+// Definim funcția de setare a tokenului
+const setCsrfToken = (token: string): void => {
+  // Importăm dinamic pentru a evita problemele cu importul circular
+  import("./csrfToken").then(module => {
+    // Folosim metoda expusă în csrfToken.ts
+    if (module.updateCsrfToken) {
+      const mockResponse = new Response(null, {
+        headers: { 'X-CSRF-Token': token }
+      });
+      module.updateCsrfToken(mockResponse);
+    }
+  }).catch(err => {
+    console.error('Error importing csrfToken module:', err);
+  });
+};
 
 // Frecvența la care se actualizează tokenul CSRF (la fiecare 20 minute)
 const CSRF_REFRESH_INTERVAL = 20 * 60 * 1000;

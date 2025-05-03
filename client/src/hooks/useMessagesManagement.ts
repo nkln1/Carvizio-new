@@ -94,7 +94,10 @@ export function useMessagesManagement(
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      // Folosim fetch normal pentru GET - nu necesită CSRF
       const response = await fetch(`${baseEndpoint}/messages/${activeConversation.requestId}`, {
+        method: 'GET',
+        credentials: 'include', // Include cookies pentru CSRF token ID
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
@@ -119,7 +122,10 @@ export function useMessagesManagement(
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
+      // Folosim fetch normal pentru GET - nu necesită CSRF
       const response = await fetch(`${baseEndpoint}/conversations`, {
+        method: 'GET',
+        credentials: 'include', // Include cookies pentru CSRF token ID
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
