@@ -3,24 +3,7 @@
  * Asigură că avem mereu un token CSRF valid pentru cereri
  */
 
-import { getCsrfToken } from "./csrfToken";
-
-// Explicit export needed for csrfToken.ts
-// Definim funcția de setare a tokenului
-const setCsrfToken = (token: string): void => {
-  // Importăm dinamic pentru a evita problemele cu importul circular
-  import("./csrfToken").then(module => {
-    // Folosim metoda expusă în csrfToken.ts
-    if (module.updateCsrfToken) {
-      const mockResponse = new Response(null, {
-        headers: { 'X-CSRF-Token': token }
-      });
-      module.updateCsrfToken(mockResponse);
-    }
-  }).catch(err => {
-    console.error('Error importing csrfToken module:', err);
-  });
-};
+import { initializeCsrf as initCsrf } from "./csrfToken";
 
 // Frecvența la care se actualizează tokenul CSRF (la fiecare 20 minute)
 const CSRF_REFRESH_INTERVAL = 20 * 60 * 1000;
@@ -35,18 +18,11 @@ let refreshIntervalId: number | null = null;
  */
 export async function initializeCsrfProtection(): Promise<void> {
   try {
-    console.log('Inițializare protecție CSRF...');
+    console.log('[CSRF] Inițializare protecție CSRF...');
 
-    // Obține token CSRF inițial
-    await initializeCsrf();
-
-    // Verifică dacă am obținut un token
-    const token = getCsrfToken();
-    if (token) {
-      console.log('Protecție CSRF inițializată cu succes');
-    } else {
-      console.warn('Nu s-a putut obține un token CSRF inițial');
-    }
+    // Folosește funcția din csrfToken.ts pentru a inițializa token-ul
+    await initCsrf();
+    console.log('[CSRF] Token CSRF inițializat cu succes');
 
     // Configurează reîmprospătarea periodică
     if (refreshIntervalId) {
@@ -55,10 +31,10 @@ export async function initializeCsrfProtection(): Promise<void> {
 
     refreshIntervalId = window.setInterval(async () => {
       try {
-        await refreshCsrfToken();
-        console.log('Token CSRF reîmprospătat');
+        await initCsrf();
+        console.log('[CSRF] Token CSRF reîmprospătat automat');
       } catch (error) {
-        console.error('Eroare la reîmprospătarea tokenului CSRF:', error);
+        console.error('[CSRF] Eroare la reîmprospătarea tokenului CSRF:', error);
       }
     }, CSRF_REFRESH_INTERVAL);
 
@@ -71,7 +47,7 @@ export async function initializeCsrfProtection(): Promise<void> {
     });
 
   } catch (error) {
-    console.error('Eroare la inițializarea protecției CSRF:', error);
+    console.error('[CSRF] Eroare la inițializarea protecției CSRF:', error);
   }
 }
 
@@ -83,72 +59,11 @@ export function cleanupCsrfProtection(): void {
   if (refreshIntervalId !== null) {
     clearInterval(refreshIntervalId);
     refreshIntervalId = null;
-    console.log('Curățare protecție CSRF realizată');
+    console.log('[CSRF] Curățare protecție CSRF realizată');
   }
-}
-
-
-// Initialize CSRF token when the module is loaded
-export function initializeCsrf() {
-  // Make a request to a health-check endpoint that returns a CSRF token
-  fetch('/api/health-check', {
-    method: 'GET',
-    credentials: 'include'
-  })
-    .then(response => {
-      const csrfToken = response.headers.get('X-CSRF-Token');
-      if (csrfToken) {
-        setCsrfToken(csrfToken);
-        console.log('CSRF token initialized successfully');
-      } else {
-        console.warn('No CSRF token found in health-check response');
-      }
-    })
-    .catch(error => {
-      console.error('Failed to initialize CSRF token:', error);
-    });
-}
-
-// Function to refresh the CSRF token
-export async function refreshCsrfToken(): Promise<string | null> {
-  try {
-    const response = await fetch('/api/health-check', {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    const csrfToken = response.headers.get('X-CSRF-Token');
-    if (csrfToken) {
-      setCsrfToken(csrfToken);
-      console.log('CSRF token refreshed successfully');
-      return csrfToken;
-    } else {
-      console.warn('No CSRF token found in refresh response');
-      return null;
-    }
-  } catch (error) {
-    console.error('Failed to refresh CSRF token:', error);
-    return null;
-  }
-}
-
-// Function to ensure we have a valid CSRF token
-export async function ensureCsrfToken(): Promise<string | null> {
-  const currentToken = getCsrfToken();
-  if (currentToken) {
-    return currentToken;
-  }
-
-  // If no token exists, fetch a new one
-  return await refreshCsrfToken();
 }
 
 // Auto-initialize when this module is imported
-initializeCsrf();
-
-// Set up periodic refresh (every 20 minutes)
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    refreshCsrfToken();
-  }, 20 * 60 * 1000);
-}
+initializeCsrfProtection().catch(err => {
+  console.error('[CSRF] Eroare la inițializarea automată a protecției CSRF:', err);
+});

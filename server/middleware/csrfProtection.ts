@@ -114,24 +114,78 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   }
 
   try {
+    console.log('[CSRF Debug] Checking CSRF protection for:', req.method, req.url);
+    
     // Get the token from the request header
     const csrfToken = req.headers['x-csrf-token'] as string;
+    console.log('[CSRF Debug] Token from header:', csrfToken ? csrfToken.substring(0, 8) + '...' : 'missing');
 
     // Get token ID from cookie
     const tokenId = req.cookies?.csrf_token_id;
+    console.log('[CSRF Debug] Token ID from cookie:', tokenId ? tokenId.substring(0, 8) + '...' : 'missing');
+
+    // For debugging - dump all values
+    console.log('[CSRF Debug] Available tokens in storage:', Array.from(csrfTokens.keys()).length);
 
     if (!csrfToken) {
+      console.log('[CSRF Debug] Request rejected: Token missing');
+      // Generăm un token nou pentru client
+      const newToken = generateCsrfToken();
+      const newTokenId = crypto.randomBytes(16).toString('hex');
+      
+      // Salvăm tokenul nou
+      csrfTokens.set(newTokenId, { 
+        token: newToken, 
+        timestamp: Date.now() 
+      });
+      
+      // Setăm headerul și cookie-ul
+      res.setHeader('X-CSRF-Token', newToken);
+      res.cookie('csrf_token_id', newTokenId, { 
+        httpOnly: true,
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 24 ore
+      });
+      
       return res.status(403).json({ error: 'CSRF token missing' });
     }
 
     if (!tokenId) {
+      console.log('[CSRF Debug] Request rejected: Token ID missing');
+      // Generăm un token nou pentru client
+      const newToken = generateCsrfToken();
+      const newTokenId = crypto.randomBytes(16).toString('hex');
+      
+      // Salvăm tokenul nou
+      csrfTokens.set(newTokenId, { 
+        token: newToken, 
+        timestamp: Date.now() 
+      });
+      
+      // Setăm headerul și cookie-ul
+      res.setHeader('X-CSRF-Token', newToken);
+      res.cookie('csrf_token_id', newTokenId, { 
+        httpOnly: true,
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 24 ore
+      });
+      
       return res.status(403).json({ error: 'CSRF token ID missing' });
     }
 
     // Check if token is valid
     const tokenData = csrfTokens.get(tokenId);
+    
+    if (!tokenData) {
+      console.log('[CSRF Debug] Token ID not found in storage');
+    } else {
+      console.log('[CSRF Debug] Token in storage:', tokenData.token.substring(0, 8) + '...');
+    }
 
     if (!tokenData || tokenData.token !== csrfToken) {
+      console.log('[CSRF Debug] Request rejected: Invalid token match');
       // Generate a new token for the client to use in future requests
       const newToken = generateCsrfToken();
       csrfTokens.set(tokenId, { 
@@ -142,6 +196,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
       res.setHeader('X-CSRF-Token', newToken);
       return res.status(403).json({ error: 'Invalid CSRF token' });
     }
+    
+    console.log('[CSRF Debug] CSRF validation successful');
 
     // Update token timestamp to mark it as recently used
     tokenData.timestamp = Date.now();
