@@ -604,6 +604,35 @@ export class EmailService {
     clientName: string,
     offerId: string | number = `offer_${Date.now()}`,
   ): Promise<boolean> {
+    // Adăugăm un ID de execuție unic pentru trimitere și logging
+    const uniqueExecutionId = `exec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    
+    // Generăm un ID unic pentru deduplicare
+    const messageSignature = `offer_accepted_${serviceProvider?.id || serviceProvider?.email}_${offerId}_${Date.now()}`;
+    
+    console.log(`\n🔔 ===== TRIMITERE NOTIFICARE EMAIL PENTRU OFERTĂ ACCEPTATĂ [${uniqueExecutionId}] =====`);
+    console.log(`📝 ID Execuție: ${uniqueExecutionId}`);
+    console.log(`📝 Signature: ${messageSignature}`);
+    
+    // CONTROL STRICT ANTI-DUPLICARE: Similar cu alte metode de notificare
+    if (!this._sentMessageIds) {
+      this._sentMessageIds = new Map<string, number>();
+      console.log(`✅ [Anti-duplicare] Inițializare cache prevenire duplicare email-uri`);
+    }
+    
+    // Verificăm dacă am trimis deja un email similar foarte recent
+    const now = Date.now();
+    const lastSentTime = this._sentMessageIds.get(messageSignature);
+    const DUPLICATE_PREVENTION_WINDOW = 120000; // 2 minute
+    
+    if (lastSentTime && now - lastSentTime < DUPLICATE_PREVENTION_WINDOW) {
+      const secondsAgo = Math.round((now - lastSentTime) / 1000);
+      console.log(`\n🛑 BLOCARE DUPLICARE: Email pentru ofertă acceptată către ${serviceProvider?.email} deja trimis acum ${secondsAgo} secunde.`);
+      console.log(`🔒 Signature: ${messageSignature}`);
+      console.log(`⏭️ Email blocat pentru prevenirea duplicării.`);
+      return true; // Simulăm succes pentru a nu întrerupe fluxul aplicației
+    }
+    
     try {
       // Validăm și normalizăm datele serviceProvider pentru a evita erorile
       if (!serviceProvider) {
@@ -633,6 +662,14 @@ export class EmailService {
       console.log(`Destinatar: ${companyName} (${serviceProvider.email})`);
       console.log(`Client: ${clientName}`);
       console.log(`Titlu ofertă: ${offerTitle}`);
+      
+      // Notă: Ofertele acceptate sunt notificări CRITICE și sunt trimise indiferent de rate limiting
+      // Însă înregistrăm în rate limit cache pentru consistență
+      console.log(`✅ [Rate limiting] Notificările de oferte acceptate sunt considerate CRITICE și trimise imediat.`);
+      
+      // Înregistrăm ID-ul mesajului în cache pentru prevenirea duplicării
+      this._sentMessageIds.set(messageSignature, now);
+      console.log(`🔐 [Anti-duplicare] Înregistrat ID ofertă acceptată: ${messageSignature}`);
 
       const FIXED_SUBJECT = "Ofertă acceptată";
 
@@ -659,6 +696,21 @@ export class EmailService {
         </div>
       `;
 
+      const text = `
+        Ofertă acceptată
+        
+        Bună ziua, ${companyName},
+        
+        Clientul ${clientName} a acceptat oferta dumneavoastră: ${offerTitle}
+        
+        Puteți contacta clientul și continua procesul.
+        
+        Pentru a vedea oferta acceptată, accesați: https://carvizio.ro/service-dashboard
+        
+        Cu stimă,
+        Echipa Carvizio
+      `;
+
       // Verificăm API key-ul și afișăm detalii pentru debugging
       if (!this.apiKey) {
         console.error(
@@ -672,18 +724,27 @@ export class EmailService {
         serviceProvider.email,
         FIXED_SUBJECT,
         html,
+        text
       );
 
       if (result) {
         console.log(
           `✅ EmailService.sendOfferAcceptedNotification - Email trimis cu succes către ${serviceProvider.email}`,
         );
+        
+        // Actualizăm cache-ul de rate limiting - chiar dacă nu aplicăm limitarea, înregistrăm pentru logging complet
+        this.updateRateLimit(serviceProvider.email, 'offer_accepted');
       } else {
         console.error(
           `❌ EmailService.sendOfferAcceptedNotification - Eșec la trimiterea email-ului către ${serviceProvider.email}`,
         );
+        // Ștergem din cache în caz de eșec
+        this._sentMessageIds.delete(messageSignature);
       }
 
+      console.log(
+        `🔔 ===== SFÂRȘIT NOTIFICARE EMAIL PENTRU OFERTĂ ACCEPTATĂ [${uniqueExecutionId}] =====\n`,
+      );
       return result;
     } catch (error) {
       console.error(
@@ -696,6 +757,9 @@ export class EmailService {
         console.error(`❌ Detalii eroare: ${error.message}`);
         console.error(`❌ Stack trace: ${error.stack}`);
       }
+
+      // Ștergem din cache în caz de eroare
+      this._sentMessageIds.delete(messageSignature);
 
       // Nu propagăm eroarea pentru a nu întrerupe fluxul aplicației
       return false;
