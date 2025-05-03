@@ -294,10 +294,11 @@ export default function ClientDashboard() {
       />
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="right">
-          <div className="mb-8">
-            <DialogTitle>Meniu</DialogTitle>
-            <DialogDescription>
+        <SheetContent side="right" className="w-[85%] sm:w-[385px]">
+          <div className="mb-4 pt-2">
+            <DialogTitle className="text-lg text-[#00aff5]">Meniu Client</DialogTitle>
+            <DialogDescription className="text-xs opacity-70">
+              Accesează funcțiile principale
             </DialogDescription>
           </div>
           <NavigationItems
@@ -313,10 +314,10 @@ export default function ClientDashboard() {
         </SheetContent>
       </Sheet>
 
-      <div className="container mx-auto p-4 sm:p-6 flex-grow">
+      <div className="container mx-auto p-2 sm:p-4 md:p-6 flex-grow">
         {isLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+          <div className="flex items-center justify-center p-4 sm:p-8">
+            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-[#00aff5]" />
           </div>
         ) : (
           <>
@@ -385,10 +386,10 @@ export default function ClientDashboard() {
       />
 
       <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Creează o nouă cerere</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="mb-2 sm:mb-4">
+            <DialogTitle className="text-lg sm:text-xl text-[#00aff5]">Creează o nouă cerere</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm opacity-80">
               Completați formularul pentru a trimite o nouă cerere de service
             </DialogDescription>
           </DialogHeader>

@@ -257,35 +257,38 @@ console.log('Navigating to service profile with username:', userProfile.username
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <nav className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-[#00aff5]">Service Dashboard</h1>
+      <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <h1 className="text-base sm:text-xl font-semibold text-[#00aff5] truncate">Service Dashboard</h1>
               {userProfile && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="hidden md:flex items-center gap-2 text-[#00aff5]"
+                  className="hidden md:flex items-center gap-2 text-[#00aff5] text-xs"
                   onClick={handleProfileClick}
                 >
-                  <ExternalLink className="h-4 w-4" />
-                  Vezi Profil public
+                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Vezi Profil public</span>
+                  <span className="sm:hidden">Profil</span>
                 </Button>
               )}
             </div>
 
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-1 lg:space-x-3">
               {navigationItems.map((item) => (
                 <Button
                   key={item.id}
                   variant={activeTab === item.id ? "default" : "ghost"}
                   onClick={() => handleTabChange(item.id)}
-                  className={`relative ${activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""}`}
+                  className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm ${
+                    activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                  }`}
                 >
                   {item.label}
                   {item.count > 0 && (
-                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
                       {item.count}
                     </span>
                   )}
@@ -296,16 +299,16 @@ console.log('Navigating to service profile with username:', userProfile.username
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
+                  <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Deschide meniul">
+                    <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[80%] sm:w-[385px]">
-                  <div className="flex flex-col gap-4 mt-6">
+                <SheetContent side="right" className="w-[85%] sm:w-[385px]">
+                  <div className="flex flex-col gap-3 mt-6">
                     {userProfile && (
                       <Button
                         variant="outline"
-                        className="w-full justify-start text-left text-[#00aff5]"
+                        className="w-full justify-start text-left text-[#00aff5] py-3"
                         onClick={handleProfileClick}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
@@ -317,13 +320,13 @@ console.log('Navigating to service profile with username:', userProfile.username
                         key={item.id}
                         variant={activeTab === item.id ? "default" : "ghost"}
                         onClick={() => handleTabChange(item.id)}
-                        className={`w-full justify-start text-left relative ${
+                        className={`w-full justify-start text-left relative py-3 ${
                           activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
                         }`}
                       >
                         {item.label}
                         {item.count > 0 && (
-                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-[#00aff5] text-white rounded-full">
+                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] h-5 flex items-center justify-center">
                             {item.count}
                           </span>
                         )}
@@ -337,7 +340,7 @@ console.log('Navigating to service profile with username:', userProfile.username
         </div>
       </nav>
 
-      <div className="container mx-auto p-4 sm:p-6 flex-grow">
+      <div className="container mx-auto p-2 sm:p-4 md:p-6 flex-grow">
         <TabWrapper name={TAB_NAMES[activeTab]} onError={handleTabError}>
           {(() => {
             switch (activeTab) {
