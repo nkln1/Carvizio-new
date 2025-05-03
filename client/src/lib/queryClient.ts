@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { auth } from "./firebase";
+import { getCsrfToken, updateCsrfToken } from "./csrfToken";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -14,12 +15,17 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  // Obținem tokenul CSRF curent pentru cereri non-GET
+  const csrfToken = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase()) 
+    ? getCsrfToken() 
+    : null;
 
   const res = await fetch(url, {
     method,
     headers: {
       ...(data ? { "Content-Type": "application/json" } : {}),
       ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Pragma": "no-cache",
       "Expires": "0",
@@ -27,6 +33,9 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // Actualizăm tokenul CSRF din răspuns (dacă există)
+  updateCsrfToken(res);
 
   await throwIfResNotOk(res);
   return res;

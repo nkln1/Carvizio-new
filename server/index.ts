@@ -6,6 +6,7 @@ import http from 'http';
 import { setCustomMimeTypes } from "./mimeTypes";
 import { securityHeaders, generalRateLimiter, securityLogger, sanitizeInput } from "./middleware/securityMiddleware";
 import { sqlInjectionProtection, databaseOperationMonitoring } from "./middleware/databaseSecurity";
+import { csrfTokenInjector, csrfProtection } from "./middleware/csrfProtection";
 
 const app = express();
 // Configurare pentru a avea încredere în proxy-uri (necesar pentru express-rate-limit într-un mediu cu proxy)
@@ -91,11 +92,16 @@ app.use((req, res, next) => {
 // Apply rate limiter for all routes (except static files)
 app.use('/api/', generalRateLimiter);
 
+// Aplicăm protecția CSRF pentru rutele API (generează token pentru cereri GET și verifică pentru cereri care modifică date)
+app.use('/api/', csrfTokenInjector);
+app.use('/api/', csrfProtection);
+
 // Configure CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-CSRF-Token');
+  res.setHeader('Access-Control-Expose-Headers', 'X-CSRF-Token');
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
