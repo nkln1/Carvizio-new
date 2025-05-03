@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Mail, Menu, ExternalLink } from "lucide-react";
+import { Loader2, Mail, Menu, ExternalLink, FileText, MessageSquare, User, SendHorizontal, MailOpen } from "lucide-react";
 import type { User as UserType, ServiceProviderUser } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -277,23 +277,76 @@ console.log('Navigating to service profile with username:', userProfile.username
             </div>
 
             <div className="hidden md:flex items-center space-x-1 lg:space-x-3">
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.id}
-                  variant={activeTab === item.id ? "default" : "ghost"}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm ${
-                    activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
-                  }`}
-                >
-                  {item.label}
-                  {item.count > 0 && (
-                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                      {item.count}
-                    </span>
-                  )}
-                </Button>
-              ))}
+              <Button
+                tab="cereri"
+                variant={activeTab === "cereri" ? "default" : "ghost"}
+                onClick={() => handleTabChange("cereri")}
+                className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm flex items-center ${
+                  activeTab === "cereri" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                }`}
+              >
+                <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                Cereri
+                {newRequestsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {newRequestsCount}
+                  </span>
+                )}
+              </Button>
+              <Button
+                tab="oferte-trimise"
+                variant={activeTab === "oferte-trimise" ? "default" : "ghost"}
+                onClick={() => handleTabChange("oferte-trimise")}
+                className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm flex items-center ${
+                  activeTab === "oferte-trimise" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                }`}
+              >
+                <MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />
+                Oferte trimise
+              </Button>
+              <Button
+                tab="oferte-acceptate"
+                variant={activeTab === "oferte-acceptate" ? "default" : "ghost"}
+                onClick={() => handleTabChange("oferte-acceptate")}
+                className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm flex items-center ${
+                  activeTab === "oferte-acceptate" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                }`}
+              >
+                <SendHorizontal className="w-4 h-4 mr-2 flex-shrink-0" />
+                Oferte acceptate
+                {newAcceptedOffersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {newAcceptedOffersCount}
+                  </span>
+                )}
+              </Button>
+              <Button
+                tab="mesaje"
+                variant={activeTab === "mesaje" ? "default" : "ghost"}
+                onClick={() => handleTabChange("mesaje")}
+                className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm flex items-center ${
+                  activeTab === "mesaje" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                }`}
+              >
+                <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
+                Mesaje
+                {unreadConversationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {unreadConversationsCount}
+                  </span>
+                )}
+              </Button>
+              <Button
+                tab="cont"
+                variant={activeTab === "cont" ? "default" : "ghost"}
+                onClick={() => handleTabChange("cont")}
+                className={`relative py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm flex items-center ${
+                  activeTab === "cont" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                }`}
+              >
+                <User className="w-4 h-4 mr-2 flex-shrink-0" />
+                Cont
+              </Button>
             </div>
 
             <div className="md:hidden">
@@ -315,23 +368,71 @@ console.log('Navigating to service profile with username:', userProfile.username
                         Vezi Profil public
                       </Button>
                     )}
-                    {navigationItems.map((item) => (
-                      <Button
-                        key={item.id}
-                        variant={activeTab === item.id ? "default" : "ghost"}
-                        onClick={() => handleTabChange(item.id)}
-                        className={`w-full justify-start text-left relative py-3 ${
-                          activeTab === item.id ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
-                        }`}
-                      >
-                        {item.label}
-                        {item.count > 0 && (
-                          <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                            {item.count}
-                          </span>
-                        )}
-                      </Button>
-                    ))}
+                    <Button
+                      variant={activeTab === "cereri" ? "default" : "ghost"}
+                      onClick={() => handleTabChange("cereri")}
+                      className={`w-full justify-start text-left relative py-3 ${
+                        activeTab === "cereri" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                      }`}
+                    >
+                      <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Cereri
+                      {newRequestsCount > 0 && (
+                        <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                          {newRequestsCount}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      variant={activeTab === "oferte-trimise" ? "default" : "ghost"}
+                      onClick={() => handleTabChange("oferte-trimise")}
+                      className={`w-full justify-start text-left relative py-3 ${
+                        activeTab === "oferte-trimise" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                      }`}
+                    >
+                      <MailOpen className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Oferte trimise
+                    </Button>
+                    <Button
+                      variant={activeTab === "oferte-acceptate" ? "default" : "ghost"}
+                      onClick={() => handleTabChange("oferte-acceptate")}
+                      className={`w-full justify-start text-left relative py-3 ${
+                        activeTab === "oferte-acceptate" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                      }`}
+                    >
+                      <SendHorizontal className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Oferte acceptate
+                      {newAcceptedOffersCount > 0 && (
+                        <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                          {newAcceptedOffersCount}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      variant={activeTab === "mesaje" ? "default" : "ghost"}
+                      onClick={() => handleTabChange("mesaje")}
+                      className={`w-full justify-start text-left relative py-3 ${
+                        activeTab === "mesaje" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                      }`}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Mesaje
+                      {unreadConversationsCount > 0 && (
+                        <span className="absolute right-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                          {unreadConversationsCount}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      variant={activeTab === "cont" ? "default" : "ghost"}
+                      onClick={() => handleTabChange("cont")}
+                      className={`w-full justify-start text-left relative py-3 ${
+                        activeTab === "cont" ? "bg-[#00aff5] hover:bg-[#0099d6]" : ""
+                      }`}
+                    >
+                      <User className="w-4 h-4 mr-2 flex-shrink-0" />
+                      Cont
+                    </Button>
                   </div>
                 </SheetContent>
               </Sheet>
