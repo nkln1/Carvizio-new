@@ -1,3 +1,4 @@
+
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 
@@ -6,7 +7,7 @@ import crypto from 'crypto';
 const csrfTokens = new Map<string, { token: string, timestamp: number }>();
 
 // Generates a new CSRF token
-function generateCsrfToken(): string {
+export function generateCsrfToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
