@@ -59,7 +59,7 @@ export function NavigationItems({
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-[#00aff5]">
-                Dashboard
+                Client Dashboard
               </h1>
             </div>
 
