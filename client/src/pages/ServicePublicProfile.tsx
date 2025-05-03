@@ -10,6 +10,9 @@ import { ReviewSection } from "@/components/reviews/ReviewSection";
 import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import SEOHeader from "@/components/seo/SEOHeader";
+import ServiceDetailSchema from "@/components/seo/ServiceDetailSchema";
+import BreadcrumbSchema from "@/components/seo/BreadcrumbSchema";
 
 interface ServiceProfileData extends ServiceProvider {
   workingHours: WorkingHour[];
@@ -173,20 +176,68 @@ export default function ServicePublicProfile() {
     </div>;
   }
 
+  // Calculăm rating-ul mediu pentru SEO
+  const avgRating = serviceProfile.reviews && serviceProfile.reviews.length > 0
+    ? serviceProfile.reviews.reduce((acc, review) => acc + review.rating, 0) / serviceProfile.reviews.length
+    : 0;
+    
+  // Datele de breadcrumb pentru SEO
+  const breadcrumbItems = [
+    { name: "Acasă", url: "/" },
+    { name: "Service-uri Auto", url: "/services" },
+    { name: serviceProfile.companyName, url: `/service/${username}` }
+  ];
+    
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
-          <h1 className="text-3xl font-bold text-[#00aff5] flex items-center gap-2">
-            <Building2 className="h-6 w-6" />
-            {serviceProfile.companyName}
-          </h1>
+    <>
+      {/* SEO Header cu metadate */}
+      <SEOHeader 
+        title={`${serviceProfile.companyName} - Service Auto în ${serviceProfile.city}, ${serviceProfile.county}`}
+        description={`${serviceProfile.companyName} oferă servicii auto de calitate în ${serviceProfile.city}. Program, adresă, recenzii și informații de contact complete.`}
+        keywords={`service auto ${serviceProfile.city.toLowerCase()}, reparații auto, ${serviceProfile.companyName}, întreținere auto, service auto profesional`}
+        canonicalUrl={`https://auto-service-app.ro/service/${username}`}
+        ogImage="/og-image.jpg"
+      />
+      
+      {/* Schema.org pentru breadcrumb */}
+      <BreadcrumbSchema items={breadcrumbItems} />
+      
+      {/* Schema.org pentru service auto */}
+      <ServiceDetailSchema 
+        name={`Service Auto ${serviceProfile.companyName}`}
+        description={`${serviceProfile.companyName} este un service auto autorizat din ${serviceProfile.city}, care oferă servicii complete de întreținere și reparații auto.`}
+        companyName={serviceProfile.companyName}
+        companyUrl={`https://auto-service-app.ro/service/${username}`}
+        serviceTypes={["Întreținere auto", "Reparații", "Diagnoză", "Service rapid"]}
+        address={{
+          street: serviceProfile.address || "",
+          city: serviceProfile.city,
+          county: serviceProfile.county,
+          postalCode: ""
+        }}
+        telephone={serviceProfile.phone}
+        email={serviceProfile.email}
+        areasServed={[serviceProfile.city, serviceProfile.county, "România"]}
+        priceRange={"$$"}
+        rating={serviceProfile.reviews && serviceProfile.reviews.length > 0 ? {
+          value: avgRating,
+          count: serviceProfile.reviews.length
+        } : undefined}
+      />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
+            <h1 className="text-3xl font-bold text-[#00aff5] flex items-center gap-2">
+              <Building2 className="h-6 w-6" />
+              {serviceProfile.companyName}
+            </h1>
 
           {/* Rating Preview Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex items-center">
               {serviceProfile.reviews && serviceProfile.reviews.length > 0 ? (
-                <>
+                <div>
                   <div className="flex items-center">
                     <span className="text-xl font-bold mr-2">
                       {(serviceProfile.reviews.reduce((acc, review) => acc + review.rating, 0) / 
@@ -209,7 +260,7 @@ export default function ServicePublicProfile() {
                       ({serviceProfile.reviews.length})
                     </span>
                   </div>
-                </>
+                </div>
               ) : (
                 <span className="text-gray-500 italic">Nicio recenzie încă</span>
               )}
@@ -342,5 +393,6 @@ export default function ServicePublicProfile() {
         </div>
       </div>
     </div>
+    </>
   );
 }
