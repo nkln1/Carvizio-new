@@ -6,13 +6,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CarForm } from "@/components/car/CarForm";
-import type { CarType } from "@shared/schema";
+import type { Car } from "@shared/schema";
 
 interface CarDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedCar?: CarType;
-  onSubmit: (data: Omit<CarType, "id" | "userId" | "createdAt">) => Promise<void>;
+  selectedCar?: Car;
+  onSubmit: (data: Omit<Car, "id" | "clientId" | "createdAt">) => Promise<void>;
   onCancel: () => void;
   pendingRequestData?: any;
 }
