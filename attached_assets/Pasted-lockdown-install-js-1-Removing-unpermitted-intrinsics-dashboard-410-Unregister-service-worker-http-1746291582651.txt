@@ -1,0 +1,427 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+dashboard:410 Unregister service worker: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/
+dashboard:400 Ștergere cache vechi: service-dashboard-cache-v1.0.8
+dashboard:5 [App] Încărcare aplicație...
+hmr-disable.ts:161 [Mod Dezvoltare] HMR dezactivat - refresh manual necesar
+hmr-disable.ts:163 Toate conexiunile pentru Hot Module Replacement au fost blocate pentru stabilitate.
+chunk-RPCDYKBN.js?v=c975125b:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+websocket.ts:46 Initializing WebSocket service...
+websocket.ts:84 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+websocket.ts:87 WebSocket URL (dev environment): wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+websocket.ts:105 Connecting to WebSocket: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+hmr-disable.ts:66 [WebSocket] Permisă conexiunea către: wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/socket
+firebase.ts:34 Firebase Cloud Messaging este suportat în acest browser
+firebase.ts:55 Firebase auth state: Logged in
+firebase.ts:57 Email verified: true
+firebase.ts:47 Firebase persistence set to LOCAL
+AuthContext.tsx:84 Firebase persistence set to LOCAL
+AuthContext.tsx:84 Firebase persistence set to LOCAL
+sw.js?t=1746291557407&v=1.0.6:1276 [Service Worker] Script încărcat cu versiunea: v1.0.8
+sw.js?t=1746291557407&v=1.0.6:27 [Service Worker] Instalare în curs...
+dashboard:135 Service Worker înregistrat cu succes: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/
+dashboard:181 Permisiune pentru notificări acordată anterior
+AuthContext.tsx:52 Token de autentificare actualizat și salvat pentru Service Worker
+AuthContext.tsx:52 Token de autentificare actualizat și salvat pentru Service Worker
+websocket.ts:122 WebSocket connection established successfully
+websocket.ts:139 Raw WebSocket message received: {"type":"CONNECTED","message":"WebSocket connection established successfully"}
+websocket.ts:141 Received WebSocket message (parsed): {type: 'CONNECTED', message: 'WebSocket connection established successfully'}
+App.tsx:52 [App] Încărcare aplicație...
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+App.tsx:52 [App] Încărcare aplicație...
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+App.tsx:83 Stare permisiune notificări: granted
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+App.tsx:83 Stare permisiune notificări: granted
+App.tsx:108 WebSocket conectat pentru notificări
+App.tsx:146 Notificările sunt active și configurate corect
+App.tsx:108 WebSocket conectat pentru notificări
+App.tsx:146 Notificările sunt active și configurate corect
+csrfInitializer.ts:8 [CSRF] Inițializare protecție CSRF...
+csrfInitializer.ts:12 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:13 [CSRF] Token CSRF inițializat cu succes
+csrfInitializer.ts:28 Protecție CSRF inițializată
+App.tsx:61 Protecție CSRF inițializată
+csrfInitializer.ts:8 [CSRF] Inițializare protecție CSRF...
+csrfInitializer.ts:12 [CSRF] Protecție CSRF inițializată cu succes
+csrfInitializer.ts:13 [CSRF] Token CSRF inițializat cu succes
+csrfInitializer.ts:28 Protecție CSRF inițializată
+App.tsx:61 Protecție CSRF inițializată
+sw.js?t=1746291557407&v=1.0.6:41 [Service Worker] Activare cu versiunea: v1.0.8
+sw.js?t=1746291557407&v=1.0.6:903 [Service Worker] Mesaj primit: {eventType: 'ping', eventId: '44332633342946089525', data: {…}}
+sw.js?t=1746291557407&v=1.0.6:1271 [Service Worker] Tip de mesaj necunoscut: undefined
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 0, viewedOffers: 0, newOffersCount: 0}
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: e48a5929...
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 0, viewedOffers: 15, newOffersCount: 0}
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: e48a5929...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 0, viewedOffers: 15, newOffersCount: 0}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: e48a5929...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:78 Permisiune notificări browser: granted
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+useUnreadMessagesCount.ts:36 Actualizare număr conversații necitite: 1
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 0, viewedOffers: 15, newOffersCount: 0}
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: e48a5929...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+useOfferManagement.ts:82 New offers calculation: {totalOffers: 24, viewedOffers: 15, newOffersCount: 9}
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+firebaseMessaging.ts:38 Inițializare notificări pentru client cu ID 3
+firebaseMessaging.ts:57 Permisiuni notificări acordate pentru client
+firebaseMessaging.ts:119 [client] Înregistrare Service Worker: /firebase-messaging-sw.js
+firebaseMessaging.ts:125 [client] Service Worker Firebase deja înregistrat: ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/', …}
+firebaseMessaging.ts:236 [client] Trimit configurația către Service Worker...
+sw.js?t=1746291557407&v=1.0.6:903 [Service Worker] Mesaj primit: {type: 'FCM_CONFIG', config: {…}, userInfo: {…}}
+sw.js?t=1746291557407&v=1.0.6:1271 [Service Worker] Tip de mesaj necunoscut: FCM_CONFIG
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: e48a5929...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+client:535 WebSocket connection to 'wss://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/' failed: 
+setupWebSocket @ client:535
+(anonymous) @ client:530
+client:556 [vite] server connection lost. Polling for restart...
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+csrfToken.ts:43 [CSRF] Token CSRF actualizat: e48a5929...
+notifications.ts:47 Notificări browser suportate: true
+notifications.ts:47 Notificări browser suportate: true
+RequestsTab.tsx:32 Uncaught ReferenceError: useToast is not defined
+    at RequestsTab (RequestsTab.tsx:32:21)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=c975125b:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=c975125b:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=c975125b:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=c975125b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=c975125b:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=c975125b:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=c975125b:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=c975125b:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=c975125b:19137:13)
+RequestsTab @ RequestsTab.tsx:32
+renderWithHooks @ chunk-RPCDYKBN.js?v=c975125b:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=c975125b:14926
+beginWork @ chunk-RPCDYKBN.js?v=c975125b:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=c975125b:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=c975125b:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=c975125b:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=c975125b:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=c975125b:19201
+workLoopSync @ chunk-RPCDYKBN.js?v=c975125b:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=c975125b:19116
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18874
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=c975125b:18627
+RequestsTab.tsx:32 Uncaught ReferenceError: useToast is not defined
+    at RequestsTab (RequestsTab.tsx:32:21)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=c975125b:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=c975125b:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=c975125b:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=c975125b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=c975125b:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=c975125b:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=c975125b:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=c975125b:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=c975125b:19137:13)
+RequestsTab @ RequestsTab.tsx:32
+renderWithHooks @ chunk-RPCDYKBN.js?v=c975125b:11548
+mountIndeterminateComponent @ chunk-RPCDYKBN.js?v=c975125b:14926
+beginWork @ chunk-RPCDYKBN.js?v=c975125b:15914
+callCallback2 @ chunk-RPCDYKBN.js?v=c975125b:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=c975125b:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=c975125b:3733
+beginWork$1 @ chunk-RPCDYKBN.js?v=c975125b:19765
+performUnitOfWork @ chunk-RPCDYKBN.js?v=c975125b:19201
+workLoopSync @ chunk-RPCDYKBN.js?v=c975125b:19137
+renderRootSync @ chunk-RPCDYKBN.js?v=c975125b:19116
+recoverFromConcurrentError @ chunk-RPCDYKBN.js?v=c975125b:18736
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18879
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=c975125b:18627
+chunk-RPCDYKBN.js?v=c975125b:14032 The above error occurred in the <RequestsTab> component:
+
+    at RequestsTab (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/dashboard/RequestsTab.tsx:22:39)
+    at div
+    at div
+    at ClientDashboard (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/pages/ClientDashboard.tsx:27:27)
+    at Route (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c975125b:323:16)
+    at Switch (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c975125b:379:17)
+    at Router
+    at NotificationProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/NotificationContext.tsx:17:40)
+    at AuthProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/context/AuthContext.tsx:14:32)
+    at QueryClientProvider (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=c975125b:2848:3)
+    at ErrorBoundary (https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/src/components/ErrorBoundary.tsx:5:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+logCapturedError @ chunk-RPCDYKBN.js?v=c975125b:14032
+callback @ chunk-RPCDYKBN.js?v=c975125b:14078
+callCallback @ chunk-RPCDYKBN.js?v=c975125b:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=c975125b:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=c975125b:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=c975125b:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19353
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=c975125b:18627
+ErrorBoundary.tsx:21 Error caught by boundary: ReferenceError: useToast is not defined
+    at RequestsTab (RequestsTab.tsx:32:21)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=c975125b:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=c975125b:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=c975125b:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=c975125b:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=c975125b:19201:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=c975125b:19137:13)
+    at renderRootSync (chunk-RPCDYKBN.js?v=c975125b:19116:15)
+    at recoverFromConcurrentError (chunk-RPCDYKBN.js?v=c975125b:18736:28)
+    at performSyncWorkOnRoot (chunk-RPCDYKBN.js?v=c975125b:18879:28) {componentStack: '\n    at RequestsTab (https://1becfc92-d03b-40b1-a1…/src/components/ErrorBoundary.tsx:5:5)\n    at App'}
+componentDidCatch @ ErrorBoundary.tsx:21
+callback @ chunk-RPCDYKBN.js?v=c975125b:14084
+callCallback @ chunk-RPCDYKBN.js?v=c975125b:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=c975125b:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=c975125b:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=c975125b:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19353
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=c975125b:18627
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+firebaseMessaging.ts:224 [client] Timeout așteptând răspunsul Service Worker
+(anonymous) @ firebaseMessaging.ts:224
+setTimeout
+(anonymous) @ firebaseMessaging.ts:223
+sendConfigToServiceWorker @ firebaseMessaging.ts:217
+registerServiceWorker @ firebaseMessaging.ts:154
+await in registerServiceWorker
+initialize @ firebaseMessaging.ts:60
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:288 Token FCM generat pentru client: MTc0NjI5MTU2Mjc4OS01NDI2Nzg3NTItTW96aWxs
+firebaseMessaging.ts:349 Înregistrare token pentru client (ID: 3)...
+csrfToken.ts:182 [CSRF] Folosim token pentru cerere (încercarea 1): e48a5929...
+csrfToken.ts:205 [CSRF] Request to /api/notifications/register-token with method POST
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+hmr-disable.ts:95 
+            
+            
+           POST https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/notifications/register-token 500 (Internal Server Error)
+window.fetch @ hmr-disable.ts:95
+fetchWithCsrf @ csrfToken.ts:208
+await in fetchWithCsrf
+registerTokenWithServer @ firebaseMessaging.ts:352
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:301
+initialize @ firebaseMessaging.ts:76
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+csrfToken.ts:209 [CSRF] Response status 500 from /api/notifications/register-token
+firebaseMessaging.ts:375 Eroare la înregistrarea token-ului FCM pentru client: Error: Eroare server: 500 - {"success":false,"message":"Eroare la înregistrarea token-ului"}
+    at FirebaseMessaging.registerTokenWithServer (firebaseMessaging.ts:368:15)
+    at async FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:301:28)
+    at async FirebaseMessaging.initialize (firebaseMessaging.ts:76:26)
+    at async initializeNotifications (NotificationContext.tsx:57:26)
+registerTokenWithServer @ firebaseMessaging.ts:375
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:301
+initialize @ firebaseMessaging.ts:76
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:78 Încercare #1: Nu s-a putut actualiza token-ul FCM pentru client
+initialize @ firebaseMessaging.ts:78
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+firebaseMessaging.ts:288 Token FCM generat pentru client: MTc0NjI5MTU2NDY2MS03OTk4NjE2NTQtTW96aWxs
+firebaseMessaging.ts:349 Înregistrare token pentru client (ID: 3)...
+csrfToken.ts:182 [CSRF] Folosim token pentru cerere (încercarea 1): e48a5929...
+csrfToken.ts:205 [CSRF] Request to /api/notifications/register-token with method POST
+hmr-disable.ts:95 
+            
+            
+           POST https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/notifications/register-token 500 (Internal Server Error)
+window.fetch @ hmr-disable.ts:95
+fetchWithCsrf @ csrfToken.ts:208
+await in fetchWithCsrf
+registerTokenWithServer @ firebaseMessaging.ts:352
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:301
+initialize @ firebaseMessaging.ts:76
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+csrfToken.ts:209 [CSRF] Response status 500 from /api/notifications/register-token
+firebaseMessaging.ts:375 Eroare la înregistrarea token-ului FCM pentru client: Error: Eroare server: 500 - {"success":false,"message":"Eroare la înregistrarea token-ului"}
+    at FirebaseMessaging.registerTokenWithServer (firebaseMessaging.ts:368:15)
+    at async FirebaseMessaging.updateFCMToken (firebaseMessaging.ts:301:28)
+    at async FirebaseMessaging.initialize (firebaseMessaging.ts:76:26)
+    at async initializeNotifications (NotificationContext.tsx:57:26)
+registerTokenWithServer @ firebaseMessaging.ts:375
+await in registerTokenWithServer
+updateFCMToken @ firebaseMessaging.ts:301
+initialize @ firebaseMessaging.ts:76
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
+firebaseMessaging.ts:78 Încercare #2: Nu s-a putut actualiza token-ul FCM pentru client
+initialize @ firebaseMessaging.ts:78
+await in initialize
+initializeNotifications @ NotificationContext.tsx:57
+await in initializeNotifications
+(anonymous) @ NotificationContext.tsx:71
+setTimeout
+(anonymous) @ NotificationContext.tsx:70
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=c975125b:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=c975125b:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=c975125b:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=c975125b:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=c975125b:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=c975125b:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=c975125b:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c975125b:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=c975125b:19432
+commitRoot @ chunk-RPCDYKBN.js?v=c975125b:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=c975125b:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=c975125b:18718
+workLoop @ chunk-RPCDYKBN.js?v=c975125b:197
+flushWork @ chunk-RPCDYKBN.js?v=c975125b:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=c975125b:384
