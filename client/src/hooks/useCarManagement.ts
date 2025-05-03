@@ -17,13 +17,19 @@ export function useCarManagement() {
         throw new Error("No authentication token available");
       }
 
+      // Import the function to get the CSRF token
+      const { getCsrfToken } = await import("@/lib/csrfToken");
+      const csrfToken = await getCsrfToken();
+
       const response = await fetch("/api/cars", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
+          "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify(carData),
+        credentials: "include", // Important to include cookies
       });
 
       if (!response.ok) {
@@ -63,13 +69,19 @@ export function useCarManagement() {
         throw new Error("No authentication token available");
       }
 
+      // Import the function to get the CSRF token
+      const { getCsrfToken } = await import("@/lib/csrfToken");
+      const csrfToken = await getCsrfToken();
+
       const response = await fetch(`/api/cars/${selectedCar.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
+          "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify(carData),
+        credentials: "include", // Important to include cookies
       });
 
       if (!response.ok) {
@@ -103,11 +115,17 @@ export function useCarManagement() {
         throw new Error("No authentication token available");
       }
 
+      // Import the function to get the CSRF token
+      const { getCsrfToken } = await import("@/lib/csrfToken");
+      const csrfToken = await getCsrfToken();
+
       const response = await fetch(`/api/cars/${carId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
+          "X-CSRF-Token": csrfToken,
         },
+        credentials: "include", // Important to include cookies
       });
 
       if (!response.ok) {
