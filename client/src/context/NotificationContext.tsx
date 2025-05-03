@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import FirebaseMessaging from '@/lib/firebaseMessaging';
 import { useAuth } from '@/context/AuthContext';
+import { getOrFetchCsrfToken } from '@/lib/csrfToken'; // Added import
+
 
 // Tipul datelor din context
 interface NotificationContextType {
@@ -39,30 +41,37 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     const initializeNotifications = async () => {
       if (isLoggedIn && user && user.id && !isInitialized) {
-        const firebaseMessaging = FirebaseMessaging.getInstance();
+        try {
+          // Ne asigurăm că CSRF este inițializat corect înainte de orice
+          await getOrFetchCsrfToken();
 
-        // Determinăm rolul utilizatorului
-        const userRole = user.role === 'service' ? 'service' : 'client';
+          // Așteptăm puțin pentru a ne asigura că tot este inițializat corect
+          await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Inițializăm Firebase Messaging
-        const result = await firebaseMessaging.initialize(user.id, userRole);
-        setIsEnabled(result);
-        setIsInitialized(true);
+          const firebaseMessaging = FirebaseMessaging.getInstance();
 
-        // Actualizăm numărul de mesaje necitite
-        await countUnreadMessages();
+          // Determinăm rolul utilizatorului
+          const userRole = user.role === 'service' ? 'service' : 'client';
+
+          // Inițializăm Firebase Messaging
+          const result = await firebaseMessaging.initialize(user.id, userRole);
+          setIsEnabled(result);
+          setIsInitialized(true);
+
+          // Actualizăm numărul de mesaje necitite
+          await countUnreadMessages();
+        } catch (error) {
+          console.error('Eroare la inițializarea notificărilor:', error);
+        }
       }
     };
 
-    initializeNotifications();
+    // Amânăm inițializarea pentru a ne asigura că autentificarea și CSRF sunt complet pregătite
+    const timer = setTimeout(() => {
+      initializeNotifications();
+    }, 1000);
 
-    // Curățăm resursele la deconectare
-    return () => {
-      if (isInitialized) {
-        FirebaseMessaging.getInstance().cleanup();
-        setIsInitialized(false);
-      }
-    };
+    return () => clearTimeout(timer);
   }, [isLoggedIn, user, isInitialized]);
 
   // Funcție pentru activarea notificărilor

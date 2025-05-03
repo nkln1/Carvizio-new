@@ -63,11 +63,37 @@ class FirebaseMessaging {
         return false;
       }
 
-      // Generăm/actualizăm token-ul FCM
-      const tokenUpdated = await this.updateFCMToken();
+      // Încercăm să ne asigurăm că CSRF este inițializat corect înainte de a actualiza tokenul
+      const { getOrFetchCsrfToken } = await import('./csrfToken');
+      await getOrFetchCsrfToken();
+
+      // Generăm/actualizăm token-ul FCM cu reîncercări
+      let retries = 3;
+      let tokenUpdated = false;
+
+      while (retries > 0 && !tokenUpdated) {
+        try {
+          tokenUpdated = await this.updateFCMToken();
+          if (!tokenUpdated) {
+            console.warn(`Încercare #${4 - retries}: Nu s-a putut actualiza token-ul FCM pentru ${userRole}`);
+            retries--;
+            if (retries > 0) {
+              // Așteptăm puțin înainte de reîncercare
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        } catch (error) {
+          console.error(`Încercare #${4 - retries}: Eroare la actualizarea token-ului FCM:`, error);
+          retries--;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+
       if (!tokenUpdated) {
-        console.warn(`Nu s-a putut actualiza token-ul FCM pentru ${userRole}`);
-        return false;
+        console.warn(`După ${3} încercări, nu s-a putut actualiza token-ul FCM pentru ${userRole}`);
+        // Continuăm oricum, deoarece notificările pot funcționa parțial
       }
 
       // Configurăm listener-ul pentru mesaje în prim-plan
@@ -317,18 +343,17 @@ class FirebaseMessaging {
       
       const authToken = await currentUser.getIdToken();
       
-      // Obținem un token CSRF valid
-      const { getCsrfToken, getOrFetchCsrfToken } = await import('./csrfToken');
-      const csrfToken = getCsrfToken() || await getOrFetchCsrfToken();
+      // Importăm și folosim fetchWithCsrf pentru a gestiona automat token-ul CSRF
+      const { fetchWithCsrf } = await import('./csrfToken');
       
       console.log(`Înregistrare token pentru ${this.userRole} (ID: ${this.userId})...`);
       
-      const response = await fetch('/api/notifications/register-token', {
+      // Folosim fetchWithCsrf care va gestiona reîncercările și reîmprospătarea token-ului CSRF
+      const response = await fetchWithCsrf('/api/notifications/register-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-          'X-CSRF-Token': csrfToken
+          'Authorization': `Bearer ${authToken}`
         },
         credentials: 'include',
         body: JSON.stringify({
