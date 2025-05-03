@@ -393,6 +393,13 @@ export default function ClientDashboard() {
               await handleCarSubmit(data);
               // Închide automat dialogul după adăugarea unei mașini noi
               setShowCarDialog(false);
+              
+              // Verifică dacă există date pentru cererea în așteptare și deschide dialogul de cerere
+              if (pendingRequestData) {
+                setTimeout(() => {
+                  setShowRequestDialog(true);
+                }, 100);
+              }
             }
           } catch (error) {
             console.error("Error handling car form submit:", error);
