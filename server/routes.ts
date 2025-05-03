@@ -19,6 +19,7 @@ import * as path from 'path';
 import { registerToken, unregisterToken, sendNotification } from './routes/notifications';
 import { EmailService } from './services/emailService';
 import { authRateLimiter, logSecurityEvent } from './middleware/securityMiddleware';
+import { generateCsrfToken, csrfTokenInjector, csrfProtection } from './middleware/csrfProtection';
 console.log('EmailService imported successfully:', EmailService ? 'Defined' : 'Undefined');
 
 // Extend the Express Request type to include firebaseUser
@@ -529,11 +530,40 @@ export function registerRoutes(app: Express): void {
   );
 
   app.use(json());
+  
+  // Aplicăm middleware-ul de injectare CSRF token pentru toate răspunsurile
+  app.use(csrfTokenInjector);
+  
+  // Rută pentru verificarea sănătății aplicației și inițializarea CSRF
+  app.get('/api/health', (req, res) => {
+    // Generăm token CSRF pentru sesiunea clientului
+    const csrfToken = generateCsrfToken(req);
+    
+    // Adăugăm token-ul în header-ul răspunsului - csrfTokenInjector va face asta automat
+    
+    // Trimitem informații despre starea aplicației
+    res.json({
+      status: 'ok',
+      serverTime: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      features: {
+        csrfProtection: true,
+        rateLimit: true,
+        securityHeaders: true,
+        passwordValidation: true,
+        databaseSecurity: true
+      },
+      message: 'Aplicația funcționează normal'
+    });
+    
+    // Înregistrăm accesul la endpoint-ul de sănătate
+    console.log(`[Security] Health check accessed - CSRF token generated: ${csrfToken.substring(0, 8)}...`);
+  });
 
   // Am mutat middleware-ul validateFirebaseToken la începutul funcției
 
   // User registration endpoint
-  app.post("/api/auth/register", authRateLimiter, validateFirebaseToken, async (req, res) => {
+  app.post("/api/auth/register", authRateLimiter, validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const { role, ...userData } = req.body;
       console.log("Registration attempt with data:", { ...userData, password: '[REDACTED]', role });
@@ -775,7 +805,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Logout endpoint
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", csrfProtection, (req, res) => {
     if (req.session) {
       req.session.destroy((err) => {
         if (err) {
@@ -806,7 +836,7 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/cars", validateFirebaseToken, async (req, res) => {
+  app.post("/api/cars", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -837,7 +867,7 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  app.patch("/api/cars/:id", validateFirebaseToken, async (req, res) => {
+  app.patch("/api/cars/:id", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
@@ -873,7 +903,7 @@ export function registerRoutes(app: Express): void {
   });
 
   // Fix error handling in car deletion endpoint
-  app.delete("/api/cars/:id", validateFirebaseToken, async (req, res) => {
+  app.delete("/api/cars/:id", validateFirebaseToken, csrfProtection, async (req, res) => {
     try {
       const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
       if (!client) {
