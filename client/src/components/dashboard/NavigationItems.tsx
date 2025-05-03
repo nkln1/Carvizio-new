@@ -37,21 +37,21 @@ export function NavigationItems({
   };
 
   const navigationItems: NavigationItem[] = [
-    { id: "requests", label: "Cereri", icon: <FileText className="h-4 w-4" /> },
+    { id: "requests", label: "Cereri", icon: <ShoppingBag className="h-4 w-4 mr-2" /> },
     {
       id: "offers",
       label: "Oferte primite",
       count: newOffersCount,
-      icon: <PlusCircle className="h-4 w-4" />
+      icon: <PlusCircle className="h-4 w-4 mr-2" />
     },
-    { id: "car", label: "Mașini", icon: <Car className="h-4 w-4" /> },
+    { id: "car", label: "Mașini", icon: <Car className="h-4 w-4 mr-2" /> },
     { 
       id: "messages", 
       label: "Mesaje",
       count: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
-      icon: <MessageCircle className="h-4 w-4" />
+      icon: <MessageCircle className="h-4 w-4 mr-2" />
     },
-    { id: "profile", label: "Cont", icon: <User className="h-4 w-4" /> },
+    { id: "profile", label: "Cont", icon: <User className="h-4 w-4 mr-2" /> },
   ];
 
   // Only show the main navigation on desktop, or when in mobile mode
@@ -79,8 +79,8 @@ export function NavigationItems({
                   } relative py-1 h-auto min-h-9 px-2 lg:px-3`}
                 >
                   <div className="flex items-center">
-                    {item.icon}
-                    <span className="lg:inline ml-1">{item.label}</span>
+                    <span className="hidden lg:inline">{item.label}</span>
+                    <span className="lg:hidden">{item.icon}</span>
                   </div>
                   {item.count && item.count > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -93,9 +93,8 @@ export function NavigationItems({
                 onClick={onCreateRequest}
                 className="bg-[#00aff5] hover:bg-[#0099d6] ml-1 sm:ml-2 py-1 h-auto min-h-9 px-2 lg:px-3 text-xs sm:text-sm whitespace-nowrap"
               >
-                <PlusCircle className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Adaugă cerere</span>
-                <span className="sm:hidden">Cerere</span>
+                <span className="sm:hidden">+ Cerere</span>
               </Button>
             </div>
 
