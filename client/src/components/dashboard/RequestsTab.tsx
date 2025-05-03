@@ -36,7 +36,6 @@ import { auth } from "@/lib/firebase";
 import type { Request as RequestType } from "@shared/schema";
 import websocketService from "@/lib/websocket";
 
-
 interface RequestsTabProps {
   requests: RequestType[];
   isLoading: boolean;
@@ -51,16 +50,25 @@ export function RequestsTab({
   const [selectedRequest, setSelectedRequest] = useState<RequestType | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("active");
   const { toast } = useToast();
 
   // Calculate request counts and filter requests by status
   const activeRequests = requests.filter(req => req.status === "Active");
   const solvedRequests = requests.filter(req => req.status === "Rezolvat");
   const canceledRequests = requests.filter(req => req.status === "Anulat");
-  
+
   const activeCount = activeRequests.length;
   const solvedCount = solvedRequests.length;
   const canceledCount = canceledRequests.length;
+
+  // Pentru debugging - verifică dacă datele vin corect și se filtrează corespunzător
+  useEffect(() => {
+    console.log("All requests:", requests);
+    console.log("Active requests:", activeRequests);
+    console.log("Solved requests:", solvedRequests);
+    console.log("Canceled requests:", canceledRequests);
+  }, [requests]);
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -81,7 +89,7 @@ export function RequestsTab({
     try {
       // Import the fetchWithCsrf function from the csrfToken module
       const { fetchWithCsrf } = await import('@/lib/csrfToken');
-      
+
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
         throw new Error("No authentication token available");
@@ -118,6 +126,103 @@ export function RequestsTab({
     setShowDeleteDialog(false);
   };
 
+  // Helper function to render request row
+  const renderRequestRow = (request: RequestType) => (
+    <TableRow
+      key={request.id}
+      className="hover:bg-gray-50 transition-colors"
+    >
+      <TableCell className="font-medium">
+        {request.title}
+      </TableCell>
+      <TableCell>
+        {format(
+          new Date(request.preferredDate),
+          "dd.MM.yyyy",
+        )}
+      </TableCell>
+      <TableCell>
+        {format(new Date(request.createdAt), "dd.MM.yyyy")}
+      </TableCell>
+      <TableCell>
+        {request.cities?.join(", ")}, {request.county}
+      </TableCell>
+      <TableCell>
+        <span
+          className={`px-2 py-1 rounded-full text-sm ${
+            request.status === "Active"
+              ? "bg-yellow-100 text-yellow-800"
+              : request.status === "Rezolvat"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+          }`}
+        >
+          {request.status}
+        </span>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedRequest(request);
+              setShowViewDialog(true);
+            }}
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+          >
+            <Eye className="h-4 w-4" />
+            Detalii
+          </Button>
+          {request.status !== "Anulat" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedRequest(request);
+                setShowDeleteDialog(true);
+              }}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+            >
+              <Trash2 className="h-4 w-4" />
+              Anulează
+            </Button>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+
+  // Helper function to create a table for a specific request type
+  const renderRequestTable = (filteredRequests: RequestType[], emptyMessage: string) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Titlu</TableHead>
+          <TableHead>Data preferată</TableHead>
+          <TableHead>Data trimiterii</TableHead>
+          <TableHead>Locație</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Acțiuni</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {filteredRequests.length > 0 ? (
+          filteredRequests.map(renderRequestRow)
+        ) : (
+          <TableRow>
+            <TableCell
+              colSpan={6}
+              className="text-center text-muted-foreground"
+            >
+              {emptyMessage}
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gray-50">
@@ -127,7 +232,15 @@ export function RequestsTab({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <Tabs defaultValue="active" className="w-full">
+        <Tabs 
+          defaultValue="active" 
+          className="w-full" 
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            console.log("Tab changed to:", value);
+          }}
+        >
           <TabsList className="w-full grid grid-cols-3 mb-4 bg-slate-100 p-1">
             <TabsTrigger
               value="active"
@@ -149,103 +262,23 @@ export function RequestsTab({
             </TabsTrigger>
           </TabsList>
 
-          {[
-            { id: "active", name: "Active", data: activeRequests },
-            { id: "solved", name: "Rezolvate", data: solvedRequests },
-            { id: "canceled", name: "Anulate", data: canceledRequests }
-          ].map((tab) => (
-            <TabsContent key={tab.id} value={tab.id}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Titlu</TableHead>
-                    <TableHead>Data preferată</TableHead>
-                    <TableHead>Data trimiterii</TableHead>
-                    <TableHead>Locație</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Acțiuni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tab.data.map((request) => (
-                      <TableRow
-                        key={request.id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <TableCell className="font-medium">
-                          {request.title}
-                        </TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(request.preferredDate),
-                            "dd.MM.yyyy",
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(request.createdAt), "dd.MM.yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          {request.cities?.join(", ")}, {request.county}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-sm ${
-                              request.status === "Active"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : request.status === "Rezolvat"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {request.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setShowViewDialog(true);
-                              }}
-                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
-                            >
-                              <Eye className="h-4 w-4" />
-                              Detalii
-                            </Button>
-                            {request.status !== "Anulat" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedRequest(request);
-                                  setShowDeleteDialog(true);
-                                }}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Anulează
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {tab.data.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground"
-                      >
-                        Nu există cereri în această categorie.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TabsContent>
-          ))}
+          {activeTab === "active" && (
+            <div className="mt-2">
+              {renderRequestTable(activeRequests, "Nu există cereri active.")}
+            </div>
+          )}
+
+          {activeTab === "solved" && (
+            <div className="mt-2">
+              {renderRequestTable(solvedRequests, "Nu există cereri rezolvate.")}
+            </div>
+          )}
+
+          {activeTab === "canceled" && (
+            <div className="mt-2">
+              {renderRequestTable(canceledRequests, "Nu există cereri anulate.")}
+            </div>
+          )}
         </Tabs>
       </CardContent>
 
