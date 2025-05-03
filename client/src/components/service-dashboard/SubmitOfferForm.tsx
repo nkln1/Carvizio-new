@@ -94,6 +94,10 @@ export function SubmitOfferForm({
     try {
       setIsSubmitting(true);
       
+      // Initialize CSRF token before submitting
+      const { getOrFetchCsrfToken } = await import('@/lib/csrfToken');
+      await getOrFetchCsrfToken();
+      
       // Format dates before submitting
       const formattedValues = {
         ...values,

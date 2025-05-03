@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getOrFetchCsrfToken } from "@/lib/csrfToken";
 import {
   Table,
   TableBody,
@@ -159,31 +160,22 @@ export default function RequestsTab({ onMessageClick }: RequestsTabProps) {
 
   const handleSubmitOffer = async (values: any) => {
     try {
+      // Import the fetchWithCsrf function from the csrfToken module
+      const { fetchWithCsrf } = await import('@/lib/csrfToken');
+      
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('No authentication token available');
 
-      // Get the CSRF token from document cookies or headers
-      let csrfToken = '';
-      // Try to get from headers first
-      const csrfHeader = document.querySelector('meta[name="csrf-token"]');
-      if (csrfHeader && csrfHeader.getAttribute('content')) {
-        csrfToken = csrfHeader.getAttribute('content') || '';
-      }
-      // If not found in meta tag, try to get from localStorage
-      if (!csrfToken) {
-        csrfToken = localStorage.getItem('csrfToken') || '';
-      }
-
-      console.log("[Debug] Using CSRF token:", csrfToken ? `${csrfToken.substring(0, 8)}...` : 'missing');
-
-      const response = await fetch(`/api/service/offers`, {
+      console.log("[Debug] Submitting offer with fetchWithCsrf");
+      
+      // Use fetchWithCsrf which handles CSRF tokens properly
+      const response = await fetchWithCsrf(`/api/service/offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-CSRF-Token': csrfToken
+          'Authorization': `Bearer ${token}`
+          // fetchWithCsrf will automatically add the CSRF token
         },
-        credentials: 'include', // Important for including cookies
         body: JSON.stringify({
           requestId: selectedRequest?.id,
           ...values
