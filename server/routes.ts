@@ -1204,7 +1204,16 @@ export function registerRoutes(app: Express): void {
 
       // Fetch requests that match the service's location
       const matchingRequests = await storage.getRequestsByLocation(provider.county, [provider.city]);
-      res.json(matchingRequests);
+      
+      // Filter out requests that were created before the service provider's registration date
+      // This implements the condition that services shouldn't see requests older than their registration date
+      const serviceRegistrationDate = provider.createdAt;
+      const filteredRequests = matchingRequests.filter(request => {
+        const requestCreationDate = new Date(request.createdAt);
+        return requestCreationDate >= serviceRegistrationDate;
+      });
+      
+      res.json(filteredRequests);
     } catch (error) {
       console.error("Error getting requests by location:", error);
       res.status(500).json({ error: "Failed to get requests" });
