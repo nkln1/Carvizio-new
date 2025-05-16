@@ -1500,6 +1500,121 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Respinge automat toate ofertele pentru o cerere, exceptând oferta cu ID-ul specificat
+   * @param requestId ID-ul cererii
+   * @param acceptedOfferId ID-ul ofertei care a fost acceptată (și trebuie exclusă de la respingere)
+   * @returns Array de oferte respinse
+   */
+  async rejectOtherOffersForRequest(requestId: number, acceptedOfferId: number): Promise<SentOffer[]> {
+    try {
+      console.log(`Respingere automată a celorlalte oferte pentru cererea ${requestId}, exceptând oferta ${acceptedOfferId}`);
+      
+      // Obține toate ofertele pentru cererea specificată
+      const allOffers = await db
+        .select()
+        .from(sentOffers)
+        .where(eq(sentOffers.requestId, requestId));
+      
+      // Filtrăm ofertele care trebuie respinse (toate cu excepția celei acceptate și celei deja respinse)
+      const offersToReject = allOffers.filter(offer => 
+        offer.id !== acceptedOfferId && offer.status !== "Rejected"
+      );
+      
+      console.log(`Găsite ${offersToReject.length} oferte pentru respingere automată`);
+      
+      // Respinge fiecare ofertă
+      const rejectedOffers: SentOffer[] = [];
+      for (const offer of offersToReject) {
+        const [updatedOffer] = await db
+          .update(sentOffers)
+          .set({ status: "Rejected" })
+          .where(eq(sentOffers.id, offer.id))
+          .returning();
+        
+        rejectedOffers.push(updatedOffer);
+        console.log(`Oferta cu ID ${offer.id} respinsă automat`);
+      }
+      
+      return rejectedOffers;
+    } catch (error) {
+      console.error('Eroare la respingerea automată a ofertelor:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Verifică și expiră ofertele vechi care nu au fost acceptate
+   * O ofertă expiră după 30 zile + data preferată din cerere
+   * @returns Informații despre ofertele expirate
+   */
+  async checkAndExpireOldOffers(): Promise<{ expired: number, offers: SentOffer[] }> {
+    try {
+      console.log('Verificare oferte vechi neacceptate pentru expirare automată');
+
+      // Găsim toate ofertele în așteptare (Pending)
+      const pendingOffers = await db
+        .select()
+        .from(sentOffers)
+        .where(eq(sentOffers.status, "Pending"));
+
+      console.log(`Găsite ${pendingOffers.length} oferte în așteptare pentru verificare`);
+
+      // Pentru fiecare ofertă, verificăm dacă a expirat
+      const expiredOffers: SentOffer[] = [];
+      const currentDate = new Date();
+
+      for (const offer of pendingOffers) {
+        // Obținem data preferată din cerere
+        const preferredDate = offer.requestPreferredDate ? new Date(offer.requestPreferredDate) : null;
+        
+        // Calculăm data de expirare (30 zile + data preferată SAU 30 zile de la creare dacă nu există dată preferată)
+        let expirationDate;
+        if (preferredDate) {
+          // Adăugăm 30 de zile la data preferată
+          expirationDate = new Date(preferredDate);
+          expirationDate.setDate(expirationDate.getDate() + 30);
+          
+          // Dacă data preferată + 30 zile este mai veche decât data creării ofertei,
+          // folosim data creării + 30 zile (pentru cazurile când data preferată este în trecut)
+          const creationDate = new Date(offer.createdAt);
+          if (expirationDate < creationDate) {
+            expirationDate = new Date(creationDate);
+            expirationDate.setDate(expirationDate.getDate() + 30);
+          }
+        } else {
+          // Nu există dată preferată, folosim data creării + 30 zile
+          expirationDate = new Date(offer.createdAt);
+          expirationDate.setDate(expirationDate.getDate() + 30);
+        }
+        
+        // Verificăm dacă oferta a expirat
+        if (currentDate > expirationDate) {
+          console.log(`Oferta #${offer.id} pentru cererea #${offer.requestId} a expirat (data exp: ${expirationDate.toISOString()})`);
+          
+          // Actualizăm statusul ofertei la "Rejected" (respinsă automat)
+          const [updatedOffer] = await db
+            .update(sentOffers)
+            .set({
+              status: "Rejected"
+            })
+            .where(eq(sentOffers.id, offer.id))
+            .returning();
+          
+          expiredOffers.push(updatedOffer);
+        }
+      }
+
+      return {
+        expired: expiredOffers.length,
+        offers: expiredOffers
+      };
+    } catch (error) {
+      console.error('Eroare la verificarea și expirarea ofertelor vechi:', error);
+      throw error;
+    }
+  }
+
   // Metoda pentru verificarea și expirarea automată a cererilor care nu au primit oferte în 7 zile
   async checkAndExpireOldRequests(): Promise<{ expired: number, requests: Request[] }> {
     try {
