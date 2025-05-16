@@ -1753,6 +1753,11 @@ export function registerRoutes(app: Express): void {
 
       const updatedOffer = await storage.updateSentOfferStatus(offerId, "Accepted");
       await storage.updateRequest(offer.requestId, { status: "Rezolvat" });
+      
+      // Respingem automat toate celelalte oferte pentru această cerere
+      console.log(`Respingem automat toate celelalte oferte pentru cererea #${offer.requestId}`);
+      const rejectedOffers = await storage.rejectOtherOffersForRequest(offer.requestId, offerId);
+      console.log(`Au fost respinse automat ${rejectedOffers.length} oferte`);
 
       // Trimitem notificare prin email furnizorului de servicii
       try {
