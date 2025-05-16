@@ -151,6 +151,31 @@ async function checkExpiredRequests() {
   }
 }
 
+// Funcție pentru verificarea ofertelor expirate
+async function checkExpiredOffers() {
+  try {
+    console.log('Rulare verificare automată pentru oferte expirate (după 30 zile + data preferată)');
+    const result = await storage.checkAndExpireOldOffers();
+    console.log(`Verificare completă: ${result.expired} oferte au expirat și au fost marcate ca respinse`);
+    
+    if (result.expired > 0) {
+      // Dacă există oferte expirate, le notificăm prin WebSocket pentru actualizare în timp real
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'OFFERS_EXPIRED',
+            count: result.expired,
+            message: `${result.expired} oferte au expirat automat conform regulilor de business.`,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Eroare la verificarea automată a ofertelor expirate:', error);
+  }
+}
+
 // Initialize routes
 (async () => {
   // Aplicăm configurarea MIME types ÎNAINTE de a înregistra rutele
@@ -173,12 +198,17 @@ async function checkExpiredRequests() {
     checkExpiredRequests().catch(err => {
       console.error('Eroare la verificarea inițială a cererilor expirate:', err);
     });
+    
+    // Executăm verificarea ofertelor expirate la pornirea serverului
+    checkExpiredOffers().catch(err => {
+      console.error('Eroare la verificarea inițială a ofertelor expirate:', err);
+    });
 
-    // Planificăm verificarea automată a cererilor expirate (o dată pe zi)
+    // Planificăm verificarea automată a cererilor și ofertelor expirate (o dată pe zi)
     // Definim interval de 24 ore (în milisecunde)
     const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 ore
     
-    // Setăm intervalul pentru verificarea automată
+    // Setăm intervalul pentru verificarea automată a cererilor
     setInterval(() => {
       console.log('Rulare verificare automată planificată pentru cererile expirate');
       checkExpiredRequests().catch(err => {
@@ -186,7 +216,15 @@ async function checkExpiredRequests() {
       });
     }, CHECK_INTERVAL_MS);
     
-    console.log(`Verificarea automată a cererilor expirate configurată (interval: ${CHECK_INTERVAL_MS / (60 * 60 * 1000)} ore)`);
+    // Setăm intervalul pentru verificarea automată a ofertelor
+    setInterval(() => {
+      console.log('Rulare verificare automată planificată pentru ofertele expirate');
+      checkExpiredOffers().catch(err => {
+        console.error('Eroare la verificarea planificată a ofertelor expirate:', err);
+      });
+    }, CHECK_INTERVAL_MS);
+    
+    console.log(`Verificarea automată a cererilor și ofertelor expirate configurată (interval: ${CHECK_INTERVAL_MS / (60 * 60 * 1000)} ore)`);
   });
 })();
 

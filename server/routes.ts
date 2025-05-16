@@ -1219,6 +1219,38 @@ export function registerRoutes(app: Express): void {
       });
     }
   });
+  
+  // Endpoint pentru verificarea și expirarea automată a ofertelor vechi
+  app.get("/api/admin/check-expired-offers", async (req, res) => {
+    try {
+      console.log("Verificare manuală pentru oferte expirate...");
+      
+      // Verificăm cheia de API de admin pentru securitate
+      const apiKey = req.headers['x-api-key'];
+      if (apiKey !== process.env.ADMIN_API_KEY) {
+        return res.status(403).json({ error: "Acces neautorizat. Cheie API invalidă." });
+      }
+
+      // Apelăm metoda care verifică și expiră ofertele vechi
+      const result = await storage.checkAndExpireOldOffers();
+      
+      res.json({
+        success: true,
+        message: `${result.expired} oferte au fost marcate ca expirate.`,
+        expiredOffers: result.offers.map(offer => ({ 
+          id: offer.id, 
+          requestId: offer.requestId,
+          serviceProviderId: offer.serviceProviderId
+        }))
+      });
+    } catch (error) {
+      console.error("Eroare la verificarea ofertelor expirate:", error);
+      res.status(500).json({ 
+        error: "A apărut o eroare la verificarea ofertelor expirate",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Add service requests endpoint
   app.get("/api/service/requests", validateFirebaseToken, async (req, res) => {
