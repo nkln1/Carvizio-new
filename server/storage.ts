@@ -1615,49 +1615,68 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Metoda pentru verificarea și expirarea automată a cererilor care nu au primit oferte în 7 zile
+  // Metoda pentru verificarea și expirarea automată a cererilor 
+  // (1) care nu au primit oferte în 7 zile SAU
+  // (2) care au trecut 30 zile de la data preferată
   async checkAndExpireOldRequests(): Promise<{ expired: number, requests: Request[] }> {
     try {
-      console.log('Verificare cereri expirate (fără oferte în 7 zile)');
+      console.log('Verificare cereri expirate (fără oferte în 7 zile sau 30 zile după data preferată)');
 
-      // Calculăm data limită - 7 zile în urmă
+      // Obținem toate cererile active
+      const activeRequests = await db
+        .select()
+        .from(requests)
+        .where(eq(requests.status, "Active"));
+
+      console.log(`Găsite ${activeRequests.length} cereri active pentru verificare`);
+
+      const expiredRequests: Request[] = [];
+      const currentDate = new Date();
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // Găsim toate cererile active mai vechi de 7 zile
-      const oldActiveRequests = await db
-        .select()
-        .from(requests)
-        .where(
-          and(
-            eq(requests.status, "Active"),
-            sql`${requests.createdAt} < ${sevenDaysAgo}`
-          )
-        );
-
-      console.log(`Găsite ${oldActiveRequests.length} cereri active mai vechi de 7 zile`);
-
-      // Pentru fiecare cerere veche, verificăm dacă există oferte
-      const expiredRequests: Request[] = [];
-
-      for (const request of oldActiveRequests) {
-        // Verificăm dacă cererea are oferte
-        const offers = await db
-          .select()
-          .from(sentOffers)
-          .where(eq(sentOffers.requestId, request.id));
-
-        // Dacă nu există oferte, marcăm cererea ca expirată (anulată)
-        if (offers.length === 0) {
-          console.log(`Cererea #${request.id} nu are oferte și a expirat`);
+      for (const request of activeRequests) {
+        let shouldExpire = false;
+        let expirationReason = "";
+        
+        // Verificăm dacă cererea este mai veche de 7 zile
+        const isOlderThanSevenDays = new Date(request.createdAt) < sevenDaysAgo;
+        
+        if (isOlderThanSevenDays) {
+          // Verificăm dacă cererea are oferte
+          const offers = await db
+            .select()
+            .from(sentOffers)
+            .where(eq(sentOffers.requestId, request.id));
           
+          // Regula 1: Dacă este mai veche de 7 zile și nu are oferte, marcăm ca expirată
+          if (offers.length === 0) {
+            shouldExpire = true;
+            expirationReason = "\n\n[SISTEM: Această cerere a fost anulată automat deoarece nu a primit nicio ofertă în termen de 7 zile.]";
+            console.log(`Cererea #${request.id} nu are oferte și a expirat (regula 7 zile)`);
+          }
+        }
+        
+        // Regula 2: Dacă au trecut 30 zile de la data preferată, marcăm ca expirată
+        if (!shouldExpire && request.preferredDate) {
+          const preferredDate = new Date(request.preferredDate);
+          const thirtyDaysAfterPreferred = new Date(preferredDate);
+          thirtyDaysAfterPreferred.setDate(thirtyDaysAfterPreferred.getDate() + 30);
+          
+          if (currentDate > thirtyDaysAfterPreferred) {
+            shouldExpire = true;
+            expirationReason = `\n\n[SISTEM: Această cerere a fost anulată automat deoarece au trecut 30 zile de la data preferată (${preferredDate.toLocaleDateString('ro-RO')}).]`;
+            console.log(`Cererea #${request.id} a expirat (30 zile după data preferată: ${preferredDate.toISOString()})`);
+          }
+        }
+        
+        // Dacă trebuie expirată, actualizăm în baza de date
+        if (shouldExpire) {
           const [updatedRequest] = await db
             .update(requests)
             .set({
               status: "Anulat",
-              // Adăugăm o notă în description pentru a indica motivul anulării
-              description: request.description + 
-                "\n\n[SISTEM: Această cerere a fost anulată automat deoarece nu a primit nicio ofertă în termen de 7 zile.]"
+              description: request.description + expirationReason
             })
             .where(eq(requests.id, request.id))
             .returning();
