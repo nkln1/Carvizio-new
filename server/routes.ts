@@ -1231,12 +1231,16 @@ export function registerRoutes(app: Express): void {
       // Fetch requests that match the service's location
       const matchingRequests = await storage.getRequestsByLocation(provider.county, [provider.city]);
       
-      // Filter out requests that were created before the service provider's registration date
-      // This implements the condition that services shouldn't see requests older than their registration date
+      // Filter out requests:
+      // 1. that were created before the service provider's registration date
+      // 2. that are canceled/expired (status = "Anulat")
       const serviceRegistrationDate = provider.createdAt;
       const filteredRequests = matchingRequests.filter(request => {
         const requestCreationDate = new Date(request.createdAt);
-        return requestCreationDate >= serviceRegistrationDate;
+        
+        // Filtrăm cererile care sunt mai vechi decât data înregistrării furnizorului
+        // și excludem cererile cu status "Anulat" (inclusiv cele expirate)
+        return requestCreationDate >= serviceRegistrationDate && request.status !== "Anulat";
       });
       
       res.json(filteredRequests);

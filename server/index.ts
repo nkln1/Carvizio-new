@@ -168,6 +168,25 @@ async function checkExpiredRequests() {
   const port = parseInt(process.env.PORT || '5000');
   server.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port ${port}`);
+    
+    // Executăm verificarea cererilor expirate la pornirea serverului
+    checkExpiredRequests().catch(err => {
+      console.error('Eroare la verificarea inițială a cererilor expirate:', err);
+    });
+
+    // Planificăm verificarea automată a cererilor expirate (o dată pe zi)
+    // Definim interval de 24 ore (în milisecunde)
+    const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 ore
+    
+    // Setăm intervalul pentru verificarea automată
+    setInterval(() => {
+      console.log('Rulare verificare automată planificată pentru cererile expirate');
+      checkExpiredRequests().catch(err => {
+        console.error('Eroare la verificarea planificată a cererilor expirate:', err);
+      });
+    }, CHECK_INTERVAL_MS);
+    
+    console.log(`Verificarea automată a cererilor expirate configurată (interval: ${CHECK_INTERVAL_MS / (60 * 60 * 1000)} ore)`);
   });
 })();
 
