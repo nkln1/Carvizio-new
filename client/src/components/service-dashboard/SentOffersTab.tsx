@@ -162,8 +162,9 @@ import { useState, useEffect } from "react";
             <CardContent className="p-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 {(() => {
-                  const pendingOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "pending").length;
-                  const rejectedOffersCount = filterOffers(offers).filter(o => o.status.toLowerCase() === "rejected").length;
+                  // Count all pending and rejected offers independent of filtering
+                  const pendingOffersCount = offers.filter(o => o.status.toLowerCase() === "pending").length;
+                  const rejectedOffersCount = offers.filter(o => o.status.toLowerCase() === "rejected").length;
 
                   return (
                     <TabsList className="grid w-full grid-cols-2 mb-4">
