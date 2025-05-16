@@ -586,6 +586,41 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  /**
+   * Respinge automat toate ofertele pentru o cerere, exceptând oferta cu ID-ul specificat
+   * @param requestId ID-ul cererii
+   * @param acceptedOfferId ID-ul ofertei care a fost acceptată (și trebuie exclusă de la respingere)
+   * @returns Array de oferte respinse
+   */
+  async rejectOtherOffersForRequest(requestId: number, acceptedOfferId: number): Promise<SentOffer[]> {
+    try {
+      console.log(`Respingere automată a celorlalte oferte pentru cererea ${requestId}, exceptând oferta ${acceptedOfferId}`);
+      
+      // Obține toate ofertele pentru cererea specificată
+      const allOffers = await this.getSentOffersByRequest(requestId);
+      
+      // Filtrăm ofertele care trebuie respinse (toate cu excepția celei acceptate și celei deja respinse)
+      const offersToReject = allOffers.filter(offer => 
+        offer.id !== acceptedOfferId && offer.status !== "Rejected"
+      );
+      
+      console.log(`Găsite ${offersToReject.length} oferte pentru respingere automată`);
+      
+      // Respinge fiecare ofertă
+      const rejectedOffers = [];
+      for (const offer of offersToReject) {
+        const rejectedOffer = await this.updateSentOfferStatus(offer.id, "Rejected");
+        rejectedOffers.push(rejectedOffer);
+        console.log(`Oferta cu ID ${offer.id} respinsă automat`);
+      }
+      
+      return rejectedOffers;
+    } catch (error) {
+      console.error('Eroare la respingerea automată a ofertelor:', error);
+      throw error;
+    }
+  }
   async getOffersForClient(clientId: number): Promise<(SentOffer & { serviceProviderName: string; serviceProviderUsername: string })[]> {
     try {
       console.log('Getting offers for client:', clientId);
