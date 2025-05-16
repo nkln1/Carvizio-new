@@ -8,6 +8,7 @@ import { setCustomMimeTypes } from "./mimeTypes";
 import { securityHeaders, generalRateLimiter, securityLogger, sanitizeInput } from "./middleware/securityMiddleware";
 import { sqlInjectionProtection, databaseOperationMonitoring } from "./middleware/databaseSecurity";
 import { csrfTokenInjector, csrfProtection } from "./middleware/csrfProtection";
+import { storage } from "./storage";
 
 const app = express();
 // Configurare pentru a avea încredere în proxy-uri (necesar pentru express-rate-limit într-un mediu cu proxy)
@@ -124,6 +125,31 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const message = err.message || "Internal Server Error";
   res.status(status).json({ error: message });
 });
+
+// Funcție pentru verificarea cererilor expirate
+async function checkExpiredRequests() {
+  try {
+    console.log('Rulare verificare automată pentru cereri expirate (fără oferte după 7 zile)');
+    const result = await storage.checkAndExpireOldRequests();
+    console.log(`Verificare completă: ${result.expired} cereri au expirat și au fost marcate ca anulate`);
+    
+    if (result.expired > 0) {
+      // Dacă există cereri expirate, le notificăm prin WebSocket pentru actualizare în timp real
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'REQUESTS_EXPIRED',
+            count: result.expired,
+            message: `${result.expired} cereri au expirat automat deoarece nu au primit oferte în 7 zile.`,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Eroare la verificarea automată a cererilor expirate:', error);
+  }
+}
 
 // Initialize routes
 (async () => {

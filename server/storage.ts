@@ -1464,6 +1464,67 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // Metoda pentru verificarea și expirarea automată a cererilor care nu au primit oferte în 7 zile
+  async checkAndExpireOldRequests(): Promise<{ expired: number, requests: Request[] }> {
+    try {
+      console.log('Verificare cereri expirate (fără oferte în 7 zile)');
+
+      // Calculăm data limită - 7 zile în urmă
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      // Găsim toate cererile active mai vechi de 7 zile
+      const oldActiveRequests = await db
+        .select()
+        .from(requests)
+        .where(
+          and(
+            eq(requests.status, "Active"),
+            sql`${requests.createdAt} < ${sevenDaysAgo}`
+          )
+        );
+
+      console.log(`Găsite ${oldActiveRequests.length} cereri active mai vechi de 7 zile`);
+
+      // Pentru fiecare cerere veche, verificăm dacă există oferte
+      const expiredRequests: Request[] = [];
+
+      for (const request of oldActiveRequests) {
+        // Verificăm dacă cererea are oferte
+        const offers = await db
+          .select()
+          .from(sentOffers)
+          .where(eq(sentOffers.requestId, request.id));
+
+        // Dacă nu există oferte, marcăm cererea ca expirată (anulată)
+        if (offers.length === 0) {
+          console.log(`Cererea #${request.id} nu are oferte și a expirat`);
+          
+          const [updatedRequest] = await db
+            .update(requests)
+            .set({
+              status: "Anulat",
+              // Adăugăm o notă în description pentru a indica motivul anulării
+              description: request.description + 
+                "\n\n[SISTEM: Această cerere a fost anulată automat deoarece nu a primit nicio ofertă în termen de 7 zile.]"
+            })
+            .where(eq(requests.id, request.id))
+            .returning();
+          
+          expiredRequests.push(updatedRequest);
+        }
+      }
+
+      return {
+        expired: expiredRequests.length,
+        requests: expiredRequests
+      };
+    } catch (error) {
+      console.error('Eroare la verificarea și expirarea cererilor vechi:', error);
+      return { expired: 0, requests: [] };
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
