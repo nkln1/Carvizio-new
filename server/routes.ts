@@ -4546,4 +4546,80 @@ try {
   console.error('Eroare la trimiterea notificărilor email pentru cererea nouă:', emailError);
   // Nu afectăm fluxul principal - continuăm fără a arunca eroarea mai departe
 }
-*/
+
+// Endpoint pentru verificarea și trimiterea notificărilor pentru recenzii
+// Acest endpoint va fi accesat zilnic de un cronjob pentru a verifica ofertele eligibile pentru recenzii
+// și pentru a trimite notificări clienților
+app.post('/api/system/review-notification-job', async (req, res) => {
+  try {
+    console.log('=== ÎNCEPERE JOB NOTIFICĂRI RECENZII ===');
+    console.log('Verificare oferte eligibile pentru recenzii...');
+    
+    // Obținem toate ofertele care sunt eligibile pentru notificări de recenzii
+    const eligibleOffers = await storage.getEligibleOffersForReviewNotifications();
+    
+    if (eligibleOffers.length === 0) {
+      console.log('Nu s-au găsit oferte eligibile pentru notificări de recenzii.');
+      return res.json({ 
+        success: true, 
+        message: 'Nu există oferte eligibile pentru notificări de recenzii.',
+        eligibleCount: 0
+      });
+    }
+    
+    console.log(`S-au găsit ${eligibleOffers.length} oferte eligibile pentru notificări de recenzii.`);
+    
+    // Trimitem notificări prin email pentru fiecare ofertă eligibilă
+    const emailPromises = eligibleOffers.map(async (offer) => {
+      try {
+        console.log(`Trimitere notificare pentru oferta ${offer.offerId} către clientul ${offer.clientEmail}`);
+        
+        // Obținem clientul din baza de date
+        const client = await storage.getClientById(offer.clientId);
+        if (!client) {
+          console.log(`Clientul cu ID ${offer.clientId} nu a fost găsit. Notificarea nu va fi trimisă.`);
+          return false;
+        }
+        
+        // Trimitem notificarea de recenzie
+        const success = await EmailService.sendReviewReminderNotification(
+          client,
+          offer.serviceProviderName,
+          offer.offerTitle,
+          offer.serviceProfileLink,
+          `offer_${offer.offerId}`
+        );
+        
+        return success;
+      } catch (error) {
+        console.error(`Eroare la trimiterea notificării pentru oferta ${offer.offerId}:`, error);
+        return false;
+      }
+    });
+    
+    // Așteptăm toate promisiunile pentru trimiterea emailurilor
+    const results = await Promise.allSettled(emailPromises);
+    
+    // Numărăm câte emailuri au fost trimise cu succes
+    const successCount = results.filter(
+      result => result.status === 'fulfilled' && result.value === true
+    ).length;
+    
+    console.log(`Proces finalizat: ${successCount} din ${eligibleOffers.length} notificări trimise cu succes.`);
+    console.log('=== FINALIZARE JOB NOTIFICĂRI RECENZII ===');
+    
+    return res.json({
+      success: true,
+      message: `S-au trimis ${successCount} din ${eligibleOffers.length} notificări pentru recenzii.`,
+      eligibleCount: eligibleOffers.length,
+      successCount: successCount
+    });
+  } catch (error) {
+    console.error('Eroare la procesarea job-ului de notificări pentru recenzii:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Eroare la procesarea job-ului de notificări pentru recenzii.',
+      error: error.message
+    });
+  }
+});
