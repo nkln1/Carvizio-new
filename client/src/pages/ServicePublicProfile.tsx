@@ -38,6 +38,12 @@ export default function ServicePublicProfile() {
   const [isEditingHours, setIsEditingHours] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasReviewedAlready, setHasReviewedAlready] = useState(false);
+  const [reviewEligibility, setReviewEligibility] = useState<{
+    canReview: boolean;
+    reason?: string;
+    earliestDateAllowed?: string;
+  }>({ canReview: false });
+  const queryClient = useQueryClient();
 
   // Obținem profilul service-ului
   const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
@@ -79,6 +85,49 @@ export default function ServicePublicProfile() {
     },
     enabled: !!user && user.role === 'client' && !!serviceProfile?.id
   });
+  
+  // Verificăm dacă clientul poate lăsa o recenzie folosind endpoint-ul dedicat
+  const { data: eligibilityData, isLoading: isEligibilityLoading } = useQuery({
+    queryKey: ['/api/client/can-review', serviceProfile?.id],
+    queryFn: async () => {
+      if (!user || user.role !== 'client' || !serviceProfile?.id) {
+        return { canReview: false, reason: "Nu sunteți autentificat ca client" };
+      }
+      
+      try {
+        const response = await apiRequest('GET', `/api/client/can-review/${serviceProfile.id}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          return { 
+            canReview: false, 
+            reason: errorData.message || "Nu se poate verifica eligibilitatea pentru recenzie" 
+          };
+        }
+        
+        const data = await response.json();
+        // Convertim data din string în format localizat dacă există
+        if (data.earliestDateAllowed) {
+          data.earliestDateAllowed = new Date(data.earliestDateAllowed).toLocaleDateString('ro-RO');
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Error checking review eligibility:", error);
+        return { 
+          canReview: false, 
+          reason: "Eroare la verificarea eligibilității pentru recenzie" 
+        };
+      }
+    },
+    enabled: !!user && user.role === 'client' && !!serviceProfile?.id
+  });
+
+  // Actualizăm starea cu datele despre eligibilitate pentru recenzie
+  useEffect(() => {
+    if (eligibilityData) {
+      setReviewEligibility(eligibilityData);
+    }
+  }, [eligibilityData]);
 
   // Verificăm dacă utilizatorul curent a lăsat deja o recenzie
   useEffect(() => {
@@ -90,12 +139,13 @@ export default function ServicePublicProfile() {
     }
   }, [user, serviceProfile]);
 
-  // Verificăm dacă clientul poate lăsa o recenzie
+  // Determinăm dacă clientul poate lăsa o recenzie pe baza tuturor verificărilor
   const canReview = user && 
     user.role === 'client' && 
     user.username !== username && 
     (acceptedOffers?.length > 0) &&
-    !hasReviewedAlready; // Adăugăm verificarea dacă utilizatorul a lăsat deja o recenzie
+    !hasReviewedAlready &&
+    reviewEligibility?.canReview;
 
   // Verificăm dacă utilizatorul este proprietarul profilului
   const isOwner = user?.role === 'service' && user?.username === username;

@@ -4200,6 +4200,32 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to check new reviews" });
     }
   });
+  
+  // Endpoint pentru verificarea dacă un client poate lăsa o recenzie pentru un service provider
+  app.get('/api/client/can-review/:serviceProviderId', validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ error: "Access denied. Only clients can check review status." });
+      }
+      
+      const serviceProviderId = parseInt(req.params.serviceProviderId);
+      if (isNaN(serviceProviderId)) {
+        return res.status(400).json({ error: "Invalid service provider ID" });
+      }
+      
+      // Verificăm dacă clientul poate lăsa o recenzie
+      const result = await storage.canClientReviewService(client.id, serviceProviderId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error checking review eligibility:", error);
+      res.status(500).json({ 
+        error: "Failed to check review eligibility",
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
 
   // Adăugăm rutele pentru notificări FCM
   app.post('/api/notifications/register-token', validateFirebaseToken, async (req, res) => {

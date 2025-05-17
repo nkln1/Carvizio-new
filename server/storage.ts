@@ -1372,6 +1372,37 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie");
       }
 
+      // Verificăm dacă a trecut data preferată (mai târzie dintre data clientului și datele service-ului)
+      const today = new Date();
+      
+      // Folosim prima ofertă acceptată pentru verificare (de obicei clienții lasă recenzii pentru ultima interacțiune)
+      const latestAcceptedOffer = acceptedOffers[0];
+      
+      // Obținem data preferată a clientului din cerere
+      const request = await this.getRequest(latestAcceptedOffer.requestId);
+      if (!request) {
+        throw new Error("Cererea asociată ofertei nu a fost găsită");
+      }
+      
+      // Data preferată a clientului
+      const clientPreferredDate = new Date(request.preferredDate);
+      
+      // Datele disponibile ale service-ului (din ofertă)
+      const serviceAvailableDates = latestAcceptedOffer.availableDates.map(date => new Date(date));
+      
+      // Găsim data cea mai târzie dintre datele service-ului
+      const latestServiceDate = serviceAvailableDates.length > 0 
+        ? new Date(Math.max(...serviceAvailableDates.map(date => date.getTime())))
+        : new Date(0); // Dacă nu există date disponibile, folosim o dată din trecut
+      
+      // Determinăm care este data cea mai târzie dintre clientPreferredDate și latestServiceDate
+      const latestPreferredDate = new Date(Math.max(clientPreferredDate.getTime(), latestServiceDate.getTime()));
+      
+      // Verificăm dacă data curentă este după data preferată cea mai târzie
+      if (today < latestPreferredDate) {
+        throw new Error(`Nu puteți lăsa o recenzie înainte de data finalizării planificate a serviciului (${latestPreferredDate.toLocaleDateString('ro-RO')})`);
+      }
+
       // Continuăm cu inserarea recenziei
       const reviewData = {
         ...review,
@@ -1438,7 +1469,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Modificarea metodei pentru a afișa dacă clientul poate lăsa recenzie
-  async canClientReviewService(clientId: number, serviceProviderId: number): Promise<boolean> {
+  async canClientReviewService(clientId: number, serviceProviderId: number): Promise<{ canReview: boolean; reason?: string; earliestDateAllowed?: Date }> {
     try {
       // Verificăm dacă clientul a lăsat deja o recenzie
       const existingReview = await db
@@ -1453,7 +1484,10 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
 
       if (existingReview.length > 0) {
-        return false; // Clientul a lăsat deja o recenzie
+        return { 
+          canReview: false, 
+          reason: "Ați lăsat deja o recenzie pentru acest service"
+        };
       }
 
       // Verificăm dacă există oferte acceptate
@@ -1468,10 +1502,59 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
-      return acceptedOffers.length > 0; // Clientul poate lăsa recenzie dacă are oferte acceptate
+      if (acceptedOffers.length === 0) {
+        return { 
+          canReview: false, 
+          reason: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie" 
+        };
+      }
+
+      // Verificăm dacă a trecut data preferată (mai târzie dintre data clientului și datele service-ului)
+      const today = new Date();
+      
+      // Folosim prima ofertă acceptată pentru verificare
+      const latestAcceptedOffer = acceptedOffers[0];
+      
+      // Obținem data preferată a clientului din cerere
+      const request = await this.getRequest(latestAcceptedOffer.requestId);
+      if (!request) {
+        return { 
+          canReview: false, 
+          reason: "Cererea asociată ofertei nu a fost găsită" 
+        };
+      }
+      
+      // Data preferată a clientului
+      const clientPreferredDate = new Date(request.preferredDate);
+      
+      // Datele disponibile ale service-ului (din ofertă)
+      const serviceAvailableDates = latestAcceptedOffer.availableDates.map(date => new Date(date));
+      
+      // Găsim data cea mai târzie dintre datele service-ului
+      const latestServiceDate = serviceAvailableDates.length > 0 
+        ? new Date(Math.max(...serviceAvailableDates.map(date => date.getTime())))
+        : new Date(0); // Dacă nu există date disponibile, folosim o dată din trecut
+      
+      // Determinăm care este data cea mai târzie dintre clientPreferredDate și latestServiceDate
+      const latestPreferredDate = new Date(Math.max(clientPreferredDate.getTime(), latestServiceDate.getTime()));
+      
+      // Verificăm dacă data curentă este după data preferată cea mai târzie
+      if (today < latestPreferredDate) {
+        return { 
+          canReview: false, 
+          reason: `Nu puteți lăsa o recenzie înainte de data finalizării planificate a serviciului`,
+          earliestDateAllowed: latestPreferredDate
+        };
+      }
+
+      // Dacă am trecut toate verificările, clientul poate lăsa recenzie
+      return { canReview: true };
     } catch (error) {
       console.error('Error checking if client can review service:', error);
-      return false;
+      return { 
+        canReview: false, 
+        reason: "A apărut o eroare la verificarea posibilității de a adăuga recenzie" 
+      };
     }
   }
   /**
