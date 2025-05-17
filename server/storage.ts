@@ -1558,6 +1558,105 @@ export class DatabaseStorage implements IStorage {
     }
   }
   /**
+   * Această metodă identifică toate ofertele acceptate pentru care clientul 
+   * poate acum să lase recenzii (adică data preferată a trecut) dar nu le-a lăsat încă.
+   * Metoda este folosită pentru sistemul de notificări automate pentru recenzii.
+   * @returns Array de obiecte cu ofertele și datele asociate pentru notificări
+   */
+  async getEligibleOffersForReviewNotifications(): Promise<Array<{
+    clientId: number;
+    clientEmail: string;
+    offerId: number;
+    offerTitle: string;
+    serviceProviderId: number;
+    serviceProviderName: string;
+    serviceProfileLink: string;
+    earliestDateAllowed: Date;
+  }>> {
+    try {
+      console.log(`[Review Notifications] Verificare oferte eligibile pentru notificări recenzii`);
+      const now = new Date();
+      const result: Array<{
+        clientId: number;
+        clientEmail: string;
+        offerId: number;
+        offerTitle: string;
+        serviceProviderId: number;
+        serviceProviderName: string;
+        serviceProfileLink: string;
+        earliestDateAllowed: Date;
+      }> = [];
+
+      // Obținem toate ofertele acceptate
+      const offersResult = await db.query.sentOffers.findMany({
+        where: eq(sentOffers.status, "Accepted"),
+        with: {
+          client: true,
+          serviceProvider: true,
+          request: true
+        }
+      });
+
+      if (!offersResult || offersResult.length === 0) {
+        console.log('[Review Notifications] Nu s-au găsit oferte acceptate.');
+        return [];
+      }
+
+      console.log(`[Review Notifications] S-au găsit ${offersResult.length} oferte acceptate pentru verificare.`);
+
+      // Pentru fiecare ofertă acceptată verificăm eligibilitatea
+      for (const offer of offersResult) {
+        // Verificăm dacă clientul a lăsat deja o recenzie
+        const existingReview = await this.getReviewByClientAndService(
+          offer.client.id, 
+          offer.serviceProvider.id
+        );
+
+        if (existingReview) {
+          console.log(`[Review Notifications] Clientul ${offer.client.id} a lăsat deja o recenzie pentru service ${offer.serviceProvider.id}.`);
+          continue; // Trecem la următoarea ofertă dacă există deja o recenzie
+        }
+
+        // Verificăm dacă data preferată a trecut
+        if (offer.availableDates && offer.availableDates.length > 0) {
+          // Sortăm datele disponibile pentru a găsi cea mai recentă
+          const sortedDates = [...offer.availableDates].sort(
+            (a, b) => new Date(b).getTime() - new Date(a).getTime()
+          );
+          const latestDate = new Date(sortedDates[0]);
+          
+          // Verificăm dacă data cea mai recentă a trecut
+          if (now > latestDate) {
+            // Clientul este eligibil să lase recenzia
+            result.push({
+              clientId: offer.client.id,
+              clientEmail: offer.client.email,
+              offerId: offer.id,
+              offerTitle: offer.title,
+              serviceProviderId: offer.serviceProvider.id,
+              serviceProviderName: offer.serviceProvider.companyName,
+              serviceProfileLink: `https://carvizio.ro/service/${offer.serviceProvider.username}`,
+              earliestDateAllowed: latestDate
+            });
+
+            console.log(`[Review Notifications] Oferta ${offer.id} eligibilă pentru notificare recenzie - Client: ${offer.client.email}`);
+          } else {
+            console.log(`[Review Notifications] Oferta ${offer.id} nu este încă eligibilă pentru recenzie. Data programată: ${latestDate.toISOString()}`);
+          }
+        } else {
+          console.log(`[Review Notifications] Oferta ${offer.id} nu are date disponibile.`);
+        }
+      }
+
+      console.log(`[Review Notifications] S-au găsit ${result.length} oferte eligibile pentru notificări recenzii.`);
+      return result;
+    } catch (error) {
+      console.error('Error getting eligible offers for review notifications:', error);
+      return [];
+    }
+  }
+
+  /**
    * Obține toți furnizorii de servicii dintr-un anumit județ
    * @param county Județul pentru care se caută furnizorii
    * @returns Array de furnizori de servicii
