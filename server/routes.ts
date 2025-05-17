@@ -3428,6 +3428,39 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Endpoint pentru verificarea dacă un client poate lăsa o recenzie pentru un service provider
+  app.get("/api/client/can-review/:serviceProviderId", validateFirebaseToken, async (req, res) => {
+    try {
+      const client = await storage.getClientByFirebaseUid(req.firebaseUser!.uid);
+      if (!client) {
+        return res.status(403).json({ 
+          canReview: false, 
+          reason: "Doar clienții pot lăsa recenzii" 
+        });
+      }
+
+      const serviceProviderId = parseInt(req.params.serviceProviderId);
+      if (isNaN(serviceProviderId)) {
+        return res.status(400).json({ 
+          canReview: false, 
+          reason: "ID furnizor servicii invalid" 
+        });
+      }
+
+      // Verificăm rezultatul folosind metoda canClientReviewService care include toate restricțiile
+      const result = await storage.canClientReviewService(client.id, serviceProviderId);
+
+      // Returnăm rezultatul verificării
+      return res.json(result);
+    } catch (error) {
+      console.error("Error checking if client can review:", error);
+      return res.status(500).json({ 
+        canReview: false, 
+        reason: "Eroare la verificarea eligibilității pentru recenzie" 
+      });
+    }
+  });
+
   // Update the review endpoint to handle direct service reviews
   app.post("/api/reviews", validateFirebaseToken, async (req, res) => {
     try {
@@ -3446,37 +3479,42 @@ export function registerRoutes(app: Express): void {
         return res.status(400).json({ error: "Service provider not found" });
       }
 
-      // Verificăm dacă clientul a interacționat cu acest service provider
-      // prin verificarea existenței unei oferte acceptate
-      let acceptedOffer = null;
+      // Verificăm dacă clientul poate lăsa o recenzie folosind metoda completă
+      const reviewEligibility = await storage.canClientReviewService(client.id, serviceProviderId);
+      
+      if (!reviewEligibility.canReview) {
+        return res.status(403).json({ 
+          error: "Cannot create review", 
+          message: reviewEligibility.reason || "Nu puteți lăsa o recenzie pentru acest service.",
+          earliestDateAllowed: reviewEligibility.earliestDateAllowed
+        });
+      }
+      
+      // Obținem ofertele pentru a găsi cea referită sau prima ofertă acceptată
       const offers = await storage.getOffersForClient(client.id);
-
+      let acceptedOffer = null;
+      
       if (offerId) {
         acceptedOffer = offers.find(offer => 
           offer.id === offerId && 
           offer.serviceProviderId === serviceProviderId && 
           offer.status === "Accepted"
         );
-
-        if (!acceptedOffer) {
-          return res.status(403).json({ 
-            error: "Cannot create review", 
-            message: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie." 
-          });
-        }
       } else {
         // Dacă nu este specificat un offerId, căutăm prima ofertă acceptată
         acceptedOffer = offers.find(offer => 
           offer.serviceProviderId === serviceProviderId && 
           offer.status === "Accepted"
         );
-
-        if (!acceptedOffer) {
-          return res.status(403).json({ 
-            error: "Cannot create review", 
-            message: "Trebuie să fi acceptat o ofertă de la acest service pentru a lăsa o recenzie." 
-          });
-        }
+      }
+      
+      // Ar trebui să existe o ofertă acceptată dacă am trecut de verificarea canClientReviewService
+      if (!acceptedOffer) {
+        console.error("Nu s-a găsit o ofertă acceptată deși canClientReviewService a returnat pozitiv");
+        return res.status(500).json({ 
+          error: "Cannot create review", 
+          message: "Eroare internă la verificarea ofertelor acceptate." 
+        });
       }
 
       console.log("Creating review for service provider:", serviceProviderId, "by client:", client.id);
