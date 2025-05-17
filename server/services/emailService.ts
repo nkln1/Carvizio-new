@@ -1483,4 +1483,113 @@ Puteți dezactiva notificările prin email din setările contului dvs.
       return false;
     }
   }
+
+  /**
+   * Trimite notificare pentru client că poate lăsa o recenzie
+   * Această metodă este utilizată pentru a trimite un reminder către client
+   * atunci când devine eligibil să lase o recenzie pentru un service
+   * după ce serviciul a fost prestat (data preferată a trecut)
+   * @param client Obiectul client care va primi notificarea
+   * @param serviceProviderName Numele service-ului provider
+   * @param offerTitle Titlul ofertei pentru care poate lăsa recenzie
+   * @param serviceProfileLink Link-ul către profilul service provider-ului
+   * @param offerId ID-ul ofertei (pentru prevenirea duplicării)
+   * @returns {Promise<boolean>} - true dacă email-ul a fost trimis cu succes, false altfel
+   */
+  public static async sendReviewReminderNotification(
+    client: Client | null | undefined,
+    serviceProviderName: string,
+    offerTitle: string,
+    serviceProfileLink: string,
+    offerId: string = `review_reminder_${Date.now()}`
+  ): Promise<boolean> {
+    try {
+      if (!client) {
+        console.error(`❌ EmailService.sendReviewReminderNotification - client este null sau undefined`);
+        return false;
+      }
+
+      // Verificăm dacă putem trimite email (rate limiting)
+      const canSendEmail = this.checkRateLimit(client.email, 'review_reminder');
+      if (!canSendEmail) {
+        console.log(`⏳ EmailService.sendReviewReminderNotification - Rate limiting activat pentru ${client.email}`);
+        return false;
+      }
+
+      console.log(
+        `\n📋 === EmailService.sendReviewReminderNotification - Trimitere notificare eligibilitate recenzie pentru CLIENT ===`,
+      );
+
+      // Generam un subiect personalizat pentru email
+      const subject = `Puteți lăsa acum o recenzie pentru ${serviceProviderName}`;
+
+      // Generam conținutul HTML al email-ului
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://carvizio.ro/logo.png" alt="Carvizio Logo" style="max-width: 150px;">
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <h2 style="color: #333; margin-top: 0;">Puteți lăsa acum o recenzie</h2>
+            <p style="color: #555; line-height: 1.5;">Bună ziua,</p>
+            <p style="color: #555; line-height: 1.5;">Ați beneficiat recent de serviciile oferite de <strong>${serviceProviderName}</strong> pentru oferta <strong>"${offerTitle}"</strong>.</p>
+            <p style="color: #555; line-height: 1.5;">Acum sunteți eligibil să lăsați o recenzie pentru acest service, ajutând astfel și alți utilizatori să ia decizii informate.</p>
+            <p style="color: #555; line-height: 1.5;">Recenziile sincere ajută la îmbunătățirea calității serviciilor și contribuie la o comunitate mai transparentă.</p>
+          </div>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <a href="${serviceProfileLink}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Lasă o recenzie</a>
+          </div>
+          <div style="color: #777; font-size: 12px; text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+            <p>Acest email a fost trimis automat. Vă rugăm să nu răspundeți la acest mesaj.</p>
+            <p>© ${new Date().getFullYear()} Carvizio. Toate drepturile rezervate.</p>
+          </div>
+        </div>
+      `;
+
+      // Generam versiunea text a email-ului
+      const textContent = `
+Puteți lăsa acum o recenzie
+
+Bună ziua,
+
+Ați beneficiat recent de serviciile oferite de ${serviceProviderName} pentru oferta "${offerTitle}".
+
+Acum sunteți eligibil să lăsați o recenzie pentru acest service, ajutând astfel și alți utilizatori să ia decizii informate.
+Recenziile sincere ajută la îmbunătățirea calității serviciilor și contribuie la o comunitate mai transparentă.
+
+Lasă o recenzie: ${serviceProfileLink}
+
+Acest email a fost trimis automat. Vă rugăm să nu răspundeți la acest mesaj.
+© ${new Date().getFullYear()} Carvizio. Toate drepturile rezervate.
+      `;
+
+      // Creăm un ID unic pentru acest email pentru a preveni duplicatele
+      const messageId = `review_reminder_${offerId}_${client.id}_${Date.now()}`;
+
+      // Trimitem email-ul
+      const success = await this.sendEmail(
+        client.email,
+        subject,
+        htmlContent,
+        textContent,
+        messageId
+      );
+
+      // Actualizăm rate limiting dacă emailul a fost trimis cu succes
+      if (success) {
+        this.updateRateLimit(client.email, 'review_reminder');
+        console.log(`✅ EmailService.sendReviewReminderNotification - Email trimis cu succes către ${client.email}`);
+      } else {
+        console.log(`❌ EmailService.sendReviewReminderNotification - Eșec la trimiterea email-ului către ${client.email}`);
+      }
+
+      return success;
+    } catch (error) {
+      console.error(
+        `📋 EmailService.sendReviewReminderNotification - Eroare la trimiterea email-ului către ${client?.email}:`,
+        error
+      );
+      return false;
+    }
+  }
 }
