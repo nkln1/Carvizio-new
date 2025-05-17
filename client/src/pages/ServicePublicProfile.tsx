@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, MapPin, Phone, Clock, Building2, Star } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/context/AuthContext";
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import WorkingHoursEditor from "@/components/service-dashboard/WorkingHoursEditor";
 import { ReviewSection } from "@/components/reviews/ReviewSection";
 import type { ServiceProvider, WorkingHour, Review, SentOffer } from "@shared/schema";
-import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import SEOHeader from "@/components/seo/SEOHeader";
 import ServiceDetailSchema from "@/components/seo/ServiceDetailSchema";
@@ -35,6 +34,7 @@ export default function ServicePublicProfile() {
   const { username } = useParams<{ username: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isEditingHours, setIsEditingHours] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasReviewedAlready, setHasReviewedAlready] = useState(false);
@@ -43,7 +43,6 @@ export default function ServicePublicProfile() {
     reason?: string;
     earliestDateAllowed?: string;
   }>({ canReview: false });
-  const queryClient = useQueryClient();
 
   // Obținem profilul service-ului
   const { data: serviceProfile, isLoading } = useQuery<ServiceProfileData>({
@@ -120,12 +119,16 @@ export default function ServicePublicProfile() {
       }
     },
     enabled: !!user && user.role === 'client' && !!serviceProfile?.id
-  });
+  } as any);
 
   // Actualizăm starea cu datele despre eligibilitate pentru recenzie
   useEffect(() => {
     if (eligibilityData) {
-      setReviewEligibility(eligibilityData);
+      setReviewEligibility(eligibilityData as {
+        canReview: boolean;
+        reason?: string;
+        earliestDateAllowed?: string;
+      });
     }
   }, [eligibilityData]);
 
@@ -142,12 +145,14 @@ export default function ServicePublicProfile() {
   // Determinăm dacă clientul poate lăsa o recenzie pe baza tuturor verificărilor
   const canReview = user && 
     user.role === 'client' && 
+    // @ts-ignore - username există pe obiectul user în context
     user.username !== username && 
-    (acceptedOffers?.length > 0) &&
+    acceptedOffers && acceptedOffers.length > 0 &&
     !hasReviewedAlready &&
-    reviewEligibility?.canReview;
+    reviewEligibility?.canReview === true;
 
   // Verificăm dacă utilizatorul este proprietarul profilului
+  // @ts-ignore - username există pe obiectul user în context
   const isOwner = user?.role === 'service' && user?.username === username;
 
   // Mutația pentru trimiterea recenziei
@@ -395,28 +400,59 @@ export default function ServicePublicProfile() {
         <div className="mt-8" id="review-section">
           <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Recenzii și evaluări</h2>
 
-          {/* Mesaj de informare pentru utilizatorii care au lăsat deja o recenzie */}
-          {user?.role === 'client' && hasReviewedAlready && (
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-blue-700">
-                Ați lăsat deja o recenzie pentru acest service. Mulțumim pentru feedback!
-              </p>
-            </div>
-          )}
-
-          {/* Mesaj de informare pentru utilizatorii care nu au interacționat cu service-ul */}
-          {!canReview && user?.role === 'client' && acceptedOffers?.length === 0 && !hasReviewedAlready && (
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
-              <p className="text-amber-700">
-                Pentru a lăsa o recenzie, trebuie să fi acceptat o ofertă de la acest service auto.
-              </p>
-            </div>
+          {/* Mesaje de informare pentru recenzii */}
+          {user?.role === 'client' && (
+            <>
+              {/* Utilizatorii care au lăsat deja o recenzie */}
+              {hasReviewedAlready && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-blue-700">
+                    Ați lăsat deja o recenzie pentru acest service. Mulțumim pentru feedback!
+                  </p>
+                </div>
+              )}
+              
+              {/* Utilizatorii care nu au interacționat cu service-ul */}
+              {!hasReviewedAlready && acceptedOffers?.length === 0 && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-amber-700">
+                    Pentru a lăsa o recenzie, trebuie să fi acceptat o ofertă de la acest service auto.
+                  </p>
+                </div>
+              )}
+              
+              {/* Utilizatorii care au acceptat oferte, dar nu pot încă lăsa recenzie din cauza datei */}
+              {!hasReviewedAlready && 
+               acceptedOffers && acceptedOffers.length > 0 && 
+               !reviewEligibility.canReview && 
+               reviewEligibility.earliestDateAllowed && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-amber-700">
+                    <span className="font-semibold">Nu puteți lăsa o recenzie încă.</span> Recenziile pot fi lăsate doar 
+                    după data programată pentru finalizarea serviciului: {reviewEligibility.earliestDateAllowed}.
+                  </p>
+                </div>
+              )}
+              
+              {/* Utilizatorii care au acceptat oferte, dar nu pot lăsa recenzie din alte motive */}
+              {!hasReviewedAlready && 
+               acceptedOffers && acceptedOffers.length > 0 && 
+               !reviewEligibility.canReview && 
+               !reviewEligibility.earliestDateAllowed && 
+               reviewEligibility.reason && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-amber-700">
+                    {reviewEligibility.reason}
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           <ReviewSection
-            canReview={canReview}
+            canReview={canReview || false}
             isLoading={isSubmitting}
-            reviews={serviceProfile.reviews || []}
+            reviews={serviceProfile?.reviews || []}
             currentUserId={user?.role === 'client' ? Number(user.id) : undefined}
             onSubmitReview={async (data) => {
               try {
@@ -433,7 +469,8 @@ export default function ServicePublicProfile() {
                   const errorData = await response.json();
                   throw new Error(errorData.error || 'Failed to update review');
                 }
-                queryClient.invalidateQueries(['/api/service-profile', username]);
+                // @ts-ignore - aceasta este structura folosită de React Query v5
+                queryClient.invalidateQueries({ queryKey: ['/api/service-profile', username] });
               } catch (error) {
                 console.error('Error updating review:', error);
                 throw error;
