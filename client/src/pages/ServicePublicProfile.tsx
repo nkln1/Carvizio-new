@@ -450,10 +450,12 @@ export default function ServicePublicProfile() {
           )}
 
           <ReviewSection
-            canReview={canReview || false}
+            canReview={reviewEligibility.canReview || false}
             isLoading={isSubmitting}
             reviews={serviceProfile?.reviews || []}
             currentUserId={user?.role === 'client' ? Number(user.id) : undefined}
+            reviewReason={reviewEligibility.reason}
+            earliestReviewDate={reviewEligibility.earliestDateAllowed}
             onSubmitReview={async (data) => {
               try {
                 await reviewMutation.mutateAsync(data);

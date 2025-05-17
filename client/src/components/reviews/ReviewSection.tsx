@@ -59,6 +59,8 @@ interface ReviewSectionProps {
   onUpdateReview?: (id: number, data: ReviewFormValues) => Promise<void>;
   reviews: ReviewProps[];
   currentUserId?: number;
+  reviewReason?: string;
+  earliestReviewDate?: string;
 }
 
 export function ReviewSection({
@@ -70,6 +72,8 @@ export function ReviewSection({
   onUpdateReview,
   reviews,
   currentUserId,
+  reviewReason,
+  earliestReviewDate,
 }: ReviewSectionProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -709,10 +713,25 @@ export function ReviewSection({
                   Resetează filtrul
                 </Button>
               )}
-              {!canReview && reviews.length === 0 && (
-                <p className="text-sm text-gray-400 mt-2">
-                  Recenziile pot fi lăsate doar de clienții care au interacționat cu acest service.
-                </p>
+              {!canReview && (
+                <div className="text-sm space-y-2 mt-2">
+                  {reviewReason ? (
+                    <p className="text-orange-600 font-medium">
+                      {reviewReason}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400">
+                      Recenziile pot fi lăsate doar de clienții care au interacționat cu acest service.
+                    </p>
+                  )}
+                  
+                  {earliestReviewDate && (
+                    <p className="text-gray-500">
+                      <span className="font-medium">Veți putea lăsa o recenzie începând cu: </span>
+                      {earliestReviewDate}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}
