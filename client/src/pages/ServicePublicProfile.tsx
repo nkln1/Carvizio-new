@@ -142,14 +142,8 @@ export default function ServicePublicProfile() {
     }
   }, [user, serviceProfile]);
 
-  // Determinăm dacă clientul poate lăsa o recenzie pe baza tuturor verificărilor
-  const canReview = user && 
-    user.role === 'client' && 
-    // @ts-ignore - username există pe obiectul user în context
-    user.username !== username && 
-    acceptedOffers && acceptedOffers.length > 0 &&
-    !hasReviewedAlready &&
-    reviewEligibility?.canReview === true;
+  // Determinăm dacă clientul poate lăsa o recenzie pe baza rezultatului de la API
+  const canReview = reviewEligibility?.canReview === true;
 
   // Verificăm dacă utilizatorul este proprietarul profilului
   // @ts-ignore - username există pe obiectul user în context
