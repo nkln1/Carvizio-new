@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { fetchWithCsrf } from '@/lib/csrfToken';
 
 // Tipul pentru admin
 interface Admin {
@@ -31,12 +32,9 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     const checkAdminSession = async () => {
       try {
-        const response = await fetch('/api/admin/check-session', {
+        // Folosim fetchWithCsrf pentru a gestiona automat token-ul CSRF
+        const response = await fetchWithCsrf('/api/admin/check-session', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include'
         });
         
         const data = await response.json();
@@ -74,12 +72,9 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Funcție pentru logout
   const logout = async () => {
     try {
-      await fetch('/api/admin/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
+      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
+      await fetchWithCsrf('/api/admin/logout', {
+        method: 'POST'
       });
       
       // Resetăm starea în context

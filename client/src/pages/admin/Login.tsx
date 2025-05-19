@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { fetchWithCsrf, refreshCsrfToken } from '@/lib/csrfToken';
 
 // Schema pentru validarea formularului de login admin
 const loginSchema = z.object({
@@ -67,13 +68,13 @@ const AdminLogin: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/admin/login', {
+      // Asigurăm că avem un token CSRF proaspăt
+      await refreshCsrfToken();
+      
+      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
+      const response = await fetchWithCsrf('/api/admin/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(values),
-        credentials: 'include' // Important pentru sesiune
       });
       
       const data = await response.json();
