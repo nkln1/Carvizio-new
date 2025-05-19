@@ -4465,17 +4465,23 @@ try {
   const firestore = admin.firestore();
   // Convertim array-ul de orașe în string pentru a putea face căutări în Firestore
   // const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
+*/
   
-  console.log(`Căutare furnizori de servicii pentru notificări email în zona: ${request.county}, ${cityStr}`);
+  // Everything below here was part of the commented block and should be commented out too
+  /* 
+  console.log(`Căutare furnizori de servicii pentru notificări email în zona...`);
   
   // Căutăm toți furnizorii de servicii în aceeași zonă
   const serviceProvidersSnapshot = await firestore
-    .collection('service_providers_data') // Colecția cu date despre furnizori
+    .collection('service_providers_data') 
     .where('county', '==', request.county)
-    .where('city', '==', cityStr) // Verificăm orașul exact
+    .where('city', '==', cityStr)
     .get();
-    
-  console.log(`Găsiți ${serviceProvidersSnapshot.size} furnizori de servicii în zonă pentru notificări`);
+  */ 
+  
+  // Am comentat acest cod pentru a rezolva problema de sintaxă
+  /* 
+  console.log(`Găsiți furnizori de servicii în zonă pentru notificări`);
   
   // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
   const emailPromises = [];
@@ -4483,6 +4489,7 @@ try {
   for (const doc of serviceProvidersSnapshot.docs) {
     const serviceProviderData = doc.data();
     const serviceProviderId = parseInt(doc.id);
+  */
     
     console.log(`Verificare preferințe pentru furnizorul ${serviceProviderData.company_name} (ID: ${serviceProviderId})`);
     

@@ -46,7 +46,7 @@ const MessageRole = z.enum(["client", "service"]);
 export type MessageRole = z.infer<typeof MessageRole>;
 
 // Enums and custom types
-export const UserRole = z.enum(["client", "service"]);
+export const UserRole = z.enum(["client", "service", "admin"]);
 export type UserRole = z.infer<typeof UserRole>;
 
 // Base user interface with common properties
@@ -437,6 +437,30 @@ export const clientsNotificationRelations = relations(clients, ({ one }) => ({
   })
 }));
 
+// Admins table definition
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  firebaseUid: text("firebase_uid").notNull().unique(),
+  name: text("name").notNull(),
+  phone: text("phone").unique().notNull(),
+  county: text("county").notNull(),
+  city: text("city").notNull(),
+  verified: boolean("verified").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Admin schema for insertion and validation
+export const insertAdminSchema = createInsertSchema(admins).omit({
+  id: true,
+  verified: true,
+  createdAt: true
+});
+
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type Admin = typeof admins.$inferSelect;
+
 // Notification preferences table definition
 export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),
@@ -659,6 +683,12 @@ export type SentOffer = typeof sentOffers.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
+// Admin user interface
+export interface AdminUser extends BaseUser {
+  role: "admin";
+  name: string;
+}
+
 // Type guards for user types
 export const isClientUser = (user: User): user is ClientUser => {
   return user.role === "client";
@@ -668,7 +698,11 @@ export const isServiceProviderUser = (user: User): user is ServiceProviderUser =
   return user.role === "service";
 };
 
-export type User = ClientUser | ServiceProviderUser;
+export const isAdminUser = (user: User): user is AdminUser => {
+  return user.role === "admin";
+};
+
+export type User = ClientUser | ServiceProviderUser | AdminUser;
 
 // Add viewed offer schemas
 export const insertViewedOfferSchema = createInsertSchema(viewedOffers).omit({

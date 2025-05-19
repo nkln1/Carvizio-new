@@ -1,6 +1,7 @@
 import {
   clients,
   serviceProviders,
+  admins,
   cars,
   requests,
   sentOffers,
@@ -17,6 +18,8 @@ import {
   type InsertClient,
   type ServiceProvider,
   type InsertServiceProvider,
+  type Admin,
+  type InsertAdmin,
   type Car,
   type InsertCar,
   type Request,
@@ -54,6 +57,14 @@ const sessionPool = new pg.Pool({
 });
 
 export interface IStorage {
+  // Admin management
+  getAdminById(id: number): Promise<Admin | undefined>;
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  getAdminByFirebaseUid(firebaseUid: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin & { firebaseUid: string }): Promise<Admin>;
+  updateAdmin(id: number, adminData: Partial<Admin>): Promise<Admin>;
+  getAllAdmins(): Promise<Admin[]>;
+
   // Client management
   getClientById(id: number): Promise<Client | undefined>;
   getClientByEmail(email: string): Promise<Client | undefined>;

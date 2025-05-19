@@ -8,6 +8,7 @@ import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { AdminAuthProvider } from "@/context/AdminAuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
 import ServicePublicProfile from "@/pages/ServicePublicProfile";
@@ -21,6 +22,8 @@ import { useEffect, useState } from "react";
 import React from "react";
 import TestEmailButton from "@/components/TestEmailButton";
 import TestEmail from "@/pages/TestEmail";
+import AdminLogin from "@/pages/admin/Login";
+import AdminDashboard from "@/pages/admin/Dashboard";
 
 // Nu mai avem nevoie de extensia proprietăților globale window
 // deoarece folosim direct NotificationHelper.handleNotificationEvent()
@@ -37,6 +40,8 @@ function Router() {
       <Route path="/terms-and-conditions" component={TermsAndConditions} />
       <Route path="/test-notificari" component={NotificationTest} />
       <Route path="/test-email" component={TestEmail} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
@@ -247,14 +252,16 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <NotificationProvider>
-            <AppInitializerMemo />
-            <Navigation />
-            <Router />
-            <CookieBanner />
-            <NotificationPermissionDialog />
-            <Toaster />
-          </NotificationProvider>
+          <AdminAuthProvider>
+            <NotificationProvider>
+              <AppInitializerMemo />
+              <Navigation />
+              <Router />
+              <CookieBanner />
+              <NotificationPermissionDialog />
+              <Toaster />
+            </NotificationProvider>
+          </AdminAuthProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
