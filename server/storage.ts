@@ -71,6 +71,8 @@ export interface IStorage {
   getClientByFirebaseUid(firebaseUid: string): Promise<Client | undefined>;
   createClient(client: InsertClient & { firebaseUid: string }): Promise<Client>;
   updateClient(id: number, clientData: Partial<Client>): Promise<Client>;
+  getAllClients(): Promise<Client[]>;
+  updateClientVerificationStatus(clientId: number, verified: boolean): Promise<Client>;
 
   // Service Provider management
   getServiceProviderById(id: number): Promise<ServiceProvider | undefined>;
@@ -79,6 +81,8 @@ export interface IStorage {
   createServiceProvider(provider: InsertServiceProvider & { firebaseUid: string }): Promise<ServiceProvider>;
   updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
   getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined>;
+  getAllServiceProviders(): Promise<ServiceProvider[]>;
+  updateServiceProviderVerificationStatus(serviceProviderId: number, verified: boolean): Promise<ServiceProvider>;
 
   // Car management
   getClientCars(clientId: number): Promise<Car[]>;
@@ -93,6 +97,7 @@ export interface IStorage {
   createRequest(request: InsertRequest): Promise<Request>;
   updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
   getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
+  getAllRequests(): Promise<Request[]>;
 
   sessionStore: session.Store;
   // Add new methods for phone number checks
