@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   Card,
   CardContent,
@@ -12,61 +14,82 @@ import {
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-// Lista de adrese email cu rol de admin
-const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
+// Schema pentru validarea formularului de login admin
+const loginSchema = z.object({
+  username: z.string().min(3, "Numele de utilizator trebuie să aibă minim 3 caractere"),
+  password: z.string().min(6, "Parola trebuie să aibă minim 6 caractere"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Verifică dacă utilizatorul este deja autentificat
+  // Verifică dacă există sesiune activă de admin
   useEffect(() => {
-    const checkAuth = async () => {
-      const user = auth.currentUser;
-      if (user && ADMIN_EMAILS.includes(user.email || '')) {
-        setLocation('/admin/dashboard');
+    const checkAdminSession = async () => {
+      try {
+        const response = await fetch('/api/admin/check-session', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include' // Important pentru sesiune
+        });
+        
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          console.log('Sesiune admin validă detectată');
+          setLocation('/admin/dashboard');
+        }
+      } catch (error) {
+        console.error('Eroare la verificarea sesiunii:', error);
       }
     };
     
-    checkAuth();
+    checkAdminSession();
   }, [setLocation]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        variant: 'destructive',
-        title: 'Eroare',
-        description: 'Vă rugăm să completați toate câmpurile.',
-      });
-      return;
-    }
-    
-    // Verifică dacă email-ul are permisiuni de admin
-    if (!ADMIN_EMAILS.includes(email)) {
-      toast({
-        variant: 'destructive',
-        title: 'Acces restricționat',
-        description: 'Nu aveți drepturi de administrator.',
-      });
-      return;
-    }
-    
+  // Configurare formular
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
+
+  const handleSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+        credentials: 'include' // Important pentru sesiune
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Eroare la autentificare');
+      }
       
       toast({
         title: 'Autentificare reușită',
         description: 'Bine ați venit în dashboard-ul de administrare.',
       });
+      
+      // Stocăm informații despre admin în localStorage
+      localStorage.setItem('adminId', data.admin.id);
+      localStorage.setItem('adminUsername', data.admin.username);
       
       setLocation('/admin/dashboard');
     } catch (error) {
@@ -75,7 +98,7 @@ const AdminLogin: React.FC = () => {
       toast({
         variant: 'destructive',
         title: 'Eroare la autentificare',
-        description: 'Email sau parolă incorectă. Vă rugăm să încercați din nou.',
+        description: error instanceof Error ? error.message : 'Nume de utilizator sau parolă incorecte.',
       });
     } finally {
       setIsLoading(false);

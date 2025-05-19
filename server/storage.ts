@@ -2072,6 +2072,56 @@ export class DatabaseStorage implements IStorage {
   }
   
   /**
+   * Verifică credențialele de autentificare pentru un administrator
+   * @param username Numele de utilizator al adminului
+   * @param password Parola adminului
+   * @returns Adminul dacă autentificarea a reușit, null altfel
+   */
+  async verifyAdminCredentials(username: string, password: string): Promise<Admin | null> {
+    try {
+      console.log(`Verificare credențiale admin pentru username: ${username}`);
+      
+      // Obținem admin după username
+      const admin = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.username, username))
+        .limit(1);
+      
+      if (admin.length === 0) {
+        console.log(`Nu s-a găsit niciun admin cu username-ul: ${username}`);
+        return null;
+      }
+      
+      // Verificăm dacă adminul este activ
+      if (!admin[0].isActive) {
+        console.log(`Contul de admin ${username} este dezactivat`);
+        return null;
+      }
+      
+      // Verificăm parola (în producție ar trebui să folosim bcrypt sau similar)
+      // Notă: În implementarea reală, va trebui să folosim bcrypt.compare sau similar
+      if (admin[0].password !== password) {
+        console.log(`Parolă incorectă pentru admin: ${username}`);
+        return null;
+      }
+      
+      // Actualizăm data ultimei autentificări
+      const [updatedAdmin] = await db
+        .update(admins)
+        .set({ lastLogin: new Date() })
+        .where(eq(admins.id, admin[0].id))
+        .returning();
+      
+      console.log(`Autentificare reușită pentru admin: ${username}`);
+      return updatedAdmin;
+    } catch (error) {
+      console.error('Eroare la verificarea credențialelor admin:', error);
+      return null;
+    }
+  }
+  
+  /**
    * Obține toți clienții din sistem
    * @returns Lista de clienți
    */
