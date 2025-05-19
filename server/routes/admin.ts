@@ -84,15 +84,38 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   
   // Rută pentru logout admin
   app.post('/api/admin/logout', async (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('Eroare la deconectarea adminului:', err);
-        return res.status(500).json({ message: 'Eroare la deconectare' });
-      }
+    if (req.session) {
+      // Resetăm explicit proprietățile sesiunii înainte de a o distruge
+      req.session.adminId = undefined;
+      req.session.adminUsername = undefined;
       
-      res.clearCookie('connect.sid'); // Șterge cookie-ul de sesiune
-      return res.json({ message: 'Deconectare reușită' });
-    });
+      // Distrugem sesiunea
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Eroare la deconectarea adminului:', err);
+          return res.status(500).json({ message: 'Eroare la deconectare' });
+        }
+        
+        // Șterge cookie-ul de sesiune - folosim opțiuni explicite pentru a asigura ștergerea
+        res.clearCookie('connect.sid', { 
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        
+        return res.json({ 
+          message: 'Deconectare reușită',
+          success: true
+        });
+      });
+    } else {
+      // Nu există sesiune activă
+      return res.json({ 
+        message: 'Nicio sesiune activă', 
+        success: true 
+      });
+    }
   });
   
   // Rută pentru verificarea sesiunii de admin

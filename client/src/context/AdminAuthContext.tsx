@@ -72,18 +72,36 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Funcție pentru logout
   const logout = async () => {
     try {
-      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
-      await fetchWithCsrf('/api/admin/logout', {
-        method: 'POST'
-      });
-      
-      // Resetăm starea în context
+      // Mai întâi resetăm starea în context - pentru experiență utilizator mai rapidă
       setAdminData(null);
       setIsAdmin(false);
       
       // Curățăm localStorage
       localStorage.removeItem('adminId');
       localStorage.removeItem('adminUsername');
+
+      // Adăugăm un delay scurt pentru a permite actualizarea UI înainte de deconectare
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
+      const response = await fetchWithCsrf('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include' // Important pentru cookie-uri
+      });
+      
+      if (!response.ok) {
+        console.error('Răspuns neașteptat la deconectare:', await response.text());
+      }
+      
+      // Forțăm un refresh al token-ului CSRF după deconectare
+      try {
+        await fetch('/api/csrf-token', { 
+          method: 'GET',
+          credentials: 'include'
+        });
+      } catch (csrfError) {
+        console.error('Eroare la reîmprospătarea token-ului CSRF:', csrfError);
+      }
     } catch (error) {
       console.error('Eroare la deconectare:', error);
     }

@@ -68,13 +68,27 @@ const AdminLogin: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Asigurăm că avem un token CSRF proaspăt
+      // Mai întâi forțăm o reîmprospătare a token-ului CSRF pentru a ne asigura că avem unul nou după deconectare
+      try {
+        await fetch('/api/csrf-token', { 
+          method: 'GET',
+          credentials: 'include'
+        });
+      } catch (csrfError) {
+        console.warn('Avertisment la obținerea token-ului CSRF:', csrfError);
+      }
+      
+      // Asigurăm că avem un token CSRF proaspăt în biblioteca noastră
       await refreshCsrfToken();
+      
+      // Adăugăm un mic delay pentru a permite sistemului să proceseze token-ul
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Folosim fetchWithCsrf pentru a include automat token-ul CSRF în cerere
       const response = await fetchWithCsrf('/api/admin/login', {
         method: 'POST',
         body: JSON.stringify(values),
+        credentials: 'include' // Important pentru cookie-uri
       });
       
       const data = await response.json();
@@ -92,6 +106,8 @@ const AdminLogin: React.FC = () => {
       localStorage.setItem('adminId', data.admin.id);
       localStorage.setItem('adminUsername', data.admin.username);
       
+      // Punem un mic delay înainte de redirecționare pentru a permite procesarea sesiunii
+      await new Promise(resolve => setTimeout(resolve, 100));
       setLocation('/admin/dashboard');
     } catch (error) {
       console.error('Eroare la autentificare:', error);
