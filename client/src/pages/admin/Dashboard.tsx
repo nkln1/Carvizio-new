@@ -266,13 +266,19 @@ const Dashboard = () => {
   }
   
   // Statistici pentru pagina de prezentare generală
+  // Asigurăm-ne că datele sunt array-uri înainte de a folosi metode specifice array-urilor
+  const clientsData = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const providersData = Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
+  const requestsData = Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
+  const reviewsData = Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
+  
   const statistics = {
-    totalClients: clientsQuery.data?.length || 0,
-    totalServiceProviders: serviceProvidersQuery.data?.length || 0,
-    totalRequests: requestsQuery.data?.length || 0,
-    totalReviews: reviewsQuery.data?.length || 0,
-    unverifiedClients: clientsQuery.data?.filter(client => !client.verified)?.length || 0,
-    unverifiedProviders: serviceProvidersQuery.data?.filter(provider => !provider.verified)?.length || 0
+    totalClients: clientsData.length || 0,
+    totalServiceProviders: providersData.length || 0,
+    totalRequests: requestsData.length || 0,
+    totalReviews: reviewsData.length || 0,
+    unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
+    unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
   };
   
   return (
@@ -361,7 +367,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clientsQuery.data?.map((client) => (
+                  {clientsData.map((client: any) => (
                     <TableRow key={client.id}>
                       <TableCell>{client.id}</TableCell>
                       <TableCell>{client.firstName} {client.lastName}</TableCell>
@@ -411,7 +417,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {serviceProvidersQuery.data?.map((provider) => (
+                  {providersData.map((provider: any) => (
                     <TableRow key={provider.id}>
                       <TableCell>{provider.id}</TableCell>
                       <TableCell>{provider.companyName}</TableCell>
@@ -459,7 +465,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requestsQuery.data?.map((request) => (
+                  {requestsData.map((request: any) => (
                     <TableRow key={request.id}>
                       <TableCell>{request.id}</TableCell>
                       <TableCell>{request.title}</TableCell>
@@ -501,7 +507,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reviewsQuery.data?.map((review) => (
+                  {reviewsData.map((review: any) => (
                     <TableRow key={review.id}>
                       <TableCell>{review.id}</TableCell>
                       <TableCell>{review.clientName}</TableCell>
