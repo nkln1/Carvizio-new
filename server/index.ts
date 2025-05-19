@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { registerAdminRoutes } from "./routes/admin";
 import * as admin from 'firebase-admin';
 import { db } from "./db";
 import { eq } from "drizzle-orm";
