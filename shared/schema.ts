@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, timestamp, integer, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, integer, unique, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -439,28 +439,37 @@ export const clientsNotificationRelations = relations(clients, ({ one }) => ({
   })
 }));
 
-// Admins table definition
+// Admins table definition - simplificat pentru autentificare directă
 export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  firebaseUid: text("firebase_uid").notNull().unique(),
-  name: text("name").notNull(),
-  phone: text("phone").unique().notNull(),
-  county: text("county").notNull(),
-  city: text("city").notNull(),
-  verified: boolean("verified").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  password: text("password").notNull(), // Va stoca parola criptată 
+  email: varchar("email", { length: 100 }).notNull().unique(),
+  fullName: varchar("full_name", { length: 100 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
-// Admin schema for insertion and validation
+// Admin schema pentru inserare și validare
 export const insertAdminSchema = createInsertSchema(admins).omit({
   id: true,
-  verified: true,
-  createdAt: true
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  password: z.string().min(6, "Parola trebuie să aibă minim 6 caractere")
+});
+
+// Admin login schema - pentru validarea formularului de login
+export const adminLoginSchema = z.object({
+  username: z.string().min(3, "Numele de utilizator trebuie să aibă minim 3 caractere"),
+  password: z.string().min(6, "Parola trebuie să aibă minim 6 caractere")
 });
 
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type AdminLogin = z.infer<typeof adminLoginSchema>;
 export type Admin = typeof admins.$inferSelect;
 
 // Notification preferences table definition
