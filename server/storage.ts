@@ -166,7 +166,11 @@ export interface IStorage {
   updateReview(id: number, reviewData: Partial<Review>): Promise<Review>;
   deleteReview(id: number): Promise<void>;
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
-  getServiceProvidersInCounty(county: string): Promise<ServiceProvider[]>; // Added method
+  getServiceProvidersInCounty(county: string): Promise<ServiceProvider[]>;
+  
+  // Admin functions for dashboard
+  getAllReviews(): Promise<Review[]>;
+  dismissReviewReport(reviewId: number): Promise<Review>;
 }
 
 async function generateUniqueUsername(companyName: string, db: typeof import('./db').db): Promise<string> {
