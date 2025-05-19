@@ -1,45 +1,101 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '@/lib/firebase';
-import { User } from 'firebase/auth';
 
-const ADMIN_EMAILS = ['nikelino6@yahoo.com']; // Lista de adrese email cu rol de admin
+// Tipul pentru admin
+interface Admin {
+  id: number;
+  username: string;
+}
 
 interface AdminAuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
-  adminUser: User | null;
+  adminData: Admin | null;
+  logout: () => Promise<void>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType>({
   isAdmin: false,
   isLoading: true,
-  adminUser: null
+  adminData: null,
+  logout: async () => {}
 });
 
 export const useAdminAuth = () => useContext(AdminAuthContext);
 
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [adminUser, setAdminUser] = useState<User | null>(null);
+  const [adminData, setAdminData] = useState<Admin | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Verifică sesiunea admin la încărcarea paginii
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user && user.email && ADMIN_EMAILS.includes(user.email)) {
-        setAdminUser(user);
-        setIsAdmin(true);
-      } else {
-        setAdminUser(null);
+    const checkAdminSession = async () => {
+      try {
+        const response = await fetch('/api/admin/check-session', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.authenticated && data.admin) {
+          setAdminData({
+            id: data.admin.id,
+            username: data.admin.username
+          });
+          setIsAdmin(true);
+          
+          // Salvăm și în localStorage ca backup
+          localStorage.setItem('adminId', data.admin.id.toString());
+          localStorage.setItem('adminUsername', data.admin.username);
+        } else {
+          setAdminData(null);
+          setIsAdmin(false);
+          
+          // Curățăm localStorage
+          localStorage.removeItem('adminId');
+          localStorage.removeItem('adminUsername');
+        }
+      } catch (error) {
+        console.error('Eroare la verificarea sesiunii admin:', error);
+        setAdminData(null);
         setIsAdmin(false);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+    };
+    
+    checkAdminSession();
   }, []);
 
+  // Funcție pentru logout
+  const logout = async () => {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      
+      // Resetăm starea în context
+      setAdminData(null);
+      setIsAdmin(false);
+      
+      // Curățăm localStorage
+      localStorage.removeItem('adminId');
+      localStorage.removeItem('adminUsername');
+    } catch (error) {
+      console.error('Eroare la deconectare:', error);
+    }
+  };
+
   return (
-    <AdminAuthContext.Provider value={{ isAdmin, isLoading, adminUser }}>
+    <AdminAuthContext.Provider value={{ isAdmin, isLoading, adminData, logout }}>
       {children}
     </AdminAuthContext.Provider>
   );

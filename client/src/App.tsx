@@ -42,18 +42,14 @@ function isAdminUser(email: string | null | undefined): boolean {
 // Simple component to redirect to admin dashboard if user is admin
 const AdminRedirect = () => {
   const [, navigate] = useLocation();
+  const { isAdmin, isLoading } = useAdminAuth();
   
   useEffect(() => {
-    // Verificăm autentificarea
-    const checkAuth = async () => {
-      const user = auth.currentUser;
-      if (user && user.email && isAdminUser(user.email)) {
-        navigate('/admin/dashboard');
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
+    // Verificăm dacă utilizatorul este deja autentificat ca admin
+    if (!isLoading && isAdmin) {
+      navigate('/admin/dashboard');
+    }
+  }, [isAdmin, isLoading, navigate]);
   
   return null;
 }
