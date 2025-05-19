@@ -59,23 +59,6 @@ const AdminRedirect = () => {
 }
 
 function Router() {
-  // Adăugăm un efect care să verifice dacă utilizatorul este admin la fiecare încărcare a paginii
-  useEffect(() => {
-    // Importăm din firebase auth direct - fără require
-    import('@/lib/firebase').then(firebaseModule => {
-      const unsubscribe = firebaseModule.auth.onAuthStateChanged((user: any) => {
-        if (user && user.email && isAdminUser(user.email)) {
-          // Redirecționăm către dashboard-ul de admin dacă există un utilizator logat care este admin
-          if (window.location.pathname !== '/admin/dashboard') {
-            window.location.href = '/admin/dashboard';
-          }
-        }
-      });
-      
-      // Returnăm un cleanup care va fi apelat când componenta este demontată
-      return () => unsubscribe();
-    });
-  }, []);
 
   return (
     <Switch>
