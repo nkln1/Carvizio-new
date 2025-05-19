@@ -21,6 +21,7 @@ import { registerToken, unregisterToken, sendNotification } from './routes/notif
 import { EmailService } from './services/emailService';
 import { authRateLimiter, logSecurityEvent } from './middleware/securityMiddleware';
 import { generateCsrfToken, csrfTokenInjector, csrfProtection } from './middleware/csrfProtection';
+import { registerAdminRoutes } from './routes/admin';
 console.log('EmailService imported successfully:', EmailService ? 'Defined' : 'Undefined');
 
 // Extend the Express Request type to include firebaseUser
