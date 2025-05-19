@@ -2115,7 +2115,9 @@ export class DatabaseStorage implements IStorage {
       console.log(`Verificare credențiale admin pentru username: ${username}`);
       
       // Importăm bcrypt pentru verificarea parolei
-      const bcrypt = require('bcrypt');
+      // Folosim importul dinamic pentru ESM
+      const bcryptModule = await import('bcrypt');
+      const bcrypt = bcryptModule.default;
       
       // Obținem admin după username
       const admin = await db
@@ -2136,7 +2138,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Verificăm parola folosind bcrypt
-      const isValid = await bcrypt.compare(password, admin[0].password);
+      const isValid = await bcryptModule.compare(password, admin[0].password);
       
       if (!isValid) {
         console.log(`Parolă incorectă pentru admin: ${username}`);
