@@ -2,6 +2,10 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { auth, isFirebaseInitialized, sendVerificationEmail } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import FirebaseMessaging from '@/lib/firebaseMessaging';
+import { useLocation } from 'wouter';
+
+// Lista de adrese email cu rol de admin
+const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
 
 interface User {
   id: number;
@@ -32,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [, setLocation] = useLocation();
 
   // Token de autentificare pentru Service Worker
   const [currentIdToken, setCurrentIdToken] = useState<string | null>(null);
@@ -108,6 +113,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   ...userData,
                   emailVerified: firebaseUser.emailVerified
                 });
+                
+                // Verificăm dacă utilizatorul este admin
+                const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email?.toLowerCase() || '');
+                
+                // Dacă este admin, îl redirecționăm către panoul de administrare
+                // dar doar dacă suntem pe o rută care nu e deja cea de admin
+                const currentPath = window.location.pathname;
+                if (isAdmin && !currentPath.startsWith('/admin/dashboard')) {
+                  console.log('Utilizator admin detectat, redirecționare către panoul de administrare');
+                  setLocation('/admin/dashboard');
+                }
                 
                 // Configurăm reînnoirea automată a tokenului
                 if (tokenRefreshCleanup) {
