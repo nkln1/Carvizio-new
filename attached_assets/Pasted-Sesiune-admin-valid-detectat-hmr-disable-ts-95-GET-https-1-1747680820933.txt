@@ -1,0 +1,143 @@
+Sesiune admin validă detectată
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/admin/reviews 429 (Too Many Requests)
+window.fetch @ hmr-disable.ts:95
+queryFn @ Dashboard.tsx:97
+fetchFn @ @tanstack_react-query.js?v=a103fc4a:842
+run @ @tanstack_react-query.js?v=a103fc4a:493
+start @ @tanstack_react-query.js?v=a103fc4a:535
+fetch @ @tanstack_react-query.js?v=a103fc4a:929
+executeFetch_fn @ @tanstack_react-query.js?v=a103fc4a:2247
+onSubscribe @ @tanstack_react-query.js?v=a103fc4a:1934
+subscribe @ @tanstack_react-query.js?v=a103fc4a:24
+(anonymous) @ @tanstack_react-query.js?v=a103fc4a:3075
+subscribeToStore @ chunk-RPCDYKBN.js?v=a103fc4a:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=a103fc4a:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=a103fc4a:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=a103fc4a:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=a103fc4a:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=a103fc4a:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=a103fc4a:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19416
+commitRoot @ chunk-RPCDYKBN.js?v=a103fc4a:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=a103fc4a:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=a103fc4a:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=a103fc4a:18627Understand this error
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/admin/requests 429 (Too Many Requests)
+window.fetch @ hmr-disable.ts:95
+queryFn @ Dashboard.tsx:84
+fetchFn @ @tanstack_react-query.js?v=a103fc4a:842
+run @ @tanstack_react-query.js?v=a103fc4a:493
+start @ @tanstack_react-query.js?v=a103fc4a:535
+fetch @ @tanstack_react-query.js?v=a103fc4a:929
+executeFetch_fn @ @tanstack_react-query.js?v=a103fc4a:2247
+onSubscribe @ @tanstack_react-query.js?v=a103fc4a:1934
+subscribe @ @tanstack_react-query.js?v=a103fc4a:24
+(anonymous) @ @tanstack_react-query.js?v=a103fc4a:3075
+subscribeToStore @ chunk-RPCDYKBN.js?v=a103fc4a:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=a103fc4a:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=a103fc4a:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=a103fc4a:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=a103fc4a:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=a103fc4a:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=a103fc4a:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19416
+commitRoot @ chunk-RPCDYKBN.js?v=a103fc4a:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=a103fc4a:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=a103fc4a:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=a103fc4a:18627Understand this error
+hmr-disable.ts:89 [HMR Disabled] Fetch blocat către: https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev:24678/
+Login.tsx:56 Sesiune admin validă detectată
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/admin/clients 429 (Too Many Requests)
+window.fetch @ hmr-disable.ts:95
+queryFn @ Dashboard.tsx:58
+fetchFn @ @tanstack_react-query.js?v=a103fc4a:842
+run @ @tanstack_react-query.js?v=a103fc4a:493
+start @ @tanstack_react-query.js?v=a103fc4a:535
+fetch @ @tanstack_react-query.js?v=a103fc4a:929
+executeFetch_fn @ @tanstack_react-query.js?v=a103fc4a:2247
+onSubscribe @ @tanstack_react-query.js?v=a103fc4a:1934
+subscribe @ @tanstack_react-query.js?v=a103fc4a:24
+(anonymous) @ @tanstack_react-query.js?v=a103fc4a:3075
+subscribeToStore @ chunk-RPCDYKBN.js?v=a103fc4a:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=a103fc4a:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=a103fc4a:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=a103fc4a:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=a103fc4a:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=a103fc4a:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=a103fc4a:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19416
+commitRoot @ chunk-RPCDYKBN.js?v=a103fc4a:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=a103fc4a:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=a103fc4a:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=a103fc4a:18627Understand this error
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/admin/requests 429 (Too Many Requests)
+window.fetch @ hmr-disable.ts:95
+queryFn @ Dashboard.tsx:84
+fetchFn @ @tanstack_react-query.js?v=a103fc4a:842
+run @ @tanstack_react-query.js?v=a103fc4a:493
+start @ @tanstack_react-query.js?v=a103fc4a:535
+fetch @ @tanstack_react-query.js?v=a103fc4a:929
+executeFetch_fn @ @tanstack_react-query.js?v=a103fc4a:2247
+onSubscribe @ @tanstack_react-query.js?v=a103fc4a:1934
+subscribe @ @tanstack_react-query.js?v=a103fc4a:24
+(anonymous) @ @tanstack_react-query.js?v=a103fc4a:3075
+subscribeToStore @ chunk-RPCDYKBN.js?v=a103fc4a:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=a103fc4a:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=a103fc4a:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=a103fc4a:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=a103fc4a:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=a103fc4a:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=a103fc4a:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19416
+commitRoot @ chunk-RPCDYKBN.js?v=a103fc4a:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=a103fc4a:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=a103fc4a:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=a103fc4a:18627Understand this error
+Login.tsx:56 Sesiune admin validă detectată
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00-2tt25zbu0b2gm.picard.replit.dev/api/admin/clients 429 (Too Many Requests)
+window.fetch @ hmr-disable.ts:95
+queryFn @ Dashboard.tsx:58
+fetchFn @ @tanstack_react-query.js?v=a103fc4a:842
+run @ @tanstack_react-query.js?v=a103fc4a:493
+start @ @tanstack_react-query.js?v=a103fc4a:535
+fetch @ @tanstack_react-query.js?v=a103fc4a:929
+executeFetch_fn @ @tanstack_react-query.js?v=a103fc4a:2247
+onSubscribe @ @tanstack_react-query.js?v=a103fc4a:1934
+subscribe @ @tanstack_react-query.js?v=a103fc4a:24
+(anonymous) @ @tanstack_react-query.js?v=a103fc4a:3075
+subscribeToStore @ chunk-RPCDYKBN.js?v=a103fc4a:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=a103fc4a:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=a103fc4a:18161
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=a103fc4a:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=a103fc4a:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=a103fc4a:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=a103fc4a:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=a103fc4a:19416
+commitRoot @ chunk-RPCDYKBN.js?v=a103fc4a:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=a103fc4a:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=a103fc4a:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=a103fc4a:18627Understand this error
+hmr-disable.ts:95 
+            
+            
+           GET https://1becfc92-d03b-40b1-a1a4-419e8fb5f4bc-00
