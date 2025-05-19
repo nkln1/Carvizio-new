@@ -98,7 +98,7 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   });
   
   // Actualizare stare de verificare a unui client (doar pentru admin)
-  app.patch('/api/admin/clients/:id/verify', validateFirebaseToken, isAdmin, async (req, res) => {
+  app.post('/api/admin/client/:id/verify', validateFirebaseToken, isAdmin, async (req, res) => {
     try {
       const clientId = parseInt(req.params.id, 10);
       const { verified } = req.body;
@@ -113,7 +113,7 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   });
   
   // Actualizare stare de verificare a unui furnizor de servicii (doar pentru admin)
-  app.patch('/api/admin/service-providers/:id/verify', validateFirebaseToken, isAdmin, async (req, res) => {
+  app.post('/api/admin/service-provider/:id/verify', validateFirebaseToken, isAdmin, async (req, res) => {
     try {
       const serviceProviderId = parseInt(req.params.id, 10);
       const { verified } = req.body;
@@ -128,7 +128,7 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   });
   
   // Gestionează raportările de recenzii (doar pentru admin)
-  app.patch('/api/admin/reviews/:id/handle-report', validateFirebaseToken, isAdmin, async (req, res) => {
+  app.post('/api/admin/review/:id/dismiss-report', validateFirebaseToken, isAdmin, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id, 10);
       const { action } = req.body; // 'remove' sau 'dismiss'

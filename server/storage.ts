@@ -207,68 +207,7 @@ async function generateUniqueUsername(companyName: string, db: typeof import('./
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
   
-  // Metode admin
-  async getAllClients(): Promise<any[]> {
-    try {
-      const allClients = await db.select().from(clients);
-      return allClients;
-    } catch (error) {
-      console.error("Eroare la obținerea tuturor clienților:", error);
-      throw error;
-    }
-  }
-  
-  async getAllServiceProviders(): Promise<any[]> {
-    try {
-      const allServiceProviders = await db.select().from(serviceProviders);
-      return allServiceProviders;
-    } catch (error) {
-      console.error("Eroare la obținerea tuturor furnizorilor de servicii:", error);
-      throw error;
-    }
-  }
-  
-  async getAllRequests(): Promise<any[]> {
-    try {
-      const allRequests = await db.select().from(requests);
-      return allRequests;
-    } catch (error) {
-      console.error("Eroare la obținerea tuturor cererilor:", error);
-      throw error;
-    }
-  }
-  
-  async getAllReviews(): Promise<any[]> {
-    try {
-      const allReviews = await db.select().from(reviews);
-      return allReviews;
-    } catch (error) {
-      console.error("Eroare la obținerea tuturor recenziilor:", error);
-      throw error;
-    }
-  }
-  
-  async updateClientVerificationStatus(clientId: number, verified: boolean): Promise<void> {
-    try {
-      await db.update(clients)
-        .set({ verified })
-        .where(eq(clients.id, clientId));
-    } catch (error) {
-      console.error("Eroare la actualizarea statusului de verificare a clientului:", error);
-      throw error;
-    }
-  }
-  
-  async updateServiceProviderVerificationStatus(serviceProviderId: number, verified: boolean): Promise<void> {
-    try {
-      await db.update(serviceProviders)
-        .set({ verified })
-        .where(eq(serviceProviders.id, serviceProviderId));
-    } catch (error) {
-      console.error("Eroare la actualizarea statusului de verificare a furnizorului de servicii:", error);
-      throw error;
-    }
-  }
+  // Metodele admin sunt implementate mai jos
   
   async deleteReview(reviewId: number): Promise<void> {
     try {
@@ -280,16 +219,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async dismissReviewReport(reviewId: number): Promise<void> {
-    try {
-      await db.update(reviews)
-        .set({ reported: false, reportReason: null })
-        .where(eq(reviews.id, reviewId));
-    } catch (error) {
-      console.error("Eroare la respingerea raportării recenziei:", error);
-      throw error;
-    }
-  }
+  // Implementarea completă a metodei dismissReviewReport se află mai jos
   
   async getAdminByEmail(email: string): Promise<any> {
     try {
