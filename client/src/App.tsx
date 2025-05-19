@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,7 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { AdminAuthProvider } from "@/context/AdminAuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
@@ -24,12 +24,59 @@ import TestEmailButton from "@/components/TestEmailButton";
 import TestEmail from "@/pages/TestEmail";
 import AdminLogin from "@/pages/admin/Login";
 import AdminDashboard from "@/pages/admin/Dashboard";
+import { Loader2 } from "lucide-react";
 
 // Nu mai avem nevoie de extensia proprietăților globale window
 // deoarece folosim direct NotificationHelper.handleNotificationEvent()
 // care are propria gestiune a ID-urilor de notificări procesate
 
+// Admin email list
+const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
+
+// Function to check if a user is admin
+function isAdminUser(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
+// Simple component to redirect to admin dashboard if user is admin
+const AdminRedirect = () => {
+  const [, navigate] = useLocation();
+  
+  useEffect(() => {
+    // Verificăm autentificarea
+    const checkAuth = async () => {
+      const user = auth.currentUser;
+      if (user && user.email && isAdminUser(user.email)) {
+        navigate('/admin/dashboard');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+  
+  return null;
+}
+
 function Router() {
+  // Adăugăm un efect care să verifice dacă utilizatorul este admin la fiecare încărcare a paginii
+  useEffect(() => {
+    // Importăm din firebase auth direct - fără require
+    import('@/lib/firebase').then(firebaseModule => {
+      const unsubscribe = firebaseModule.auth.onAuthStateChanged((user: any) => {
+        if (user && user.email && isAdminUser(user.email)) {
+          // Redirecționăm către dashboard-ul de admin dacă există un utilizator logat care este admin
+          if (window.location.pathname !== '/admin/dashboard') {
+            window.location.href = '/admin/dashboard';
+          }
+        }
+      });
+      
+      // Returnăm un cleanup care va fi apelat când componenta este demontată
+      return () => unsubscribe();
+    });
+  }, []);
+
   return (
     <Switch>
       <Route path="/service/:username" component={ServicePublicProfile} />

@@ -66,14 +66,23 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
       // Dacă este admin, redirecționează direct către panoul de administrare
       if (isAdmin) {
+        console.log("Admin login detected:", values.email);
+        // Stocăm într-un localStorage flag pentru a putea verifica acest lucru și în alte părți
+        localStorage.setItem('isAdmin', 'true');
+        
         toast({
           title: "Autentificare reușită",
           description: "Bine ai venit în panoul de administrare!",
         });
-        setLocation("/admin/dashboard");
+        
+        // Folosim window.location pentru o redirecționare completă, mai sigură
+        window.location.href = "/admin/dashboard";
         setIsLoading(false);
         return;
       }
+      
+      // Resetăm flag-ul de admin în caz că nu este un admin
+      localStorage.removeItem('isAdmin');
 
       // Get the Firebase ID token
       const idToken = await userCredential.user.getIdToken();
