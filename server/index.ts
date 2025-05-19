@@ -1,5 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import * as admin from 'firebase-admin';
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { clients, serviceProviders, requests, reviews } from "@shared/schema";
 import { setupVite, serveStatic } from "./vite";
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
@@ -183,6 +187,142 @@ async function checkExpiredOffers() {
   
   // registerRoutes no longer returns a server instance
   registerRoutes(app);
+
+  // Admin Dashboard routes - start
+  // Lista de e-mailuri cu roluri de admin
+  const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
+  
+  // Middleware pentru verificarea dacă utilizatorul este admin
+  const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.firebaseUser) {
+        return res.status(401).json({ message: 'Autentificare necesară' });
+      }
+      
+      const adminEmail = req.firebaseUser.email;
+      
+      if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail)) {
+        return res.status(403).json({ message: 'Nu aveți drepturi de administrator' });
+      }
+      
+      next();
+    } catch (error) {
+      console.error('Eroare la verificarea drepturilor de admin:', error);
+      return res.status(500).json({ message: 'Eroare internă a serverului' });
+    }
+  };
+
+  // Firebase Auth Middleware
+  const validateFirebaseToken = async (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.firebaseUser = decodedToken;
+      next();
+    } catch (error) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+  };
+
+  // Admin routes
+  app.get('/api/admin/clients', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const clients = await db.select().from(clients);
+      res.json(clients);
+    } catch (error) {
+      console.error('Eroare la obținerea listei de clienți:', error);
+      res.status(500).json({ message: 'Eroare la obținerea listei de clienți' });
+    }
+  });
+  
+  app.get('/api/admin/service-providers', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const serviceProviders = await db.select().from(serviceProviders);
+      res.json(serviceProviders);
+    } catch (error) {
+      console.error('Eroare la obținerea listei de furnizori de servicii:', error);
+      res.status(500).json({ message: 'Eroare la obținerea listei de furnizori de servicii' });
+    }
+  });
+  
+  app.get('/api/admin/requests', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const allRequests = await db.select().from(requests);
+      res.json(allRequests);
+    } catch (error) {
+      console.error('Eroare la obținerea listei de cereri:', error);
+      res.status(500).json({ message: 'Eroare la obținerea listei de cereri' });
+    }
+  });
+  
+  app.get('/api/admin/reviews', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const allReviews = await db.select().from(reviews);
+      res.json(allReviews);
+    } catch (error) {
+      console.error('Eroare la obținerea listei de review-uri:', error);
+      res.status(500).json({ message: 'Eroare la obținerea listei de review-uri' });
+    }
+  });
+  
+  app.post('/api/admin/client/:id/verify', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const { verified } = req.body;
+      
+      const updatedClient = await db
+        .update(clients)
+        .set({ verified: verified === true })
+        .where(eq(clients.id, clientId))
+        .returning();
+      
+      res.json(updatedClient[0]);
+    } catch (error) {
+      console.error('Eroare la actualizarea statusului de verificare pentru client:', error);
+      res.status(500).json({ message: 'Eroare la actualizarea statusului de verificare' });
+    }
+  });
+  
+  app.post('/api/admin/service-provider/:id/verify', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const providerId = parseInt(req.params.id);
+      const { verified } = req.body;
+      
+      const updatedProvider = await db
+        .update(serviceProviders)
+        .set({ verified: verified === true })
+        .where(eq(serviceProviders.id, providerId))
+        .returning();
+      
+      res.json(updatedProvider[0]);
+    } catch (error) {
+      console.error('Eroare la actualizarea statusului de verificare pentru furnizor:', error);
+      res.status(500).json({ message: 'Eroare la actualizarea statusului de verificare' });
+    }
+  });
+  
+  app.post('/api/admin/review/:id/dismiss-report', validateFirebaseToken, isAdmin, async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      
+      const updatedReview = await db
+        .update(reviews)
+        .set({ reportStatus: 'dismissed' })
+        .where(eq(reviews.id, reviewId))
+        .returning();
+      
+      res.json(updatedReview[0]);
+    } catch (error) {
+      console.error('Eroare la actualizarea statusului de raportare pentru recenzie:', error);
+      res.status(500).json({ message: 'Eroare la actualizarea statusului de raportare' });
+    }
+  });
+  // Admin Dashboard routes - end
 
   if (app.get("env") === "development") {
     await setupVite(app, server);
