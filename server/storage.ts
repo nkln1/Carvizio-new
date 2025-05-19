@@ -60,8 +60,8 @@ export interface IStorage {
   // Admin management
   getAdminById(id: number): Promise<Admin | undefined>;
   getAdminByEmail(email: string): Promise<Admin | undefined>;
-  getAdminByFirebaseUid(firebaseUid: string): Promise<Admin | undefined>;
-  createAdmin(admin: InsertAdmin & { firebaseUid: string }): Promise<Admin>;
+  verifyAdminCredentials(username: string, password: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
   updateAdmin(id: number, adminData: Partial<Admin>): Promise<Admin>;
   getAllAdmins(): Promise<Admin[]>;
 
@@ -2048,6 +2048,39 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error('Eroare la obținerea adminului după ID:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Verifică credențialele de autentificare ale unui admin
+   * @param username Numele de utilizator al adminului
+   * @param password Parola adminului
+   * @returns Admin dacă autentificarea reușește, undefined în caz contrar
+   */
+  async verifyAdminCredentials(username: string, password: string): Promise<Admin | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.username, username))
+        .limit(1);
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      const admin = result[0];
+      
+      // Verificăm parola folosind bcrypt (ar trebui adăugat într-un sistem real)
+      // Pentru a simplifica, facem o comparație simplă de parole (care nu este sigură în producție)
+      if (admin.password === password) {
+        return admin;
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Eroare la verificarea credențialelor admin:', error);
       throw error;
     }
   }

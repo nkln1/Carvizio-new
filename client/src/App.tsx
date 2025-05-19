@@ -8,7 +8,7 @@ import Navigation from "@/components/layout/Navigation";
 import Contact from "@/pages/Contact";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
-import { AdminAuthProvider } from "@/context/AdminAuthContext";
+import { AdminAuthProvider, useAdminAuth } from "@/context/AdminAuthContext";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ServiceDashboard from "@/pages/ServiceDashboard";
 import ServicePublicProfile from "@/pages/ServicePublicProfile";
