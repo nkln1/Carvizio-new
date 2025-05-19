@@ -211,28 +211,7 @@ async function checkExpiredOffers() {
     }
   };
   
-  // Lista de e-mailuri cu roluri de admin
-  const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
-  
-  // Middleware pentru verificarea dacă utilizatorul este admin
-  const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.firebaseUser) {
-        return res.status(401).json({ message: 'Autentificare necesară' });
-      }
-      
-      const adminEmail = req.firebaseUser.email;
-      
-      if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail)) {
-        return res.status(403).json({ message: 'Nu aveți drepturi de administrator' });
-      }
-      
-      next();
-    } catch (error) {
-      console.error('Eroare la verificarea drepturilor de admin:', error);
-      return res.status(500).json({ message: 'Eroare internă a serverului' });
-    }
-  };
+  // Funcția isAdmin este implementată în routes/admin.ts și utilizată acolo
 
   // Înregistrăm rutele pentru panoul de administrare
   registerAdminRoutes(app, storage, validateFirebaseToken);
