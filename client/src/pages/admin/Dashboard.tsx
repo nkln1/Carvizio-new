@@ -195,35 +195,28 @@ const AdminDashboard: React.FC = () => {
   // Interogări pentru date
   const clientsQuery = useQuery({
     queryKey: ['/api/admin/clients'],
-    queryFn: () => apiRequest('/api/admin/clients', { method: 'GET' }),
     enabled: activeTab === 'clients' || activeTab === 'overview'
   });
   
   const serviceProvidersQuery = useQuery({
     queryKey: ['/api/admin/service-providers'],
-    queryFn: () => apiRequest('/api/admin/service-providers', { method: 'GET' }),
     enabled: activeTab === 'service-providers' || activeTab === 'overview'
   });
   
   const requestsQuery = useQuery({
     queryKey: ['/api/admin/requests'],
-    queryFn: () => apiRequest('/api/admin/requests', { method: 'GET' }),
     enabled: activeTab === 'requests' || activeTab === 'overview'
   });
   
   const reviewsQuery = useQuery({
     queryKey: ['/api/admin/reviews'],
-    queryFn: () => apiRequest('/api/admin/reviews', { method: 'GET' }),
     enabled: activeTab === 'reviews' || activeTab === 'overview'
   });
   
   // Mutații pentru actualizări
   const updateClientVerificationMutation = useMutation({
     mutationFn: ({ clientId, verified }: { clientId: number, verified: boolean }) => {
-      return apiRequest(`/api/admin/clients/${clientId}/verify`, {
-        method: 'PATCH',
-        data: { verified }
-      });
+      return apiRequest('PATCH', `/api/admin/clients/${clientId}/verify`, { verified });
     },
     onSuccess: () => {
       toast({
@@ -243,10 +236,7 @@ const AdminDashboard: React.FC = () => {
   
   const updateServiceProviderVerificationMutation = useMutation({
     mutationFn: ({ serviceProviderId, verified }: { serviceProviderId: number, verified: boolean }) => {
-      return apiRequest(`/api/admin/service-providers/${serviceProviderId}/verify`, {
-        method: 'PATCH',
-        data: { verified }
-      });
+      return apiRequest('PATCH', `/api/admin/service-providers/${serviceProviderId}/verify`, { verified });
     },
     onSuccess: () => {
       toast({
@@ -266,10 +256,7 @@ const AdminDashboard: React.FC = () => {
   
   const handleReviewReportMutation = useMutation({
     mutationFn: ({ reviewId, action }: { reviewId: number, action: 'remove' | 'dismiss' }) => {
-      return apiRequest(`/api/admin/reviews/${reviewId}/handle-report`, {
-        method: 'PATCH',
-        data: { action }
-      });
+      return apiRequest('PATCH', `/api/admin/reviews/${reviewId}/handle-report`, { action });
     },
     onSuccess: () => {
       toast({

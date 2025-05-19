@@ -197,6 +197,169 @@ async function generateUniqueUsername(companyName: string, db: typeof import('./
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
+  
+  // Metode admin
+  async getAllClients(): Promise<any[]> {
+    try {
+      const allClients = await db.select().from(clients);
+      return allClients;
+    } catch (error) {
+      console.error("Eroare la obținerea tuturor clienților:", error);
+      throw error;
+    }
+  }
+  
+  async getAllServiceProviders(): Promise<any[]> {
+    try {
+      const allServiceProviders = await db.select().from(serviceProviders);
+      return allServiceProviders;
+    } catch (error) {
+      console.error("Eroare la obținerea tuturor furnizorilor de servicii:", error);
+      throw error;
+    }
+  }
+  
+  async getAllRequests(): Promise<any[]> {
+    try {
+      const allRequests = await db.select().from(requests);
+      return allRequests;
+    } catch (error) {
+      console.error("Eroare la obținerea tuturor cererilor:", error);
+      throw error;
+    }
+  }
+  
+  async getAllReviews(): Promise<any[]> {
+    try {
+      const allReviews = await db.select().from(reviews);
+      return allReviews;
+    } catch (error) {
+      console.error("Eroare la obținerea tuturor recenziilor:", error);
+      throw error;
+    }
+  }
+  
+  async updateClientVerificationStatus(clientId: number, verified: boolean): Promise<void> {
+    try {
+      await db.update(clients)
+        .set({ verified })
+        .where(eq(clients.id, clientId));
+    } catch (error) {
+      console.error("Eroare la actualizarea statusului de verificare a clientului:", error);
+      throw error;
+    }
+  }
+  
+  async updateServiceProviderVerificationStatus(serviceProviderId: number, verified: boolean): Promise<void> {
+    try {
+      await db.update(serviceProviders)
+        .set({ verified })
+        .where(eq(serviceProviders.id, serviceProviderId));
+    } catch (error) {
+      console.error("Eroare la actualizarea statusului de verificare a furnizorului de servicii:", error);
+      throw error;
+    }
+  }
+  
+  async deleteReview(reviewId: number): Promise<void> {
+    try {
+      await db.delete(reviews)
+        .where(eq(reviews.id, reviewId));
+    } catch (error) {
+      console.error("Eroare la ștergerea recenziei:", error);
+      throw error;
+    }
+  }
+  
+  async dismissReviewReport(reviewId: number): Promise<void> {
+    try {
+      await db.update(reviews)
+        .set({ reported: false, reportReason: null })
+        .where(eq(reviews.id, reviewId));
+    } catch (error) {
+      console.error("Eroare la respingerea raportării recenziei:", error);
+      throw error;
+    }
+  }
+  
+  async getAdminByEmail(email: string): Promise<any> {
+    try {
+      const foundAdmin = await db.select()
+        .from(admins)
+        .where(eq(admins.email, email))
+        .limit(1);
+      
+      return foundAdmin.length > 0 ? foundAdmin[0] : undefined;
+    } catch (error) {
+      console.error("Eroare la obținerea adminului după email:", error);
+      throw error;
+    }
+  }
+  
+  async getAdminById(id: number): Promise<any> {
+    try {
+      const foundAdmin = await db.select()
+        .from(admins)
+        .where(eq(admins.id, id))
+        .limit(1);
+      
+      return foundAdmin.length > 0 ? foundAdmin[0] : undefined;
+    } catch (error) {
+      console.error("Eroare la obținerea adminului după ID:", error);
+      throw error;
+    }
+  }
+  
+  async getAdminByFirebaseUid(firebaseUid: string): Promise<any> {
+    try {
+      const foundAdmin = await db.select()
+        .from(admins)
+        .where(eq(admins.firebaseUid, firebaseUid))
+        .limit(1);
+      
+      return foundAdmin.length > 0 ? foundAdmin[0] : undefined;
+    } catch (error) {
+      console.error("Eroare la obținerea adminului după Firebase UID:", error);
+      throw error;
+    }
+  }
+  
+  async createAdmin(admin: any): Promise<any> {
+    try {
+      const result = await db.insert(admins)
+        .values(admin)
+        .returning();
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error("Eroare la crearea adminului:", error);
+      throw error;
+    }
+  }
+  
+  async updateAdmin(adminId: number, adminData: any): Promise<any> {
+    try {
+      const updatedAdmin = await db.update(admins)
+        .set(adminData)
+        .where(eq(admins.id, adminId))
+        .returning();
+      
+      return updatedAdmin.length > 0 ? updatedAdmin[0] : undefined;
+    } catch (error) {
+      console.error("Eroare la actualizarea adminului:", error);
+      throw error;
+    }
+  }
+  
+  async getAllAdmins(): Promise<any[]> {
+    try {
+      const allAdmins = await db.select().from(admins);
+      return allAdmins;
+    } catch (error) {
+      console.error("Eroare la obținerea tuturor adminilor:", error);
+      throw error;
+    }
+  }
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
