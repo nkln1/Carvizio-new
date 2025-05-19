@@ -19,6 +19,9 @@ import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { UserRole } from "@shared/schema";
 
+// Lista de adrese email cu rol de admin
+const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
+
 const formSchema = z.object({
   email: z.string().email({
     message: "Te rugăm să introduci o adresă de email validă.",
@@ -57,6 +60,20 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         values.email,
         values.password
       );
+
+      // Verifică dacă emailul este în lista de administratori
+      const isAdmin = ADMIN_EMAILS.includes(values.email.toLowerCase());
+
+      // Dacă este admin, redirecționează direct către panoul de administrare
+      if (isAdmin) {
+        toast({
+          title: "Autentificare reușită",
+          description: "Bine ai venit în panoul de administrare!",
+        });
+        setLocation("/admin/dashboard");
+        setIsLoading(false);
+        return;
+      }
 
       // Get the Firebase ID token
       const idToken = await userCredential.user.getIdToken();
