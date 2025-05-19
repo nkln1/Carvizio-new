@@ -54,6 +54,7 @@ const getUserWithRole = (user: any, role: "client" | "service") => {
 };
 
 interface IStorage {
+    // Client și Service Provider
     createClient: any;
     createServiceProvider: any;
     getClientByFirebaseUid: any;
@@ -100,6 +101,19 @@ interface IStorage {
     getWorkingHours: any;
     getServiceProviderByUsername: any;
     createReview: any;
+    
+    // Admin related methods
+    getAdminByFirebaseUid: any;
+    getAdminByEmail: any;
+    getAdminById: any;
+    createAdmin: any;
+    getAllClients: any;
+    getAllServiceProviders: any;
+    getAllRequests: any;
+    getAllReviews: any;
+    updateClientVerificationStatus: any;
+    updateServiceProviderVerificationStatus: any;
+    dismissReviewReport: any;
 }
 
 const getUserDisplayName = async (userId: number, userRole: "client" | "service", storage: IStorage) => {

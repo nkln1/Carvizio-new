@@ -1887,6 +1887,233 @@ export class DatabaseStorage implements IStorage {
       return { expired: 0, requests: [] };
     }
   }
+
+  // Metode pentru administrare
+  
+  /**
+   * Obține un admin după Firebase UID
+   * @param firebaseUid Identificatorul Firebase al adminului
+   * @returns Admin sau undefined dacă nu există
+   */
+  async getAdminByFirebaseUid(firebaseUid: string): Promise<Admin | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.firebaseUid, firebaseUid))
+        .limit(1);
+        
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Eroare la obținerea adminului după Firebase UID:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obține un admin după email
+   * @param email Adresa de email a adminului
+   * @returns Admin sau undefined dacă nu există
+   */
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.email, email))
+        .limit(1);
+        
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Eroare la obținerea adminului după email:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obține un admin după ID
+   * @param id ID-ul adminului
+   * @returns Admin sau undefined dacă nu există
+   */
+  async getAdminById(id: number): Promise<Admin | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.id, id))
+        .limit(1);
+        
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Eroare la obținerea adminului după ID:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Creează un admin nou
+   * @param admin Datele adminului
+   * @returns Adminul creat
+   */
+  async createAdmin(admin: InsertAdmin): Promise<Admin> {
+    try {
+      const [newAdmin] = await db
+        .insert(admins)
+        .values(admin)
+        .returning();
+        
+      return newAdmin;
+    } catch (error) {
+      console.error('Eroare la crearea adminului:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obține toți clienții din sistem
+   * @returns Lista de clienți
+   */
+  async getAllClients(): Promise<Client[]> {
+    try {
+      return await db
+        .select()
+        .from(clients)
+        .orderBy(clients.createdAt);
+    } catch (error) {
+      console.error('Eroare la obținerea tuturor clienților:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obține toți furnizorii de servicii din sistem
+   * @returns Lista de furnizori de servicii
+   */
+  async getAllServiceProviders(): Promise<ServiceProvider[]> {
+    try {
+      return await db
+        .select()
+        .from(serviceProviders)
+        .orderBy(serviceProviders.createdAt);
+    } catch (error) {
+      console.error('Eroare la obținerea tuturor furnizorilor de servicii:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obține toate cererile din sistem
+   * @returns Lista de cereri
+   */
+  async getAllRequests(): Promise<Request[]> {
+    try {
+      return await db
+        .select()
+        .from(requests)
+        .orderBy(desc(requests.createdAt));
+    } catch (error) {
+      console.error('Eroare la obținerea tuturor cererilor:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obține toate recenziile din sistem
+   * @returns Lista de recenzii
+   */
+  async getAllReviews(): Promise<any[]> {
+    try {
+      return await db
+        .select()
+        .from(reviews)
+        .orderBy(desc(reviews.createdAt));
+    } catch (error) {
+      console.error('Eroare la obținerea tuturor recenziilor:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Actualizează starea de verificare a unui client
+   * @param clientId ID-ul clientului
+   * @param verified Starea de verificare (true/false)
+   * @returns Client actualizat
+   */
+  async updateClientVerificationStatus(clientId: number, verified: boolean): Promise<Client> {
+    try {
+      const [updatedClient] = await db
+        .update(clients)
+        .set({ verified })
+        .where(eq(clients.id, clientId))
+        .returning();
+        
+      return updatedClient;
+    } catch (error) {
+      console.error('Eroare la actualizarea stării de verificare a clientului:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Actualizează starea de verificare a unui furnizor de servicii
+   * @param serviceProviderId ID-ul furnizorului de servicii
+   * @param verified Starea de verificare (true/false)
+   * @returns Furnizor de servicii actualizat
+   */
+  async updateServiceProviderVerificationStatus(serviceProviderId: number, verified: boolean): Promise<ServiceProvider> {
+    try {
+      const [updatedServiceProvider] = await db
+        .update(serviceProviders)
+        .set({ verified })
+        .where(eq(serviceProviders.id, serviceProviderId))
+        .returning();
+        
+      return updatedServiceProvider;
+    } catch (error) {
+      console.error('Eroare la actualizarea stării de verificare a furnizorului de servicii:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Respinge un raport de recenzie
+   * @param reviewId ID-ul recenziei
+   * @returns Recenzia actualizată
+   */
+  async dismissReviewReport(reviewId: number): Promise<any> {
+    try {
+      // Implementare simplificată - în realitate ar putea fi un câmp specific 
+      // pentru a marca raportul ca respins
+      const [updatedReview] = await db
+        .update(reviews)
+        .set({ reportStatus: 'dismissed' })
+        .where(eq(reviews.id, reviewId))
+        .returning();
+        
+      return updatedReview;
+    } catch (error) {
+      console.error('Eroare la respingerea raportului de recenzie:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Șterge o recenzie
+   * @param reviewId ID-ul recenziei
+   * @returns true dacă ștergerea a reușit
+   */
+  async deleteReview(reviewId: number): Promise<boolean> {
+    try {
+      await db
+        .delete(reviews)
+        .where(eq(reviews.id, reviewId));
+        
+      return true;
+    } catch (error) {
+      console.error('Eroare la ștergerea recenziei:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
