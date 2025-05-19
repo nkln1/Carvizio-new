@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useAdminAuth } from '@/context/AdminAuthContext';
 import {
   Tabs,
   TabsContent,
@@ -55,8 +55,12 @@ const Dashboard = () => {
   const clientsQuery = useQuery({
     queryKey: ['/api/admin/clients'],
     queryFn: async () => {
-      const response = await apiRequest('/api/admin/clients', { method: 'GET' });
-      return response || [];
+      const response = await fetch('/api/admin/clients', { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
     },
     enabled: activeTab === 'clients' || activeTab === 'overview'
   });
@@ -64,8 +68,12 @@ const Dashboard = () => {
   const serviceProvidersQuery = useQuery({
     queryKey: ['/api/admin/service-providers'],
     queryFn: async () => {
-      const response = await apiRequest('/api/admin/service-providers', { method: 'GET' });
-      return response || [];
+      const response = await fetch('/api/admin/service-providers', { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
     },
     enabled: activeTab === 'providers' || activeTab === 'overview'
   });
@@ -73,8 +81,12 @@ const Dashboard = () => {
   const requestsQuery = useQuery({
     queryKey: ['/api/admin/requests'],
     queryFn: async () => {
-      const response = await apiRequest('/api/admin/requests', { method: 'GET' });
-      return response || [];
+      const response = await fetch('/api/admin/requests', { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
     },
     enabled: activeTab === 'requests' || activeTab === 'overview'
   });
@@ -82,8 +94,12 @@ const Dashboard = () => {
   const reviewsQuery = useQuery({
     queryKey: ['/api/admin/reviews'],
     queryFn: async () => {
-      const response = await apiRequest('/api/admin/reviews', { method: 'GET' });
-      return response || [];
+      const response = await fetch('/api/admin/reviews', { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
     },
     enabled: activeTab === 'reviews' || activeTab === 'overview'
   });
@@ -91,10 +107,15 @@ const Dashboard = () => {
   // Mutations pentru actualizarea datelor
   const verifyClientMutation = useMutation({
     mutationFn: async ({ clientId, verified }: { clientId: number, verified: boolean }) => {
-      return apiRequest(`/api/admin/client/${clientId}/verify`, {
+      const response = await fetch(`/api/admin/client/${clientId}/verify`, {
         method: 'POST',
-        body: { verified }
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ verified })
       });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/clients'] });
@@ -103,10 +124,15 @@ const Dashboard = () => {
   
   const verifyServiceProviderMutation = useMutation({
     mutationFn: async ({ providerId, verified }: { providerId: number, verified: boolean }) => {
-      return apiRequest(`/api/admin/service-provider/${providerId}/verify`, {
+      const response = await fetch(`/api/admin/service-provider/${providerId}/verify`, {
         method: 'POST',
-        body: { verified }
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ verified })
       });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
@@ -115,9 +141,14 @@ const Dashboard = () => {
   
   const dismissReviewReportMutation = useMutation({
     mutationFn: async ({ reviewId }: { reviewId: number }) => {
-      return apiRequest(`/api/admin/review/${reviewId}/dismiss-report`, {
-        method: 'POST'
+      const response = await fetch(`/api/admin/review/${reviewId}/dismiss-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
       });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/reviews'] });
@@ -194,46 +225,20 @@ const Dashboard = () => {
     );
   };
 
-  // Verificăm dacă utilizatorul are permisiunea de admin
+  // Verificăm dacă utilizatorul are permisiunea de admin folosind AdminAuthContext
+  const { isAdmin, isLoading, adminData, logout } = useAdminAuth();
+  
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      try {
-        const currentUser = auth.currentUser;
-        
-        if (!currentUser || !currentUser.email) {
-          setLocation('/admin/login');
-          toast({
-            title: "Acces interzis",
-            description: "Trebuie să vă autentificați ca administrator.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // Verificam dacă email-ul curent are acces de admin
-        const isAdmin = ADMIN_EMAILS.includes(currentUser.email);
-        
-        if (!isAdmin) {
-          setLocation('/');
-          toast({
-            title: "Acces interzis",
-            description: "Nu aveți permisiunea de a accesa panoul de administrare.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Eroare la verificarea accesului de admin:", error);
-        setLocation('/');
-        toast({
-          title: "Eroare",
-          description: "A apărut o eroare la verificarea permisiunilor.",
-          variant: "destructive",
-        });
-      }
-    };
-    
-    checkAdminAccess();
-  }, [setLocation, toast]);
+    // Dacă nu se încarcă și nu este admin, redirecționăm către pagina de login
+    if (!isLoading && !isAdmin) {
+      setLocation('/admin/login');
+      toast({
+        title: "Acces interzis",
+        description: "Trebuie să vă autentificați ca administrator.",
+        variant: "destructive",
+      });
+    }
+  }, [isLoading, isAdmin, setLocation, toast]);
   
   // Dacă datele sunt în încărcare, afișăm un indicator
   if (clientsQuery.isLoading || serviceProvidersQuery.isLoading || requestsQuery.isLoading || reviewsQuery.isLoading) {
@@ -274,7 +279,9 @@ const Dashboard = () => {
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Panou de administrare</h1>
-        <Button variant="outline" onClick={() => auth.signOut().then(() => setLocation('/'))}>
+        <Button variant="outline" onClick={() => {
+          logout().then(() => setLocation('/admin/login'));
+        }}>
           Deconectare
         </Button>
       </div>
