@@ -5,27 +5,29 @@ import { adminLoginSchema } from '@shared/schema';
 import { z } from 'zod';
 
 // Middleware pentru verificarea dacă utilizatorul este admin folosind token de sesiune
-const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Verificăm dacă există o sesiune admin validă
-    if (!req.session || !req.session.adminId) {
-      return res.status(401).json({ message: 'Autentificare necesară' });
+const createIsAdminMiddleware = (storage: IStorage) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Verificăm dacă există o sesiune admin validă
+      if (!req.session || !req.session.adminId) {
+        return res.status(401).json({ message: 'Autentificare necesară' });
+      }
+      
+      // Verificăm dacă admin-ul există și este activ în baza de date
+      const adminUser = await storage.getAdminById(req.session.adminId);
+      
+      if (!adminUser || !adminUser.isActive) {
+        return res.status(403).json({ message: 'Nu aveți drepturi de administrator sau contul este dezactivat' });
+      }
+      
+      // Admin validat, permitem accesul
+      req.admin = adminUser;
+      next();
+    } catch (error) {
+      console.error('Eroare la verificarea drepturilor de admin:', error);
+      return res.status(500).json({ message: 'Eroare internă a serverului' });
     }
-    
-    // Verificăm dacă admin-ul există și este activ în baza de date
-    const adminUser = await req.storage.getAdminById(req.session.adminId);
-    
-    if (!adminUser || !adminUser.isActive) {
-      return res.status(403).json({ message: 'Nu aveți drepturi de administrator sau contul este dezactivat' });
-    }
-    
-    // Admin validat, permitem accesul
-    req.admin = adminUser;
-    next();
-  } catch (error) {
-    console.error('Eroare la verificarea drepturilor de admin:', error);
-    return res.status(500).json({ message: 'Eroare internă a serverului' });
-  }
+  };
 };
 
 // Adăugăm tipurile necesare pentru Request
@@ -40,6 +42,8 @@ declare global {
 }
 
 export function registerAdminRoutes(app: Express, storage: IStorage, validateFirebaseToken: any): void {
+  // Creăm middleware-ul de admin folosind storage
+  const isAdmin = createIsAdminMiddleware(storage);
   // Rută pentru login admin
   app.post('/api/admin/login', async (req, res) => {
     try {
