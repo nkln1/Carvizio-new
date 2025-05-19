@@ -131,17 +131,8 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   app.post('/api/admin/review/:id/dismiss-report', validateFirebaseToken, isAdmin, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id, 10);
-      const { action } = req.body; // 'remove' sau 'dismiss'
-      
-      if (action === 'remove') {
-        await storage.deleteReview(reviewId);
-        res.json({ message: 'Recenzia a fost ștearsă cu succes' });
-      } else if (action === 'dismiss') {
-        await storage.dismissReviewReport(reviewId);
-        res.json({ message: 'Raportul a fost respins cu succes' });
-      } else {
-        res.status(400).json({ message: 'Acțiune nevalidă' });
-      }
+      await storage.dismissReviewReport(reviewId);
+      res.json({ message: 'Raportul a fost respins cu succes' });
     } catch (error) {
       console.error('Eroare la gestionarea raportului de recenzie:', error);
       res.status(500).json({ message: 'Eroare la gestionarea raportului de recenzie' });
