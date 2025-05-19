@@ -2114,6 +2114,9 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Verificare credențiale admin pentru username: ${username}`);
       
+      // Importăm bcrypt pentru verificarea parolei
+      const bcrypt = require('bcrypt');
+      
       // Obținem admin după username
       const admin = await db
         .select()
@@ -2132,12 +2135,15 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Verificăm parola (în producție ar trebui să folosim bcrypt sau similar)
-      // Notă: În implementarea reală, va trebui să folosim bcrypt.compare sau similar
-      if (admin[0].password !== password) {
+      // Verificăm parola folosind bcrypt
+      const isValid = await bcrypt.compare(password, admin[0].password);
+      
+      if (!isValid) {
         console.log(`Parolă incorectă pentru admin: ${username}`);
         return null;
       }
+      
+      console.log(`Autentificare reușită pentru admin: ${username}`);
       
       // Actualizăm data ultimei autentificări
       const [updatedAdmin] = await db
