@@ -49,6 +49,8 @@ export type MessageRole = z.infer<typeof MessageRole>;
 export const UserRole = z.enum(["client", "service", "admin"]);
 export type UserRole = z.infer<typeof UserRole>;
 
+// Vezi definiția admins mai jos pentru administrarea dashboard-ului
+
 // Base user interface with common properties
 export interface BaseUser {
   id: number;
