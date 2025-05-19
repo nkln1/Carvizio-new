@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -24,62 +24,155 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
 
 // Lista de adrese email cu rol de admin
 const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
 
-// Interfețe pentru tipurile de date
-interface Client {
-  id: number;
-  email: string;
-  name: string;
-  phone: string;
-  county: string;
-  city: string;
-  verified: boolean;
-  createdAt: string;
-}
+// Date de exemplu - acestea vor fi înlocuite cu date reale din API în viitor
+const mockClients = [
+  {
+    id: 1,
+    name: 'Ion Popescu',
+    email: 'ion.popescu@example.com',
+    phone: '0722123456',
+    county: 'București',
+    city: 'București',
+    verified: true,
+    createdAt: '2024-01-15T10:30:00'
+  },
+  {
+    id: 2,
+    name: 'Maria Ionescu',
+    email: 'maria.ionescu@example.com',
+    phone: '0733654321',
+    county: 'Cluj',
+    city: 'Cluj-Napoca',
+    verified: false,
+    createdAt: '2024-02-20T14:45:00'
+  },
+  {
+    id: 3,
+    name: 'Andrei Radu',
+    email: 'andrei.radu@example.com',
+    phone: '0744987654',
+    county: 'Iași',
+    city: 'Iași',
+    verified: true,
+    createdAt: '2024-03-05T09:15:00'
+  }
+];
 
-interface ServiceProvider {
-  id: number;
-  email: string;
-  companyName: string;
-  representativeName: string;
-  phone: string;
-  county: string;
-  city: string;
-  username: string;
-  verified: boolean;
-  createdAt: string;
-}
+const mockServiceProviders = [
+  {
+    id: 1,
+    companyName: 'Auto Service Rapid',
+    representativeName: 'George Dumitrescu',
+    email: 'contact@autoservicerapid.ro',
+    phone: '0723456789',
+    county: 'București',
+    city: 'București',
+    username: 'autoservicerapid',
+    verified: true,
+    createdAt: '2024-01-10T08:00:00'
+  },
+  {
+    id: 2,
+    companyName: 'Service Motoare Expert',
+    representativeName: 'Alexandru Popa',
+    email: 'office@servicemotoare.ro',
+    phone: '0745678901',
+    county: 'Timiș',
+    city: 'Timișoara',
+    username: 'servicemotoare',
+    verified: true,
+    createdAt: '2024-02-15T11:30:00'
+  },
+  {
+    id: 3,
+    companyName: 'Auto Fix Professional',
+    representativeName: 'Mihai Stancu',
+    email: 'contact@autofixpro.ro',
+    phone: '0756789012',
+    county: 'Constanța',
+    city: 'Constanța',
+    username: 'autofixpro',
+    verified: false,
+    createdAt: '2024-03-20T13:45:00'
+  }
+];
 
-interface Request {
-  id: number;
-  clientId: number;
-  title: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  clientName?: string;
-}
+const mockRequests = [
+  {
+    id: 1,
+    clientId: 1,
+    clientName: 'Ion Popescu',
+    title: 'Schimbare ulei și filtre',
+    description: 'Doresc schimbarea uleiului și a filtrelor pentru un Ford Focus 2018',
+    status: 'Active',
+    createdAt: '2024-04-01T10:00:00'
+  },
+  {
+    id: 2,
+    clientId: 2,
+    clientName: 'Maria Ionescu',
+    title: 'Verificare frâne',
+    description: 'Am probleme cu frânele la o Skoda Octavia 2020',
+    status: 'Rezolvat',
+    createdAt: '2024-04-05T14:30:00'
+  },
+  {
+    id: 3,
+    clientId: 3,
+    clientName: 'Andrei Radu',
+    title: 'Diagnoză computer de bord',
+    description: 'Se aprinde becul de motor la un Volkswagen Golf 2019',
+    status: 'Active',
+    createdAt: '2024-04-10T09:15:00'
+  }
+];
 
-interface Review {
-  id: number;
-  serviceProviderId: number;
-  clientId: number;
-  rating: number;
-  comment: string;
-  reported: boolean;
-  reportReason?: string;
-  createdAt: string;
-  serviceProviderName?: string;
-  clientName?: string;
-}
+const mockReviews = [
+  {
+    id: 1,
+    serviceProviderId: 1,
+    serviceProviderName: 'Auto Service Rapid',
+    clientId: 2,
+    clientName: 'Maria Ionescu',
+    rating: 5,
+    comment: 'Servicii excelente, recomand cu încredere!',
+    reported: false,
+    reportReason: null,
+    createdAt: '2024-04-10T16:45:00'
+  },
+  {
+    id: 2,
+    serviceProviderId: 2,
+    serviceProviderName: 'Service Motoare Expert',
+    clientId: 1,
+    clientName: 'Ion Popescu',
+    rating: 4,
+    comment: 'Am rămas mulțumit de servicii, prețuri corecte.',
+    reported: false,
+    reportReason: null,
+    createdAt: '2024-04-12T11:30:00'
+  },
+  {
+    id: 3,
+    serviceProviderId: 3,
+    serviceProviderName: 'Auto Fix Professional',
+    clientId: 3,
+    clientName: 'Andrei Radu',
+    rating: 2,
+    comment: 'Servicii sub așteptări, nu recomand.',
+    reported: true,
+    reportReason: 'Recenzie nepotrivită și neadevărată.',
+    createdAt: '2024-04-15T14:00:00'
+  }
+];
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // Verifică dacă utilizatorul este autentificat și are rol de admin
@@ -88,7 +181,7 @@ const AdminDashboard: React.FC = () => {
       const user = auth.currentUser;
       
       if (!user) {
-        navigate('/admin/login');
+        setLocation('/admin/login');
         return;
       }
       
@@ -99,88 +192,12 @@ const AdminDashboard: React.FC = () => {
           description: 'Nu aveți drepturi de administrator.',
         });
         await auth.signOut();
-        navigate('/admin/login');
+        setLocation('/admin/login');
       }
     };
     
     checkAuthentication();
-  }, [navigate, toast]);
-
-  // Obține clienții din baza de date
-  const { data: clients, isLoading: isLoadingClients } = useQuery({
-    queryKey: ['/api/admin/clients'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/clients', {
-        headers: {
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Eroare la obținerea datelor despre clienți');
-      }
-      
-      return response.json() as Promise<Client[]>;
-    },
-    enabled: !!auth.currentUser
-  });
-
-  // Obține furnizorii de servicii din baza de date
-  const { data: serviceProviders, isLoading: isLoadingServiceProviders } = useQuery({
-    queryKey: ['/api/admin/service-providers'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/service-providers', {
-        headers: {
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Eroare la obținerea datelor despre furnizorii de servicii');
-      }
-      
-      return response.json() as Promise<ServiceProvider[]>;
-    },
-    enabled: !!auth.currentUser
-  });
-
-  // Obține cererile din baza de date
-  const { data: requests, isLoading: isLoadingRequests } = useQuery({
-    queryKey: ['/api/admin/requests'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/requests', {
-        headers: {
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Eroare la obținerea datelor despre cereri');
-      }
-      
-      return response.json() as Promise<Request[]>;
-    },
-    enabled: !!auth.currentUser
-  });
-
-  // Obține recenziile din baza de date
-  const { data: reviews, isLoading: isLoadingReviews } = useQuery({
-    queryKey: ['/api/admin/reviews'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/reviews', {
-        headers: {
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Eroare la obținerea datelor despre recenzii');
-      }
-      
-      return response.json() as Promise<Review[]>;
-    },
-    enabled: !!auth.currentUser
-  });
+  }, [setLocation, toast]);
 
   // Gestionează deconectarea
   const handleLogout = async () => {
@@ -190,7 +207,7 @@ const AdminDashboard: React.FC = () => {
         title: 'Deconectare reușită',
         description: 'V-ați deconectat cu succes.',
       });
-      navigate('/admin/login');
+      setLocation('/admin/login');
     } catch (error) {
       console.error('Eroare la deconectare:', error);
       toast({
@@ -203,12 +220,12 @@ const AdminDashboard: React.FC = () => {
 
   // Statistici pentru pagina de prezentare
   const statistics = {
-    totalClients: clients?.length || 0,
-    totalServiceProviders: serviceProviders?.length || 0,
-    totalRequests: requests?.length || 0,
-    totalReviews: reviews?.length || 0,
-    activeRequests: requests?.filter(r => r.status === 'Active').length || 0,
-    reportedReviews: reviews?.filter(r => r.reported).length || 0
+    totalClients: mockClients.length,
+    totalServiceProviders: mockServiceProviders.length,
+    totalRequests: mockRequests.length,
+    totalReviews: mockReviews.length,
+    activeRequests: mockRequests.filter(r => r.status === 'Active').length,
+    reportedReviews: mockReviews.filter(r => r.reported).length
   };
 
   return (
@@ -295,38 +312,34 @@ const AdminDashboard: React.FC = () => {
                 <CardDescription>Toți clienții înregistrați în platformă</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingClients ? (
-                  <p>Se încarcă...</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Nume</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefon</TableHead>
-                        <TableHead>Județ</TableHead>
-                        <TableHead>Oraș</TableHead>
-                        <TableHead>Verificat</TableHead>
-                        <TableHead>Data Înregistrării</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Nume</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Telefon</TableHead>
+                      <TableHead>Județ</TableHead>
+                      <TableHead>Oraș</TableHead>
+                      <TableHead>Verificat</TableHead>
+                      <TableHead>Data Înregistrării</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockClients.map(client => (
+                      <TableRow key={client.id}>
+                        <TableCell>{client.id}</TableCell>
+                        <TableCell>{client.name}</TableCell>
+                        <TableCell>{client.email}</TableCell>
+                        <TableCell>{client.phone}</TableCell>
+                        <TableCell>{client.county}</TableCell>
+                        <TableCell>{client.city}</TableCell>
+                        <TableCell>{client.verified ? 'Da' : 'Nu'}</TableCell>
+                        <TableCell>{new Date(client.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clients?.map(client => (
-                        <TableRow key={client.id}>
-                          <TableCell>{client.id}</TableCell>
-                          <TableCell>{client.name}</TableCell>
-                          <TableCell>{client.email}</TableCell>
-                          <TableCell>{client.phone}</TableCell>
-                          <TableCell>{client.county}</TableCell>
-                          <TableCell>{client.city}</TableCell>
-                          <TableCell>{client.verified ? 'Da' : 'Nu'}</TableCell>
-                          <TableCell>{new Date(client.createdAt).toLocaleDateString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -339,40 +352,36 @@ const AdminDashboard: React.FC = () => {
                 <CardDescription>Toți furnizorii de servicii înregistrați în platformă</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingServiceProviders ? (
-                  <p>Se încarcă...</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Nume Companie</TableHead>
-                        <TableHead>Reprezentant</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefon</TableHead>
-                        <TableHead>Județ</TableHead>
-                        <TableHead>Oraș</TableHead>
-                        <TableHead>Verificat</TableHead>
-                        <TableHead>Data Înregistrării</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Nume Companie</TableHead>
+                      <TableHead>Reprezentant</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Telefon</TableHead>
+                      <TableHead>Județ</TableHead>
+                      <TableHead>Oraș</TableHead>
+                      <TableHead>Verificat</TableHead>
+                      <TableHead>Data Înregistrării</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockServiceProviders.map(provider => (
+                      <TableRow key={provider.id}>
+                        <TableCell>{provider.id}</TableCell>
+                        <TableCell>{provider.companyName}</TableCell>
+                        <TableCell>{provider.representativeName}</TableCell>
+                        <TableCell>{provider.email}</TableCell>
+                        <TableCell>{provider.phone}</TableCell>
+                        <TableCell>{provider.county}</TableCell>
+                        <TableCell>{provider.city}</TableCell>
+                        <TableCell>{provider.verified ? 'Da' : 'Nu'}</TableCell>
+                        <TableCell>{new Date(provider.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {serviceProviders?.map(provider => (
-                        <TableRow key={provider.id}>
-                          <TableCell>{provider.id}</TableCell>
-                          <TableCell>{provider.companyName}</TableCell>
-                          <TableCell>{provider.representativeName}</TableCell>
-                          <TableCell>{provider.email}</TableCell>
-                          <TableCell>{provider.phone}</TableCell>
-                          <TableCell>{provider.county}</TableCell>
-                          <TableCell>{provider.city}</TableCell>
-                          <TableCell>{provider.verified ? 'Da' : 'Nu'}</TableCell>
-                          <TableCell>{new Date(provider.createdAt).toLocaleDateString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -385,32 +394,28 @@ const AdminDashboard: React.FC = () => {
                 <CardDescription>Toate cererile din platformă</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingRequests ? (
-                  <p>Se încarcă...</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Titlu</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Data Creării</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Titlu</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data Creării</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockRequests.map(request => (
+                      <TableRow key={request.id}>
+                        <TableCell>{request.id}</TableCell>
+                        <TableCell>{request.clientName}</TableCell>
+                        <TableCell>{request.title}</TableCell>
+                        <TableCell>{request.status}</TableCell>
+                        <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {requests?.map(request => (
-                        <TableRow key={request.id}>
-                          <TableCell>{request.id}</TableCell>
-                          <TableCell>{request.clientName}</TableCell>
-                          <TableCell>{request.title}</TableCell>
-                          <TableCell>{request.status}</TableCell>
-                          <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -423,38 +428,34 @@ const AdminDashboard: React.FC = () => {
                 <CardDescription>Toate recenziile din platformă</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingReviews ? (
-                  <p>Se încarcă...</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Furnizor Servicii</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Comentariu</TableHead>
-                        <TableHead>Raportat</TableHead>
-                        <TableHead>Motiv Raportare</TableHead>
-                        <TableHead>Data Creării</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Furnizor Servicii</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Comentariu</TableHead>
+                      <TableHead>Raportat</TableHead>
+                      <TableHead>Motiv Raportare</TableHead>
+                      <TableHead>Data Creării</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockReviews.map(review => (
+                      <TableRow key={review.id} className={review.reported ? 'bg-red-50' : ''}>
+                        <TableCell>{review.id}</TableCell>
+                        <TableCell>{review.serviceProviderName}</TableCell>
+                        <TableCell>{review.clientName}</TableCell>
+                        <TableCell>{review.rating}</TableCell>
+                        <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
+                        <TableCell>{review.reported ? 'Da' : 'Nu'}</TableCell>
+                        <TableCell>{review.reportReason || '-'}</TableCell>
+                        <TableCell>{new Date(review.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {reviews?.map(review => (
-                        <TableRow key={review.id} className={review.reported ? 'bg-red-50' : ''}>
-                          <TableCell>{review.id}</TableCell>
-                          <TableCell>{review.serviceProviderName}</TableCell>
-                          <TableCell>{review.clientName}</TableCell>
-                          <TableCell>{review.rating}</TableCell>
-                          <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
-                          <TableCell>{review.reported ? 'Da' : 'Nu'}</TableCell>
-                          <TableCell>{review.reportReason || '-'}</TableCell>
-                          <TableCell>{new Date(review.createdAt).toLocaleDateString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>

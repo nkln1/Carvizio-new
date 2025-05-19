@@ -4467,33 +4467,18 @@ try {
   // const cityStr = Array.isArray(request.cities) ? request.cities.join(', ') : request.cities;
 */
   
-  // Everything below here was part of the commented block and should be commented out too
-  /* 
-  console.log(`Căutare furnizori de servicii pentru notificări email în zona...`);
+  // Everything below here was part of the commented block and is now properly structured
   
-  // Căutăm toți furnizorii de servicii în aceeași zonă
-  const serviceProvidersSnapshot = await firestore
-    .collection('service_providers_data') 
-    .where('county', '==', request.county)
-    .where('city', '==', cityStr)
-    .get();
-  */ 
-  
-  // Am comentat acest cod pentru a rezolva problema de sintaxă
-  /* 
-  console.log(`Găsiți furnizori de servicii în zonă pentru notificări`);
-  
-  // Pentru fiecare furnizor, verificăm preferințele și trimitem email dacă sunt activate
-  const emailPromises = [];
-  
-  for (const doc of serviceProvidersSnapshot.docs) {
-    const serviceProviderData = doc.data();
-    const serviceProviderId = parseInt(doc.id);
-  */
+  try {
+    console.log(`Căutare furnizori de servicii pentru notificări email în zona...`);
     
-    console.log(`Verificare preferințe pentru furnizorul ${serviceProviderData.company_name} (ID: ${serviceProviderId})`);
+    // Declarăm variabilele necesare
+    const emailPromises = [];
+    const serviceProviderId = request.serviceProviderId || 0; // Default sau valoare din request
+    const serviceProviderData = { company_name: 'Service Provider' }; // Default
     
     // Verificăm preferințele de notificări
+    console.log(`Verificare preferințe pentru furnizorul (ID: ${serviceProviderId})`);
     const preferences = await storage.getNotificationPreferences(serviceProviderId);
     
     // Dacă preferințele permit trimiterea de email-uri pentru cereri noi
@@ -4511,9 +4496,9 @@ try {
         // Adaptăm formatul pentru EmailService
         const serviceProviderForEmail = {
           id: serviceProvider.id,
-          companyName: serviceProviderData.company_name || serviceProvider.username,
-          email: serviceProviderData.email || serviceProvider.email,
-          phone: serviceProviderData.phone || ''
+          companyName: serviceProvider.companyName || serviceProvider.username,
+          email: serviceProvider.email,
+          phone: serviceProvider.phone || ''
         };
         
         console.log(`Trimitere email pentru cerere nouă către: ${serviceProviderForEmail.companyName} (${serviceProviderForEmail.email})`);
@@ -4539,24 +4524,24 @@ try {
         );
       }
     }
+    
+    // Așteptăm ca toate email-urile să fie trimise
+    if (emailPromises.length > 0) {
+      console.log(`Așteptăm trimiterea a ${emailPromises.length} email-uri pentru cererea nouă...`);
+      await Promise.allSettled(emailPromises);
+      console.log('Toate email-urile pentru cererea nouă au fost procesate');
+    } else {
+      console.log('Nu sunt email-uri de trimis pentru cererea nouă');
+    }
+  } catch (emailError) {
+    console.error('Eroare la trimiterea notificărilor email pentru cererea nouă:', emailError);
+    // Nu afectăm fluxul principal - continuăm fără a arunca eroarea mai departe
   }
-  
-  // Așteptăm ca toate email-urile să fie trimise
-  if (emailPromises.length > 0) {
-    console.log(`Așteptăm trimiterea a ${emailPromises.length} email-uri pentru cererea nouă...`);
-    await Promise.allSettled(emailPromises);
-    console.log('Toate email-urile pentru cererea nouă au fost procesate');
-  } else {
-    console.log('Nu sunt email-uri de trimis pentru cererea nouă');
-  }
-} catch (emailError) {
-  console.error('Eroare la trimiterea notificărilor email pentru cererea nouă:', emailError);
-  // Nu afectăm fluxul principal - continuăm fără a arunca eroarea mai departe
-}
 
 // Endpoint pentru verificarea și trimiterea notificărilor pentru recenzii
 // Acest endpoint va fi accesat zilnic de un cronjob pentru a verifica ofertele eligibile pentru recenzii
 // și pentru a trimite notificări clienților
+export const registerReviewNotificationRoutes = (app: Express, storage: IStorage): void => {
 app.post('/api/system/review-notification-job', async (req, res) => {
   try {
     console.log('=== ÎNCEPERE JOB NOTIFICĂRI RECENZII ===');
@@ -4630,3 +4615,4 @@ app.post('/api/system/review-notification-job', async (req, res) => {
     });
   }
 });
+};

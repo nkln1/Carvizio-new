@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,7 @@ const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // Verifică dacă utilizatorul este deja autentificat
@@ -29,12 +29,12 @@ const AdminLogin: React.FC = () => {
     const checkAuth = async () => {
       const user = auth.currentUser;
       if (user && ADMIN_EMAILS.includes(user.email || '')) {
-        navigate('/admin/dashboard');
+        setLocation('/admin/dashboard');
       }
     };
     
     checkAuth();
-  }, [navigate]);
+  }, [setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +68,7 @@ const AdminLogin: React.FC = () => {
         description: 'Bine ați venit în dashboard-ul de administrare.',
       });
       
-      navigate('/admin/dashboard');
+      setLocation('/admin/dashboard');
     } catch (error) {
       console.error('Eroare la autentificare:', error);
       
