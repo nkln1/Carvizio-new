@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Router, useLocation } from 'react-router-dom';
 import { fetchWithCsrf } from '@/lib/csrfToken';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -35,11 +36,23 @@ const formSchema = z.object({
   }),
 });
 
+// Funcție ajutătoare pentru a înlocui useNavigate când nu avem Router
+const useCustomNavigate = () => {
+  // Verificăm dacă suntem în producție sau nu
+  const inBrowser = typeof window !== 'undefined';
+  
+  return (path) => {
+    if (inBrowser) {
+      window.location.href = path;
+    }
+  };
+};
+
 export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loginSuccess, setLoginSuccess] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useCustomNavigate(); // Folosim o funcție simplă în loc de useNavigate
   const { isAdmin, isLoading: authLoading } = useAdminAuth();
 
   // Verificăm dacă utilizatorul este deja autentificat ca admin
