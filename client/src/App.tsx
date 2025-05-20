@@ -30,29 +30,7 @@ import { Loader2 } from "lucide-react";
 // deoarece folosim direct NotificationHelper.handleNotificationEvent()
 // care are propria gestiune a ID-urilor de notificări procesate
 
-// Admin email list
-const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
-
-// Function to check if a user is admin
-function isAdminUser(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase());
-}
-
-// Simple component to redirect to admin dashboard if user is admin
-const AdminRedirect = () => {
-  const [, navigate] = useLocation();
-  const { isAdmin, isLoading } = useAdminAuth();
-  
-  useEffect(() => {
-    // Verificăm dacă utilizatorul este deja autentificat ca admin
-    if (!isLoading && isAdmin) {
-      navigate('/admin/dashboard');
-    }
-  }, [isAdmin, isLoading, navigate]);
-  
-  return null;
-}
+// Eliminăm funcțiile de verificare și redirecționare pentru admin
 
 function Router() {
 
@@ -78,7 +56,7 @@ function Router() {
 const AppInitializer: React.FC = () => {
   const [webSocketInitialized, setWebSocketInitialized] = React.useState(false);
   const [csrfInitialized, setCsrfInitialized] = React.useState(false);
-  
+
   React.useEffect(() => {
     console.log("[App] Încărcare aplicație...");
 
@@ -104,7 +82,7 @@ const AppInitializer: React.FC = () => {
         // Importăm dinammic modulele
         const NotificationHelperModule = await import("./lib/notifications");
         const NotificationHelper = NotificationHelperModule.default;
-        
+
         // Flag pentru a urmări dacă avem permisiunea utilizatorului
         let hasPermission = false;
 
@@ -171,7 +149,7 @@ const AppInitializer: React.FC = () => {
             };
 
             window.addEventListener('test-notification', testNotificationHandler);
-            
+
             // Doar afișăm un mesaj în consolă că notificările sunt active, fără a afișa notificări inițiale
             if (hasPermission) {
               console.log("Notificările sunt active și configurate corect");
@@ -198,16 +176,16 @@ const AppInitializer: React.FC = () => {
                 const firebaseModule = await import('./lib/firebase');
                 const auth = firebaseModule.auth;
                 let token = null;
-                
+
                 if (auth.currentUser) {
                   token = await auth.currentUser.getIdToken();
                 }
-                
+
                 const headers: Record<string, string> = {};
                 if (token) {
                   headers['Authorization'] = `Bearer ${token}`;
                 }
-                
+
                 const response = await fetch('/api/messages/unread', { headers });
 
                 if (response.ok) {
@@ -216,13 +194,13 @@ const AppInitializer: React.FC = () => {
                     // Procesăm mesajele noi, dar doar unul pentru a evita spam-ul cu notificări
                     // Acest mecanism este doar un fallback când WebSocket nu funcționează
                     console.log(`Fallback mechanism: ${data.newMessages.length} new messages found`);
-                    
+
                     // Folosim întotdeauna doar primul mesaj pentru notificare pentru a reduce zgomotul
                     const firstMessage = data.newMessages[0];
-                    
+
                     // Generăm un ID unic pentru notificare
                     const notificationId = `fallback-msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-                    
+
                     // Creăm un eveniment de notificare și delegăm gestiunea către NotificationHelper
                     // pentru a beneficia de mecanismul existent de prevenire a duplicatelor
                     const notificationEvent = {
@@ -232,7 +210,7 @@ const AppInitializer: React.FC = () => {
                         content: `Aveți ${data.newMessages.length} mesaje necitite`
                       }
                     };
-                    
+
                     // Folosim handleNotificationEvent pentru a beneficia de logica de deduplicare
                     console.log(`Afișăm notificare fallback pentru ${data.newMessages.length} mesaje necitite`);
                     NotificationHelper.handleNotificationEvent(notificationEvent);

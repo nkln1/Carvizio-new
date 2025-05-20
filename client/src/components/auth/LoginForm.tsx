@@ -20,6 +20,8 @@ import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { UserRole } from "@shared/schema";
 
+// Eliminăm orice referință la lista de adrese email cu rol de admin
+
 const formSchema = z.object({
   email: z.string().email({
     message: "Te rugăm să introduci o adresă de email validă.",
