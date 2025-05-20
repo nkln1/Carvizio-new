@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,9 +19,6 @@ import { Mail, Lock } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { UserRole } from "@shared/schema";
-
-// Lista de adrese email cu rol de admin
-const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
 
 const formSchema = z.object({
   email: z.string().email({
@@ -60,28 +58,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         values.email,
         values.password
       );
-
-      // Verifică dacă emailul este în lista de administratori
-      const isAdmin = ADMIN_EMAILS.includes(values.email.toLowerCase());
-
-      // Dacă este admin, redirecționează direct către pagina de login admin
-      // Aceasta va verifica apoi autentificarea din nou și va face redirecționarea finală
-      if (isAdmin) {
-        console.log("Admin login detected:", values.email);
-        
-        toast({
-          title: "Autentificare reușită",
-          description: "Te redirecționăm către panoul de administrare...",
-        });
-        
-        // Redirecționăm către pagina de login admin, care va verifica autentificarea
-        setTimeout(() => {
-          window.location.href = "/admin/login";
-        }, 1000);
-        
-        setIsLoading(false);
-        return;
-      }
 
       // Get the Firebase ID token
       const idToken = await userCredential.user.getIdToken();
