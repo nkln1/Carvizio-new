@@ -23,6 +23,26 @@ const AdminAuthContext = createContext<AdminAuthContextType>({
 
 export const useAdminAuth = () => useContext(AdminAuthContext);
 
+// Funcție helper pentru a reîmprospăta token-ul CSRF
+const refreshCsrfToken = async () => {
+  try {
+    const response = await fetch('/api/csrf-token', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
+    if (!response.ok) {
+      console.error('Eroare la obținerea token-ului CSRF:', await response.text());
+    }
+    return response.ok;
+  } catch (error) {
+    console.error('Eroare la reîmprospătarea token-ului CSRF:', error);
+    return false;
+  }
+};
+
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [adminData, setAdminData] = useState<Admin | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);

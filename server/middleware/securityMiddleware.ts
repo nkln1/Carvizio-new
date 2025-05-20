@@ -13,25 +13,25 @@ import rateLimit from 'express-rate-limit';
 export const securityHeaders = (req: Request, res: Response, next: NextFunction) => {
   // Previne atacurile de tip clickjacking
   res.setHeader('X-Frame-Options', 'DENY');
-  
+
   // Previne atacurile de tip MIME-sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  
+
   // Activează XSS Protection în browsere
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  
+
   // Content Security Policy temporar dezactivat pentru a evita probleme cu interfața
   // Vom implementa o versiune mai bine configurată după ce toate problemele sunt rezolvate
   // res.setHeader(
   //   'Content-Security-Policy',
   //   "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data: 'unsafe-inline';"
   // );
-  
+
   // Strict Transport Security (doar în producție)
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
-  
+
   next();
 };
 
@@ -57,12 +57,12 @@ export const generalRateLimiter = rateLimit({
 export const securityLogger = (req: Request, res: Response, next: NextFunction) => {
   const { method, path, ip } = req;
   const userInfo = req.firebaseUser ? `User ID: ${req.firebaseUser.uid}` : 'Unauthenticated';
-  
+
   // Log pentru acțiuni sensibile
   if (path.includes('/auth/') || path.includes('/admin/') || method !== 'GET') {
     console.log(`[SECURITY] ${new Date().toISOString()} | ${method} ${path} | ${ip} | ${userInfo}`);
   }
-  
+
   next();
 };
 
@@ -75,7 +75,7 @@ export function logSecurityEvent(type: string, details: string, req: Request, us
     userId,
     ipAddress: req.ip
   };
-  
+
   console.log(`[SECURITY EVENT] ${JSON.stringify(logEntry)}`);
 }
 
@@ -95,6 +95,21 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
           .replace(/\//g, '&#x2F;');
       }
     });
+  }
+  next();
+};
+
+// Middleware pentru verificarea dacă utilizatorul este autentificat
+export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  // Verificăm dacă este o sesiune admin validă (pentru a permite accesul din admin panel)
+  if (req.session && req.session.adminId) {
+    console.log('Sesiune admin validă detectată în middleware de autentificare');
+    return next();
+  }
+
+  // Dacă nu este admin, verificăm autentificarea Firebase normală
+  if (!req.firebaseUser) {
+    return res.status(401).json({ error: 'Autentificare necesară' });
   }
   next();
 };
