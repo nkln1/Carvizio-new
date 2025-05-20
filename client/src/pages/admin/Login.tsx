@@ -40,28 +40,45 @@ const AdminLogin: React.FC = () => {
 
   // Verifică dacă există sesiune activă de admin
   useEffect(() => {
-    const checkAdminSession = async () => {
-      try {
-        const response = await fetch('/api/admin/check-session', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include' // Important pentru sesiune
-        });
-        
-        const data = await response.json();
-        
-        if (data.authenticated) {
-          console.log('Sesiune admin validă detectată');
-          setLocation('/admin/dashboard');
-        }
-      } catch (error) {
-        console.error('Eroare la verificarea sesiunii:', error);
-      }
-    };
+    // Verifică mai întâi localStorage pentru a evita cereri inutile
+    const adminId = localStorage.getItem('adminId');
+    const adminUsername = localStorage.getItem('adminUsername');
     
-    checkAdminSession();
+    if (adminId && adminUsername) {
+      console.log('Sesiune admin potențială detectată în localStorage');
+      
+      // Verifică sesiunea pe server doar dacă există date în localStorage
+      const checkAdminSession = async () => {
+        try {
+          // Adăugăm un timestamp pentru a evita cache-ul browserului
+          const response = await fetch(`/api/admin/check-session?t=${Date.now()}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate'
+            },
+            credentials: 'include' // Important pentru sesiune
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.authenticated) {
+              console.log('Sesiune admin validă confirmată de server');
+              setLocation('/admin/dashboard');
+            } else {
+              // Curăță localStorage dacă serverul nu confirmă sesiunea
+              localStorage.removeItem('adminId');
+              localStorage.removeItem('adminUsername');
+            }
+          }
+        } catch (error) {
+          console.error('Eroare la verificarea sesiunii:', error);
+        }
+      };
+      
+      checkAdminSession();
+    }
   }, [setLocation]);
 
   const onSubmit = async (values: LoginFormValues) => {

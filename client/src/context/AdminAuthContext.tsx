@@ -30,43 +30,70 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Verifică sesiunea admin la încărcarea paginii
   useEffect(() => {
+    let isMounted = true;
     const checkAdminSession = async () => {
       try {
+        // Asigurăm-ne că avem un token CSRF valid înainte de a face cererea
+        await refreshCsrfToken();
+        
         // Folosim fetchWithCsrf pentru a gestiona automat token-ul CSRF
-        const response = await fetchWithCsrf('/api/admin/check-session', {
+        // Adăugăm un timestamp pentru a preveni cache-ul
+        const response = await fetchWithCsrf(`/api/admin/check-session?t=${Date.now()}`, {
           method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          }
         });
         
-        const data = await response.json();
+        if (!isMounted) return;
         
-        if (data.authenticated && data.admin) {
-          setAdminData({
-            id: data.admin.id,
-            username: data.admin.username
-          });
-          setIsAdmin(true);
+        if (response.ok) {
+          const data = await response.json();
           
-          // Salvăm și în localStorage ca backup
-          localStorage.setItem('adminId', data.admin.id.toString());
-          localStorage.setItem('adminUsername', data.admin.username);
+          if (data.authenticated && data.admin) {
+            setAdminData({
+              id: data.admin.id,
+              username: data.admin.username
+            });
+            setIsAdmin(true);
+            
+            // Salvăm și în localStorage ca backup
+            localStorage.setItem('adminId', data.admin.id.toString());
+            localStorage.setItem('adminUsername', data.admin.username);
+          } else {
+            setAdminData(null);
+            setIsAdmin(false);
+            
+            // Curățăm localStorage
+            localStorage.removeItem('adminId');
+            localStorage.removeItem('adminUsername');
+          }
         } else {
+          // Dacă răspunsul nu este ok, presupunem că nu avem sesiune validă
           setAdminData(null);
           setIsAdmin(false);
-          
-          // Curățăm localStorage
           localStorage.removeItem('adminId');
           localStorage.removeItem('adminUsername');
         }
       } catch (error) {
+        if (!isMounted) return;
         console.error('Eroare la verificarea sesiunii admin:', error);
         setAdminData(null);
         setIsAdmin(false);
+        localStorage.removeItem('adminId');
+        localStorage.removeItem('adminUsername');
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     checkAdminSession();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Funcție pentru logout

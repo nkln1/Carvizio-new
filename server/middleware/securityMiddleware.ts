@@ -38,7 +38,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
 // Middleware pentru limitarea ratei de încercări la autentificare
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minute
-  max: 5, // 5 încercări per IP în fereastra de timp
+  max: 20, // 20 încercări per IP în fereastra de timp (mărit de la 5)
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Prea multe încercări de autentificare. Vă rugăm încercați din nou peste 15 minute.' },
@@ -47,7 +47,7 @@ export const authRateLimiter = rateLimit({
 // Middleware pentru limitarea ratei de cereri generale
 export const generalRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minut
-  max: 100, // 100 cereri per IP per minut
+  max: 300, // 300 cereri per IP per minut (mărit de la 100)
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Prea multe cereri. Vă rugăm încercați din nou mai târziu.' },
