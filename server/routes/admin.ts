@@ -147,11 +147,12 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   app.get('/api/admin/clients', isAdmin, async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 100); // Limităm la maxim 100
+      const search = req.query.search as string || '';
       const offset = (page - 1) * limit;
 
-      const clients = await storage.getAllClientsPaginated(offset, limit);
-      const totalClients = await storage.getTotalClientsCount();
+      const clients = await storage.getAllClientsPaginated(offset, limit, search);
+      const totalClients = await storage.getTotalClientsCount(search);
       
       res.json({
         clients,
@@ -232,11 +233,12 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
   app.get('/api/admin/service-providers', isAdmin, async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 100); // Limităm la maxim 100
+      const search = req.query.search as string || '';
       const offset = (page - 1) * limit;
 
-      const serviceProviders = await storage.getAllServiceProvidersPaginated(offset, limit);
-      const totalProviders = await storage.getTotalServiceProvidersCount();
+      const serviceProviders = await storage.getAllServiceProvidersPaginated(offset, limit, search);
+      const totalProviders = await storage.getTotalServiceProvidersCount(search);
       
       res.json({
         serviceProviders,
