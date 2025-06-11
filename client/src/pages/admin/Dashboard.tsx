@@ -50,6 +50,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   // Pagination states
   const [clientsPage, setClientsPage] = useState(1);
@@ -230,6 +232,12 @@ const Dashboard = () => {
         }
       }
     );
+  };
+
+  // Handler pentru afișarea detaliilor unei cereri
+  const handleViewRequest = (request: any) => {
+    setSelectedRequest(request);
+    setShowRequestDialog(true);
   };
 
   // Verificăm dacă utilizatorul are permisiunea de admin folosind AdminAuthContext
@@ -502,7 +510,13 @@ const Dashboard = () => {
                       <TableCell>{request.status}</TableCell>
                       <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewRequest(request)}
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
                           Detalii
                         </Button>
                       </TableCell>
@@ -619,6 +633,43 @@ const Dashboard = () => {
                   Respinge raport
                 </AlertDialogAction>
               )}
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Dialog pentru detalii cerere */}
+      {selectedRequest && (
+        <AlertDialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
+          <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Detalii cerere</AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="mt-2 space-y-2">
+                  <p><strong>ID:</strong> {selectedRequest.id}</p>
+                  <p><strong>Titlu:</strong> {selectedRequest.title}</p>
+                  <p><strong>Client:</strong> {selectedRequest.clientName}</p>
+                  <p><strong>Status:</strong> {selectedRequest.status}</p>
+                  <p><strong>Creat la:</strong> {new Date(selectedRequest.createdAt).toLocaleString()}</p>
+                  {selectedRequest.preferredDate && (
+                    <p><strong>Data preferată:</strong> {new Date(selectedRequest.preferredDate).toLocaleDateString()}</p>
+                  )}
+                  {selectedRequest.location && (
+                    <p><strong>Locație:</strong> {selectedRequest.location}</p>
+                  )}
+                  {selectedRequest.description && (
+                    <>
+                      <p><strong>Descriere:</strong></p>
+                      <div className="max-h-40 overflow-y-auto rounded-md bg-muted p-2 whitespace-pre-line">
+                        {selectedRequest.description}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Închide</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
