@@ -65,13 +65,18 @@ const Dashboard = () => {
   const [providersPage, setProvidersPage] = useState(1);
   const [requestsPage, setRequestsPage] = useState(1);
   const [reviewsPage, setReviewsPage] = useState(1);
-  const itemsPerPage = 10;
+  
+  // Items per page states pentru fiecare secțiune
+  const [clientsItemsPerPage, setClientsItemsPerPage] = useState(10);
+  const [providersItemsPerPage, setProvidersItemsPerPage] = useState(10);
+  const [requestsItemsPerPage, setRequestsItemsPerPage] = useState(10);
+  const [reviewsItemsPerPage, setReviewsItemsPerPage] = useState(10);
 
   // Interogări pentru date cu paginație
   const clientsQuery = useQuery({
-    queryKey: ['/api/admin/clients', clientsPage],
+    queryKey: ['/api/admin/clients', clientsPage, clientsItemsPerPage],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/clients?page=${clientsPage}&limit=${itemsPerPage}`, { 
+      const response = await fetch(`/api/admin/clients?page=${clientsPage}&limit=${clientsItemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -82,9 +87,9 @@ const Dashboard = () => {
   });
 
   const serviceProvidersQuery = useQuery({
-    queryKey: ['/api/admin/service-providers', providersPage],
+    queryKey: ['/api/admin/service-providers', providersPage, providersItemsPerPage],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/service-providers?page=${providersPage}&limit=${itemsPerPage}`, { 
+      const response = await fetch(`/api/admin/service-providers?page=${providersPage}&limit=${providersItemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -95,9 +100,9 @@ const Dashboard = () => {
   });
 
   const requestsQuery = useQuery({
-    queryKey: ['/api/admin/requests', requestsPage],
+    queryKey: ['/api/admin/requests', requestsPage, requestsItemsPerPage],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/requests?page=${requestsPage}&limit=${itemsPerPage}`, { 
+      const response = await fetch(`/api/admin/requests?page=${requestsPage}&limit=${requestsItemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -108,9 +113,9 @@ const Dashboard = () => {
   });
 
   const reviewsQuery = useQuery({
-    queryKey: ['/api/admin/reviews', reviewsPage],
+    queryKey: ['/api/admin/reviews', reviewsPage, reviewsItemsPerPage],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/reviews?page=${reviewsPage}&limit=${itemsPerPage}`, { 
+      const response = await fetch(`/api/admin/reviews?page=${reviewsPage}&limit=${reviewsItemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -391,12 +396,11 @@ const Dashboard = () => {
                   Total: {clientsPagination?.total || clientsData.length} clienți
                 </div>
                 <Select 
-                  value={itemsPerPage.toString()} 
+                  value={clientsItemsPerPage.toString()} 
                   onValueChange={(value) => {
                     const newItemsPerPage = Number(value);
-                    const newTotalPages = Math.ceil((clientsPagination?.total || clientsData.length) / newItemsPerPage);
+                    setClientsItemsPerPage(newItemsPerPage);
                     setClientsPage(1); // Reset la prima pagină
-                    // Note: itemsPerPage este folosit în toate secțiunile, dar ar trebui să avem state separat pentru fiecare
                   }}
                 >
                   <SelectTrigger className="w-[180px]">
@@ -455,11 +459,11 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru clienți */}
-              {(clientsPagination || clientsData.length >= itemsPerPage) && (
+              {(clientsPagination || clientsData.length >= clientsItemsPerPage) && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {clientsPagination?.currentPage || clientsPage} din {clientsPagination?.totalPages || Math.ceil((clientsPagination?.total || clientsData.length) / itemsPerPage)}
+                      Pagina {clientsPagination?.currentPage || clientsPage} din {clientsPagination?.totalPages || Math.ceil((clientsPagination?.total || clientsData.length) / clientsItemsPerPage)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       ({clientsPagination?.total || clientsData.length} clienți în total)
@@ -479,7 +483,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setClientsPage(prev => prev + 1)}
-                      disabled={clientsPagination ? !clientsPagination.hasNext : clientsPage >= Math.ceil(clientsData.length / itemsPerPage)}
+                      disabled={clientsPagination ? !clientsPagination.hasNext : clientsPage >= Math.ceil(clientsData.length / clientsItemsPerPage)}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
@@ -505,9 +509,10 @@ const Dashboard = () => {
                   Total: {providersPagination?.total || providersData.length} furnizori
                 </div>
                 <Select 
-                  value={itemsPerPage.toString()} 
+                  value={providersItemsPerPage.toString()} 
                   onValueChange={(value) => {
                     const newItemsPerPage = Number(value);
+                    setProvidersItemsPerPage(newItemsPerPage);
                     setProvidersPage(1); // Reset la prima pagină
                   }}
                 >
@@ -569,11 +574,11 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru furnizori */}
-              {(providersPagination || providersData.length >= itemsPerPage) && (
+              {(providersPagination || providersData.length >= providersItemsPerPage) && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {providersPagination?.currentPage || providersPage} din {providersPagination?.totalPages || Math.ceil((providersPagination?.total || providersData.length) / itemsPerPage)}
+                      Pagina {providersPagination?.currentPage || providersPage} din {providersPagination?.totalPages || Math.ceil((providersPagination?.total || providersData.length) / providersItemsPerPage)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       ({providersPagination?.total || providersData.length} furnizori în total)
@@ -593,7 +598,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setProvidersPage(prev => prev + 1)}
-                      disabled={providersPagination ? !providersPagination.hasNext : providersPage >= Math.ceil(providersData.length / itemsPerPage)}
+                      disabled={providersPagination ? !providersPagination.hasNext : providersPage >= Math.ceil(providersData.length / providersItemsPerPage)}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
@@ -619,9 +624,10 @@ const Dashboard = () => {
                   Total: {requestsPagination?.total || requestsData.length} cereri
                 </div>
                 <Select 
-                  value={itemsPerPage.toString()} 
+                  value={requestsItemsPerPage.toString()} 
                   onValueChange={(value) => {
                     const newItemsPerPage = Number(value);
+                    setRequestsItemsPerPage(newItemsPerPage);
                     setRequestsPage(1); // Reset la prima pagină
                   }}
                 >
@@ -672,11 +678,11 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru cereri */}
-              {(requestsPagination || requestsData.length >= itemsPerPage) && (
+              {(requestsPagination || requestsData.length >= requestsItemsPerPage) && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {requestsPagination?.currentPage || requestsPage} din {requestsPagination?.totalPages || Math.ceil((requestsPagination?.total || requestsData.length) / itemsPerPage)}
+                      Pagina {requestsPagination?.currentPage || requestsPage} din {requestsPagination?.totalPages || Math.ceil((requestsPagination?.total || requestsData.length) / requestsItemsPerPage)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       ({requestsPagination?.total || requestsData.length} cereri în total)
@@ -696,7 +702,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setRequestsPage(prev => prev + 1)}
-                      disabled={requestsPagination ? !requestsPagination.hasNext : requestsPage >= Math.ceil(requestsData.length / itemsPerPage)}
+                      disabled={requestsPagination ? !requestsPagination.hasNext : requestsPage >= Math.ceil(requestsData.length / requestsItemsPerPage)}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
@@ -722,9 +728,10 @@ const Dashboard = () => {
                   Total: {reviewsPagination?.total || reviewsData.length} recenzii
                 </div>
                 <Select 
-                  value={itemsPerPage.toString()} 
+                  value={reviewsItemsPerPage.toString()} 
                   onValueChange={(value) => {
                     const newItemsPerPage = Number(value);
+                    setReviewsItemsPerPage(newItemsPerPage);
                     setReviewsPage(1); // Reset la prima pagină
                   }}
                 >
@@ -797,11 +804,11 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru recenzii */}
-              {(reviewsPagination || reviewsData.length >= itemsPerPage) && (
+              {(reviewsPagination || reviewsData.length >= reviewsItemsPerPage) && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {reviewsPagination?.currentPage || reviewsPage} din {reviewsPagination?.totalPages || Math.ceil((reviewsPagination?.total || reviewsData.length) / itemsPerPage)}
+                      Pagina {reviewsPagination?.currentPage || reviewsPage} din {reviewsPagination?.totalPages || Math.ceil((reviewsPagination?.total || reviewsData.length) / reviewsItemsPerPage)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       ({reviewsPagination?.total || reviewsData.length} recenzii în total)
@@ -821,7 +828,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setReviewsPage(prev => prev + 1)}
-                      disabled={reviewsPagination ? !reviewsPagination.hasNext : reviewsPage >= Math.ceil(reviewsData.length / itemsPerPage)}
+                      disabled={reviewsPagination ? !reviewsPagination.hasNext : reviewsPage >= Math.ceil(reviewsData.length / reviewsItemsPerPage)}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
