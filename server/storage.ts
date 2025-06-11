@@ -176,7 +176,12 @@ export interface IStorage {
   getServiceProvidersInCounty(county: string): Promise<ServiceProvider[]>;
   
   // Admin functions for dashboard
+  getAllRequests(): Promise<Request[]>;
+  getAllRequestsPaginated(offset: number, limit: number): Promise<Request[]>;
+  getTotalRequestsCount(): Promise<number>;
   getAllReviews(): Promise<Review[]>;
+  getAllReviewsPaginated(offset: number, limit: number): Promise<Review[]>;
+  getTotalReviewsCount(): Promise<number>;
   dismissReviewReport(reviewId: number): Promise<Review>;
 }
 
@@ -2300,6 +2305,42 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  /**
+   * Obține cererile cu paginație pentru panoul de admin
+   * @param offset Offset pentru paginație
+   * @param limit Limita de înregistrări per pagină
+   * @returns Lista de cereri cu paginație
+   */
+  async getAllRequestsPaginated(offset: number, limit: number): Promise<Request[]> {
+    try {
+      const result = await db
+        .select()
+        .from(requests)
+        .orderBy(desc(requests.createdAt))
+        .offset(offset)
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea cererilor cu paginație:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obține numărul total de cereri din sistem
+   * @returns Numărul total de cereri
+   */
+  async getTotalRequestsCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(requests);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error("Eroare la obținerea numărului total de cereri:", error);
+      throw error;
+    }
+  }
   
   /**
    * Obține toate recenziile din sistem
@@ -2313,6 +2354,42 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(reviews.createdAt));
     } catch (error) {
       console.error('Eroare la obținerea tuturor recenziilor:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obține recenziile cu paginație pentru panoul de admin
+   * @param offset Offset pentru paginație
+   * @param limit Limita de înregistrări per pagină
+   * @returns Lista de recenzii cu paginație
+   */
+  async getAllReviewsPaginated(offset: number, limit: number): Promise<Review[]> {
+    try {
+      const result = await db
+        .select()
+        .from(reviews)
+        .orderBy(desc(reviews.createdAt))
+        .offset(offset)
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea recenziilor cu paginație:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obține numărul total de recenzii din sistem
+   * @returns Numărul total de recenzii
+   */
+  async getTotalReviewsCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(reviews);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error("Eroare la obținerea numărului total de recenzii:", error);
       throw error;
     }
   }
