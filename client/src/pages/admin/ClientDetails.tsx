@@ -58,7 +58,7 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({ params }) => {
       if (!response.ok) throw new Error('Failed to fetch requests');
       return response.json();
     },
-    enabled: !!clientId && isAuthenticated
+    enabled: !!clientId && isAdmin
   });
 
   // Fetch client reviews
@@ -73,7 +73,7 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({ params }) => {
       if (!response.ok) throw new Error('Failed to fetch reviews');
       return response.json();
     },
-    enabled: !!clientId && isAuthenticated
+    enabled: !!clientId && isAdmin
   });
 
   // Fetch client cars
@@ -88,10 +88,10 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({ params }) => {
       if (!response.ok) throw new Error('Failed to fetch cars');
       return response.json();
     },
-    enabled: !!clientId && isAuthenticated
+    enabled: !!clientId && isAdmin
   });
 
-  if (!admin) {
+  if (!isAdmin) {
     setLocation('/admin/login');
     return null;
   }

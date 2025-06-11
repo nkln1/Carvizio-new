@@ -192,6 +192,42 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
     }
   });
 
+  // Obține cererile unui client specific
+  app.get('/api/admin/clients/:id/requests', isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const requests = await storage.getClientRequests(clientId);
+      res.json(requests);
+    } catch (error) {
+      console.error('Eroare la obținerea cererilor clientului:', error);
+      res.status(500).json({ message: 'Eroare la obținerea cererilor clientului' });
+    }
+  });
+
+  // Obține recenziile unui client specific
+  app.get('/api/admin/clients/:id/reviews', isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const reviews = await storage.getClientReviews(clientId);
+      res.json(reviews);
+    } catch (error) {
+      console.error('Eroare la obținerea recenziilor clientului:', error);
+      res.status(500).json({ message: 'Eroare la obținerea recenziilor clientului' });
+    }
+  });
+
+  // Obține mașinile unui client specific
+  app.get('/api/admin/clients/:id/cars', isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const cars = await storage.getClientCars(clientId);
+      res.json(cars);
+    } catch (error) {
+      console.error('Eroare la obținerea mașinilor clientului:', error);
+      res.status(500).json({ message: 'Eroare la obținerea mașinilor clientului' });
+    }
+  });
+
   // Obține lista tuturor furnizorilor de servicii cu paginație (doar pentru admin)
   app.get('/api/admin/service-providers', isAdmin, async (req, res) => {
     try {
