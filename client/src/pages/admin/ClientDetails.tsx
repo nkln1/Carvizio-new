@@ -28,7 +28,7 @@ interface ClientDetailsProps {
 
 const ClientDetails: React.FC<ClientDetailsProps> = ({ params }) => {
   const [location, setLocation] = useLocation();
-  const { admin } = useAdminAuth();
+  const { isAdmin } = useAdminAuth();
   const clientId = params.id;
 
   // Fetch client data
@@ -43,7 +43,7 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({ params }) => {
       if (!response.ok) throw new Error('Failed to fetch client');
       return response.json();
     },
-    enabled: !!clientId && isAuthenticated
+    enabled: !!clientId && isAdmin
   });
 
   // Fetch client requests
@@ -91,7 +91,7 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({ params }) => {
     enabled: !!clientId && isAuthenticated
   });
 
-  if (!isAuthenticated) {
+  if (!admin) {
     setLocation('/admin/login');
     return null;
   }
