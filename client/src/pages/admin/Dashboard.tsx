@@ -1,810 +1,873 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAdminAuth } from '@/context/AdminAuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Users, Car, MessageSquare, Star, Eye, Search, Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { fetchWithCsrf } from '@/lib/csrfToken';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Loader2, ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react';
 
-interface Client {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  createdAt: string;
-  carsCount?: number;
-  requestsCount?: number;
-  reviewsCount?: number;
-}
+// Lista de adrese email cu rol de admin
+const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
 
-interface ServiceProvider {
-  id: number;
-  companyName: string;
-  email: string;
-  phone?: string;
-  representativeName?: string;
-  createdAt: string;
-  reviewsCount?: number;
-  offersCount?: number;
-}
+// Dashboard Component
+const Dashboard = () => {
+  const [location, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<any>(null);
 
-interface Request {
-  id: number;
-  clientName: string;
-  serviceType: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  budget?: number;
-}
+  // Pagination states
+  const [clientsPage, setClientsPage] = useState(1);
+  const [providersPage, setProvidersPage] = useState(1);
+  const [requestsPage, setRequestsPage] = useState(1);
+  const [reviewsPage, setReviewsPage] = useState(1);
 
-interface Review {
-  id: number;
-  clientName: string;
-  serviceProviderName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
-
-interface PaginationState {
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-const AdminDashboard: React.FC = () => {
-  const { isAdmin, isLoading: authLoading, logout } = useAdminAuth();
-  const [, setLocation] = useLocation();
-
-  // State pentru fiecare secțiune
-  const [clients, setClients] = useState<Client[]>([]);
-  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>([]);
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-
-  // Loading states
-  const [clientsLoading, setClientsLoading] = useState(true);
-  const [serviceProvidersLoading, setServiceProvidersLoading] = useState(true);
-  const [requestsLoading, setRequestsLoading] = useState(true);
-  const [reviewsLoading, setReviewsLoading] = useState(true);
+  // Items per page states
+  const [clientsPerPage, setClientsPerPage] = useState(10);
+  const [providersPerPage, setProvidersPerPage] = useState(10);
+  const [requestsPerPage, setRequestsPerPage] = useState(10);
+  const [reviewsPerPage, setReviewsPerPage] = useState(10);
 
   // Search states
   const [clientsSearch, setClientsSearch] = useState('');
-  const [serviceProvidersSearch, setServiceProvidersSearch] = useState('');
+  const [providersSearch, setProvidersSearch] = useState('');
   const [requestsSearch, setRequestsSearch] = useState('');
   const [reviewsSearch, setReviewsSearch] = useState('');
 
-  // Pagination states
-  const [clientsPagination, setClientsPagination] = useState<PaginationState>({
-    page: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0
+  // Interogări pentru date cu paginație și căutare
+  const clientsQuery = useQuery({
+    queryKey: ['/api/admin/clients', clientsPage, clientsPerPage, clientsSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: clientsPage.toString(),
+        limit: clientsPerPage.toString(),
+        ...(clientsSearch && { search: clientsSearch })
+      });
+      const response = await fetch(`/api/admin/clients?${params}`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    enabled: activeTab === 'clients' || activeTab === 'overview'
   });
 
-  const [serviceProvidersPagination, setServiceProvidersPagination] = useState<PaginationState>({
-    page: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0
+  const serviceProvidersQuery = useQuery({
+    queryKey: ['/api/admin/service-providers', providersPage, providersPerPage, providersSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: providersPage.toString(),
+        limit: providersPerPage.toString(),
+        ...(providersSearch && { search: providersSearch })
+      });
+      const response = await fetch(`/api/admin/service-providers?${params}`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    enabled: activeTab === 'providers' || activeTab === 'overview'
   });
 
-  const [requestsPagination, setRequestsPagination] = useState<PaginationState>({
-    page: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0
+  const requestsQuery = useQuery({
+    queryKey: ['/api/admin/requests', requestsPage, requestsPerPage, requestsSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: requestsPage.toString(),
+        limit: requestsPerPage.toString(),
+        ...(requestsSearch && { search: requestsSearch })
+      });
+      const response = await fetch(`/api/admin/requests?${params}`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    enabled: activeTab === 'requests' || activeTab === 'overview'
   });
 
-  const [reviewsPagination, setReviewsPagination] = useState<PaginationState>({
-    page: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0
+  const reviewsQuery = useQuery({
+    queryKey: ['/api/admin/reviews', reviewsPage, reviewsPerPage, reviewsSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: reviewsPage.toString(),
+        limit: reviewsPerPage.toString(),
+        ...(reviewsSearch && { search: reviewsSearch })
+      });
+      const response = await fetch(`/api/admin/reviews?${params}`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    enabled: activeTab === 'reviews' || activeTab === 'overview'
   });
 
-  // Helper function pentru construirea query params
-  const buildQueryParams = (page: number, pageSize: number, search: string) => {
-    const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('pageSize', pageSize.toString());
-    if (search.trim()) {
-      params.append('search', search.trim());
+  // Mutations pentru actualizarea datelor
+  const verifyClientMutation = useMutation({
+    mutationFn: async ({ clientId, verified }: { clientId: number, verified: boolean }) => {
+      const response = await fetch(`/api/admin/client/${clientId}/verify`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ verified })
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/clients'] });
     }
-    return params.toString();
-  };
+  });
 
-  // Funcții pentru încărcarea datelor
-  const fetchClients = async (page: number = 1, pageSize: number = 10, search: string = '') => {
-    setClientsLoading(true);
-    try {
-      const queryParams = buildQueryParams(page, pageSize, search);
-      const response = await fetchWithCsrf(`/api/admin/clients?${queryParams}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data.clients || []);
-        setClientsPagination({
-          page: data.page || 1,
-          pageSize: data.pageSize || 10,
-          totalItems: data.totalItems || 0,
-          totalPages: data.totalPages || 0
-        });
+  const verifyServiceProviderMutation = useMutation({
+    mutationFn: async ({ providerId, verified }: { providerId: number, verified: boolean }) => {
+      const response = await fetch(`/api/admin/service-provider/${providerId}/verify`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ verified })
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
+    }
+  });
+
+  const dismissReviewReportMutation = useMutation({
+    mutationFn: async ({ reviewId }: { reviewId: number }) => {
+      const response = await fetch(`/api/admin/review/${reviewId}/dismiss-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/reviews'] });
+      setShowReviewDialog(false);
+    }
+  });
+
+  // Handler pentru verificarea unui client
+  const handleVerifyClient = (clientId: number, verified: boolean) => {
+    verifyClientMutation.mutate(
+      { clientId, verified },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Succes!",
+            description: `Clientul a fost ${verified ? 'verificat' : 'marcat ca neverificat'} cu succes.`,
+            variant: "default",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Eroare!",
+            description: "Nu s-a putut actualiza statusul de verificare al clientului.",
+            variant: "destructive",
+          });
+        }
       }
-    } catch (error) {
-      console.error('Eroare la încărcarea clienților:', error);
-    } finally {
-      setClientsLoading(false);
-    }
+    );
   };
 
-  const fetchServiceProviders = async (page: number = 1, pageSize: number = 10, search: string = '') => {
-    setServiceProvidersLoading(true);
-    try {
-      const queryParams = buildQueryParams(page, pageSize, search);
-      const response = await fetchWithCsrf(`/api/admin/service-providers?${queryParams}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setServiceProviders(data.serviceProviders || []);
-        setServiceProvidersPagination({
-          page: data.page || 1,
-          pageSize: data.pageSize || 10,
-          totalItems: data.totalItems || 0,
-          totalPages: data.totalPages || 0
-        });
+  // Handler pentru verificarea unui furnizor de servicii
+  const handleVerifyServiceProvider = (providerId: number, verified: boolean) => {
+    verifyServiceProviderMutation.mutate(
+      { providerId, verified },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Succes!",
+            description: `Furnizorul de servicii a fost ${verified ? 'verificat' : 'marcat ca neverificat'} cu succes.`,
+            variant: "default",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Eroare!",
+            description: "Nu s-a putut actualiza statusul de verificare al furnizorului de servicii.",
+            variant: "destructive",
+          });
+        }
       }
-    } catch (error) {
-      console.error('Eroare la încărcarea furnizorilor de servicii:', error);
-    } finally {
-      setServiceProvidersLoading(false);
-    }
+    );
   };
 
-  const fetchRequests = async (page: number = 1, pageSize: number = 10, search: string = '') => {
-    setRequestsLoading(true);
-    try {
-      const queryParams = buildQueryParams(page, pageSize, search);
-      const response = await fetchWithCsrf(`/api/admin/requests?${queryParams}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setRequests(data.requests || []);
-        setRequestsPagination({
-          page: data.page || 1,
-          pageSize: data.pageSize || 10,
-          totalItems: data.totalItems || 0,
-          totalPages: data.totalPages || 0
-        });
+  // Handler pentru gestionarea unui raport de recenzie
+  const handleDismissReviewReport = (reviewId: number) => {
+    dismissReviewReportMutation.mutate(
+      { reviewId },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Succes!",
+            description: "Raportul recenziei a fost respins cu succes.",
+            variant: "default",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Eroare!",
+            description: "Nu s-a putut respinge raportul recenziei.",
+            variant: "destructive",
+          });
+        }
       }
-    } catch (error) {
-      console.error('Eroare la încărcarea cererilor:', error);
-    } finally {
-      setRequestsLoading(false);
-    }
+    );
   };
 
-  const fetchReviews = async (page: number = 1, pageSize: number = 10, search: string = '') => {
-    setReviewsLoading(true);
-    try {
-      const queryParams = buildQueryParams(page, pageSize, search);
-      const response = await fetchWithCsrf(`/api/admin/reviews?${queryParams}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setReviews(data.reviews || []);
-        setReviewsPagination({
-          page: data.page || 1,
-          pageSize: data.pageSize || 10,
-          totalItems: data.totalItems || 0,
-          totalPages: data.totalPages || 0
-        });
-      }
-    } catch (error) {
-      console.error('Eroare la încărcarea recenziilor:', error);
-    } finally {
-      setReviewsLoading(false);
-    }
+  // Pagination handlers
+  const handleClientsPageChange = (newPage: number) => {
+    setClientsPage(newPage);
   };
 
-  // Effect pentru încărcarea inițială a datelor
-  useEffect(() => {
-    if (isAdmin) {
-      fetchClients();
-      fetchServiceProviders();
-      fetchRequests();
-      fetchReviews();
-    }
-  }, [isAdmin]);
+  const handleProvidersPageChange = (newPage: number) => {
+    setProvidersPage(newPage);
+  };
 
-  // Handlers pentru search
+  const handleRequestsPageChange = (newPage: number) => {
+    setRequestsPage(newPage);
+  };
+
+  const handleReviewsPageChange = (newPage: number) => {
+    setReviewsPage(newPage);
+  };
+
+  // Search handlers
   const handleClientsSearch = (value: string) => {
     setClientsSearch(value);
-    setClientsPagination(prev => ({ ...prev, page: 1 }));
-    fetchClients(1, clientsPagination.pageSize, value);
+    setClientsPage(1); // Reset to first page when searching
   };
 
-  const handleServiceProvidersSearch = (value: string) => {
-    setServiceProvidersSearch(value);
-    setServiceProvidersPagination(prev => ({ ...prev, page: 1 }));
-    fetchServiceProviders(1, serviceProvidersPagination.pageSize, value);
+  const handleProvidersSearch = (value: string) => {
+    setProvidersSearch(value);
+    setProvidersPage(1);
   };
 
   const handleRequestsSearch = (value: string) => {
     setRequestsSearch(value);
-    setRequestsPagination(prev => ({ ...prev, page: 1 }));
-    fetchRequests(1, requestsPagination.pageSize, value);
+    setRequestsPage(1);
   };
 
   const handleReviewsSearch = (value: string) => {
     setReviewsSearch(value);
-    setReviewsPagination(prev => ({ ...prev, page: 1 }));
-    fetchReviews(1, reviewsPagination.pageSize, value);
+    setReviewsPage(1);
   };
 
-  // Handlers pentru page size change
-  const handleClientsPageSizeChange = (pageSize: string) => {
-    const newPageSize = parseInt(pageSize);
-    setClientsPagination(prev => ({ ...prev, pageSize: newPageSize, page: 1 }));
-    fetchClients(1, newPageSize, clientsSearch);
+  // Items per page handlers
+  const handleClientsPerPageChange = (value: string) => {
+    setClientsPerPage(parseInt(value));
+    setClientsPage(1);
   };
 
-  const handleServiceProvidersPageSizeChange = (pageSize: string) => {
-    const newPageSize = parseInt(pageSize);
-    setServiceProvidersPagination(prev => ({ ...prev, pageSize: newPageSize, page: 1 }));
-    fetchServiceProviders(1, newPageSize, serviceProvidersSearch);
+  const handleProvidersPerPageChange = (value: string) => {
+    setProvidersPerPage(parseInt(value));
+    setProvidersPage(1);
   };
 
-  const handleRequestsPageSizeChange = (pageSize: string) => {
-    const newPageSize = parseInt(pageSize);
-    setRequestsPagination(prev => ({ ...prev, pageSize: newPageSize, page: 1 }));
-    fetchRequests(1, newPageSize, requestsSearch);
+  const handleRequestsPerPageChange = (value: string) => {
+    setRequestsPerPage(parseInt(value));
+    setRequestsPage(1);
   };
 
-  const handleReviewsPageSizeChange = (pageSize: string) => {
-    const newPageSize = parseInt(pageSize);
-    setReviewsPagination(prev => ({ ...prev, pageSize: newPageSize, page: 1 }));
-    fetchReviews(1, newPageSize, reviewsSearch);
+  const handleReviewsPerPageChange = (value: string) => {
+    setReviewsPerPage(parseInt(value));
+    setReviewsPage(1);
   };
 
-  // Handlers pentru pagination
-  const handleClientsPageChange = (page: number) => {
-    setClientsPagination(prev => ({ ...prev, page }));
-    fetchClients(page, clientsPagination.pageSize, clientsSearch);
-  };
+  // Verificăm dacă utilizatorul are permisiunea de admin folosind AdminAuthContext
+  const { isAdmin, isLoading, adminData, logout } = useAdminAuth();
 
-  const handleServiceProvidersPageChange = (page: number) => {
-    setServiceProvidersPagination(prev => ({ ...prev, page }));
-    fetchServiceProviders(page, serviceProvidersPagination.pageSize, serviceProvidersSearch);
-  };
+  useEffect(() => {
+    // Dacă nu se încarcă și nu este admin, redirecționăm către pagina de login
+    if (!isLoading && !isAdmin) {
+      setLocation('/admin/login');
+      toast({
+        title: "Acces interzis",
+        description: "Trebuie să vă autentificați ca administrator.",
+        variant: "destructive",
+      });
+    }
+  }, [isLoading, isAdmin, setLocation, toast]);
 
-  const handleRequestsPageChange = (page: number) => {
-    setRequestsPagination(prev => ({ ...prev, page }));
-    fetchRequests(page, requestsPagination.pageSize, requestsSearch);
-  };
-
-  const handleReviewsPageChange = (page: number) => {
-    setReviewsPagination(prev => ({ ...prev, page }));
-    fetchReviews(page, reviewsPagination.pageSize, reviewsSearch);
-  };
-
-  // Componenta pentru paginare
-  const PaginationComponent = ({ pagination, onPageChange }: { 
-    pagination: PaginationState, 
-    onPageChange: (page: number) => void 
-  }) => {
-    const renderPageNumbers = () => {
-      const pages = [];
-      const { page: currentPage, totalPages } = pagination;
-
-      // Afișăm maxim 5 pagini
-      let startPage = Math.max(1, currentPage - 2);
-      let endPage = Math.min(totalPages, startPage + 4);
-
-      if (endPage - startPage < 4) {
-        startPage = Math.max(1, endPage - 4);
-      }
-
-      if (startPage > 1) {
-        pages.push(
-          <PaginationItem key="1">
-            <PaginationLink onClick={() => onPageChange(1)}>1</PaginationLink>
-          </PaginationItem>
-        );
-        if (startPage > 2) {
-          pages.push(
-            <PaginationItem key="ellipsis1">
-              <PaginationEllipsis />
-            </PaginationItem>
-          );
-        }
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(
-          <PaginationItem key={i}>
-            <PaginationLink 
-              onClick={() => onPageChange(i)}
-              isActive={i === currentPage}
-            >
-              {i}
-            </PaginationLink>
-          </PaginationItem>
-        );
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push(
-            <PaginationItem key="ellipsis2">
-              <PaginationEllipsis />
-            </PaginationItem>
-          );
-        }
-        pages.push(
-          <PaginationItem key={totalPages}>
-            <PaginationLink onClick={() => onPageChange(totalPages)}>
-              {totalPages}
-            </PaginationLink>
-          </PaginationItem>
-        );
-      }
-
-      return pages;
-    };
-
-    if (pagination.totalPages <= 1) return null;
-
+  // Dacă datele sunt în încărcare, afișăm un indicator
+  if (clientsQuery.isLoading || serviceProvidersQuery.isLoading || requestsQuery.isLoading || reviewsQuery.isLoading) {
     return (
-      <Pagination className="mt-4">
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious 
-              onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
-              className={pagination.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-            />
-          </PaginationItem>
-          {renderPageNumbers()}
-          <PaginationItem>
-            <PaginationNext 
-              onClick={() => onPageChange(Math.min(pagination.totalPages, pagination.page + 1))}
-              className={pagination.page === pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    );
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    setLocation('/admin/login');
-  };
-
-  const handleViewClient = (clientId: number) => {
-    setLocation(`/admin/clients/${clientId}`);
-  };
-
-  const handleViewServiceProvider = (serviceProviderId: number) => {
-    setLocation(`/admin/service-providers/${serviceProviderId}`);
-  };
-
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00aff5]" />
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <span className="ml-2 text-xl">Se încarcă datele...</span>
       </div>
     );
   }
 
-  if (!isAdmin) {
+  // Dacă apare o eroare, o afișăm
+  if (clientsQuery.isError || serviceProvidersQuery.isError ||serviceProvidersQuery.isError || requestsQuery.isError || reviewsQuery.isError) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle>Acces neautorizat</CardTitle>
-            <CardDescription>Nu aveți permisiuni pentru a accesa această pagină.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setLocation('/admin/login')} className="w-full">
-              Autentificare Admin
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex h-screen flex-col items-center justify-center text-center">
+        <h1 className="text-2xl font-bold text-destructive">Eroare la încărcarea datelor</h1>
+        <p className="mt-2 max-w-md text-muted-foreground">
+          A apărut o eroare la preluarea datelor. Vă rugăm să reîncărcați pagina sau să contactați echipa tehnică.
+        </p>
+        <Button className="mt-4" onClick={() => window.location.reload()}>
+          Reîncarcă pagina
+        </Button>
       </div>
     );
   }
+
+  // Extragerea datelor cu suport pentru paginație
+  const clientsData = clientsQuery.data?.clients ? Array.isArray(clientsQuery.data.clients) ? clientsQuery.data.clients : [] : 
+                      Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const clientsPagination = clientsQuery.data?.pagination;
+
+  const providersData = serviceProvidersQuery.data?.serviceProviders ? Array.isArray(serviceProvidersQuery.data.serviceProviders) ? serviceProvidersQuery.data.serviceProviders : [] :
+                        Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
+  const providersPagination = serviceProvidersQuery.data?.pagination;
+
+  const requestsData = requestsQuery.data?.requests ? Array.isArray(requestsQuery.data.requests) ? requestsQuery.data.requests : [] :
+                      Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
+  const requestsPagination = requestsQuery.data?.pagination;
+
+  const reviewsData = reviewsQuery.data?.reviews ? Array.isArray(reviewsQuery.data.reviews) ? reviewsQuery.data.reviews : [] :
+                     Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
+  const reviewsPagination = reviewsQuery.data?.pagination;
+
+  const statistics = {
+    totalClients: clientsPagination?.total || clientsData.length || 0,
+    totalServiceProviders: providersPagination?.total || providersData.length || 0,
+    totalRequests: requestsPagination?.total || requestsData.length || 0,
+    totalReviews: reviewsPagination?.total || reviewsData.length || 0,
+    unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
+    unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
+  };
+
+  // Pagination component
+  const PaginationControls = ({ 
+    currentPage, 
+    totalPages, 
+    onPageChange, 
+    itemsPerPage, 
+    onItemsPerPageChange,
+    totalItems
+  }: {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    itemsPerPage: number;
+    onItemsPerPageChange: (value: string) => void;
+    totalItems: number;
+  }) => (
+    <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-muted-foreground">Afișează</span>
+        <Select value={itemsPerPage.toString()} onValueChange={onItemsPerPageChange}>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="5">5</SelectItem>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-sm text-muted-foreground">din {totalItems} înregistrări</span>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Anterior
+        </Button>
+        
+        <span className="text-sm">
+          Pagina {currentPage} din {totalPages}
+        </span>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+        >
+          Următor
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Search component
+  const SearchBar = ({ 
+    value, 
+    onChange, 
+    placeholder 
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+  }) => (
+    <div className="relative mb-4">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pl-10"
+      />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Panou de Administrare</h1>
-            <Button variant="outline" onClick={handleLogout}>
-              Deconectare
-            </Button>
+    <div className="container mx-auto py-6">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Panou de administrare</h1>
+        <Button variant="outline" onClick={() => {
+          logout().then(() => setLocation('/admin/login'));
+        }}>
+          Deconectare
+        </Button>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
+          <TabsTrigger value="clients">Clienți</TabsTrigger>
+          <TabsTrigger value="providers">Furnizori de servicii</TabsTrigger>
+          <TabsTrigger value="requests">Cereri</TabsTrigger>
+          <TabsTrigger value="reviews">Recenzii</TabsTrigger>
+        </TabsList>
+
+        {/* Tab Prezentare generală */}
+        <TabsContent value="overview">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Clienți</CardTitle>
+                <CardDescription>Statistici privind clienții</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{statistics.totalClients}</p>
+                <p className="text-sm text-muted-foreground">Total clienți</p>
+                <p className="mt-2 text-lg font-semibold text-amber-500">{statistics.unverifiedClients}</p>
+                <p className="text-sm text-muted-foreground">Clienți neverificați</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Furnizori de servicii</CardTitle>
+                <CardDescription>Statistici privind furnizorii</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{statistics.totalServiceProviders}</p>
+                <p className="text-sm text-muted-foreground">Total furnizori</p>
+                <p className="mt-2 text-lg font-semibold text-amber-500">{statistics.unverifiedProviders}</p>
+                <p className="text-sm text-muted-foreground">Furnizori neverificați</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Activitate</CardTitle>
+                <CardDescription>Statistici privind activitatea</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{statistics.totalRequests}</p>
+                <p className="text-sm text-muted-foreground">Total cereri</p>
+                <p className="mt-2 text-lg font-semibold">{statistics.totalReviews}</p>
+                <p className="text-sm text-muted-foreground">Total recenzii</p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </div>
+        </TabsContent>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid gap-8">
-          {/* Lista Clienților */}
+        {/* Tab Clienți */}
+        <TabsContent value="clients">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-[#00aff5]" />
-                  <CardTitle>Lista Clienților</CardTitle>
-                </div>
-                <Badge variant="secondary">
-                  {clientsPagination.totalItems} total
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-4 mt-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Căutare clienți..."
-                    value={clientsSearch}
-                    onChange={(e) => handleClientsSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={clientsPagination.pageSize.toString()} onValueChange={handleClientsPageSizeChange}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="25">25 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <CardTitle>Lista clienților</CardTitle>
+              <CardDescription>Gestionați clienții înregistrați în sistem</CardDescription>
             </CardHeader>
             <CardContent>
-              {clientsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nume</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefon</TableHead>
-                        <TableHead>Data înregistrării</TableHead>
-                        <TableHead>Mașini</TableHead>
-                        <TableHead>Cereri</TableHead>
-                        <TableHead>Acțiuni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clients.map((client) => (
-                        <TableRow key={client.id}>
-                          <TableCell className="font-medium">{client.name}</TableCell>
-                          <TableCell>{client.email}</TableCell>
-                          <TableCell>{client.phone || 'N/A'}</TableCell>
-                          <TableCell>
-                            {new Date(client.createdAt).toLocaleDateString('ro-RO')}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{client.carsCount || 0}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{client.requestsCount || 0}</Badge>
-                          </TableCell>
-                          <TableCell>
+              <SearchBar
+                value={clientsSearch}
+                onChange={handleClientsSearch}
+                placeholder="Căutați după nume, email sau telefon..."
+              />
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Nume</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefon</TableHead>
+                    <TableHead>Locație</TableHead>
+                    <TableHead>Înregistrat la</TableHead>
+                    <TableHead>Verificat</TableHead>
+                    <TableHead>Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clientsData.map((client: any) => (
+                    <TableRow key={client.id}>
+                      <TableCell>{client.id}</TableCell>
+                      <TableCell>{client.firstName} {client.lastName}</TableCell>
+                      <TableCell>{client.email}</TableCell>
+                      <TableCell>{client.phone}</TableCell>
+                      <TableCell>{client.city}, {client.county}</TableCell>
+                      <TableCell>{new Date(client.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={client.verified}
+                          onCheckedChange={(checked) => handleVerifyClient(client.id, checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setLocation(`/admin/clients/${client.id}`)}
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Detalii
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <PaginationControls
+                currentPage={clientsPage}
+                totalPages={clientsPagination?.totalPages || 1}
+                onPageChange={handleClientsPageChange}
+                itemsPerPage={clientsPerPage}
+                onItemsPerPageChange={handleClientsPerPageChange}
+                totalItems={clientsPagination?.total || 0}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Furnizori */}
+        <TabsContent value="providers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista furnizorilor de servicii</CardTitle>
+              <CardDescription>Gestionați furnizorii de servicii înregistrați în sistem</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SearchBar
+                value={providersSearch}
+                onChange={handleProvidersSearch}
+                placeholder="Căutați după companie, reprezentant sau email..."
+              />
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Companie</TableHead>
+                    <TableHead>Reprezentant</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefon</TableHead>
+                    <TableHead>Locație</TableHead>
+                    <TableHead>Înregistrat la</TableHead>
+                    <TableHead>Verificat</TableHead>
+                    <TableHead>Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {providersData.map((provider: any) => (
+                    <TableRow key={provider.id}>
+                      <TableCell>{provider.id}</TableCell>
+                      <TableCell>{provider.companyName}</TableCell>
+                      <TableCell>{provider.representativeName}</TableCell>
+                      <TableCell>{provider.email}</TableCell>
+                      <TableCell>{provider.phone}</TableCell>
+                      <TableCell>{provider.city}, {provider.county}</TableCell>
+                      <TableCell>{new Date(provider.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={provider.verified}
+                          onCheckedChange={(checked) => handleVerifyServiceProvider(provider.id, checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            console.log('Navigating to service provider details:', provider.id);
+                            setLocation(`/admin/service-providers/${provider.id}`);
+                          }}
+                        >
+                          Detalii
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <PaginationControls
+                currentPage={providersPage}
+                totalPages={providersPagination?.totalPages || 1}
+                onPageChange={handleProvidersPageChange}
+                itemsPerPage={providersPerPage}
+                onItemsPerPageChange={handleProvidersPerPageChange}
+                totalItems={providersPagination?.total || 0}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Cereri */}
+        <TabsContent value="requests">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista cererilor</CardTitle>
+              <CardDescription>Vizualizați cererile din sistem</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SearchBar
+                value={requestsSearch}
+                onChange={handleRequestsSearch}
+                placeholder="Căutați după titlu sau client..."
+              />
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Titlu</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Creat la</TableHead>
+                    <TableHead>Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requestsData.map((request: any) => (
+                    <TableRow key={request.id}>
+                      <TableCell>{request.id}</TableCell>
+                      <TableCell>{request.title}</TableCell>
+                      <TableCell>{request.clientName}</TableCell>
+                      <TableCell>{request.status}</TableCell>
+                      <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm">
+                          Detalii
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <PaginationControls
+                currentPage={requestsPage}
+                totalPages={requestsPagination?.totalPages || 1}
+                onPageChange={handleRequestsPageChange}
+                itemsPerPage={requestsPerPage}
+                onItemsPerPageChange={handleRequestsPerPageChange}
+                totalItems={requestsPagination?.total || 0}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Recenzii */}
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista recenziilor</CardTitle>
+              <CardDescription>Gestionați recenziile din sistem</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SearchBar
+                value={reviewsSearch}
+                onChange={handleReviewsSearch}
+                placeholder="Căutați după client, furnizor sau conținut..."
+              />
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Furnizor</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Conținut</TableHead>
+                    <TableHead>Creat la</TableHead>
+                    <TableHead>Raportat</TableHead>
+                    <TableHead>Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reviewsData.map((review: any) => (
+                    <TableRow key={review.id}>
+                      <TableCell>{review.id}</TableCell>
+                      <TableCell>{review.clientName}</TableCell>
+                      <TableCell>{review.serviceProviderName}</TableCell>
+                      <TableCell>{review.rating} / 5</TableCell>
+                      <TableCell className="max-w-xs truncate">{review.content}</TableCell>
+                      <TableCell>{new Date(review.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {review.reportStatus ? (
+                          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                            Raportat
+                          </span>
+                        ) : "Nu"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReview(review);
+                              setShowReviewDialog(true);
+                            }}
+                          >
+                            Detalii
+                          </Button>
+                          {review.reportStatus && (
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              onClick={() => handleViewClient(client.id)}
+                              onClick={() => handleDismissReviewReport(review.id)}
                             >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Detalii
+                              Respinge raport
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <PaginationComponent 
-                    pagination={clientsPagination} 
-                    onPageChange={handleClientsPageChange} 
-                  />
-                </>
-              )}
-            </CardContent>
-          </Card>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-          {/* Lista Furnizorilor de Servicii */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Car className="h-5 w-5 text-[#00aff5]" />
-                  <CardTitle>Lista Furnizorilor de Servicii</CardTitle>
-                </div>
-                <Badge variant="secondary">
-                  {serviceProvidersPagination.totalItems} total
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-4 mt-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Căutare furnizori..."
-                    value={serviceProvidersSearch}
-                    onChange={(e) => handleServiceProvidersSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={serviceProvidersPagination.pageSize.toString()} onValueChange={handleServiceProvidersPageSizeChange}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="25">25 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {serviceProvidersLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Companie</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Reprezentant</TableHead>
-                        <TableHead>Telefon</TableHead>
-                        <TableHead>Data înregistrării</TableHead>
-                        <TableHead>Oferte</TableHead>
-                        <TableHead>Acțiuni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {serviceProviders.map((provider) => (
-                        <TableRow key={provider.id}>
-                          <TableCell className="font-medium">{provider.companyName}</TableCell>
-                          <TableCell>{provider.email}</TableCell>
-                          <TableCell>{provider.representativeName || 'N/A'}</TableCell>
-                          <TableCell>{provider.phone || 'N/A'}</TableCell>
-                          <TableCell>
-                            {new Date(provider.createdAt).toLocaleDateString('ro-RO')}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{provider.offersCount || 0}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewServiceProvider(provider.id)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Detalii
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <PaginationComponent 
-                    pagination={serviceProvidersPagination} 
-                    onPageChange={handleServiceProvidersPageChange} 
-                  />
-                </>
-              )}
+              <PaginationControls
+                currentPage={reviewsPage}
+                totalPages={reviewsPagination?.totalPages || 1}
+                onPageChange={handleReviewsPageChange}
+                itemsPerPage={reviewsPerPage}
+                onItemsPerPageChange={handleReviewsPerPageChange}
+                totalItems={reviewsPagination?.total || 0}
+              />
             </CardContent>
           </Card>
+        </TabsContent>
+      </Tabs>
 
-          {/* Lista Cererilor */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5 text-[#00aff5]" />
-                  <CardTitle>Lista Cererilor</CardTitle>
-                </div>
-                <Badge variant="secondary">
-                  {requestsPagination.totalItems} total
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-4 mt-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Căutare cereri..."
-                    value={requestsSearch}
-                    onChange={(e) => handleRequestsSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={requestsPagination.pageSize.toString()} onValueChange={handleRequestsPageSizeChange}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="25">25 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {requestsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Tip serviciu</TableHead>
-                        <TableHead>Descriere</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Buget</TableHead>
-                        <TableHead>Data creării</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {requests.map((request) => (
-                        <TableRow key={request.id}>
-                          <TableCell className="font-medium">{request.clientName}</TableCell>
-                          <TableCell>{request.serviceType}</TableCell>
-                          <TableCell className="max-w-xs truncate">{request.description}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                request.status === 'open' ? 'default' :
-                                request.status === 'in_progress' ? 'secondary' :
-                                request.status === 'completed' ? 'outline' : 'destructive'
-                              }
-                            >
-                              {request.status === 'open' ? 'Deschisă' :
-                               request.status === 'in_progress' ? 'În progres' :
-                               request.status === 'completed' ? 'Completată' : 'Anulată'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {request.budget ? `${request.budget} RON` : 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(request.createdAt).toLocaleDateString('ro-RO')}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <PaginationComponent 
-                    pagination={requestsPagination} 
-                    onPageChange={handleRequestsPageChange} 
-                  />
-                </>
-              )}
-            </CardContent>
-          </Card>
+      {/* Dialog pentru detalii recenzie */}
+      {selectedReview && (
+        <AlertDialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Detalii recenzie</AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="mt-2 space-y-2">
+                  <p><strong>ID:</strong> {selectedReview.id}</p>
+                  <p><strong>Client:</strong> {selectedReview.clientName}</p>
+                  <p><strong>Furnizor:</strong> {selectedReview.serviceProviderName}</p>
+                  <p><strong>Rating:</strong> {selectedReview.rating} / 5</p>
+                  <p><strong>Creat la:</strong> {new Date(selectedReview.createdAt).toLocaleString()}</p>
+                  <p><strong>Conținut:</strong></p>
+                  <div className="max-h-40 overflow-y-auto rounded-md bg-muted p-2">
+                    {selectedReview.content}
+                  </div>
 
-          {/* Lista Recenziilor */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Star className="h-5 w-5 text-[#00aff5]" />
-                  <CardTitle>Lista Recenziilor</CardTitle>
+                  {selectedReview.reportStatus && (
+                    <div className="mt-4 rounded-md bg-amber-50 p-3">
+                      <h4 className="font-semibold text-amber-800">Recenzie raportată</h4>
+                      <p className="text-sm text-amber-700">Această recenzie a fost raportată și necesită atenția dvs.</p>
+                    </div>
+                  )}
                 </div>
-                <Badge variant="secondary">
-                  {reviewsPagination.totalItems} total
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-4 mt-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Căutare recenzii..."
-                    value={reviewsSearch}
-                    onChange={(e) => handleReviewsSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={reviewsPagination.pageSize.toString()} onValueChange={handleReviewsPageSizeChange}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="25">25 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {reviewsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Furnizor serviciu</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Comentariu</TableHead>
-                        <TableHead>Data creării</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {reviews.map((review) => (
-                        <TableRow key={review.id}>
-                          <TableCell className="font-medium">{review.clientName}</TableCell>
-                          <TableCell>{review.serviceProviderName}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              {Array.from({ length: 5 }, (_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating
-                                      ? 'text-yellow-400 fill-current'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              ))}
-                              <span className="ml-1 text-sm text-gray-600">
-                                {review.rating}/5
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
-                          <TableCell>
-                            {new Date(review.createdAt).toLocaleDateString('ro-RO')}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <PaginationComponent 
-                    pagination={reviewsPagination} 
-                    onPageChange={handleReviewsPageChange} 
-                  />
-                </>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Închide</AlertDialogCancel>
+              {selectedReview.reportStatus && (
+                <AlertDialogAction
+                  onClick={() => handleDismissReviewReport(selectedReview.id)}
+                >
+                  Respinge raport
+                </AlertDialogAction>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
 
-export default AdminDashboard;
+export default Dashboard;
