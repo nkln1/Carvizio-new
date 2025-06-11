@@ -72,6 +72,39 @@ const Dashboard = () => {
   const [requestsItemsPerPage, setRequestsItemsPerPage] = useState(10);
   const [reviewsItemsPerPage, setReviewsItemsPerPage] = useState(10);
 
+  // Handlers pentru schimbarea numărului de elemente pe pagină
+  const handleClientsItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = Number(value);
+    setClientsItemsPerPage(newItemsPerPage);
+    setClientsPage(1); // Reset la prima pagină
+    // Forțăm invalidarea cache-ului pentru a reîncărca datele
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/clients'] });
+  };
+
+  const handleProvidersItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = Number(value);
+    setProvidersItemsPerPage(newItemsPerPage);
+    setProvidersPage(1); // Reset la prima pagină
+    // Forțăm invalidarea cache-ului pentru a reîncărca datele
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
+  };
+
+  const handleRequestsItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = Number(value);
+    setRequestsItemsPerPage(newItemsPerPage);
+    setRequestsPage(1); // Reset la prima pagină
+    // Forțăm invalidarea cache-ului pentru a reîncărca datele
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/requests'] });
+  };
+
+  const handleReviewsItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = Number(value);
+    setReviewsItemsPerPage(newItemsPerPage);
+    setReviewsPage(1); // Reset la prima pagină
+    // Forțăm invalidarea cache-ului pentru a reîncărca datele
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/reviews'] });
+  };
+
   // Interogări pentru date cu paginație
   const clientsQuery = useQuery({
     queryKey: ['/api/admin/clients', clientsPage, clientsItemsPerPage],
@@ -83,7 +116,9 @@ const Dashboard = () => {
       });
       return response.json();
     },
-    enabled: activeTab === 'clients' || activeTab === 'overview'
+    enabled: activeTab === 'clients' || activeTab === 'overview',
+    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    gcTime: 0
   });
 
   const serviceProvidersQuery = useQuery({
@@ -96,7 +131,9 @@ const Dashboard = () => {
       });
       return response.json();
     },
-    enabled: activeTab === 'providers' || activeTab === 'overview'
+    enabled: activeTab === 'providers' || activeTab === 'overview',
+    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    gcTime: 0
   });
 
   const requestsQuery = useQuery({
@@ -109,7 +146,9 @@ const Dashboard = () => {
       });
       return response.json();
     },
-    enabled: activeTab === 'requests' || activeTab === 'overview'
+    enabled: activeTab === 'requests' || activeTab === 'overview',
+    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    gcTime: 0
   });
 
   const reviewsQuery = useQuery({
@@ -122,7 +161,9 @@ const Dashboard = () => {
       });
       return response.json();
     },
-    enabled: activeTab === 'reviews' || activeTab === 'overview'
+    enabled: activeTab === 'reviews' || activeTab === 'overview',
+    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    gcTime: 0
   });
 
   // Mutations pentru actualizarea datelor
@@ -397,11 +438,7 @@ const Dashboard = () => {
                 </div>
                 <Select 
                   value={clientsItemsPerPage.toString()} 
-                  onValueChange={(value) => {
-                    const newItemsPerPage = Number(value);
-                    setClientsItemsPerPage(newItemsPerPage);
-                    setClientsPage(1); // Reset la prima pagină
-                  }}
+                  onValueChange={handleClientsItemsPerPageChange}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Elemente pe pagină" />
@@ -510,11 +547,7 @@ const Dashboard = () => {
                 </div>
                 <Select 
                   value={providersItemsPerPage.toString()} 
-                  onValueChange={(value) => {
-                    const newItemsPerPage = Number(value);
-                    setProvidersItemsPerPage(newItemsPerPage);
-                    setProvidersPage(1); // Reset la prima pagină
-                  }}
+                  onValueChange={handleProvidersItemsPerPageChange}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Elemente pe pagină" />
@@ -625,11 +658,7 @@ const Dashboard = () => {
                 </div>
                 <Select 
                   value={requestsItemsPerPage.toString()} 
-                  onValueChange={(value) => {
-                    const newItemsPerPage = Number(value);
-                    setRequestsItemsPerPage(newItemsPerPage);
-                    setRequestsPage(1); // Reset la prima pagină
-                  }}
+                  onValueChange={handleRequestsItemsPerPageChange}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Elemente pe pagină" />
@@ -729,11 +758,7 @@ const Dashboard = () => {
                 </div>
                 <Select 
                   value={reviewsItemsPerPage.toString()} 
-                  onValueChange={(value) => {
-                    const newItemsPerPage = Number(value);
-                    setReviewsItemsPerPage(newItemsPerPage);
-                    setReviewsPage(1); // Reset la prima pagină
-                  }}
+                  onValueChange={handleReviewsItemsPerPageChange}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Elemente pe pagină" />
