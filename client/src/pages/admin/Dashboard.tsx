@@ -35,6 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
@@ -378,6 +385,31 @@ const Dashboard = () => {
               <CardDescription>Gestionați clienții înregistrați în sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Selector pentru numărul de clienți pe pagină */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-muted-foreground">
+                  Total: {clientsPagination?.total || clientsData.length} clienți
+                </div>
+                <Select 
+                  value={itemsPerPage.toString()} 
+                  onValueChange={(value) => {
+                    const newItemsPerPage = Number(value);
+                    const newTotalPages = Math.ceil((clientsPagination?.total || clientsData.length) / newItemsPerPage);
+                    setClientsPage(1); // Reset la prima pagină
+                    // Note: itemsPerPage este folosit în toate secțiunile, dar ar trebui să avem state separat pentru fiecare
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Elemente pe pagină" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 clienți pe pagină</SelectItem>
+                    <SelectItem value="10">10 clienți pe pagină</SelectItem>
+                    <SelectItem value="20">20 clienți pe pagină</SelectItem>
+                    <SelectItem value="50">50 clienți pe pagină</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -467,6 +499,29 @@ const Dashboard = () => {
               <CardDescription>Gestionați furnizorii de servicii înregistrați în sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Selector pentru numărul de furnizori pe pagină */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-muted-foreground">
+                  Total: {providersPagination?.total || providersData.length} furnizori
+                </div>
+                <Select 
+                  value={itemsPerPage.toString()} 
+                  onValueChange={(value) => {
+                    const newItemsPerPage = Number(value);
+                    setProvidersPage(1); // Reset la prima pagină
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Elemente pe pagină" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 furnizori pe pagină</SelectItem>
+                    <SelectItem value="10">10 furnizori pe pagină</SelectItem>
+                    <SelectItem value="20">20 furnizori pe pagină</SelectItem>
+                    <SelectItem value="50">50 furnizori pe pagină</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -558,6 +613,29 @@ const Dashboard = () => {
               <CardDescription>Vizualizați cererile din sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Selector pentru numărul de cereri pe pagină */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-muted-foreground">
+                  Total: {requestsPagination?.total || requestsData.length} cereri
+                </div>
+                <Select 
+                  value={itemsPerPage.toString()} 
+                  onValueChange={(value) => {
+                    const newItemsPerPage = Number(value);
+                    setRequestsPage(1); // Reset la prima pagină
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Elemente pe pagină" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 cereri pe pagină</SelectItem>
+                    <SelectItem value="10">10 cereri pe pagină</SelectItem>
+                    <SelectItem value="20">20 cereri pe pagină</SelectItem>
+                    <SelectItem value="50">50 cereri pe pagină</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -638,6 +716,29 @@ const Dashboard = () => {
               <CardDescription>Gestionați recenziile din sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Selector pentru numărul de recenzii pe pagină */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-muted-foreground">
+                  Total: {reviewsPagination?.total || reviewsData.length} recenzii
+                </div>
+                <Select 
+                  value={itemsPerPage.toString()} 
+                  onValueChange={(value) => {
+                    const newItemsPerPage = Number(value);
+                    setReviewsPage(1); // Reset la prima pagină
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Elemente pe pagină" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 recenzii pe pagină</SelectItem>
+                    <SelectItem value="10">10 recenzii pe pagină</SelectItem>
+                    <SelectItem value="20">20 recenzii pe pagină</SelectItem>
+                    <SelectItem value="50">50 recenzii pe pagină</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
