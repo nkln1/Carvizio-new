@@ -72,6 +72,9 @@ export interface IStorage {
   createClient(client: InsertClient & { firebaseUid: string }): Promise<Client>;
   updateClient(id: number, clientData: Partial<Client>): Promise<Client>;
   getAllClients(): Promise<Client[]>;
+  getAllClientsPaginated(offset: number, limit: number): Promise<Client[]>;
+  getTotalClientsCount(): Promise<number>;
+  getClientReviews(clientId: number): Promise<Review[]>;
   updateClientVerificationStatus(clientId: number, verified: boolean): Promise<Client>;
 
   // Service Provider management
@@ -82,6 +85,10 @@ export interface IStorage {
   updateServiceProvider(id: number, providerData: Partial<ServiceProvider>): Promise<ServiceProvider>;
   getServiceProviderByUsername(username: string): Promise<ServiceProvider | undefined>;
   getAllServiceProviders(): Promise<ServiceProvider[]>;
+  getAllServiceProvidersPaginated(offset: number, limit: number): Promise<ServiceProvider[]>;
+  getTotalServiceProvidersCount(): Promise<number>;
+  getServiceProviderReviews(serviceProviderId: number): Promise<Review[]>;
+  getServiceProviderOffers(serviceProviderId: number): Promise<SentOffer[]>;
   updateServiceProviderVerificationStatus(serviceProviderId: number, verified: boolean): Promise<ServiceProvider>;
 
   // Car management
@@ -290,6 +297,97 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // New admin panel pagination methods for clients
+  async getAllClientsPaginated(offset: number, limit: number): Promise<Client[]> {
+    try {
+      const result = await db.select()
+        .from(clients)
+        .orderBy(desc(clients.createdAt))
+        .offset(offset)
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea clienților cu paginație:", error);
+      throw error;
+    }
+  }
+
+  async getTotalClientsCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(clients);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error("Eroare la obținerea numărului total de clienți:", error);
+      throw error;
+    }
+  }
+
+  async getClientReviews(clientId: number): Promise<Review[]> {
+    try {
+      const result = await db.select()
+        .from(reviews)
+        .where(eq(reviews.clientId, clientId))
+        .orderBy(desc(reviews.createdAt));
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea recenziilor clientului:", error);
+      throw error;
+    }
+  }
+
+  // New admin panel pagination methods for service providers
+  async getAllServiceProvidersPaginated(offset: number, limit: number): Promise<ServiceProvider[]> {
+    try {
+      const result = await db.select()
+        .from(serviceProviders)
+        .orderBy(desc(serviceProviders.createdAt))
+        .offset(offset)
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea furnizorilor cu paginație:", error);
+      throw error;
+    }
+  }
+
+  async getTotalServiceProvidersCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(serviceProviders);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error("Eroare la obținerea numărului total de furnizori:", error);
+      throw error;
+    }
+  }
+
+  async getServiceProviderReviews(serviceProviderId: number): Promise<Review[]> {
+    try {
+      const result = await db.select()
+        .from(reviews)
+        .where(eq(reviews.serviceProviderId, serviceProviderId))
+        .orderBy(desc(reviews.createdAt));
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea recenziilor furnizorului:", error);
+      throw error;
+    }
+  }
+
+  async getServiceProviderOffers(serviceProviderId: number): Promise<SentOffer[]> {
+    try {
+      const result = await db.select()
+        .from(sentOffers)
+        .where(eq(sentOffers.serviceProviderId, serviceProviderId))
+        .orderBy(desc(sentOffers.createdAt));
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea ofertelor furnizorului:", error);
+      throw error;
+    }
+  }
+
   async getAllAdmins(): Promise<any[]> {
     try {
       const allAdmins = await db.select().from(admins);

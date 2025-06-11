@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
 import { IStorage } from '../storage';
-import { adminLoginSchema } from '@shared/schema';
+import { adminLoginSchema, insertAdminSchema } from '@shared/schema';
 import { z } from 'zod';
 
 // Middleware pentru verificarea dacă utilizatorul este admin folosind token de sesiune
@@ -143,25 +143,101 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
     }
   });
 
-  // Obține lista tuturor clienților (doar pentru admin)
+  // Obține lista tuturor clienților cu paginație (doar pentru admin)
   app.get('/api/admin/clients', isAdmin, async (req, res) => {
     try {
-      const clients = await storage.getAllClients();
-      res.json(clients);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = (page - 1) * limit;
+
+      const clients = await storage.getAllClientsPaginated(offset, limit);
+      const totalClients = await storage.getTotalClientsCount();
+      
+      res.json({
+        clients,
+        pagination: {
+          page,
+          limit,
+          total: totalClients,
+          totalPages: Math.ceil(totalClients / limit)
+        }
+      });
     } catch (error) {
       console.error('Eroare la obținerea listei de clienți:', error);
       res.status(500).json({ message: 'Eroare la obținerea listei de clienți' });
     }
   });
 
-  // Obține lista tuturor furnizorilor de servicii (doar pentru admin)
+  // Obține detalii client cu cererile și recenziile sale
+  app.get('/api/admin/clients/:id', isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getClientById(clientId);
+      
+      if (!client) {
+        return res.status(404).json({ message: 'Clientul nu a fost găsit' });
+      }
+
+      const clientRequests = await storage.getClientRequests(clientId);
+      const clientReviews = await storage.getClientReviews(clientId);
+      
+      res.json({
+        client,
+        requests: clientRequests,
+        reviews: clientReviews
+      });
+    } catch (error) {
+      console.error('Eroare la obținerea detaliilor clientului:', error);
+      res.status(500).json({ message: 'Eroare la obținerea detaliilor clientului' });
+    }
+  });
+
+  // Obține lista tuturor furnizorilor de servicii cu paginație (doar pentru admin)
   app.get('/api/admin/service-providers', isAdmin, async (req, res) => {
     try {
-      const serviceProviders = await storage.getAllServiceProviders();
-      res.json(serviceProviders);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = (page - 1) * limit;
+
+      const serviceProviders = await storage.getAllServiceProvidersPaginated(offset, limit);
+      const totalProviders = await storage.getTotalServiceProvidersCount();
+      
+      res.json({
+        serviceProviders,
+        pagination: {
+          page,
+          limit,
+          total: totalProviders,
+          totalPages: Math.ceil(totalProviders / limit)
+        }
+      });
     } catch (error) {
       console.error('Eroare la obținerea listei de furnizori de servicii:', error);
       res.status(500).json({ message: 'Eroare la obținerea listei de furnizori de servicii' });
+    }
+  });
+
+  // Obține detalii furnizor de servicii cu recenziile primite
+  app.get('/api/admin/service-providers/:id', isAdmin, async (req, res) => {
+    try {
+      const providerId = parseInt(req.params.id);
+      const provider = await storage.getServiceProviderById(providerId);
+      
+      if (!provider) {
+        return res.status(404).json({ message: 'Furnizorul de servicii nu a fost găsit' });
+      }
+
+      const providerReviews = await storage.getServiceProviderReviews(providerId);
+      const providerOffers = await storage.getServiceProviderOffers(providerId);
+      
+      res.json({
+        provider,
+        reviews: providerReviews,
+        offers: providerOffers
+      });
+    } catch (error) {
+      console.error('Eroare la obținerea detaliilor furnizorului de servicii:', error);
+      res.status(500).json({ message: 'Eroare la obținerea detaliilor furnizorului de servicii' });
     }
   });
 
