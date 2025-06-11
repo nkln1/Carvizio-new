@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 // Lista de adrese email cu rol de admin
 const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
@@ -50,12 +50,19 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
+  
+  // Pagination states
+  const [clientsPage, setClientsPage] = useState(1);
+  const [providersPage, setProvidersPage] = useState(1);
+  const [requestsPage, setRequestsPage] = useState(1);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Interogări pentru date
+  // Interogări pentru date cu paginație
   const clientsQuery = useQuery({
-    queryKey: ['/api/admin/clients'],
+    queryKey: ['/api/admin/clients', clientsPage],
     queryFn: async () => {
-      const response = await fetch('/api/admin/clients', { 
+      const response = await fetch(`/api/admin/clients?page=${clientsPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -66,9 +73,9 @@ const Dashboard = () => {
   });
   
   const serviceProvidersQuery = useQuery({
-    queryKey: ['/api/admin/service-providers'],
+    queryKey: ['/api/admin/service-providers', providersPage],
     queryFn: async () => {
-      const response = await fetch('/api/admin/service-providers', { 
+      const response = await fetch(`/api/admin/service-providers?page=${providersPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -265,10 +272,15 @@ const Dashboard = () => {
     );
   }
   
-  // Statistici pentru pagina de prezentare generală
-  // Asigurăm-ne că datele sunt array-uri înainte de a folosi metode specifice array-urilor
-  const clientsData = Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
-  const providersData = Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
+  // Extragerea datelor cu suport pentru paginație
+  const clientsData = clientsQuery.data?.clients ? Array.isArray(clientsQuery.data.clients) ? clientsQuery.data.clients : [] : 
+                      Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const clientsPagination = clientsQuery.data?.pagination;
+  
+  const providersData = serviceProvidersQuery.data?.serviceProviders ? Array.isArray(serviceProvidersQuery.data.serviceProviders) ? serviceProvidersQuery.data.serviceProviders : [] :
+                        Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
+  const providersPagination = serviceProvidersQuery.data?.pagination;
+  
   const requestsData = Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
   const reviewsData = Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
   
