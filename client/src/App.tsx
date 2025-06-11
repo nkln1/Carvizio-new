@@ -24,6 +24,8 @@ import TestEmailButton from "@/components/TestEmailButton";
 import TestEmail from "@/pages/TestEmail";
 import AdminLogin from "@/pages/admin/Login";
 import AdminDashboard from "@/pages/admin/Dashboard";
+import ClientDetails from "@/pages/admin/ClientDetails";
+import ServiceProviderDetails from "@/pages/admin/ServiceProviderDetails";
 import { Loader2 } from "lucide-react";
 
 // Nu mai avem nevoie de extensia proprietăților globale window
@@ -46,6 +48,8 @@ function Router() {
       <Route path="/test-email" component={TestEmail} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/clients/:id" component={ClientDetails} />
+      <Route path="/admin/service-providers/:id" component={ServiceProviderDetails} />
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>

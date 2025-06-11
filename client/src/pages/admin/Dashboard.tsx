@@ -281,14 +281,19 @@ const Dashboard = () => {
                         Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
   const providersPagination = serviceProvidersQuery.data?.pagination;
   
-  const requestsData = Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
-  const reviewsData = Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
+  const requestsData = requestsQuery.data?.requests ? Array.isArray(requestsQuery.data.requests) ? requestsQuery.data.requests : [] :
+                      Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
+  const requestsPagination = requestsQuery.data?.pagination;
+  
+  const reviewsData = reviewsQuery.data?.reviews ? Array.isArray(reviewsQuery.data.reviews) ? reviewsQuery.data.reviews : [] :
+                     Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
+  const reviewsPagination = reviewsQuery.data?.pagination;
   
   const statistics = {
-    totalClients: clientsData.length || 0,
-    totalServiceProviders: providersData.length || 0,
-    totalRequests: requestsData.length || 0,
-    totalReviews: reviewsData.length || 0,
+    totalClients: clientsPagination?.total || clientsData.length || 0,
+    totalServiceProviders: providersPagination?.total || providersData.length || 0,
+    totalRequests: requestsPagination?.total || requestsData.length || 0,
+    totalReviews: reviewsPagination?.total || reviewsData.length || 0,
     unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
     unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
   };
