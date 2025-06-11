@@ -421,6 +421,40 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Paginație pentru clienți */}
+              {clientsPagination && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Pagina {clientsPagination.currentPage} din {clientsPagination.totalPages}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({clientsPagination.total} clienți în total)
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClientsPage(prev => Math.max(prev - 1, 1))}
+                      disabled={clientsPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClientsPage(prev => prev + 1)}
+                      disabled={!clientsPagination.hasNext}
+                    >
+                      Următor
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -478,6 +512,40 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Paginație pentru furnizori */}
+              {providersPagination && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Pagina {providersPagination.currentPage} din {providersPagination.totalPages}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({providersPagination.total} furnizori în total)
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProvidersPage(prev => Math.max(prev - 1, 1))}
+                      disabled={providersPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProvidersPage(prev => prev + 1)}
+                      disabled={!providersPagination.hasNext}
+                    >
+                      Următor
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -524,6 +592,40 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Paginație pentru cereri */}
+              {requestsPagination && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Pagina {requestsPagination.currentPage} din {requestsPagination.totalPages}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({requestsPagination.total} cereri în total)
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRequestsPage(prev => Math.max(prev - 1, 1))}
+                      disabled={requestsPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRequestsPage(prev => prev + 1)}
+                      disabled={!requestsPagination.hasNext}
+                    >
+                      Următor
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -592,6 +694,40 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Paginație pentru recenzii */}
+              {reviewsPagination && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      Pagina {reviewsPagination.currentPage} din {reviewsPagination.totalPages}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({reviewsPagination.total} recenzii în total)
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReviewsPage(prev => Math.max(prev - 1, 1))}
+                      disabled={reviewsPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReviewsPage(prev => prev + 1)}
+                      disabled={!reviewsPagination.hasNext}
+                    >
+                      Următor
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
