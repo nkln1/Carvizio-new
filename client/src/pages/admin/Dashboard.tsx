@@ -86,9 +86,9 @@ const Dashboard = () => {
   });
   
   const requestsQuery = useQuery({
-    queryKey: ['/api/admin/requests'],
+    queryKey: ['/api/admin/requests', requestsPage],
     queryFn: async () => {
-      const response = await fetch('/api/admin/requests', { 
+      const response = await fetch(`/api/admin/requests?page=${requestsPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -99,9 +99,9 @@ const Dashboard = () => {
   });
   
   const reviewsQuery = useQuery({
-    queryKey: ['/api/admin/reviews'],
+    queryKey: ['/api/admin/reviews', reviewsPage],
     queryFn: async () => {
-      const response = await fetch('/api/admin/reviews', { 
+      const response = await fetch(`/api/admin/reviews?page=${reviewsPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -394,7 +394,13 @@ const Dashboard = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setLocation(`/admin/clients/${client.id}`)}
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
                           Detalii
                         </Button>
                       </TableCell>
