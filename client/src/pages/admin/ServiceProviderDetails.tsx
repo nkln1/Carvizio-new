@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import { fetchWithCsrf } from '@/lib/csrfToken';
 import {
   Card,
   CardContent,
@@ -34,8 +35,11 @@ export default function ServiceProviderDetails({ params }: ServiceProviderDetail
   const providerQuery = useQuery({
     queryKey: ['/api/admin/service-providers', params.id],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/service-providers/${params.id}`, {
-        credentials: 'include'
+      const response = await fetchWithCsrf(`/api/admin/service-providers/${params.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       if (!response.ok) {
         throw new Error('Eroare la încărcarea detaliilor furnizorului');
@@ -46,15 +50,39 @@ export default function ServiceProviderDetails({ params }: ServiceProviderDetail
   });
 
   if (!isAdmin) {
-    return <div>Acces interzis</div>;
+    setLocation('/admin/login');
+    return null;
   }
 
   if (providerQuery.isLoading) {
-    return <div>Se încarcă...</div>;
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Se încarcă detaliile furnizorului...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (providerQuery.isError) {
-    return <div>Eroare la încărcarea datelor</div>;
+    return (
+      <div className="container mx-auto py-6">
+        <div className="text-center">
+          <p className="text-red-600">Eroare la încărcarea datelor furnizorului</p>
+          <Button 
+            variant="outline" 
+            onClick={() => setLocation('/admin/dashboard')}
+            className="mt-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Înapoi la Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const { provider, reviews, offers } = providerQuery.data;
@@ -124,6 +152,19 @@ export default function ServiceProviderDetails({ params }: ServiceProviderDetail
                   <span className="text-sm text-muted-foreground">({reviews.length} recenzii)</span>
                 </div>
               </div>
+              {provider.username && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Pagina publică</p>
+                  <a 
+                    href={`/service/${provider.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    Vezi profilul public →
+                  </a>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
