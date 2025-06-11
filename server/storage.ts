@@ -40,7 +40,7 @@ import {
   type InsertClientNotificationPreference
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, or, and, inArray, sql } from "drizzle-orm";
+import { eq, desc, asc, and, or, isNull, sql, ilike } from 'drizzle-orm';
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
@@ -105,6 +105,8 @@ export interface IStorage {
   updateRequest(id: number, requestData: Partial<Request>): Promise<Request>;
   getRequestsByLocation(county: string, cities: string[]): Promise<Request[]>;
   getAllRequests(): Promise<Request[]>;
+  getAllRequestsPaginatedWithSearch(offset: number, limit: number, search: string): Promise<any[]>;
+  getTotalRequestsCountWithSearch(search: string): Promise<number>;
 
   sessionStore: session.Store;
   // Add new methods for phone number checks
@@ -159,7 +161,7 @@ export interface IStorage {
   getNotificationPreferences(serviceProviderId: number): Promise<NotificationPreference | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
   updateNotificationPreferences(id: number, preferencesData: Partial<NotificationPreference>): Promise<NotificationPreference>;
-  
+
   // Client Notification Preferences management
   getClientNotificationPreferences(clientId: number): Promise<ClientNotificationPreference | undefined>;
   createClientNotificationPreferences(preferences: InsertClientNotificationPreference): Promise<ClientNotificationPreference>;
@@ -174,9 +176,11 @@ export interface IStorage {
   deleteReview(id: number): Promise<void>;
   getServiceProviderAverageRating(serviceProviderId: number): Promise<number>;
   getServiceProvidersInCounty(county: string): Promise<ServiceProvider[]>;
-  
+
   // Admin functions for dashboard
   getAllReviews(): Promise<Review[]>;
+  getAllReviewsPaginatedWithSearch(offset: number, limit: number, search: string): Promise<any[]>;
+  getTotalReviewsCountWithSearch(search: string): Promise<number>;
   dismissReviewReport(reviewId: number): Promise<Review>;
 }
 
@@ -213,9 +217,9 @@ async function generateUniqueUsername(companyName: string, db: typeof import('./
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
-  
+
   // Metodele admin sunt implementate mai jos
-  
+
   async deleteReview(reviewId: number): Promise<void> {
     try {
       await db.delete(reviews)
@@ -225,78 +229,78 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Implementarea completă a metodei dismissReviewReport se află mai jos
-  
+
   async getAdminByEmail(email: string): Promise<any> {
     try {
       const foundAdmin = await db.select()
         .from(admins)
         .where(eq(admins.email, email))
         .limit(1);
-      
+
       return foundAdmin.length > 0 ? foundAdmin[0] : undefined;
     } catch (error) {
       console.error("Eroare la obținerea adminului după email:", error);
       throw error;
     }
   }
-  
+
   async getAdminById(id: number): Promise<any> {
     try {
       const foundAdmin = await db.select()
         .from(admins)
         .where(eq(admins.id, id))
         .limit(1);
-      
+
       return foundAdmin.length > 0 ? foundAdmin[0] : undefined;
     } catch (error) {
       console.error("Eroare la obținerea adminului după ID:", error);
       throw error;
     }
   }
-  
+
   async getAdminByFirebaseUid(firebaseUid: string): Promise<any> {
     try {
       const foundAdmin = await db.select()
         .from(admins)
         .where(eq(admins.firebaseUid, firebaseUid))
         .limit(1);
-      
+
       return foundAdmin.length > 0 ? foundAdmin[0] : undefined;
     } catch (error) {
       console.error("Eroare la obținerea adminului după Firebase UID:", error);
       throw error;
     }
   }
-  
+
   async createAdmin(admin: any): Promise<any> {
     try {
       const result = await db.insert(admins)
         .values(admin)
         .returning();
-      
+
       return result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error("Eroare la crearea adminului:", error);
       throw error;
     }
   }
-  
+
   async updateAdmin(adminId: number, adminData: any): Promise<any> {
     try {
       const updatedAdmin = await db.update(admins)
         .set(adminData)
         .where(eq(admins.id, adminId))
         .returning();
-      
+
       return updatedAdmin.length > 0 ? updatedAdmin[0] : undefined;
     } catch (error) {
       console.error("Eroare la actualizarea adminului:", error);
       throw error;
     }
   }
-  
+
   // New admin panel pagination methods for clients
   async getAllClientsPaginated(offset: number, limit: number): Promise<Client[]> {
     try {
@@ -797,7 +801,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Respinge automat toate ofertele pentru o cerere, exceptând oferta cu ID-ul specificat
    * @param requestId ID-ul cererii
@@ -807,17 +811,17 @@ export class DatabaseStorage implements IStorage {
   async rejectOtherOffersForRequest(requestId: number, acceptedOfferId: number): Promise<SentOffer[]> {
     try {
       console.log(`Respingere automată a celorlalte oferte pentru cererea ${requestId}, exceptând oferta ${acceptedOfferId}`);
-      
+
       // Obține toate ofertele pentru cererea specificată
       const allOffers = await this.getSentOffersByRequest(requestId);
-      
+
       // Filtrăm ofertele care trebuie respinse (toate cu excepția celei acceptate și celei deja respinse)
       const offersToReject = allOffers.filter(offer => 
         offer.id !== acceptedOfferId && offer.status !== "Rejected"
       );
-      
+
       console.log(`Găsite ${offersToReject.length} oferte pentru respingere automată`);
-      
+
       // Respinge fiecare ofertă
       const rejectedOffers = [];
       for (const offer of offersToReject) {
@@ -825,7 +829,7 @@ export class DatabaseStorage implements IStorage {
         rejectedOffers.push(rejectedOffer);
         console.log(`Oferta cu ID ${offer.id} respinsă automat`);
       }
-      
+
       return rejectedOffers;
     } catch (error) {
       console.error('Eroare la respingerea automată a ofertelor:', error);
@@ -940,8 +944,7 @@ export class DatabaseStorage implements IStorage {
       return message;
     } catch (error) {
       console.error('Error getting message:', error);
-      return undefined;
-    }
+      return undefined;      }
   }
 
   async getUserMessages(userId: number, userRole: "client" | "service", requestId?: number): Promise<Message[]> {
@@ -1459,23 +1462,23 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Client Notification Preferences methods
   async getClientNotificationPreferences(clientId: number): Promise<ClientNotificationPreference | undefined> {
     try {
       console.log(`Obtaining client notification preferences for client ID: ${clientId}`);
-      
+
       const preferences = await db
         .select()
         .from(clientNotificationPreferences)
         .where(eq(clientNotificationPreferences.clientId, clientId));
 
       console.log(`Found ${preferences.length} notification preferences records for client ${clientId}`);
-      
+
       if (preferences.length === 0) {
         return undefined;
       }
-      
+
       return preferences[0];
     } catch (error) {
       console.error('Error getting client notification preferences:', error);
@@ -1486,7 +1489,7 @@ export class DatabaseStorage implements IStorage {
   async createClientNotificationPreferences(preferences: InsertClientNotificationPreference): Promise<ClientNotificationPreference> {
     try {
       console.log(`Creating new client notification preferences for client ID: ${preferences.clientId}`, preferences);
-      
+
       const [newPreferences] = await db
         .insert(clientNotificationPreferences)
         .values({
@@ -1495,7 +1498,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .returning();
-      
+
       console.log(`Created client notification preferences:`, newPreferences);
       return newPreferences;
     } catch (error) {
@@ -1585,30 +1588,30 @@ export class DatabaseStorage implements IStorage {
 
       // Verificăm dacă a trecut data preferată (mai târzie dintre data clientului și datele service-ului)
       const today = new Date();
-      
+
       // Folosim prima ofertă acceptată pentru verificare (de obicei clienții lasă recenzii pentru ultima interacțiune)
       const latestAcceptedOffer = acceptedOffers[0];
-      
+
       // Obținem data preferată a clientului din cerere
       const request = await this.getRequest(latestAcceptedOffer.requestId);
       if (!request) {
         throw new Error("Cererea asociată ofertei nu a fost găsită");
       }
-      
+
       // Data preferată a clientului
       const clientPreferredDate = new Date(request.preferredDate);
-      
+
       // Datele disponibile ale service-ului (din ofertă)
       const serviceAvailableDates = latestAcceptedOffer.availableDates.map(date => new Date(date));
-      
+
       // Găsim data cea mai târzie dintre datele service-ului
       const latestServiceDate = serviceAvailableDates.length > 0 
         ? new Date(Math.max(...serviceAvailableDates.map(date => date.getTime())))
         : new Date(0); // Dacă nu există date disponibile, folosim o dată din trecut
-      
+
       // Determinăm care este data cea mai târzie dintre clientPreferredDate și latestServiceDate
       const latestPreferredDate = new Date(Math.max(clientPreferredDate.getTime(), latestServiceDate.getTime()));
-      
+
       // Verificăm dacă data curentă este după data preferată cea mai târzie
       if (today < latestPreferredDate) {
         throw new Error(`Nu puteți lăsa o recenzie înainte de data finalizării planificate a serviciului (${latestPreferredDate.toLocaleDateString('ro-RO')})`);
@@ -1655,7 +1658,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async deleteReview(id: number): Promise<void> {
     try {
       await db.delete(reviews).where(eq(reviews.id, id));
@@ -1664,14 +1667,14 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getServiceProviderAverageRating(serviceProviderId: number): Promise<number> {
     try {
       const result = await db
         .select({ avgRating: sql<number>`AVG(${reviews.rating})` })
         .from(reviews)
         .where(eq(reviews.serviceProviderId, serviceProviderId));
-      
+
       return result[0]?.avgRating || 0;
     } catch (error) {
       console.error('Error getting service provider average rating:', error);
@@ -1722,10 +1725,10 @@ export class DatabaseStorage implements IStorage {
 
       // Verificăm dacă a trecut data preferată (mai târzie dintre data clientului și datele service-ului)
       const today = new Date();
-      
+
       // Folosim prima ofertă acceptată pentru verificare
       const latestAcceptedOffer = acceptedOffers[0];
-      
+
       // Obținem data preferată a clientului din cerere
       const request = await this.getRequest(latestAcceptedOffer.requestId);
       if (!request) {
@@ -1734,21 +1737,21 @@ export class DatabaseStorage implements IStorage {
           reason: "Cererea asociată ofertei nu a fost găsită" 
         };
       }
-      
+
       // Data preferată a clientului
       const clientPreferredDate = new Date(request.preferredDate);
-      
+
       // Datele disponibile ale service-ului (din ofertă)
       const serviceAvailableDates = latestAcceptedOffer.availableDates.map(date => new Date(date));
-      
+
       // Găsim data cea mai târzie dintre datele service-ului
       const latestServiceDate = serviceAvailableDates.length > 0 
         ? new Date(Math.max(...serviceAvailableDates.map(date => date.getTime())))
         : new Date(0); // Dacă nu există date disponibile, folosim o dată din trecut
-      
+
       // Determinăm care este data cea mai târzie dintre clientPreferredDate și latestServiceDate
       const latestPreferredDate = new Date(Math.max(clientPreferredDate.getTime(), latestServiceDate.getTime()));
-      
+
       // Verificăm dacă data curentă este după data preferată cea mai târzie
       if (today < latestPreferredDate) {
         return { 
@@ -1835,7 +1838,7 @@ export class DatabaseStorage implements IStorage {
             (a, b) => new Date(b).getTime() - new Date(a).getTime()
           );
           const latestDate = new Date(sortedDates[0]);
-          
+
           // Verificăm dacă data cea mai recentă a trecut
           if (now > latestDate) {
             // Clientul este eligibil să lase recenzia
@@ -1902,20 +1905,20 @@ export class DatabaseStorage implements IStorage {
   async rejectOtherOffersForRequest(requestId: number, acceptedOfferId: number): Promise<SentOffer[]> {
     try {
       console.log(`Respingere automată a celorlalte oferte pentru cererea ${requestId}, exceptând oferta ${acceptedOfferId}`);
-      
+
       // Obține toate ofertele pentru cererea specificată
       const allOffers = await db
         .select()
         .from(sentOffers)
         .where(eq(sentOffers.requestId, requestId));
-      
+
       // Filtrăm ofertele care trebuie respinse (toate cu excepția celei acceptate și celei deja respinse)
       const offersToReject = allOffers.filter(offer => 
         offer.id !== acceptedOfferId && offer.status !== "Rejected"
       );
-      
+
       console.log(`Găsite ${offersToReject.length} oferte pentru respingere automată`);
-      
+
       // Respinge fiecare ofertă
       const rejectedOffers: SentOffer[] = [];
       for (const offer of offersToReject) {
@@ -1924,18 +1927,18 @@ export class DatabaseStorage implements IStorage {
           .set({ status: "Rejected" })
           .where(eq(sentOffers.id, offer.id))
           .returning();
-        
+
         rejectedOffers.push(updatedOffer);
         console.log(`Oferta cu ID ${offer.id} respinsă automat`);
       }
-      
+
       return rejectedOffers;
     } catch (error) {
       console.error('Eroare la respingerea automată a ofertelor:', error);
       throw error;
     }
   }
-  
+
   /**
    * Verifică și expiră ofertele vechi care nu au fost acceptate
    * O ofertă expiră după 30 zile + data preferată din cerere
@@ -1960,14 +1963,14 @@ export class DatabaseStorage implements IStorage {
       for (const offer of pendingOffers) {
         // Obținem data preferată din cerere
         const preferredDate = offer.requestPreferredDate ? new Date(offer.requestPreferredDate) : null;
-        
+
         // Calculăm data de expirare (30 zile + data preferată SAU 30 zile de la creare dacă nu există dată preferată)
         let expirationDate;
         if (preferredDate) {
           // Adăugăm 30 de zile la data preferată
           expirationDate = new Date(preferredDate);
           expirationDate.setDate(expirationDate.getDate() + 30);
-          
+
           // Dacă data preferată + 30 zile este mai veche decât data creării ofertei,
           // folosim data creării + 30 zile (pentru cazurile când data preferată este în trecut)
           const creationDate = new Date(offer.createdAt);
@@ -1980,11 +1983,11 @@ export class DatabaseStorage implements IStorage {
           expirationDate = new Date(offer.createdAt);
           expirationDate.setDate(expirationDate.getDate() + 30);
         }
-        
+
         // Verificăm dacă oferta a expirat
         if (currentDate > expirationDate) {
           console.log(`Oferta #${offer.id} pentru cererea #${offer.requestId} a expirat (data exp: ${expirationDate.toISOString()})`);
-          
+
           // Actualizăm statusul ofertei la "Rejected" (respinsă automat)
           const [updatedOffer] = await db
             .update(sentOffers)
@@ -1993,7 +1996,7 @@ export class DatabaseStorage implements IStorage {
             })
             .where(eq(sentOffers.id, offer.id))
             .returning();
-          
+
           expiredOffers.push(updatedOffer);
         }
       }
@@ -2031,17 +2034,17 @@ export class DatabaseStorage implements IStorage {
       for (const request of activeRequests) {
         let shouldExpire = false;
         let expirationReason = "";
-        
+
         // Verificăm dacă cererea este mai veche de 7 zile
         const isOlderThanSevenDays = new Date(request.createdAt) < sevenDaysAgo;
-        
+
         if (isOlderThanSevenDays) {
           // Verificăm dacă cererea are oferte
           const offers = await db
             .select()
             .from(sentOffers)
             .where(eq(sentOffers.requestId, request.id));
-          
+
           // Regula 1: Dacă este mai veche de 7 zile și nu are oferte, marcăm ca expirată
           if (offers.length === 0) {
             shouldExpire = true;
@@ -2049,20 +2052,20 @@ export class DatabaseStorage implements IStorage {
             console.log(`Cererea #${request.id} nu are oferte și a expirat (regula 7 zile)`);
           }
         }
-        
+
         // Regula 2: Dacă au trecut 30 zile de la data preferată, marcăm ca expirată
         if (!shouldExpire && request.preferredDate) {
           const preferredDate = new Date(request.preferredDate);
           const thirtyDaysAfterPreferred = new Date(preferredDate);
           thirtyDaysAfterPreferred.setDate(thirtyDaysAfterPreferred.getDate() + 30);
-          
+
           if (currentDate > thirtyDaysAfterPreferred) {
             shouldExpire = true;
             expirationReason = `\n\n[SISTEM: Această cerere a fost anulată automat deoarece au trecut 30 zile de la data preferată (${preferredDate.toLocaleDateString('ro-RO')}).]`;
             console.log(`Cererea #${request.id} a expirat (30 zile după data preferată: ${preferredDate.toISOString()})`);
           }
         }
-        
+
         // Dacă trebuie expirată, actualizăm în baza de date
         if (shouldExpire) {
           const [updatedRequest] = await db
@@ -2073,7 +2076,7 @@ export class DatabaseStorage implements IStorage {
             })
             .where(eq(requests.id, request.id))
             .returning();
-          
+
           expiredRequests.push(updatedRequest);
         }
       }
@@ -2089,7 +2092,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Metode pentru administrare
-  
+
   /**
    * Obține un admin după Firebase UID
    * @param firebaseUid Identificatorul Firebase al adminului
@@ -2102,14 +2105,14 @@ export class DatabaseStorage implements IStorage {
         .from(admins)
         .where(eq(admins.firebaseUid, firebaseUid))
         .limit(1);
-        
+
       return result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error('Eroare la obținerea adminului după Firebase UID:', error);
       throw error;
     }
   }
-  
+
   /**
    * Obține un admin după email
    * @param email Adresa de email a adminului
@@ -2122,14 +2125,14 @@ export class DatabaseStorage implements IStorage {
         .from(admins)
         .where(eq(admins.email, email))
         .limit(1);
-        
+
       return result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error('Eroare la obținerea adminului după email:', error);
       throw error;
     }
   }
-  
+
   /**
    * Obține un admin după ID
    * @param id ID-ul adminului
@@ -2142,14 +2145,14 @@ export class DatabaseStorage implements IStorage {
         .from(admins)
         .where(eq(admins.id, id))
         .limit(1);
-        
+
       return result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error('Eroare la obținerea adminului după ID:', error);
       throw error;
     }
   }
-  
+
   /**
    * Verifică credențialele de autentificare ale unui admin
    * @param username Numele de utilizator al adminului
@@ -2163,26 +2166,26 @@ export class DatabaseStorage implements IStorage {
         .from(admins)
         .where(eq(admins.username, username))
         .limit(1);
-      
+
       if (result.length === 0) {
         return undefined;
       }
-      
+
       const admin = result[0];
-      
+
       // Verificăm parola folosind bcrypt (ar trebui adăugat într-un sistem real)
       // Pentru a simplifica, facem o comparație simplă de parole (care nu este sigură în producție)
       if (admin.password === password) {
         return admin;
       }
-      
+
       return undefined;
     } catch (error) {
       console.error('Eroare la verificarea credențialelor admin:', error);
       throw error;
     }
   }
-  
+
   /**
    * Creează un admin nou
    * @param admin Datele adminului
@@ -2194,14 +2197,14 @@ export class DatabaseStorage implements IStorage {
         .insert(admins)
         .values(admin)
         .returning();
-        
+
       return newAdmin;
     } catch (error) {
       console.error('Eroare la crearea adminului:', error);
       throw error;
     }
   }
-  
+
   /**
    * Verifică credențialele de autentificare pentru un administrator
    * @param username Numele de utilizator al adminului
@@ -2211,48 +2214,48 @@ export class DatabaseStorage implements IStorage {
   async verifyAdminCredentials(username: string, password: string): Promise<Admin | null> {
     try {
       console.log(`Verificare credențiale admin pentru username: ${username}`);
-      
+
       // Obținem admin după username
       const admin = await db
         .select()
         .from(admins)
         .where(eq(admins.username, username))
         .limit(1);
-      
+
       if (admin.length === 0) {
         console.log(`Nu s-a găsit niciun admin cu username-ul: ${username}`);
         return null;
       }
-      
+
       // Verificăm dacă adminul este activ
       if (!admin[0].isActive) {
         console.log(`Contul de admin ${username} este dezactivat`);
         return null;
       }
-      
+
       // Pentru simplificare, ocolim verificarea bcrypt și folosim admin123 ca parola temporară
       // În producție am folosi verificare bcrypt
       if (password !== "admin123") {
         console.log(`Parolă incorectă pentru admin: ${username}`);
         return null;
       }
-      
+
       console.log(`Autentificare reușită pentru admin: ${username}`);
-      
+
       // Actualizăm data ultimei autentificări
       const [updatedAdmin] = await db
         .update(admins)
         .set({ lastLogin: new Date() })
         .where(eq(admins.id, admin[0].id))
         .returning();
-      
+
       return updatedAdmin;
     } catch (error) {
       console.error('Eroare la verificarea credențialelor admin:', error);
       return null;
     }
   }
-  
+
   /**
    * Obține toți clienții din sistem
    * @returns Lista de clienți
@@ -2268,7 +2271,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Obține toți furnizorii de servicii din sistem
    * @returns Lista de furnizori de servicii
@@ -2284,117 +2287,151 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Obține toate cererile din sistem
    * @returns Lista de cereri
    */
-  async getAllRequests(): Promise<Request[]> {
+
+  async updateAdmin(id: number, adminData: Partial<Admin>): Promise<Admin> {
     try {
-      return await db
-        .select()
+      const [updatedAdmin] = await db
+        .update(admins)
+        .set(adminData)
+        .where(eq(admins.id, id))
+        .returning();
+
+      return updatedAdmin;
+    } catch (error) {
+      console.error('Eroare la actualizarea adminului:', error);
+      throw error;
+    }
+  }
+
+  async getAllRequestsPaginatedWithSearch(offset: number, limit: number, search: string): Promise<any[]> {
+    try {
+      let query = db.select({
+        id: requests.id,
+        title: requests.title,
+        description: requests.description,
+        status: requests.status,
+        urgency: requests.urgency,
+        createdAt: requests.createdAt,
+        clientId: requests.clientId,
+        clientName: sql<string>`CONCAT(${clients.firstName}, ' ', ${clients.lastName})`.as('clientName')
+      })
+      .from(requests)
+      .leftJoin(clients, eq(requests.clientId, clients.id));
+
+      if (search) {
+        query = query.where(
+          or(
+            ilike(requests.title, `%${search}%`),
+            ilike(requests.description, `%${search}%`),
+            ilike(clients.firstName, `%${search}%`),
+            ilike(clients.lastName, `%${search}%`)
+          )
+        );
+      }
+
+      const result = await query
+        .orderBy(desc(requests.createdAt))
+        .offset(offset)
+        .limit(limit);
+
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea cererilor cu paginație și căutare:", error);
+      throw error;
+    }
+  }
+
+  async getTotalRequestsCountWithSearch(search: string): Promise<number> {
+    try {
+      let query = db.select({ count: sql<number>`count(*)` })
         .from(requests)
-        .orderBy(desc(requests.createdAt));
+        .leftJoin(clients, eq(requests.clientId, clients.id));
+
+      if (search) {
+        query = query.where(
+          or(
+            ilike(requests.title, `%${search}%`),
+            ilike(requests.description, `%${search}%`),
+            ilike(clients.firstName, `%${search}%`),
+            ilike(clients.lastName, `%${search}%`)
+          )
+        );
+      }
+
+      const result = await query;
+      return result[0]?.count || 0;
     } catch (error) {
-      console.error('Eroare la obținerea tuturor cererilor:', error);
+      console.error("Eroare la obținerea numărului total de cereri cu căutare:", error);
       throw error;
     }
   }
-  
-  /**
-   * Obține toate recenziile din sistem
-   * @returns Lista de recenzii
-   */
-  async getAllReviews(): Promise<any[]> {
+  async getAllReviewsPaginatedWithSearch(offset: number, limit: number, search: string): Promise<any[]> {
     try {
-      return await db
-        .select()
+      let query = db.select({
+        id: reviews.id,
+        rating: reviews.rating,
+        content: reviews.content,
+        createdAt: reviews.createdAt,
+        clientId: reviews.clientId,
+        serviceProviderId: reviews.serviceProviderId,
+        reportStatus: reviews.reportStatus,
+        clientName: sql<string>`CONCAT(${clients.firstName}, ' ', ${clients.lastName})`.as('clientName'),
+        serviceProviderName: serviceProviders.companyName
+      })
+      .from(reviews)
+      .leftJoin(clients, eq(reviews.clientId, clients.id))
+      .leftJoin(serviceProviders, eq(reviews.serviceProviderId, serviceProviders.id));
+
+      if (search) {
+        query = query.where(
+          or(
+            ilike(reviews.content, `%${search}%`),
+            ilike(clients.firstName, `%${search}%`),
+            ilike(clients.lastName, `%${search}%`),
+            ilike(serviceProviders.companyName, `%${search}%`)
+          )
+        );
+      }
+
+      const result = await query
+        .orderBy(desc(reviews.createdAt))
+        .offset(offset)
+        .limit(limit);
+
+      return result;
+    } catch (error) {
+      console.error("Eroare la obținerea recenziilor cu paginație și căutare:", error);
+      throw error;
+    }
+  }
+
+  async getTotalReviewsCountWithSearch(search: string): Promise<number> {
+    try {
+      let query = db.select({ count: sql<number>`count(*)` })
         .from(reviews)
-        .orderBy(desc(reviews.createdAt));
+        .leftJoin(clients, eq(reviews.clientId, clients.id))
+        .leftJoin(serviceProviders, eq(reviews.serviceProviderId, serviceProviders.id));
+
+      if (search) {
+        query = query.where(
+          or(
+            ilike(reviews.content, `%${search}%`),
+            ilike(clients.firstName, `%${search}%`),
+            ilike(clients.lastName, `%${search}%`),
+            ilike(serviceProviders.companyName, `%${search}%`)
+          )
+        );
+      }
+
+      const result = await query;
+      return result[0]?.count || 0;
     } catch (error) {
-      console.error('Eroare la obținerea tuturor recenziilor:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Actualizează starea de verificare a unui client
-   * @param clientId ID-ul clientului
-   * @param verified Starea de verificare (true/false)
-   * @returns Client actualizat
-   */
-  async updateClientVerificationStatus(clientId: number, verified: boolean): Promise<Client> {
-    try {
-      const [updatedClient] = await db
-        .update(clients)
-        .set({ verified })
-        .where(eq(clients.id, clientId))
-        .returning();
-        
-      return updatedClient;
-    } catch (error) {
-      console.error('Eroare la actualizarea stării de verificare a clientului:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Actualizează starea de verificare a unui furnizor de servicii
-   * @param serviceProviderId ID-ul furnizorului de servicii
-   * @param verified Starea de verificare (true/false)
-   * @returns Furnizor de servicii actualizat
-   */
-  async updateServiceProviderVerificationStatus(serviceProviderId: number, verified: boolean): Promise<ServiceProvider> {
-    try {
-      const [updatedServiceProvider] = await db
-        .update(serviceProviders)
-        .set({ verified })
-        .where(eq(serviceProviders.id, serviceProviderId))
-        .returning();
-        
-      return updatedServiceProvider;
-    } catch (error) {
-      console.error('Eroare la actualizarea stării de verificare a furnizorului de servicii:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Respinge un raport de recenzie
-   * @param reviewId ID-ul recenziei
-   * @returns Recenzia actualizată
-   */
-  async dismissReviewReport(reviewId: number): Promise<any> {
-    try {
-      // Implementare simplificată - în realitate ar putea fi un câmp specific 
-      // pentru a marca raportul ca respins
-      const [updatedReview] = await db
-        .update(reviews)
-        .set({ reportStatus: 'dismissed' })
-        .where(eq(reviews.id, reviewId))
-        .returning();
-        
-      return updatedReview;
-    } catch (error) {
-      console.error('Eroare la respingerea raportului de recenzie:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Șterge o recenzie
-   * @param reviewId ID-ul recenziei
-   * @returns true dacă ștergerea a reușit
-   */
-  async deleteReview(reviewId: number): Promise<boolean> {
-    try {
-      await db
-        .delete(reviews)
-        .where(eq(reviews.id, reviewId));
-        
-      return true;
-    } catch (error) {
-      console.error('Eroare la ștergerea recenziei:', error);
+      console.error("Eroare la obținerea numărului total de recenzii cu căutare:", error);
       throw error;
     }
   }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
@@ -35,9 +36,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react';
 
 // Lista de adrese email cu rol de admin
 const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
@@ -56,13 +65,29 @@ const Dashboard = () => {
   const [providersPage, setProvidersPage] = useState(1);
   const [requestsPage, setRequestsPage] = useState(1);
   const [reviewsPage, setReviewsPage] = useState(1);
-  const itemsPerPage = 10;
 
-  // Interogări pentru date cu paginație
+  // Items per page states
+  const [clientsPerPage, setClientsPerPage] = useState(10);
+  const [providersPerPage, setProvidersPerPage] = useState(10);
+  const [requestsPerPage, setRequestsPerPage] = useState(10);
+  const [reviewsPerPage, setReviewsPerPage] = useState(10);
+
+  // Search states
+  const [clientsSearch, setClientsSearch] = useState('');
+  const [providersSearch, setProvidersSearch] = useState('');
+  const [requestsSearch, setRequestsSearch] = useState('');
+  const [reviewsSearch, setReviewsSearch] = useState('');
+
+  // Interogări pentru date cu paginație și căutare
   const clientsQuery = useQuery({
-    queryKey: ['/api/admin/clients', clientsPage],
+    queryKey: ['/api/admin/clients', clientsPage, clientsPerPage, clientsSearch],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/clients?page=${clientsPage}&limit=${itemsPerPage}`, { 
+      const params = new URLSearchParams({
+        page: clientsPage.toString(),
+        limit: clientsPerPage.toString(),
+        ...(clientsSearch && { search: clientsSearch })
+      });
+      const response = await fetch(`/api/admin/clients?${params}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -73,9 +98,14 @@ const Dashboard = () => {
   });
 
   const serviceProvidersQuery = useQuery({
-    queryKey: ['/api/admin/service-providers', providersPage],
+    queryKey: ['/api/admin/service-providers', providersPage, providersPerPage, providersSearch],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/service-providers?page=${providersPage}&limit=${itemsPerPage}`, { 
+      const params = new URLSearchParams({
+        page: providersPage.toString(),
+        limit: providersPerPage.toString(),
+        ...(providersSearch && { search: providersSearch })
+      });
+      const response = await fetch(`/api/admin/service-providers?${params}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -86,9 +116,14 @@ const Dashboard = () => {
   });
 
   const requestsQuery = useQuery({
-    queryKey: ['/api/admin/requests', requestsPage],
+    queryKey: ['/api/admin/requests', requestsPage, requestsPerPage, requestsSearch],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/requests?page=${requestsPage}&limit=${itemsPerPage}`, { 
+      const params = new URLSearchParams({
+        page: requestsPage.toString(),
+        limit: requestsPerPage.toString(),
+        ...(requestsSearch && { search: requestsSearch })
+      });
+      const response = await fetch(`/api/admin/requests?${params}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -99,9 +134,14 @@ const Dashboard = () => {
   });
 
   const reviewsQuery = useQuery({
-    queryKey: ['/api/admin/reviews', reviewsPage],
+    queryKey: ['/api/admin/reviews', reviewsPage, reviewsPerPage, reviewsSearch],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/reviews?page=${reviewsPage}&limit=${itemsPerPage}`, { 
+      const params = new URLSearchParams({
+        page: reviewsPage.toString(),
+        limit: reviewsPerPage.toString(),
+        ...(reviewsSearch && { search: reviewsSearch })
+      });
+      const response = await fetch(`/api/admin/reviews?${params}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -232,6 +272,65 @@ const Dashboard = () => {
     );
   };
 
+  // Pagination handlers
+  const handleClientsPageChange = (newPage: number) => {
+    setClientsPage(newPage);
+  };
+
+  const handleProvidersPageChange = (newPage: number) => {
+    setProvidersPage(newPage);
+  };
+
+  const handleRequestsPageChange = (newPage: number) => {
+    setRequestsPage(newPage);
+  };
+
+  const handleReviewsPageChange = (newPage: number) => {
+    setReviewsPage(newPage);
+  };
+
+  // Search handlers
+  const handleClientsSearch = (value: string) => {
+    setClientsSearch(value);
+    setClientsPage(1); // Reset to first page when searching
+  };
+
+  const handleProvidersSearch = (value: string) => {
+    setProvidersSearch(value);
+    setProvidersPage(1);
+  };
+
+  const handleRequestsSearch = (value: string) => {
+    setRequestsSearch(value);
+    setRequestsPage(1);
+  };
+
+  const handleReviewsSearch = (value: string) => {
+    setReviewsSearch(value);
+    setReviewsPage(1);
+  };
+
+  // Items per page handlers
+  const handleClientsPerPageChange = (value: string) => {
+    setClientsPerPage(parseInt(value));
+    setClientsPage(1);
+  };
+
+  const handleProvidersPerPageChange = (value: string) => {
+    setProvidersPerPage(parseInt(value));
+    setProvidersPage(1);
+  };
+
+  const handleRequestsPerPageChange = (value: string) => {
+    setRequestsPerPage(parseInt(value));
+    setRequestsPage(1);
+  };
+
+  const handleReviewsPerPageChange = (value: string) => {
+    setReviewsPerPage(parseInt(value));
+    setReviewsPage(1);
+  };
+
   // Verificăm dacă utilizatorul are permisiunea de admin folosind AdminAuthContext
   const { isAdmin, isLoading, adminData, logout } = useAdminAuth();
 
@@ -297,6 +396,89 @@ const Dashboard = () => {
     unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
     unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
   };
+
+  // Pagination component
+  const PaginationControls = ({ 
+    currentPage, 
+    totalPages, 
+    onPageChange, 
+    itemsPerPage, 
+    onItemsPerPageChange,
+    totalItems
+  }: {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    itemsPerPage: number;
+    onItemsPerPageChange: (value: string) => void;
+    totalItems: number;
+  }) => (
+    <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-muted-foreground">Afișează</span>
+        <Select value={itemsPerPage.toString()} onValueChange={onItemsPerPageChange}>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="5">5</SelectItem>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-sm text-muted-foreground">din {totalItems} înregistrări</span>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Anterior
+        </Button>
+        
+        <span className="text-sm">
+          Pagina {currentPage} din {totalPages}
+        </span>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+        >
+          Următor
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Search component
+  const SearchBar = ({ 
+    value, 
+    onChange, 
+    placeholder 
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+  }) => (
+    <div className="relative mb-4">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pl-10"
+      />
+    </div>
+  );
 
   return (
     <div className="container mx-auto py-6">
@@ -370,6 +552,12 @@ const Dashboard = () => {
               <CardDescription>Gestionați clienții înregistrați în sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              <SearchBar
+                value={clientsSearch}
+                onChange={handleClientsSearch}
+                placeholder="Căutați după nume, email sau telefon..."
+              />
+              
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -413,6 +601,15 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+
+              <PaginationControls
+                currentPage={clientsPage}
+                totalPages={clientsPagination?.totalPages || 1}
+                onPageChange={handleClientsPageChange}
+                itemsPerPage={clientsPerPage}
+                onItemsPerPageChange={handleClientsPerPageChange}
+                totalItems={clientsPagination?.total || 0}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -425,6 +622,12 @@ const Dashboard = () => {
               <CardDescription>Gestionați furnizorii de servicii înregistrați în sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              <SearchBar
+                value={providersSearch}
+                onChange={handleProvidersSearch}
+                placeholder="Căutați după companie, reprezentant sau email..."
+              />
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -471,6 +674,15 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+
+              <PaginationControls
+                currentPage={providersPage}
+                totalPages={providersPagination?.totalPages || 1}
+                onPageChange={handleProvidersPageChange}
+                itemsPerPage={providersPerPage}
+                onItemsPerPageChange={handleProvidersPerPageChange}
+                totalItems={providersPagination?.total || 0}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -483,6 +695,12 @@ const Dashboard = () => {
               <CardDescription>Vizualizați cererile din sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              <SearchBar
+                value={requestsSearch}
+                onChange={handleRequestsSearch}
+                placeholder="Căutați după titlu sau client..."
+              />
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -511,6 +729,15 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+
+              <PaginationControls
+                currentPage={requestsPage}
+                totalPages={requestsPagination?.totalPages || 1}
+                onPageChange={handleRequestsPageChange}
+                itemsPerPage={requestsPerPage}
+                onItemsPerPageChange={handleRequestsPerPageChange}
+                totalItems={requestsPagination?.total || 0}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -523,6 +750,12 @@ const Dashboard = () => {
               <CardDescription>Gestionați recenziile din sistem</CardDescription>
             </CardHeader>
             <CardContent>
+              <SearchBar
+                value={reviewsSearch}
+                onChange={handleReviewsSearch}
+                placeholder="Căutați după client, furnizor sau conținut..."
+              />
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -579,6 +812,15 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+
+              <PaginationControls
+                currentPage={reviewsPage}
+                totalPages={reviewsPagination?.totalPages || 1}
+                onPageChange={handleReviewsPageChange}
+                itemsPerPage={reviewsPerPage}
+                onItemsPerPageChange={handleReviewsPerPageChange}
+                totalItems={reviewsPagination?.total || 0}
+              />
             </CardContent>
           </Card>
         </TabsContent>
