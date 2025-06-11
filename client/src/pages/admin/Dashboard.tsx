@@ -38,15 +38,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 // Lista de adrese email cu rol de admin
 const ADMIN_EMAILS = ['nikelino6@yahoo.com'];
@@ -59,34 +50,19 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
-
+  
   // Pagination states
   const [clientsPage, setClientsPage] = useState(1);
-  const [clientsLimit, setClientsLimit] = useState(10);
-  const [clientsSearch, setClientsSearch] = useState('');
-
   const [providersPage, setProvidersPage] = useState(1);
-  const [providersLimit, setProvidersLimit] = useState(10);
-  const [providersSearch, setProvidersSearch] = useState('');
-
   const [requestsPage, setRequestsPage] = useState(1);
-  const [requestsLimit, setRequestsLimit] = useState(10);
-  const [requestsSearch, setRequestsSearch] = useState('');
-
   const [reviewsPage, setReviewsPage] = useState(1);
-  const [reviewsLimit, setReviewsLimit] = useState(10);
-  const [reviewsSearch, setReviewsSearch] = useState('');
   const itemsPerPage = 10;
 
   // Interogări pentru date cu paginație
   const clientsQuery = useQuery({
-    queryKey: ['/api/admin/clients', clientsPage, clientsLimit, clientsSearch],
+    queryKey: ['/api/admin/clients', clientsPage],
     queryFn: async () => {
-      let url = `/api/admin/clients?page=${clientsPage}&limit=${clientsLimit}`;
-      if (clientsSearch) {
-        url += `&search=${clientsSearch}`;
-      }
-      const response = await fetch(url, {
+      const response = await fetch(`/api/admin/clients?page=${clientsPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -95,15 +71,11 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'clients' || activeTab === 'overview'
   });
-
+  
   const serviceProvidersQuery = useQuery({
-    queryKey: ['/api/admin/service-providers', providersPage, providersLimit, providersSearch],
+    queryKey: ['/api/admin/service-providers', providersPage],
     queryFn: async () => {
-      let url = `/api/admin/service-providers?page=${providersPage}&limit=${providersLimit}`;
-      if (providersSearch) {
-        url += `&search=${providersSearch}`;
-      }
-      const response = await fetch(url, {
+      const response = await fetch(`/api/admin/service-providers?page=${providersPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -112,15 +84,11 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'providers' || activeTab === 'overview'
   });
-
+  
   const requestsQuery = useQuery({
-    queryKey: ['/api/admin/requests', requestsPage, requestsLimit, requestsSearch],
+    queryKey: ['/api/admin/requests', requestsPage],
     queryFn: async () => {
-      let url = `/api/admin/requests?page=${requestsPage}&limit=${requestsLimit}`;
-      if (requestsSearch) {
-        url += `&search=${requestsSearch}`;
-      }
-      const response = await fetch(url, {
+      const response = await fetch(`/api/admin/requests?page=${requestsPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -129,15 +97,11 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'requests' || activeTab === 'overview'
   });
-
+  
   const reviewsQuery = useQuery({
-    queryKey: ['/api/admin/reviews', reviewsPage, reviewsLimit, reviewsSearch],
+    queryKey: ['/api/admin/reviews', reviewsPage],
     queryFn: async () => {
-      let url = `/api/admin/reviews?page=${reviewsPage}&limit=${reviewsLimit}`;
-      if (reviewsSearch) {
-        url += `&search=${reviewsSearch}`;
-      }
-      const response = await fetch(url, {
+      const response = await fetch(`/api/admin/reviews?page=${reviewsPage}&limit=${itemsPerPage}`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -146,13 +110,13 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'reviews' || activeTab === 'overview'
   });
-
+  
   // Mutations pentru actualizarea datelor
   const verifyClientMutation = useMutation({
     mutationFn: async ({ clientId, verified }: { clientId: number, verified: boolean }) => {
       const response = await fetch(`/api/admin/client/${clientId}/verify`, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
         },
         credentials: 'include',
@@ -164,12 +128,12 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/clients'] });
     }
   });
-
+  
   const verifyServiceProviderMutation = useMutation({
     mutationFn: async ({ providerId, verified }: { providerId: number, verified: boolean }) => {
       const response = await fetch(`/api/admin/service-provider/${providerId}/verify`, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
         },
         credentials: 'include',
@@ -181,7 +145,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
     }
   });
-
+  
   const dismissReviewReportMutation = useMutation({
     mutationFn: async ({ reviewId }: { reviewId: number }) => {
       const response = await fetch(`/api/admin/review/${reviewId}/dismiss-report`, {
@@ -221,7 +185,7 @@ const Dashboard = () => {
       }
     );
   };
-
+  
   // Handler pentru verificarea unui furnizor de servicii
   const handleVerifyServiceProvider = (providerId: number, verified: boolean) => {
     verifyServiceProviderMutation.mutate(
@@ -244,7 +208,7 @@ const Dashboard = () => {
       }
     );
   };
-
+  
   // Handler pentru gestionarea unui raport de recenzie
   const handleDismissReviewReport = (reviewId: number) => {
     dismissReviewReportMutation.mutate(
@@ -270,7 +234,7 @@ const Dashboard = () => {
 
   // Verificăm dacă utilizatorul are permisiunea de admin folosind AdminAuthContext
   const { isAdmin, isLoading, adminData, logout } = useAdminAuth();
-
+  
   useEffect(() => {
     // Dacă nu se încarcă și nu este admin, redirecționăm către pagina de login
     if (!isLoading && !isAdmin) {
@@ -282,7 +246,7 @@ const Dashboard = () => {
       });
     }
   }, [isLoading, isAdmin, setLocation, toast]);
-
+  
   // Dacă datele sunt în încărcare, afișăm un indicator
   if (clientsQuery.isLoading || serviceProvidersQuery.isLoading || requestsQuery.isLoading || reviewsQuery.isLoading) {
     return (
@@ -292,9 +256,9 @@ const Dashboard = () => {
       </div>
     );
   }
-
+  
   // Dacă apare o eroare, o afișăm
-  if (clientsQuery.isError || serviceProvidersQuery.isError ||serviceProvidersQuery.isError || requestsQuery.isError || reviewsQuery.isError) {
+  if (clientsQuery.isError || serviceProvidersQuery.isError || requestsQuery.isError || reviewsQuery.isError) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center">
         <h1 className="text-2xl font-bold text-destructive">Eroare la încărcarea datelor</h1>
@@ -307,58 +271,24 @@ const Dashboard = () => {
       </div>
     );
   }
-
+  
   // Extragerea datelor cu suport pentru paginație
-  const clientsData = clientsQuery.data?.clients ? Array.isArray(clientsQuery.data.clients) ? clientsQuery.data.clients : [] :
+  const clientsData = clientsQuery.data?.clients ? Array.isArray(clientsQuery.data.clients) ? clientsQuery.data.clients : [] : 
                       Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
   const clientsPagination = clientsQuery.data?.pagination;
-
+  
   const providersData = serviceProvidersQuery.data?.serviceProviders ? Array.isArray(serviceProvidersQuery.data.serviceProviders) ? serviceProvidersQuery.data.serviceProviders : [] :
                         Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
   const providersPagination = serviceProvidersQuery.data?.pagination;
-
+  
   const requestsData = requestsQuery.data?.requests ? Array.isArray(requestsQuery.data.requests) ? requestsQuery.data.requests : [] :
                       Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
   const requestsPagination = requestsQuery.data?.pagination;
-
+  
   const reviewsData = reviewsQuery.data?.reviews ? Array.isArray(reviewsQuery.data.reviews) ? reviewsQuery.data.reviews : [] :
                      Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
   const reviewsPagination = reviewsQuery.data?.pagination;
-
-    // Funcții helper pentru filtrare
-    const filteredClients = React.useMemo(() => {
-      if (!clientsQuery.data?.clients) return [];
-      return clientsQuery.data.clients.filter((client: any) =>
-        client.firstName.toLowerCase().includes(clientsSearch.toLowerCase()) ||
-        client.lastName.toLowerCase().includes(clientsSearch.toLowerCase()) ||
-        client.email.toLowerCase().includes(clientsSearch.toLowerCase())
-      );
-    }, [clientsQuery.data?.clients, clientsSearch]);
   
-    const filteredServiceProviders = React.useMemo(() => {
-      if (!serviceProvidersQuery.data?.serviceProviders) return [];
-      return serviceProvidersQuery.data.serviceProviders.filter((provider: any) =>
-        provider.companyName.toLowerCase().includes(providersSearch.toLowerCase()) ||
-        provider.email.toLowerCase().includes(providersSearch.toLowerCase())
-      );
-    }, [serviceProvidersQuery.data?.serviceProviders, providersSearch]);
-  
-    const filteredRequests = React.useMemo(() => {
-      if (!requestsQuery.data?.requests) return [];
-      return requestsQuery.data.requests.filter((request: any) =>
-        request.title.toLowerCase().includes(requestsSearch.toLowerCase()) ||
-        request.clientName.toLowerCase().includes(requestsSearch.toLowerCase())
-      );
-    }, [requestsQuery.data?.requests, requestsSearch]);
-  
-    const filteredReviews = React.useMemo(() => {
-      if (!reviewsQuery.data?.reviews) return [];
-      return reviewsQuery.data.reviews.filter((review: any) =>
-        review.clientName.toLowerCase().includes(reviewsSearch.toLowerCase()) ||
-        review.serviceProviderName.toLowerCase().includes(reviewsSearch.toLowerCase())
-      );
-    }, [reviewsQuery.data?.reviews, reviewsSearch]);
-
   const statistics = {
     totalClients: clientsPagination?.total || clientsData.length || 0,
     totalServiceProviders: providersPagination?.total || providersData.length || 0,
@@ -367,7 +297,7 @@ const Dashboard = () => {
     unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
     unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
   };
-
+  
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
@@ -378,7 +308,7 @@ const Dashboard = () => {
           Deconectare
         </Button>
       </div>
-
+      
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
@@ -387,7 +317,7 @@ const Dashboard = () => {
           <TabsTrigger value="requests">Cereri</TabsTrigger>
           <TabsTrigger value="reviews">Recenzii</TabsTrigger>
         </TabsList>
-
+        
         {/* Tab Prezentare generală */}
         <TabsContent value="overview">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -403,7 +333,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">Clienți neverificați</p>
               </CardContent>
             </Card>
-
+            
             <Card>
               <CardHeader>
                 <CardTitle>Furnizori de servicii</CardTitle>
@@ -416,7 +346,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">Furnizori neverificați</p>
               </CardContent>
             </Card>
-
+            
             <Card>
               <CardHeader>
                 <CardTitle>Activitate</CardTitle>
@@ -431,7 +361,7 @@ const Dashboard = () => {
             </Card>
           </div>
         </TabsContent>
-
+        
         {/* Tab Clienți */}
         <TabsContent value="clients">
           <Card>
@@ -439,30 +369,7 @@ const Dashboard = () => {
               <CardTitle>Lista clienților</CardTitle>
               <CardDescription>Gestionați clienții înregistrați în sistem</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Bara de căutare și selecție număr elemente */}
-              <div className="flex gap-4 items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Căutați după nume sau email..."
-                    value={clientsSearch}
-                    onChange={(e) => setClientsSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={clientsLimit.toString()} onValueChange={(value) => setClientsLimit(Number(value))}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="20">20 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -477,7 +384,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.map((client: any) => (
+                  {clientsData.map((client: any) => (
                     <TableRow key={client.id}>
                       <TableCell>{client.id}</TableCell>
                       <TableCell>{client.firstName} {client.lastName}</TableCell>
@@ -488,20 +395,12 @@ const Dashboard = () => {
                       <TableCell>
                         <Switch
                           checked={client.verified}
-                          onChange={(checked) => {
-                            //handleVerifyClient(client.id, checked)
-                          }}
-                          onCheckedChange={(checked) => {
-                            // updateClientVerificationMutation.mutate({
-                            //   clientId: client.id,
-                            //   verified: checked,
-                            // });
-                          }}
+                          onCheckedChange={(checked) => handleVerifyClient(client.id, checked)}
                         />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
+                        <Button 
+                          variant="ghost" 
                           size="sm"
                           onClick={() => setLocation(`/admin/clients/${client.id}`)}
                           className="flex items-center gap-2"
@@ -514,39 +413,10 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
-               {/* Paginație */}
-               {clientsQuery.data?.pagination && (
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        Pagina {clientsQuery.data.pagination.page} din {clientsQuery.data.pagination.totalPages}
-                        ({clientsQuery.data.pagination.total} clienți în total)
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setClientsPage(prev => Math.max(1, prev - 1))}
-                          disabled={clientsPage === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Anterior
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setClientsPage(prev => prev + 1)}
-                          disabled={clientsPage >= (clientsQuery.data?.pagination?.totalPages || 1)}
-                        >
-                          Următorul
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
             </CardContent>
           </Card>
         </TabsContent>
-
+        
         {/* Tab Furnizori */}
         <TabsContent value="providers">
           <Card>
@@ -554,30 +424,7 @@ const Dashboard = () => {
               <CardTitle>Lista furnizorilor de servicii</CardTitle>
               <CardDescription>Gestionați furnizorii de servicii înregistrați în sistem</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Bara de căutare și selecție număr elemente */}
-              <div className="flex gap-4 items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Căutați după nume companie sau email..."
-                    value={providersSearch}
-                    onChange={(e) => setProvidersSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={providersLimit.toString()} onValueChange={(value) => setProvidersLimit(Number(value))}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 pe pagină</SelectItem>
-                    <SelectItem value="10">10 pe pagină</SelectItem>
-                    <SelectItem value="20">20 pe pagină</SelectItem>
-                    <SelectItem value="50">50 pe pagină</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -593,7 +440,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredServiceProviders.map((provider: any) => (
+                  {providersData.map((provider: any) => (
                     <TableRow key={provider.id}>
                       <TableCell>{provider.id}</TableCell>
                       <TableCell>{provider.companyName}</TableCell>
@@ -609,14 +456,7 @@ const Dashboard = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            console.log('Navigating to service provider details:', provider.id);
-                            setLocation(`/admin/service-providers/${provider.id}`);
-                          }}
-                        >
+                        <Button variant="ghost" size="sm">
                           Detalii
                         </Button>
                       </TableCell>
@@ -624,39 +464,10 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
-              {/* Paginație */}
-              {serviceProvidersQuery.data?.pagination && (
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        Pagina {serviceProvidersQuery.data.pagination.page} din {serviceProvidersQuery.data.pagination.totalPages}
-                        ({serviceProvidersQuery.data.pagination.total} furnizori în total)
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setProvidersPage(prev => Math.max(1, prev - 1))}
-                          disabled={providersPage === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Anterior
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setProvidersPage(prev => prev + 1)}
-                          disabled={providersPage >= (serviceProvidersQuery.data?.pagination?.totalPages || 1)}
-                        >
-                          Următorul
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
             </CardContent>
           </Card>
         </TabsContent>
-
+        
         {/* Tab Cereri */}
         <TabsContent value="requests">
           <Card>
@@ -664,17 +475,7 @@ const Dashboard = () => {
               <CardTitle>Lista cererilor</CardTitle>
               <CardDescription>Vizualizați cererile din sistem</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Bara de căutare */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Căutați după titlu sau nume client..."
-                  value={requestsSearch}
-                  onChange={(e) => setRequestsSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -687,7 +488,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRequests.map((request: any) => (
+                  {requestsData.map((request: any) => (
                     <TableRow key={request.id}>
                       <TableCell>{request.id}</TableCell>
                       <TableCell>{request.title}</TableCell>
@@ -706,7 +507,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
+        
         {/* Tab Recenzii */}
         <TabsContent value="reviews">
           <Card>
@@ -714,17 +515,7 @@ const Dashboard = () => {
               <CardTitle>Lista recenziilor</CardTitle>
               <CardDescription>Gestionați recenziile din sistem</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Bara de căutare */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Căutați după nume client sau furnizor..."
-                  value={reviewsSearch}
-                  onChange={(e) => setReviewsSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -739,7 +530,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReviews.map((review: any) => (
+                  {reviewsData.map((review: any) => (
                     <TableRow key={review.id}>
                       <TableCell>{review.id}</TableCell>
                       <TableCell>{review.clientName}</TableCell>
@@ -785,7 +576,7 @@ const Dashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
+      
       {/* Dialog pentru detalii recenzie */}
       {selectedReview && (
         <AlertDialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
@@ -803,7 +594,7 @@ const Dashboard = () => {
                   <div className="max-h-40 overflow-y-auto rounded-md bg-muted p-2">
                     {selectedReview.content}
                   </div>
-
+                  
                   {selectedReview.reportStatus && (
                     <div className="mt-4 rounded-md bg-amber-50 p-3">
                       <h4 className="font-semibold text-amber-800">Recenzie raportată</h4>
