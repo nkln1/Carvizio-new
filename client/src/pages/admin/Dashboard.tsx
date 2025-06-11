@@ -50,7 +50,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
-  
+
   // Pagination states
   const [clientsPage, setClientsPage] = useState(1);
   const [providersPage, setProvidersPage] = useState(1);
@@ -71,7 +71,7 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'clients' || activeTab === 'overview'
   });
-  
+
   const serviceProvidersQuery = useQuery({
     queryKey: ['/api/admin/service-providers', providersPage],
     queryFn: async () => {
@@ -84,7 +84,7 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'providers' || activeTab === 'overview'
   });
-  
+
   const requestsQuery = useQuery({
     queryKey: ['/api/admin/requests', requestsPage],
     queryFn: async () => {
@@ -97,7 +97,7 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'requests' || activeTab === 'overview'
   });
-  
+
   const reviewsQuery = useQuery({
     queryKey: ['/api/admin/reviews', reviewsPage],
     queryFn: async () => {
@@ -110,7 +110,7 @@ const Dashboard = () => {
     },
     enabled: activeTab === 'reviews' || activeTab === 'overview'
   });
-  
+
   // Mutations pentru actualizarea datelor
   const verifyClientMutation = useMutation({
     mutationFn: async ({ clientId, verified }: { clientId: number, verified: boolean }) => {
@@ -128,7 +128,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/clients'] });
     }
   });
-  
+
   const verifyServiceProviderMutation = useMutation({
     mutationFn: async ({ providerId, verified }: { providerId: number, verified: boolean }) => {
       const response = await fetch(`/api/admin/service-provider/${providerId}/verify`, {
@@ -145,7 +145,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
     }
   });
-  
+
   const dismissReviewReportMutation = useMutation({
     mutationFn: async ({ reviewId }: { reviewId: number }) => {
       const response = await fetch(`/api/admin/review/${reviewId}/dismiss-report`, {
@@ -185,7 +185,7 @@ const Dashboard = () => {
       }
     );
   };
-  
+
   // Handler pentru verificarea unui furnizor de servicii
   const handleVerifyServiceProvider = (providerId: number, verified: boolean) => {
     verifyServiceProviderMutation.mutate(
@@ -208,7 +208,7 @@ const Dashboard = () => {
       }
     );
   };
-  
+
   // Handler pentru gestionarea unui raport de recenzie
   const handleDismissReviewReport = (reviewId: number) => {
     dismissReviewReportMutation.mutate(
@@ -234,7 +234,7 @@ const Dashboard = () => {
 
   // Verificăm dacă utilizatorul are permisiunea de admin folosind AdminAuthContext
   const { isAdmin, isLoading, adminData, logout } = useAdminAuth();
-  
+
   useEffect(() => {
     // Dacă nu se încarcă și nu este admin, redirecționăm către pagina de login
     if (!isLoading && !isAdmin) {
@@ -246,7 +246,7 @@ const Dashboard = () => {
       });
     }
   }, [isLoading, isAdmin, setLocation, toast]);
-  
+
   // Dacă datele sunt în încărcare, afișăm un indicator
   if (clientsQuery.isLoading || serviceProvidersQuery.isLoading || requestsQuery.isLoading || reviewsQuery.isLoading) {
     return (
@@ -256,7 +256,7 @@ const Dashboard = () => {
       </div>
     );
   }
-  
+
   // Dacă apare o eroare, o afișăm
   if (clientsQuery.isError || serviceProvidersQuery.isError || requestsQuery.isError || reviewsQuery.isError) {
     return (
@@ -271,24 +271,24 @@ const Dashboard = () => {
       </div>
     );
   }
-  
+
   // Extragerea datelor cu suport pentru paginație
   const clientsData = clientsQuery.data?.clients ? Array.isArray(clientsQuery.data.clients) ? clientsQuery.data.clients : [] : 
                       Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
   const clientsPagination = clientsQuery.data?.pagination;
-  
+
   const providersData = serviceProvidersQuery.data?.serviceProviders ? Array.isArray(serviceProvidersQuery.data.serviceProviders) ? serviceProvidersQuery.data.serviceProviders : [] :
                         Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
   const providersPagination = serviceProvidersQuery.data?.pagination;
-  
+
   const requestsData = requestsQuery.data?.requests ? Array.isArray(requestsQuery.data.requests) ? requestsQuery.data.requests : [] :
                       Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
   const requestsPagination = requestsQuery.data?.pagination;
-  
+
   const reviewsData = reviewsQuery.data?.reviews ? Array.isArray(reviewsQuery.data.reviews) ? reviewsQuery.data.reviews : [] :
                      Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
   const reviewsPagination = reviewsQuery.data?.pagination;
-  
+
   const statistics = {
     totalClients: clientsPagination?.total || clientsData.length || 0,
     totalServiceProviders: providersPagination?.total || providersData.length || 0,
@@ -297,7 +297,7 @@ const Dashboard = () => {
     unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
     unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
   };
-  
+
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
@@ -308,7 +308,7 @@ const Dashboard = () => {
           Deconectare
         </Button>
       </div>
-      
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
@@ -317,7 +317,7 @@ const Dashboard = () => {
           <TabsTrigger value="requests">Cereri</TabsTrigger>
           <TabsTrigger value="reviews">Recenzii</TabsTrigger>
         </TabsList>
-        
+
         {/* Tab Prezentare generală */}
         <TabsContent value="overview">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -333,7 +333,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">Clienți neverificați</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Furnizori de servicii</CardTitle>
@@ -346,7 +346,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">Furnizori neverificați</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Activitate</CardTitle>
@@ -361,7 +361,7 @@ const Dashboard = () => {
             </Card>
           </div>
         </TabsContent>
-        
+
         {/* Tab Clienți */}
         <TabsContent value="clients">
           <Card>
@@ -416,7 +416,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Tab Furnizori */}
         <TabsContent value="providers">
           <Card>
@@ -456,7 +456,13 @@ const Dashboard = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setLocation(`/admin/service-providers/${provider.id}`)}
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
                           Detalii
                         </Button>
                       </TableCell>
@@ -467,7 +473,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Tab Cereri */}
         <TabsContent value="requests">
           <Card>
@@ -507,7 +513,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Tab Recenzii */}
         <TabsContent value="reviews">
           <Card>
@@ -576,7 +582,7 @@ const Dashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Dialog pentru detalii recenzie */}
       {selectedReview && (
         <AlertDialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
@@ -594,7 +600,7 @@ const Dashboard = () => {
                   <div className="max-h-40 overflow-y-auto rounded-md bg-muted p-2">
                     {selectedReview.content}
                   </div>
-                  
+
                   {selectedReview.reportStatus && (
                     <div className="mt-4 rounded-md bg-amber-50 p-3">
                       <h4 className="font-semibold text-amber-800">Recenzie raportată</h4>
