@@ -117,7 +117,7 @@ const Dashboard = () => {
       return response.json();
     },
     enabled: activeTab === 'clients' || activeTab === 'overview',
-    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    staleTime: 0,
     gcTime: 0
   });
 
@@ -132,7 +132,7 @@ const Dashboard = () => {
       return response.json();
     },
     enabled: activeTab === 'providers' || activeTab === 'overview',
-    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    staleTime: 0,
     gcTime: 0
   });
 
@@ -147,7 +147,7 @@ const Dashboard = () => {
       return response.json();
     },
     enabled: activeTab === 'requests' || activeTab === 'overview',
-    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    staleTime: 0,
     gcTime: 0
   });
 
@@ -162,7 +162,7 @@ const Dashboard = () => {
       return response.json();
     },
     enabled: activeTab === 'reviews' || activeTab === 'overview',
-    staleTime: 0, // Asigurăm-ne că datele se reîmprospătează
+    staleTime: 0,
     gcTime: 0
   });
 
@@ -334,27 +334,23 @@ const Dashboard = () => {
   }
 
   // Extragerea datelor cu suport pentru paginație
-  const clientsData = clientsQuery.data?.clients ? Array.isArray(clientsQuery.data.clients) ? clientsQuery.data.clients : [] : 
-                      Array.isArray(clientsQuery.data) ? clientsQuery.data : [];
+  const clientsData = clientsQuery.data?.clients || [];
   const clientsPagination = clientsQuery.data?.pagination;
 
-  const providersData = serviceProvidersQuery.data?.serviceProviders ? Array.isArray(serviceProvidersQuery.data.serviceProviders) ? serviceProvidersQuery.data.serviceProviders : [] :
-                        Array.isArray(serviceProvidersQuery.data) ? serviceProvidersQuery.data : [];
+  const providersData = serviceProvidersQuery.data?.serviceProviders || [];
   const providersPagination = serviceProvidersQuery.data?.pagination;
 
-  const requestsData = requestsQuery.data?.requests ? Array.isArray(requestsQuery.data.requests) ? requestsQuery.data.requests : [] :
-                      Array.isArray(requestsQuery.data) ? requestsQuery.data : [];
+  const requestsData = requestsQuery.data?.requests || [];
   const requestsPagination = requestsQuery.data?.pagination;
 
-  const reviewsData = reviewsQuery.data?.reviews ? Array.isArray(reviewsQuery.data.reviews) ? reviewsQuery.data.reviews : [] :
-                     Array.isArray(reviewsQuery.data) ? reviewsQuery.data : [];
+  const reviewsData = reviewsQuery.data?.reviews || [];
   const reviewsPagination = reviewsQuery.data?.pagination;
 
   const statistics = {
-    totalClients: clientsPagination?.total || clientsData.length || 0,
-    totalServiceProviders: providersPagination?.total || providersData.length || 0,
-    totalRequests: requestsPagination?.total || requestsData.length || 0,
-    totalReviews: reviewsPagination?.total || reviewsData.length || 0,
+    totalClients: clientsPagination?.total || 0,
+    totalServiceProviders: providersPagination?.total || 0,
+    totalRequests: requestsPagination?.total || 0,
+    totalReviews: reviewsPagination?.total || 0,
     unverifiedClients: clientsData.filter((client: any) => !client.verified).length || 0,
     unverifiedProviders: providersData.filter((provider: any) => !provider.verified).length || 0
   };
@@ -496,14 +492,14 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru clienți */}
-              {(clientsPagination || clientsData.length >= clientsItemsPerPage) && (
+              {clientsPagination && clientsPagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {clientsPagination?.currentPage || clientsPage} din {clientsPagination?.totalPages || Math.ceil((clientsPagination?.total || clientsData.length) / clientsItemsPerPage)}
+                      Pagina {clientsPagination.currentPage} din {clientsPagination.totalPages}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      ({clientsPagination?.total || clientsData.length} clienți în total)
+                      ({clientsPagination.total} clienți în total)
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -520,7 +516,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setClientsPage(prev => prev + 1)}
-                      disabled={clientsPagination ? !clientsPagination.hasNext : clientsPage >= Math.ceil(clientsData.length / clientsItemsPerPage)}
+                      disabled={clientsPage >= clientsPagination.totalPages}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
@@ -607,14 +603,14 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru furnizori */}
-              {(providersPagination || providersData.length >= providersItemsPerPage) && (
+              {providersPagination && providersPagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {providersPagination?.currentPage || providersPage} din {providersPagination?.totalPages || Math.ceil((providersPagination?.total || providersData.length) / providersItemsPerPage)}
+                      Pagina {providersPagination.currentPage} din {providersPagination.totalPages}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      ({providersPagination?.total || providersData.length} furnizori în total)
+                      ({providersPagination.total} furnizori în total)
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -631,7 +627,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setProvidersPage(prev => prev + 1)}
-                      disabled={providersPagination ? !providersPagination.hasNext : providersPage >= Math.ceil(providersData.length / providersItemsPerPage)}
+                      disabled={providersPage >= providersPagination.totalPages}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
@@ -707,14 +703,14 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru cereri */}
-              {(requestsPagination || requestsData.length >= requestsItemsPerPage) && (
+              {requestsPagination && requestsPagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {requestsPagination?.currentPage || requestsPage} din {requestsPagination?.totalPages || Math.ceil((requestsPagination?.total || requestsData.length) / requestsItemsPerPage)}
+                      Pagina {requestsPagination.currentPage} din {requestsPagination.totalPages}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      ({requestsPagination?.total || requestsData.length} cereri în total)
+                      ({requestsPagination.total} cereri în total)
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -731,7 +727,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setRequestsPage(prev => prev + 1)}
-                      disabled={requestsPagination ? !requestsPagination.hasNext : requestsPage >= Math.ceil(requestsData.length / requestsItemsPerPage)}
+                      disabled={requestsPage >= requestsPagination.totalPages}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />
@@ -829,14 +825,14 @@ const Dashboard = () => {
               </Table>
               
               {/* Paginație pentru recenzii */}
-              {(reviewsPagination || reviewsData.length >= reviewsItemsPerPage) && (
+              {reviewsPagination && reviewsPagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      Pagina {reviewsPagination?.currentPage || reviewsPage} din {reviewsPagination?.totalPages || Math.ceil((reviewsPagination?.total || reviewsData.length) / reviewsItemsPerPage)}
+                      Pagina {reviewsPagination.currentPage} din {reviewsPagination.totalPages}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      ({reviewsPagination?.total || reviewsData.length} recenzii în total)
+                      ({reviewsPagination.total} recenzii în total)
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -853,7 +849,7 @@ const Dashboard = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setReviewsPage(prev => prev + 1)}
-                      disabled={reviewsPagination ? !reviewsPagination.hasNext : reviewsPage >= Math.ceil(reviewsData.length / reviewsItemsPerPage)}
+                      disabled={reviewsPage >= reviewsPagination.totalPages}
                     >
                       Următor
                       <ChevronRight className="h-4 w-4" />

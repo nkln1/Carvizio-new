@@ -152,14 +152,16 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
 
       const clients = await storage.getAllClientsPaginated(offset, limit);
       const totalClients = await storage.getTotalClientsCount();
-      
+
       res.json({
         clients,
         pagination: {
-          page,
+          currentPage: page,
           limit,
           total: totalClients,
-          totalPages: Math.ceil(totalClients / limit)
+          totalPages: Math.ceil(totalClients / limit),
+          hasNext: page < Math.ceil(totalClients / limit),
+          hasPrev: page > 1
         }
       });
     } catch (error) {
@@ -173,14 +175,14 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
     try {
       const clientId = parseInt(req.params.id);
       const client = await storage.getClientById(clientId);
-      
+
       if (!client) {
         return res.status(404).json({ message: 'Clientul nu a fost găsit' });
       }
 
       const clientRequests = await storage.getClientRequests(clientId);
       const clientReviews = await storage.getClientReviews(clientId);
-      
+
       res.json({
         client,
         requests: clientRequests,
@@ -236,15 +238,17 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
       const offset = (page - 1) * limit;
 
       const serviceProviders = await storage.getAllServiceProvidersPaginated(offset, limit);
-      const totalProviders = await storage.getTotalServiceProvidersCount();
-      
+      const totalServiceProviders = await storage.getTotalServiceProvidersCount();
+
       res.json({
         serviceProviders,
         pagination: {
-          page,
+          currentPage: page,
           limit,
-          total: totalProviders,
-          totalPages: Math.ceil(totalProviders / limit)
+          total: totalServiceProviders,
+          totalPages: Math.ceil(totalServiceProviders / limit),
+          hasNext: page < Math.ceil(totalServiceProviders / limit),
+          hasPrev: page > 1
         }
       });
     } catch (error) {
@@ -258,14 +262,14 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
     try {
       const providerId = parseInt(req.params.id);
       const provider = await storage.getServiceProviderById(providerId);
-      
+
       if (!provider) {
         return res.status(404).json({ message: 'Furnizorul de servicii nu a fost găsit' });
       }
 
       const providerReviews = await storage.getServiceProviderReviews(providerId);
       const providerOffers = await storage.getServiceProviderOffers(providerId);
-      
+
       res.json({
         provider,
         reviews: providerReviews,
@@ -277,49 +281,54 @@ export function registerAdminRoutes(app: Express, storage: IStorage, validateFir
     }
   });
 
-  // Obține lista tuturor cererilor (doar pentru admin)
+  // Obține lista tuturor cererilor cu paginație (doar pentru admin)
   app.get('/api/admin/requests', isAdmin, async (req, res) => {
     try {
-      const requests = await storage.getAllRequests();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = (page - 1) * limit;
 
-      // Adăugăm numele clientului pentru fiecare cerere
-      const requestsWithClientNames = await Promise.all(
-        requests.map(async (request) => {
-          const client = await storage.getClient(request.clientId);
-          return {
-            ...request,
-            clientName: client ? client.name : 'Client necunoscut'
-          };
-        })
-      );
+      const requests = await storage.getAllRequestsPaginated(offset, limit);
+      const totalRequests = await storage.getTotalRequestsCount();
 
-      res.json(requestsWithClientNames);
+      res.json({
+        requests,
+        pagination: {
+          currentPage: page,
+          limit,
+          total: totalRequests,
+          totalPages: Math.ceil(totalRequests / limit),
+          hasNext: page < Math.ceil(totalRequests / limit),
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
       console.error('Eroare la obținerea listei de cereri:', error);
-      res.status(500).json({ message: 'Eroare la obținerea listei de cereri' });
+      res.status(500).json({ message: 'Eroare internă la obținerea cererilor' });
     }
   });
 
-  // Obține lista tuturor recenziilor (doar pentru admin)
+  // Obține lista tuturor recenziilor cu paginație (doar pentru admin)
   app.get('/api/admin/reviews', isAdmin, async (req, res) => {
     try {
-      const reviews = await storage.getAllReviews();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = (page - 1) * limit;
 
-      // Adăugăm numele clientului și furnizorului pentru fiecare recenzie
-      const reviewsWithNames = await Promise.all(
-        reviews.map(async (review) => {
-          const client = await storage.getClient(review.clientId);
-          const serviceProvider = await storage.getServiceProvider(review.serviceProviderId);
+      const reviews = await storage.getAllReviewsPaginated(offset, limit);
+      const totalReviews = await storage.getTotalReviewsCount();
 
-          return {
-            ...review,
-            clientName: client ? client.name : 'Client necunoscut',
-            serviceProviderName: serviceProvider ? serviceProvider.companyName : 'Furnizor necunoscut'
-          };
-        })
-      );
-
-      res.json(reviewsWithNames);
+      res.json({
+        reviews,
+        pagination: {
+          currentPage: page,
+          limit,
+          total: totalReviews,
+          totalPages: Math.ceil(totalReviews / limit),
+          hasNext: page < Math.ceil(totalReviews / limit),
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
       console.error('Eroare la obținerea listei de recenzii:', error);
       res.status(500).json({ message: 'Eroare la obținerea listei de recenzii' });
